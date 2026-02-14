@@ -51,26 +51,17 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
 
           {/* Account section */}
           <div className="space-y-3">
-            <label className="flex items-center gap-2.5 cursor-pointer group">
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.createAccount ? 'bg-accent border-accent' : 'border-border'}`}>
-                {formData.createAccount && <span className="text-accent-foreground text-xs">✓</span>}
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Compte joueur</label>
+            <div className="space-y-3 p-4 bg-accent/5 rounded-xl border border-accent/10">
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent/60" />
+                <input type="email" placeholder="Email" className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
               </div>
-              <span className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">Créer un compte joueur</span>
-            </label>
-            <input type="checkbox" className="hidden" checked={formData.createAccount} onChange={(e) => setFormData({ ...formData, createAccount: e.target.checked })} />
-
-            {formData.createAccount && (
-              <div className="space-y-3 p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent/60" />
-                  <input type="email" placeholder="Email" className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-                </div>
-                <div className="relative">
-                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent/60" />
-                  <input type="text" placeholder="Mot de passe (min. 6)" className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-                </div>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent/60" />
+                <input type="text" placeholder="Mot de passe (min. 6)" className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -81,7 +72,7 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
           </button>
           <button
             onClick={() => onSubmit(formData)}
-            disabled={!formData.name || (formData.createAccount && (!formData.email || !formData.password))}
+            disabled={!formData.name || !formData.email || !formData.password}
             className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
           >
             Ajouter
