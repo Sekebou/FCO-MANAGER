@@ -30,6 +30,7 @@ export type ScrapeResult = {
   teams?: string[];
   matches?: ScrapedMatch[];
   standings?: ScrapedStanding[];
+  teamLogos?: Record<string, string>;
   rawMarkdown?: string;
   error?: string;
 };

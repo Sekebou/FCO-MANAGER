@@ -9,6 +9,7 @@ export interface Championship {
   teams: string[];
   fffUrl?: string;
   fffStandings?: ScrapedStanding[];
+  teamLogos?: Record<string, string>;
   createdAt: string;
 }
 
@@ -28,7 +29,7 @@ interface Props {
   championships: Championship[];
   matches: Match[];
   canManage: () => boolean | undefined;
-  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[] }) => void;
+  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string> }) => void;
   onDeleteChampionship: (id: string) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
@@ -59,6 +60,7 @@ const ChampionnatTab: React.FC<Props> = ({
   const [isScrapingFFF, setIsScrapingFFF] = useState(false);
   const [importedMatches, setImportedMatches] = useState<ScrapedMatch[]>([]);
   const [importedStandings, setImportedStandings] = useState<ScrapedStanding[]>([]);
+  const [importedLogos, setImportedLogos] = useState<Record<string, string>>({});
   const [refreshingChamp, setRefreshingChamp] = useState<string | null>(null);
 
   // Add match form state
@@ -73,6 +75,31 @@ const ChampionnatTab: React.FC<Props> = ({
   const [editAway, setEditAway] = useState(0);
 
   const getChampMatches = (champId: string) => matches.filter(m => m.championshipId === champId);
+
+  const getTeamLogo = (teamName: string, champId?: string) => {
+    // Search across all championships for the team logo
+    const searchChamps = champId ? [championships.find(c => c.id === champId)] : championships;
+    for (const champ of searchChamps) {
+      if (!champ?.teamLogos) continue;
+      const logo = champ.teamLogos[teamName.toUpperCase()] || champ.teamLogos[teamName];
+      if (logo) return logo;
+    }
+    return null;
+  };
+
+  const TeamLogo: React.FC<{ team: string; champId?: string; size?: number }> = ({ team, champId, size = 24 }) => {
+    const logo = getTeamLogo(team, champId);
+    if (!logo) return null;
+    return (
+      <img
+        src={logo}
+        alt={team}
+        className="rounded-full object-cover shrink-0 bg-muted"
+        style={{ width: size, height: size }}
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+    );
+  };
 
   const getStandings = (champId: string) => {
     const champ = championships.find(c => c.id === champId);
@@ -128,8 +155,8 @@ const ChampionnatTab: React.FC<Props> = ({
     if (!champName.trim()) return;
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { alert('Ajoutez au moins 2 équipes'); return; }
-    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined });
-    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setShowAddChamp(false);
+    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined });
+    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setShowAddChamp(false);
   };
 
   const handleImportFFF = async () => {
@@ -144,6 +171,9 @@ const ChampionnatTab: React.FC<Props> = ({
         }
         if (result.standings && result.standings.length > 0) {
           setImportedStandings(result.standings);
+        }
+        if (result.teamLogos && Object.keys(result.teamLogos).length > 0) {
+          setImportedLogos(result.teamLogos);
         }
       } else {
         alert(result.error || 'Aucune équipe trouvée sur cette page');
@@ -210,29 +240,53 @@ const ChampionnatTab: React.FC<Props> = ({
         {/* Prochains matchs */}
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar size={18} className="text-accent" />
+            <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
+              <Clock size={16} className="text-accent" />
+            </div>
             <h3 className="font-semibold text-foreground">Prochains matchs</h3>
+            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{upcomingMatches.length}</span>
           </div>
           {upcomingMatches.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Aucun match à venir</p>
+            <p className="text-sm text-muted-foreground text-center py-6">Aucun match à venir</p>
           ) : (
-            <div className="space-y-2.5">
-              {upcomingMatches.map(m => {
+            <div className="space-y-2">
+              {upcomingMatches.map((m, idx) => {
                 const champ = championships.find(c => c.id === m.championshipId);
+                const matchDate = new Date(m.date);
+                const now = new Date();
+                const diffDays = Math.ceil((matchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                const isImminent = diffDays <= 3;
                 return (
-                  <div key={m.id} className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <span>{m.homeTeam}</span>
-                        <span className="text-muted-foreground font-normal">vs</span>
-                        <span>{m.awayTeam}</span>
+                  <div key={m.id} className={`relative rounded-xl border transition-all ${isImminent ? 'border-accent/30 bg-accent/5' : 'border-border/50 bg-secondary/30'} ${idx === 0 ? 'ring-1 ring-accent/20' : ''}`}>
+                    <div className="px-4 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <CalendarDays size={12} />
+                          <span className="font-medium">
+                            {matchDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                        {isImminent && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full animate-pulse">
+                            {diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        J{m.journee} • {champ?.name}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                          <span className="text-sm font-bold text-foreground truncate">{m.homeTeam}</span>
+                          <TeamLogo team={m.homeTeam} champId={m.championshipId} size={22} />
+                        </div>
+                        <div className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-semibold shrink-0">VS</div>
+                        <div className="flex items-center gap-2 flex-1">
+                          <TeamLogo team={m.awayTeam} champId={m.championshipId} size={22} />
+                          <span className="text-sm font-bold text-foreground truncate">{m.awayTeam}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-xs font-medium text-accent bg-accent/10 px-2.5 py-1 rounded-lg">
-                      {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground">
+                        <Trophy size={10} />
+                        <span>J{m.journee} • {champ?.name}</span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -267,17 +321,23 @@ const ChampionnatTab: React.FC<Props> = ({
                       <span>J{m.journee}</span>
                     </div>
                     <div className="flex items-center px-4 py-3">
-                      <span className={`text-sm font-bold flex-1 text-right truncate ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
-                        {m.homeTeam}
-                      </span>
+                      <div className="flex items-center gap-2 flex-1 justify-end">
+                        <span className={`text-sm font-bold truncate ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
+                          {m.homeTeam}
+                        </span>
+                        <TeamLogo team={m.homeTeam} champId={m.championshipId} size={22} />
+                      </div>
                       <div className={`mx-3 px-4 py-1 rounded-lg text-sm font-black min-w-[70px] text-center tracking-wider shadow-sm ${
                         isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
                       }`}>
                         {m.homeScore} - {m.awayScore}
                       </div>
-                      <span className={`text-sm font-bold flex-1 truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
-                        {m.awayTeam}
-                      </span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <TeamLogo team={m.awayTeam} champId={m.championshipId} size={22} />
+                        <span className={`text-sm font-bold truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
+                          {m.awayTeam}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -368,7 +428,12 @@ const ChampionnatTab: React.FC<Props> = ({
                                 i === 0 ? 'bg-yellow-400/20 text-yellow-600' : i === 1 ? 'bg-gray-300/20 text-gray-500' : i === 2 ? 'bg-amber-600/20 text-amber-700' : 'text-muted-foreground'
                               }`}>{i + 1}</span>
                             </td>
-                            <td className="py-2.5 px-2 font-semibold text-foreground">{s.team}</td>
+                            <td className="py-2.5 px-2 font-semibold text-foreground">
+                              <div className="flex items-center gap-2">
+                                <TeamLogo team={s.team} champId={champ.id} size={20} />
+                                <span>{s.team}</span>
+                              </div>
+                            </td>
                             <td className="text-center py-2.5 px-2 text-muted-foreground">{s.played}</td>
                             <td className="text-center py-2.5 px-2 text-emerald-500 font-medium">{s.won}</td>
                             <td className="text-center py-2.5 px-2 text-muted-foreground">{s.drawn}</td>
@@ -407,10 +472,11 @@ const ChampionnatTab: React.FC<Props> = ({
                       <div className="space-y-2">
                         {champMatches.filter(m => m.journee === j).map(m => (
                           <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3.5 gap-3">
-                            <div className="flex-1 text-right">
-                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
+                            <div className="flex items-center gap-2 flex-1 justify-end">
+                              <span className={`text-sm font-bold truncate ${m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
                                 {m.homeTeam}
                               </span>
+                              <TeamLogo team={m.homeTeam} champId={champ.id} size={22} />
                             </div>
 
                             {m.played ? (
@@ -439,8 +505,9 @@ const ChampionnatTab: React.FC<Props> = ({
                               </div>
                             )}
 
-                            <div className="flex-1">
-                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
+                            <div className="flex items-center gap-2 flex-1">
+                              <TeamLogo team={m.awayTeam} champId={champ.id} size={22} />
+                              <span className={`text-sm font-bold truncate ${m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
                                 {m.awayTeam}
                               </span>
                             </div>
