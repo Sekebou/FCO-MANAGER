@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import type { NewsItem, NewsComment } from '@/pages/Dashboard';
+import type { NewsItem, NewsComment, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Bell, Plus, Trash2, Heart, MessageCircle, Send, X } from 'lucide-react';
 
 interface Props {
   news: NewsItem[];
   comments: NewsComment[];
+  members: Member[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
   deleteNews: (id: string) => void;
@@ -15,7 +16,29 @@ interface Props {
   onAddNews: () => void;
 }
 
-const NewsTab = ({ news, comments, currentUser, canManage, deleteNews, toggleLike, addComment, deleteComment, onAddNews }: Props) => {
+const CommentAvatar: React.FC<{ authorUid: string; authorName: string; members: Member[] }> = ({ authorUid, authorName, members }) => {
+  const member = members.find(m => m.id === authorUid);
+  const photoURL = member?.photoURL;
+  const initials = authorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  if (photoURL) {
+    return (
+      <img
+        src={photoURL}
+        alt={authorName}
+        className="w-8 h-8 rounded-lg object-cover shrink-0"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+      <span className="text-primary-foreground text-xs font-bold">{initials}</span>
+    </div>
+  );
+};
+
+const NewsTab = ({ news, comments, members, currentUser, canManage, deleteNews, toggleLike, addComment, deleteComment, onAddNews }: Props) => {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
 
@@ -106,11 +129,7 @@ const NewsTab = ({ news, comments, currentUser, canManage, deleteNews, toggleLik
                     <div className="px-5 py-3 space-y-3 max-h-64 overflow-y-auto">
                       {newsComments.map(comment => (
                         <div key={comment.id} className="flex gap-3 group">
-                          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">
-                              {comment.authorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                            </span>
-                          </div>
+                          <CommentAvatar authorUid={comment.authorUid} authorName={comment.authorName} members={members} />
                           <div className="flex-1 min-w-0">
                             <div className="bg-secondary rounded-xl px-3 py-2">
                               <span className="text-xs font-semibold text-foreground">{comment.authorName}</span>
@@ -135,11 +154,7 @@ const NewsTab = ({ news, comments, currentUser, canManage, deleteNews, toggleLik
                   {/* Comment input */}
                   {currentUser && (
                     <div className="px-5 py-3 border-t border-border/50 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center shrink-0">
-                        <span className="text-accent text-xs font-bold">
-                          {currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </span>
-                      </div>
+                      <CommentAvatar authorUid={currentUser.uid} authorName={currentUser.name} members={members} />
                       <div className="flex-1 relative">
                         <input
                           type="text"
