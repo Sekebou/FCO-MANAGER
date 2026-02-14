@@ -65,7 +65,7 @@ const AddEventForm = ({ onSubmit, onClose }: Props) => {
           {/* Notification */}
           {(formData.type === 'match' || formData.type === 'training') && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
-              <label className="flex items-center gap-3 cursor-pointer">
+              <label className="flex items-center gap-3 cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, sendNotification: !prev.sendNotification }))}>
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.sendNotification ? 'bg-accent border-accent' : 'border-border'}`}>
                   {formData.sendNotification && <span className="text-accent-foreground text-xs">✓</span>}
                 </div>
@@ -76,7 +76,6 @@ const AddEventForm = ({ onSubmit, onClose }: Props) => {
                   <p className="text-[11px] text-muted-foreground mt-0.5">Email de confirmation de présence</p>
                 </div>
               </label>
-              <input type="checkbox" className="hidden" checked={formData.sendNotification} onChange={(e) => setFormData({ ...formData, sendNotification: e.target.checked })} />
             </div>
           )}
         </div>
