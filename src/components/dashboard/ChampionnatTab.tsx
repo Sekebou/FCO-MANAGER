@@ -205,14 +205,17 @@ const ChampionnatTab: React.FC<Props> = ({
     setEditingMatch(null);
   };
 
+  // Use local date to avoid timezone issues with YYYY-MM-DD strings
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
   const upcomingMatches = matches
-    .filter(m => !m.played)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 5);
+    .filter(m => !m.played && m.date >= todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const recentResults = matches
     .filter(m => m.played)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 5);
 
   return (
