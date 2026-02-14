@@ -1,8 +1,19 @@
 import { supabase } from '@/integrations/supabase/client';
 
+export type ScrapedMatch = {
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  date: string;
+  journee: number;
+  played: boolean;
+};
+
 export type ScrapeResult = {
   success: boolean;
   teams?: string[];
+  matches?: ScrapedMatch[];
   rawMarkdown?: string;
   error?: string;
 };
