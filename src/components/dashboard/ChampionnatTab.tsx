@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane } from 'lucide-react';
 
 export interface Championship {
   id: string;
@@ -395,74 +395,116 @@ const ChampionnatTab: React.FC<Props> = ({
 
       {/* Modal: Add Championship */}
       {showAddChamp && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowAddChamp(false)}>
-          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground mb-4">Nouveau Championnat</h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setShowAddChamp(false)}>
+          <div className="bg-card rounded-2xl w-full max-w-md border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+                  <Trophy size={20} className="text-accent" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Nouveau championnat</h3>
+              </div>
+              <button onClick={() => setShowAddChamp(false)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                <X size={16} className="text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4">
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Nom</label>
-                <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District U15" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
+                <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District U15" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Saison</label>
-                <input value={champSeason} onChange={e => setChampSeason(e.target.value)} placeholder="2024-2025" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saison</label>
+                <input value={champSeason} onChange={e => setChampSeason(e.target.value)} placeholder="2024-2025" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">Équipes (une par ligne)</label>
-                <textarea value={teamsInput} onChange={e => setTeamsInput(e.target.value)} rows={6} placeholder={"FCO\nAS Rivière\nFC Montagne\nUS Vallée"} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none" />
-                <p className="text-xs text-muted-foreground mt-1">{teamsInput.split('\n').filter(t => t.trim()).length} équipe(s)</p>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipes (une par ligne)</label>
+                <textarea value={teamsInput} onChange={e => setTeamsInput(e.target.value)} rows={6} placeholder={"FCO\nAS Rivière\nFC Montagne\nUS Vallée"} className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all resize-none" />
+                <p className="text-xs text-muted-foreground mt-1.5">{teamsInput.split('\n').filter(t => t.trim()).length} équipe(s) ajoutée(s)</p>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowAddChamp(false)} className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-secondary transition-all">Annuler</button>
-                <button onClick={handleAddChamp} className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-all">Créer</button>
-              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-5 border-t border-border">
+              <button onClick={() => setShowAddChamp(false)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+                Annuler
+              </button>
+              <button onClick={handleAddChamp} disabled={!champName.trim() || teamsInput.split('\n').filter(t => t.trim()).length < 2} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20">
+                Créer
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* Modal: Add Match */}
-      {showAddMatch && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowAddMatch(null)}>
-          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground mb-4">Ajouter un match</h3>
-            {(() => {
-              const champ = championships.find(c => c.id === showAddMatch);
-              if (!champ) return null;
-              return (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Journée</label>
-                    <input type="number" min="1" value={matchJournee} onChange={e => setMatchJournee(Number(e.target.value))} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+      {showAddMatch && (() => {
+        const champ = championships.find(c => c.id === showAddMatch);
+        if (!champ) return null;
+        return (
+          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setShowAddMatch(null)}>
+            <div className="bg-card rounded-2xl w-full max-w-md border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+                    <Calendar size={20} className="text-accent" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Équipe domicile</label>
-                    <select value={matchHome} onChange={e => setMatchHome(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
-                      <option value="">Sélectionner...</option>
-                      {champ.teams.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Équipe extérieur</label>
-                    <select value={matchAway} onChange={e => setMatchAway(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
-                      <option value="">Sélectionner...</option>
-                      {champ.teams.filter(t => t !== matchHome).map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-1 block">Date</label>
-                    <input type="date" value={matchDate} onChange={e => setMatchDate(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setShowAddMatch(null)} className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-secondary transition-all">Annuler</button>
-                    <button onClick={() => handleAddMatch(showAddMatch)} className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-all">Ajouter</button>
+                    <h3 className="text-lg font-bold text-foreground">Nouveau match</h3>
+                    <p className="text-xs text-muted-foreground">{champ.name}</p>
                   </div>
                 </div>
-              );
-            })()}
+                <button onClick={() => setShowAddMatch(null)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                  <X size={16} className="text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 space-y-4">
+                <div className="relative">
+                  <Hash size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input type="number" min="1" value={matchJournee} onChange={e => setMatchJournee(Number(e.target.value))} placeholder="Journée" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+                </div>
+
+                <div className="relative">
+                  <Home size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <select value={matchHome} onChange={e => setMatchHome(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none">
+                    <option value="">Équipe domicile...</option>
+                    {champ.teams.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+
+                <div className="relative">
+                  <Plane size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <select value={matchAway} onChange={e => setMatchAway(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none">
+                    <option value="">Équipe extérieur...</option>
+                    {champ.teams.filter(t => t !== matchHome).map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+
+                <div className="relative">
+                  <CalendarDays size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input type="date" value={matchDate} onChange={e => setMatchDate(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex gap-3 p-5 border-t border-border">
+                <button onClick={() => setShowAddMatch(null)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+                  Annuler
+                </button>
+                <button onClick={() => handleAddMatch(showAddMatch)} disabled={!matchHome || !matchAway || !matchDate} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20">
+                  Ajouter
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
