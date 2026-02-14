@@ -496,35 +496,38 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Avatar */}
+            <div className="flex items-center gap-1.5">
+              {/* Profile group */}
               <button
                 onClick={() => setShowAvatarModal(true)}
-                className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-accent transition-all"
+                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition-all group"
               >
-                {currentUser?.photoURL ? (
-                  <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <>
-                    {currentUser?.role === 'admin' && <Shield size={16} className="text-warning" />}
-                    {currentUser?.role === 'entraineur' && <Trophy size={16} className="text-warning" />}
-                    {currentUser?.role === 'joueur' && <Users size={16} className="text-primary-foreground" />}
-                  </>
-                )}
-              </button>
-
-              <div className="hidden sm:block text-right">
-                <div className="text-sm font-medium text-primary-foreground">{currentUser?.name}</div>
-                <div className="text-xs text-primary-foreground/60">
-                  {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : 'Joueur'}
+                <div className="relative">
+                  <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden ring-2 ring-white/20 group-hover:ring-accent transition-all">
+                    {currentUser?.photoURL ? (
+                      <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-primary-foreground">
+                        {currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary" />
                 </div>
-              </div>
-
-              <button onClick={() => setShowChangePassword(true)} className="p-2 rounded-lg hover:bg-sidebar-accent text-primary-foreground/70 hover:text-primary-foreground transition-all" title="Changer mot de passe">
-                <Lock size={18} />
+                <div className="hidden sm:block text-left">
+                  <div className="text-sm font-semibold text-primary-foreground leading-tight">{currentUser?.name}</div>
+                  <div className="text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
+                    {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : 'Joueur'}
+                  </div>
+                </div>
               </button>
-              <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-destructive/20 text-primary-foreground/70 hover:text-destructive transition-all" title="Déconnexion">
-                <LogOut size={18} />
+
+              {/* Actions */}
+              <button onClick={() => setShowChangePassword(true)} className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all" title="Changer mot de passe">
+                <Lock size={16} />
+              </button>
+              <button onClick={handleLogout} className="w-8 h-8 rounded-lg hover:bg-destructive/20 flex items-center justify-center text-primary-foreground/50 hover:text-destructive transition-all" title="Déconnexion">
+                <LogOut size={16} />
               </button>
             </div>
           </div>
