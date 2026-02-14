@@ -202,14 +202,14 @@ const ChampionnatTab: React.FC<Props> = ({
           ) : (
             <div className="space-y-2.5">
               {recentResults.map(m => (
-                <div key={m.id} className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
-                  <span className={`text-sm font-semibold flex-1 text-right ${m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3.5">
+                  <span className={`text-sm font-bold flex-1 text-right ${m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
                     {m.homeTeam}
                   </span>
-                  <div className="mx-3 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-bold min-w-[60px] text-center">
+                  <div className="mx-4 bg-primary text-primary-foreground px-5 py-1.5 rounded-xl text-base font-black min-w-[80px] text-center tracking-wider shadow-md">
                     {m.homeScore} - {m.awayScore}
                   </div>
-                  <span className={`text-sm font-semibold flex-1 ${m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                  <span className={`text-sm font-bold flex-1 ${m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
                     {m.awayTeam}
                   </span>
                 </div>
@@ -321,24 +321,24 @@ const ChampionnatTab: React.FC<Props> = ({
                       <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-1">Journée {j}</div>
                       <div className="space-y-2">
                         {champMatches.filter(m => m.journee === j).map(m => (
-                          <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3 gap-2">
+                          <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3.5 gap-3">
                             <div className="flex-1 text-right">
-                              <span className={`text-sm font-semibold ${m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
                                 {m.homeTeam}
                               </span>
                             </div>
 
                             {m.played ? (
-                              <div className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-bold min-w-[60px] text-center">
+                              <div className="bg-primary text-primary-foreground px-5 py-1.5 rounded-xl text-base font-black min-w-[80px] text-center tracking-wider shadow-md">
                                 {m.homeScore} - {m.awayScore}
                               </div>
                             ) : editingMatch === m.id ? (
-                              <div className="flex items-center gap-1">
-                                <input type="number" min="0" value={editHome} onChange={e => setEditHome(Number(e.target.value))} className="w-10 text-center rounded-lg border border-border bg-background text-sm py-1" />
-                                <span className="text-muted-foreground text-xs">-</span>
-                                <input type="number" min="0" value={editAway} onChange={e => setEditAway(Number(e.target.value))} className="w-10 text-center rounded-lg border border-border bg-background text-sm py-1" />
-                                <button onClick={() => handleSaveScore(m.id)} className="text-xs bg-emerald-500 text-white px-2 py-1 rounded-lg font-medium">OK</button>
-                                <button onClick={() => setEditingMatch(null)} className="text-xs text-muted-foreground px-1">✕</button>
+                              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5 shadow-sm">
+                                <input type="number" min="0" value={editHome} onChange={e => setEditHome(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
+                                <span className="text-muted-foreground font-bold text-lg">-</span>
+                                <input type="number" min="0" value={editAway} onChange={e => setEditAway(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
+                                <button onClick={() => handleSaveScore(m.id)} className="text-xs bg-accent text-accent-foreground px-3 py-1.5 rounded-lg font-semibold hover:brightness-110 transition-all shadow-sm">OK</button>
+                                <button onClick={() => setEditingMatch(null)} className="text-xs text-muted-foreground hover:text-foreground px-1.5 transition-colors">✕</button>
                               </div>
                             ) : (
                               <div className="min-w-[60px] text-center">
@@ -355,7 +355,7 @@ const ChampionnatTab: React.FC<Props> = ({
                             )}
 
                             <div className="flex-1">
-                              <span className={`text-sm font-semibold ${m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
                                 {m.awayTeam}
                               </span>
                             </div>
