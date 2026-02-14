@@ -229,8 +229,14 @@ const Dashboard = () => {
     }
     try {
       const event = events.find(e => e.id === eventId);
-      const updatedPresences = { ...(event?.presences || {}), [playerId]: status };
-      await updateDoc(doc(db, 'events', eventId), { presences: updatedPresences });
+      const currentPresences = { ...(event?.presences || {}) };
+      // If already this status, remove it (deselect)
+      if (currentPresences[playerId] === status) {
+        delete currentPresences[playerId];
+      } else {
+        currentPresences[playerId] = status;
+      }
+      await updateDoc(doc(db, 'events', eventId), { presences: currentPresences });
     } catch (err: any) {
       alert('Erreur: ' + err.message);
     }
