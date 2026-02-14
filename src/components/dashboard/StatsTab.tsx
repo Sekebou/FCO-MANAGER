@@ -117,7 +117,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
               const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
               return (
                 <div key={item.player.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl hover:bg-secondary transition-all">
-                  <div className={`w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center text-xs font-bold text-card shadow-sm`}>
+                  <div className={`w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center text-xs font-bold text-white shadow-sm`}>
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -126,7 +126,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-28 h-2.5 bg-border rounded-full overflow-hidden">
-                      <div className={`h-full ${colorClass} rounded-full transition-all duration-500`} style={{ width: `${rate}%` }} />
+                      <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
                     </div>
                     <span className={`text-sm font-bold w-12 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
                   </div>
