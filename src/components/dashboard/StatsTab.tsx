@@ -205,7 +205,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                     </div>
                     {currentUser?.role === 'admin' && (
                       <button onClick={() => onAddCard(player.id)} className="text-xs text-destructive font-semibold hover:bg-destructive/10 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
-                        <Plus size={12} /> Carton
+                        <Plus size={12} /> Ajouter un carton
                       </button>
                     )}
                   </div>
