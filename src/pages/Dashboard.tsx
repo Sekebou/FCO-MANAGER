@@ -495,17 +495,15 @@ const Dashboard = () => {
 
   const canUpdateChampionnat = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur' || currentUser.role === 'joueur');
 
-  const refreshFromFFF = async (championshipId: string, fffUrl: string) => {
-    if (!canUpdateChampionnat()) return;
+  const refreshFromFFF = async (championshipId: string, fffUrl: string): Promise<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string }> => {
+    if (!canUpdateChampionnat()) return { success: false, updated: 0, added: 0, standingsCount: 0, error: 'Non autorisé' };
     try {
       const { scrapeFFFTeams } = await import('@/lib/api/scrape-fff');
       const result = await scrapeFFFTeams(fffUrl);
       if (!result.success || !result.matches) {
-        alert(result.error || 'Impossible de récupérer les données');
-        return;
+        return { success: false, updated: 0, added: 0, standingsCount: 0, error: result.error || 'Impossible de récupérer les données' };
       }
 
-      // Update standings and logos from FFF
       const updateData: Record<string, any> = {};
       if (result.standings && result.standings.length > 0) {
         updateData.fffStandings = result.standings;
@@ -553,9 +551,9 @@ const Dashboard = () => {
         }
       }
 
-      const standingsMsg = result.standings && result.standings.length > 0 ? `\nClassement mis à jour (${result.standings.length} équipes)` : '';
-      alert(`✅ Mise à jour terminée !\n${updated} score(s) mis à jour\n${added} nouveau(x) match(s) ajouté(s)${standingsMsg}`);
-    } catch (err: any) { alert('Erreur: ' + err.message); }
+      const standingsCount = result.standings?.length || 0;
+      return { success: true, updated, added, standingsCount };
+    } catch (err: any) { return { success: false, updated: 0, added: 0, standingsCount: 0, error: err.message }; }
   };
 
   const deleteChampionship = async (id: string) => {
