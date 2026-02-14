@@ -516,7 +516,7 @@ const ChampionnatTab: React.FC<Props> = ({
                                   </div>
                                 ) : (
                                   <div className="min-w-[68px] text-center">
-                                    {canUpdateChampionnat() ? (
+                                    {canManage() ? (
                                       <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-xs bg-accent/10 text-accent px-3.5 py-1.5 rounded-lg font-medium hover:bg-accent/20 transition-all">
                                         Score
                                       </button>
