@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw, Clock } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3 } from 'lucide-react';
 import { scrapeFFFTeams, type ScrapedMatch, type ScrapedStanding } from '@/lib/api/scrape-fff';
 
 export interface Championship {
@@ -35,7 +35,7 @@ interface Props {
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
   onDeleteMatch: (id: string) => void;
-  onRefreshFromFFF?: (championshipId: string, fffUrl: string) => Promise<void>;
+  onRefreshFromFFF?: (championshipId: string, fffUrl: string) => Promise<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string }>;
 }
 
 const ChampionnatTab: React.FC<Props> = ({
@@ -75,6 +75,9 @@ const ChampionnatTab: React.FC<Props> = ({
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
   const [editHome, setEditHome] = useState(0);
   const [editAway, setEditAway] = useState(0);
+
+  // Refresh result modal
+  const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
 
   const getChampMatches = (champId: string) => matches.filter(m => m.championshipId === champId);
 
@@ -385,7 +388,8 @@ const ChampionnatTab: React.FC<Props> = ({
                       e.stopPropagation();
                       setRefreshingChamp(champ.id);
                       try {
-                        await onRefreshFromFFF(champ.id, champ.fffUrl!);
+                        const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
+                        setRefreshResult({ ...result, champName: champ.name });
                       } finally {
                         setRefreshingChamp(null);
                       }
@@ -795,6 +799,84 @@ const ChampionnatTab: React.FC<Props> = ({
           </div>
         );
       })()}
+
+      {/* Modal: Refresh Result */}
+      {refreshResult && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setRefreshResult(null)}>
+          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${refreshResult.success ? 'bg-accent/10' : 'bg-destructive/10'}`}>
+                  {refreshResult.success ? <CheckCircle2 size={20} className="text-accent" /> : <AlertCircle size={20} className="text-destructive" />}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">
+                    {refreshResult.success ? 'Mise à jour terminée' : 'Erreur'}
+                  </h3>
+                  {refreshResult.champName && (
+                    <p className="text-xs text-muted-foreground">{refreshResult.champName}</p>
+                  )}
+                </div>
+              </div>
+              <button onClick={() => setRefreshResult(null)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                <X size={16} className="text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5">
+              {refreshResult.success ? (
+                <div className="space-y-3">
+                  {/* Stats cards */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-secondary/50 rounded-xl p-4 text-center border border-border/50">
+                      <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <ArrowUpCircle size={14} className="text-accent" />
+                        <span className="text-2xl font-black text-foreground">{refreshResult.updated}</span>
+                      </div>
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Score(s) mis à jour</span>
+                    </div>
+                    <div className="bg-secondary/50 rounded-xl p-4 text-center border border-border/50">
+                      <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <PlusCircle size={14} className="text-accent" />
+                        <span className="text-2xl font-black text-foreground">{refreshResult.added}</span>
+                      </div>
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Match(s) ajouté(s)</span>
+                    </div>
+                  </div>
+                  {refreshResult.standingsCount > 0 && (
+                    <div className="bg-accent/5 border border-accent/20 rounded-xl p-3 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center shrink-0">
+                        <BarChart3 size={14} className="text-accent" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold text-foreground">Classement mis à jour</span>
+                        <p className="text-xs text-muted-foreground">{refreshResult.standingsCount} équipes</p>
+                      </div>
+                    </div>
+                  )}
+                  {refreshResult.updated === 0 && refreshResult.added === 0 && refreshResult.standingsCount === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-2">Aucun changement détecté — tout est déjà à jour !</p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 flex items-start gap-3">
+                  <AlertCircle size={18} className="text-destructive shrink-0 mt-0.5" />
+                  <p className="text-sm text-foreground">{refreshResult.error}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-5 border-t border-border">
+              <button onClick={() => setRefreshResult(null)} className="w-full py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-accent/20">
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
