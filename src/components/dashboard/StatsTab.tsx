@@ -102,7 +102,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                     <div className={`text-xs font-bold mt-1 ${podiumColors[podiumIdx]}`}>#{podiumIdx + 1}</div>
                     <div className="text-sm font-bold text-foreground mt-2 text-center truncate w-full">{item.player.name}</div>
                     <div className={`text-xl font-black mt-1 ${podiumColors[podiumIdx]}`}>{rate.toFixed(0)}%</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">{item.attendance!.present} participation{item.attendance!.present > 1 ? 's' : ''} sur {item.attendance!.total}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{item.attendance!.present} entraînement{item.attendance!.present > 1 ? 's' : ''} sur {item.attendance!.total}</div>
                   </div>
                 );
               })}
