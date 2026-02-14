@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
-import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, createUserWithEmailAndPassword, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove } from '@/lib/firebase';
+import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn } from '@/lib/firebase';
 import { 
   Users, TrendingUp, Bell, Calendar, LogOut, Shield, Trophy, Lock, Menu, X 
 } from 'lucide-react';
@@ -248,7 +248,7 @@ const Dashboard = () => {
       });
 
       if (playerData.createAccount && playerData.email && playerData.password) {
-        const userCredential = await createUserWithEmailAndPassword(firebaseAuth, playerData.email, playerData.password);
+        const userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
         const user = userCredential.user;
         const username = playerData.email.split('@')[0];
         await setDoc(doc(db, 'users', user.uid), {
