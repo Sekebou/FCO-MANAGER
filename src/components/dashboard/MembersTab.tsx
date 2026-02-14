@@ -71,11 +71,11 @@ const MembersTab = ({ members, players, cards, currentUser, getPlayerCards, onRe
             const RoleIcon = config.icon;
 
             return (
-              <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in">
+              <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in flex flex-col">
                 {/* Colored header band */}
                 <div className={`h-2 bg-gradient-to-r ${config.gradient}`} />
 
-                <div className="p-5">
+                <div className="p-5 flex flex-col flex-1">
                   {/* Top: Avatar + Name + Role */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg overflow-hidden shrink-0 bg-gradient-to-br ${config.gradient} shadow-sm`}>
@@ -139,7 +139,6 @@ const MembersTab = ({ members, players, cards, currentUser, getPlayerCards, onRe
                       license.status === 'expiring' ? 'bg-warning/10 text-warning border border-warning/20' :
                       'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}>
-                      {/* Glow pulse dot */}
                       <span className="relative flex h-3 w-3 shrink-0">
                         <span className={`absolute inline-flex h-full w-full rounded-full ${
                           license.status === 'active' ? 'bg-accent glow-pulse-green' :
@@ -168,11 +167,14 @@ const MembersTab = ({ members, players, cards, currentUser, getPlayerCards, onRe
                     </div>
                   )}
 
-                  {/* Admin action */}
+                  {/* Spacer to push button to bottom */}
+                  <div className="flex-1" />
+
+                  {/* Admin action - always at bottom */}
                   {currentUser?.role === 'admin' && (
                     <button
                       onClick={() => onResetPassword(member)}
-                      className="w-full flex items-center justify-center gap-2 bg-secondary hover:bg-primary hover:text-primary-foreground text-muted-foreground px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                      className="w-full flex items-center justify-center gap-2 bg-secondary hover:bg-primary hover:text-primary-foreground text-muted-foreground px-3 py-2.5 rounded-xl transition-all text-xs font-semibold mt-3"
                     >
                       <Lock size={13} />
                       Réinitialiser le mot de passe
