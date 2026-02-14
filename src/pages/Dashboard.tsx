@@ -100,7 +100,12 @@ const tabs = [
 const Dashboard = () => {
   const { currentUser, logout, setCurrentUser } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('presences');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('fco-active-tab') || 'presences');
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    localStorage.setItem('fco-active-tab', tab);
+  };
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -609,7 +614,7 @@ const Dashboard = () => {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }}
+                  onClick={() => { handleTabChange(tab.id); setMobileMenuOpen(false); }}
                   className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${
                     activeTab === tab.id
                       ? 'border-accent text-accent'
