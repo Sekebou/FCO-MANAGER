@@ -134,19 +134,29 @@ const MembersTab = ({ members, players, cards, currentUser, getPlayerCards, onRe
 
                   {/* License badge */}
                   {license && (
-                    <div className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-medium mb-3 ${
-                      license.status === 'active' ? 'bg-accent/10 text-accent' :
-                      license.status === 'expiring' ? 'bg-warning/10 text-warning' :
-                      'bg-destructive/10 text-destructive'
+                    <div className={`relative flex items-center gap-3 p-3 rounded-xl text-xs font-semibold mb-3 overflow-hidden ${
+                      license.status === 'active' ? 'bg-accent/10 text-accent border border-accent/20' :
+                      license.status === 'expiring' ? 'bg-warning/10 text-warning border border-warning/20' :
+                      'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}>
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${
-                        license.status === 'active' ? 'bg-accent animate-pulse' :
-                        license.status === 'expiring' ? 'bg-warning animate-pulse' :
-                        'bg-destructive'
-                      }`} />
-                      {license.status === 'expired' && `Licence expirée depuis ${license.days}j`}
-                      {license.status === 'expiring' && `Renouvellement dans ${license.days}j`}
-                      {license.status === 'active' && `Licence valide (${license.days}j)`}
+                      {/* Pulse ring */}
+                      <span className="relative flex h-3 w-3 shrink-0">
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                          license.status === 'active' ? 'bg-accent' :
+                          license.status === 'expiring' ? 'bg-warning' :
+                          'bg-destructive'
+                        }`} />
+                        <span className={`relative inline-flex rounded-full h-3 w-3 ${
+                          license.status === 'active' ? 'bg-accent' :
+                          license.status === 'expiring' ? 'bg-warning' :
+                          'bg-destructive'
+                        }`} />
+                      </span>
+                      <div>
+                        {license.status === 'expired' && `🎫 Licence expirée depuis ${license.days} jour${license.days > 1 ? 's' : ''} — Renouvellement requis`}
+                        {license.status === 'expiring' && `🎫 Licence à renouveler dans ${license.days} jour${license.days > 1 ? 's' : ''}`}
+                        {license.status === 'active' && `🎫 Licence active — Valide encore ${license.days} jour${license.days > 1 ? 's' : ''}`}
+                      </div>
                     </div>
                   )}
 
