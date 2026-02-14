@@ -469,11 +469,11 @@ const Dashboard = () => {
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
   // Championship CRUD
-  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any> }) => {
+  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
     if (!canManage()) return;
     try {
-      const { matches: importedMatches, standings: importedStandings, ...champData } = data;
-      const champRef = await addDoc(collection(db, 'championships'), { ...champData, fffStandings: importedStandings || [], createdAt: new Date().toISOString() });
+      const { matches: importedMatches, standings: importedStandings, teamLogos: importedLogos, ...champData } = data;
+      const champRef = await addDoc(collection(db, 'championships'), { ...champData, fffStandings: importedStandings || [], teamLogos: importedLogos || {}, createdAt: new Date().toISOString() });
       
       if (importedMatches && importedMatches.length > 0) {
         for (const m of importedMatches) {
@@ -503,11 +503,16 @@ const Dashboard = () => {
         return;
       }
 
-      // Update standings from FFF
+      // Update standings and logos from FFF
+      const updateData: Record<string, any> = {};
       if (result.standings && result.standings.length > 0) {
-        await updateDoc(doc(db, 'championships', championshipId), {
-          fffStandings: result.standings,
-        });
+        updateData.fffStandings = result.standings;
+      }
+      if (result.teamLogos && Object.keys(result.teamLogos).length > 0) {
+        updateData.teamLogos = result.teamLogos;
+      }
+      if (Object.keys(updateData).length > 0) {
+        await updateDoc(doc(db, 'championships', championshipId), updateData);
       }
 
       const existingMatches = champMatches.filter(m => m.championshipId === championshipId);

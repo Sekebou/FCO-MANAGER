@@ -105,14 +105,16 @@ Deno.serve(async (req) => {
 
     const markdown = mainData.data?.markdown || mainData.markdown || '';
     const classementMarkdown = classementData.data?.markdown || classementData.markdown || '';
-    const teams = extractTeamNames(markdown);
+    const allMarkdown = markdown + '\n' + classementMarkdown;
+    const teams = extractTeamNames(allMarkdown);
     const matches = extractMatches(markdown);
     const standings = extractStandings(classementMarkdown);
+    const teamLogos = extractTeamLogos(allMarkdown);
 
-    console.log(`Found ${teams.length} teams, ${matches.length} matches, ${standings.length} standings`);
+    console.log(`Found ${teams.length} teams, ${matches.length} matches, ${standings.length} standings, ${Object.keys(teamLogos).length} logos`);
 
     return new Response(
-      JSON.stringify({ success: true, teams, matches, standings, rawMarkdown: markdown }),
+      JSON.stringify({ success: true, teams, matches, standings, teamLogos, rawMarkdown: markdown }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -149,6 +151,33 @@ function extractTeamNames(markdown: string): string[] {
   }
 
   return teams;
+}
+
+function extractTeamLogos(markdown: string): Record<string, string> {
+  const logos: Record<string, string> = {};
+
+  // Pattern 1: [![TEAM_NAME](logo_url)\\ from match blocks
+  const pattern1 = /\[!\[([^\]]+)\]\((https:\/\/cdn-transverse\.azureedge\.net\/phlogos\/[^)]+)\)\\\\/g;
+  let match;
+  while ((match = pattern1.exec(markdown)) !== null) {
+    const teamName = match[1].trim();
+    const logoUrl = match[2].trim();
+    if (teamName && logoUrl && teamName !== 'undefined') {
+      logos[teamName.toUpperCase()] = logoUrl;
+    }
+  }
+
+  // Pattern 2: [![undefined](logo_url) TEAM_NAME](club_url) from standings table
+  const pattern2 = /\[!\[(?:undefined|[^\]]*)\]\((https:\/\/cdn-transverse\.azureedge\.net\/phlogos\/[^)]+)\)\s+([^\]]+)\]\(https:\/\/epreuves\.fff\.fr/g;
+  while ((match = pattern2.exec(markdown)) !== null) {
+    const logoUrl = match[1].trim();
+    const teamName = match[2].trim();
+    if (teamName && logoUrl) {
+      logos[teamName.toUpperCase()] = logoUrl;
+    }
+  }
+
+  return logos;
 }
 
 function extractStandings(markdown: string): ScrapedStanding[] {
