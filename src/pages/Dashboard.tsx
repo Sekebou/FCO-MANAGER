@@ -1,0 +1,504 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, createUserWithEmailAndPassword, auth as firebaseAuth, sendPasswordResetEmail } from '@/lib/firebase';
+import { 
+  Users, TrendingUp, Bell, Calendar, LogOut, Shield, Trophy, Lock, Menu, X 
+} from 'lucide-react';
+import PresencesTab from '@/components/dashboard/PresencesTab';
+import StatsTab from '@/components/dashboard/StatsTab';
+import NewsTab from '@/components/dashboard/NewsTab';
+import CalendarTab from '@/components/dashboard/CalendarTab';
+import MembersTab from '@/components/dashboard/MembersTab';
+import AddPlayerForm from '@/components/modals/AddPlayerForm';
+import AddEventForm from '@/components/modals/AddEventForm';
+import AddNewsForm from '@/components/modals/AddNewsForm';
+import AddCardForm from '@/components/modals/AddCardForm';
+import ChangePasswordForm from '@/components/modals/ChangePasswordForm';
+import AdminResetPasswordForm from '@/components/modals/AdminResetPasswordForm';
+import AvatarModal from '@/components/modals/AvatarModal';
+
+export interface Player {
+  id: string;
+  name: string;
+  position: string;
+  matches?: number;
+  goals?: number;
+  assists?: number;
+  licenseExpiry?: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  date: string;
+  type: string;
+  presences?: Record<string, string>;
+  createdAt?: string;
+}
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  date: string;
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  playerId?: string;
+  photoURL?: string | null;
+  createdAt: string;
+  username?: string;
+}
+
+export interface Card {
+  id: string;
+  playerId: string;
+  type: 'yellow' | 'red';
+  reason: string;
+  date: string;
+  suspendedUntil?: string;
+}
+
+const tabs = [
+  { id: 'presences', label: 'Présences', icon: Users },
+  { id: 'stats', label: 'Statistiques', icon: TrendingUp },
+  { id: 'news', label: 'Actualités', icon: Bell },
+  { id: 'calendar', label: 'Calendrier', icon: Calendar },
+  { id: 'members', label: 'Membres', icon: Users },
+];
+
+const Dashboard = () => {
+  const { currentUser, logout, setCurrentUser } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('presences');
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Modals
+  const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [showAddNews, setShowAddNews] = useState(false);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [selectedPlayerForCard, setSelectedPlayerForCard] = useState<string | null>(null);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showAdminResetPassword, setShowAdminResetPassword] = useState(false);
+  const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+
+  const canManage = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur');
+  const canManageOwnPresence = (playerId: string) => {
+    if (canManage()) return true;
+    return currentUser && currentUser.role === 'joueur' && currentUser.playerId === playerId;
+  };
+
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/auth');
+      return;
+    }
+
+    const unsubs: (() => void)[] = [];
+
+    try {
+      unsubs.push(onSnapshot(collection(db, 'players'), (snapshot) => {
+        const data: Player[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Player));
+        setPlayers(data);
+      }, (err) => setError(err.message)));
+
+      const eventsQ = query(collection(db, 'events'), orderBy('date', 'desc'));
+      unsubs.push(onSnapshot(eventsQ, (snapshot) => {
+        const data: Event[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Event));
+        setEvents(data);
+      }, (err) => setError(err.message)));
+
+      const newsQ = query(collection(db, 'news'), orderBy('date', 'desc'));
+      unsubs.push(onSnapshot(newsQ, (snapshot) => {
+        const data: NewsItem[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as NewsItem));
+        setNews(data);
+      }, (err) => setError(err.message)));
+
+      const membersQ = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+      unsubs.push(onSnapshot(membersQ, (snapshot) => {
+        const data: Member[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Member));
+        setMembers(data);
+      }, (err) => setError(err.message)));
+
+      const cardsQ = query(collection(db, 'cards'), orderBy('date', 'desc'));
+      unsubs.push(onSnapshot(cardsQ, (snapshot) => {
+        const data: Card[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Card));
+        setCards(data);
+      }, (err) => setError(err.message)));
+
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+
+    return () => unsubs.forEach(u => u());
+  }, [currentUser, navigate]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/auth');
+  };
+
+  // CRUD functions
+  const togglePresence = async (eventId: string, playerId: string, status: string) => {
+    if (!canManageOwnPresence(playerId)) {
+      alert('Vous ne pouvez gérer que votre propre présence');
+      return;
+    }
+    try {
+      const event = events.find(e => e.id === eventId);
+      const updatedPresences = { ...(event?.presences || {}), [playerId]: status };
+      await updateDoc(doc(db, 'events', eventId), { presences: updatedPresences });
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const addPlayer = async (playerData: any) => {
+    if (!canManage()) return;
+    try {
+      const playerRef = await addDoc(collection(db, 'players'), {
+        name: playerData.name,
+        position: playerData.position,
+        matches: 0,
+        goals: 0,
+        assists: 0,
+        licenseExpiry: playerData.licenseExpiry || null,
+        createdAt: new Date().toISOString(),
+      });
+
+      if (playerData.createAccount && playerData.email && playerData.password) {
+        const userCredential = await createUserWithEmailAndPassword(firebaseAuth, playerData.email, playerData.password);
+        const user = userCredential.user;
+        const username = playerData.email.split('@')[0];
+        await setDoc(doc(db, 'users', user.uid), {
+          email: playerData.email,
+          username,
+          role: 'joueur',
+          name: playerData.name,
+          playerId: playerRef.id,
+          createdAt: new Date().toISOString(),
+        });
+        alert(`✅ Joueur et compte créés !\nEmail: ${playerData.email}\nMot de passe: ${playerData.password}`);
+      } else {
+        alert('✅ Joueur créé !');
+      }
+      setShowAddPlayer(false);
+    } catch (err: any) {
+      let msg = err.message;
+      if (err.code === 'auth/email-already-in-use') msg = 'Ce nom d\'utilisateur existe déjà.';
+      alert('❌ Erreur: ' + msg);
+    }
+  };
+
+  const deletePlayer = async (playerId: string) => {
+    if (!canManage()) return;
+    if (!window.confirm('Supprimer ce joueur ?')) return;
+    try {
+      await deleteDoc(doc(db, 'players', playerId));
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('playerId', '==', playerId));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        await deleteDoc(doc(db, 'users', snapshot.docs[0].id));
+      }
+      alert('✅ Joueur supprimé');
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const addEvent = async (eventData: any) => {
+    if (!canManage()) return;
+    try {
+      const sendEmail = eventData.sendNotification;
+      delete eventData.sendNotification;
+      await addDoc(collection(db, 'events'), {
+        ...eventData,
+        presences: {},
+        createdAt: new Date().toISOString(),
+      });
+      setShowAddEvent(false);
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const deleteEvent = async (eventId: string) => {
+    if (!window.confirm('Supprimer cet événement ?')) return;
+    try {
+      await deleteDoc(doc(db, 'events', eventId));
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const addNews = async (newsData: any) => {
+    if (!canManage()) return;
+    try {
+      await addDoc(collection(db, 'news'), {
+        ...newsData,
+        date: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString(),
+      });
+      setShowAddNews(false);
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const deleteNews = async (newsId: string) => {
+    if (!window.confirm('Supprimer cette actualité ?')) return;
+    try {
+      await deleteDoc(doc(db, 'news', newsId));
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const addCard = async (cardData: any) => {
+    if (currentUser?.role !== 'admin') return;
+    try {
+      await addDoc(collection(db, 'cards'), {
+        ...cardData,
+        createdAt: new Date().toISOString(),
+      });
+      setShowAddCard(false);
+      setSelectedPlayerForCard(null);
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const deleteCard = async (cardId: string) => {
+    if (currentUser?.role !== 'admin') return;
+    if (!window.confirm('Supprimer ce carton ?')) return;
+    try {
+      await deleteDoc(doc(db, 'cards', cardId));
+    } catch (err: any) {
+      alert('Erreur: ' + err.message);
+    }
+  };
+
+  const updatePlayerStats = async (playerId: string, field: string, value: string) => {
+    if (!canManage()) return;
+    try {
+      await updateDoc(doc(db, 'players', playerId), { [field]: parseInt(value) || 0 });
+    } catch (err: any) {
+      console.error('Error updating stats:', err);
+    }
+  };
+
+  const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner w-10 h-10 mx-auto mb-4" />
+          <p className="text-lg font-medium text-foreground">Chargement...</p>
+          <p className="text-sm text-muted-foreground mt-1">Connexion à Firebase</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card rounded-2xl shadow-lg p-8 max-w-md border border-border">
+          <div className="text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-destructive mb-3">Erreur de connexion</h2>
+            <p className="text-muted-foreground mb-4 text-sm">{error}</p>
+            <button onClick={() => window.location.reload()} className="bg-accent text-accent-foreground px-6 py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all">
+              Réessayer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-secondary/50">
+      {/* Header */}
+      <header className="bg-primary border-b border-primary/80 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-primary-foreground">
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-lg">⚽</span>
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-primary-foreground leading-tight">FCO Manager</h1>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Avatar */}
+              <button
+                onClick={() => setShowAvatarModal(true)}
+                className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-accent transition-all"
+              >
+                {currentUser?.photoURL ? (
+                  <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    {currentUser?.role === 'admin' && <Shield size={16} className="text-warning" />}
+                    {currentUser?.role === 'entraineur' && <Trophy size={16} className="text-warning" />}
+                    {currentUser?.role === 'joueur' && <Users size={16} className="text-primary-foreground" />}
+                  </>
+                )}
+              </button>
+
+              <div className="hidden sm:block text-right">
+                <div className="text-sm font-medium text-primary-foreground">{currentUser?.name}</div>
+                <div className="text-xs text-primary-foreground/60">
+                  {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : 'Joueur'}
+                </div>
+              </div>
+
+              <button onClick={() => setShowChangePassword(true)} className="p-2 rounded-lg hover:bg-sidebar-accent text-primary-foreground/70 hover:text-primary-foreground transition-all" title="Changer mot de passe">
+                <Lock size={18} />
+              </button>
+              <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-destructive/20 text-primary-foreground/70 hover:text-destructive transition-all" title="Déconnexion">
+                <LogOut size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
+      <nav className="bg-card border-b border-border sticky top-16 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className={`${mobileMenuOpen ? 'flex flex-col' : 'hidden'} md:flex md:flex-row overflow-x-auto`}>
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false); }}
+                  className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${
+                    activeTab === tab.id
+                      ? 'border-accent text-accent'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  }`}
+                >
+                  <Icon size={18} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      {/* Content */}
+      <main className="max-w-7xl mx-auto p-4 sm:p-6 animate-fade-in">
+        {activeTab === 'presences' && (
+          <PresencesTab
+            events={events}
+            players={players}
+            canManage={canManage}
+            canManageOwnPresence={canManageOwnPresence}
+            togglePresence={togglePresence}
+            deleteEvent={deleteEvent}
+            onAddPlayer={() => setShowAddPlayer(true)}
+            onAddEvent={() => setShowAddEvent(true)}
+          />
+        )}
+        {activeTab === 'stats' && (
+          <StatsTab
+            players={players}
+            events={events}
+            cards={cards}
+            currentUser={currentUser}
+            canManage={canManage}
+            updatePlayerStats={updatePlayerStats}
+            deletePlayer={deletePlayer}
+            getPlayerCards={getPlayerCards}
+            deleteCard={deleteCard}
+            onAddPlayer={() => setShowAddPlayer(true)}
+            onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }}
+          />
+        )}
+        {activeTab === 'news' && (
+          <NewsTab
+            news={news}
+            canManage={canManage}
+            deleteNews={deleteNews}
+            onAddNews={() => setShowAddNews(true)}
+          />
+        )}
+        {activeTab === 'calendar' && <CalendarTab events={events} />}
+        {activeTab === 'members' && (
+          <MembersTab
+            members={members}
+            players={players}
+            cards={cards}
+            currentUser={currentUser}
+            getPlayerCards={getPlayerCards}
+            onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
+          />
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card mt-8 p-4 text-center">
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+          <span>Connecté au serveur — Données synchronisées en temps réel</span>
+        </div>
+      </footer>
+
+      {/* Modals */}
+      {showAddPlayer && <AddPlayerForm onSubmit={addPlayer} onClose={() => setShowAddPlayer(false)} />}
+      {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} />}
+      {showAddNews && <AddNewsForm onSubmit={addNews} onClose={() => setShowAddNews(false)} />}
+      {showAddCard && <AddCardForm players={players} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
+      {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
+      {showAdminResetPassword && selectedMemberForReset && (
+        <AdminResetPasswordForm member={selectedMemberForReset} onClose={() => { setShowAdminResetPassword(false); setSelectedMemberForReset(null); }} />
+      )}
+      {showAvatarModal && currentUser && (
+        <AvatarModal
+          currentUser={currentUser}
+          onClose={() => setShowAvatarModal(false)}
+          onAvatarUpdated={(photoURL) => {
+            setCurrentUser({ ...currentUser, photoURL });
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Dashboard;
