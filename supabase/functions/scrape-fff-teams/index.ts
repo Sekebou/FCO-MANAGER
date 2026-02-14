@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           url: formattedUrl,
           formats: ['markdown'],
-          onlyMainContent: true,
-          waitFor: 3000,
+          onlyMainContent: false,
+          waitFor: 5000,
         }),
       }),
       fetch('https://api.firecrawl.dev/v1/scrape', {
