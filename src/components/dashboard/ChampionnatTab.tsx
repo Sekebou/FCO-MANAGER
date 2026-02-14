@@ -1,0 +1,470 @@
+import React, { useState } from 'react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp } from 'lucide-react';
+
+export interface Championship {
+  id: string;
+  name: string;
+  season: string;
+  teams: string[];
+  createdAt: string;
+}
+
+export interface Match {
+  id: string;
+  championshipId: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  date: string;
+  journee: number;
+  played: boolean;
+}
+
+interface Props {
+  championships: Championship[];
+  matches: Match[];
+  canManage: () => boolean | undefined;
+  onAddChampionship: (data: { name: string; season: string; teams: string[] }) => void;
+  onDeleteChampionship: (id: string) => void;
+  onAddMatch: (data: Omit<Match, 'id'>) => void;
+  onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
+  onDeleteMatch: (id: string) => void;
+}
+
+const ChampionnatTab: React.FC<Props> = ({
+  championships,
+  matches,
+  canManage,
+  onAddChampionship,
+  onDeleteChampionship,
+  onAddMatch,
+  onUpdateMatchScore,
+  onDeleteMatch,
+}) => {
+  const [showAddChamp, setShowAddChamp] = useState(false);
+  const [showAddMatch, setShowAddMatch] = useState<string | null>(null);
+  const [expandedChamp, setExpandedChamp] = useState<string | null>(championships[0]?.id || null);
+
+  // Add championship form state
+  const [champName, setChampName] = useState('');
+  const [champSeason, setChampSeason] = useState('2024-2025');
+  const [teamsInput, setTeamsInput] = useState('');
+
+  // Add match form state
+  const [matchHome, setMatchHome] = useState('');
+  const [matchAway, setMatchAway] = useState('');
+  const [matchDate, setMatchDate] = useState('');
+  const [matchJournee, setMatchJournee] = useState(1);
+
+  // Score edit
+  const [editingMatch, setEditingMatch] = useState<string | null>(null);
+  const [editHome, setEditHome] = useState(0);
+  const [editAway, setEditAway] = useState(0);
+
+  const getChampMatches = (champId: string) => matches.filter(m => m.championshipId === champId);
+
+  const getStandings = (champId: string) => {
+    const champ = championships.find(c => c.id === champId);
+    if (!champ) return [];
+    const champMatches = getChampMatches(champId).filter(m => m.played);
+
+    const stats: Record<string, { team: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }> = {};
+
+    champ.teams.forEach(team => {
+      stats[team] = { team, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+    });
+
+    champMatches.forEach(m => {
+      if (m.homeScore === null || m.awayScore === null) return;
+      const home = stats[m.homeTeam];
+      const away = stats[m.awayTeam];
+      if (!home || !away) return;
+
+      home.played++; away.played++;
+      home.gf += m.homeScore; home.ga += m.awayScore;
+      away.gf += m.awayScore; away.ga += m.homeScore;
+
+      if (m.homeScore > m.awayScore) {
+        home.won++; away.lost++; home.points += 3;
+      } else if (m.homeScore < m.awayScore) {
+        away.won++; home.lost++; away.points += 3;
+      } else {
+        home.drawn++; away.drawn++; home.points++; away.points++;
+      }
+    });
+
+    return Object.values(stats).sort((a, b) => b.points - a.points || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+  };
+
+  const handleAddChamp = () => {
+    if (!champName.trim()) return;
+    const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
+    if (teams.length < 2) { alert('Ajoutez au moins 2 équipes'); return; }
+    onAddChampionship({ name: champName, season: champSeason, teams });
+    setChampName(''); setTeamsInput(''); setShowAddChamp(false);
+  };
+
+  const handleAddMatch = (champId: string) => {
+    if (!matchHome || !matchAway || !matchDate) return;
+    onAddMatch({
+      championshipId: champId,
+      homeTeam: matchHome,
+      awayTeam: matchAway,
+      homeScore: null,
+      awayScore: null,
+      date: matchDate,
+      journee: matchJournee,
+      played: false,
+    });
+    setMatchHome(''); setMatchAway(''); setMatchDate(''); setMatchJournee(1); setShowAddMatch(null);
+  };
+
+  const handleSaveScore = (matchId: string) => {
+    onUpdateMatchScore(matchId, editHome, editAway);
+    setEditingMatch(null);
+  };
+
+  const upcomingMatches = matches
+    .filter(m => !m.played)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 5);
+
+  const recentResults = matches
+    .filter(m => m.played)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <Trophy className="text-accent" size={22} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Championnats</h2>
+            <p className="text-sm text-muted-foreground">{championships.length} championnat(s)</p>
+          </div>
+        </div>
+        {canManage() && (
+          <button onClick={() => setShowAddChamp(true)} className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm">
+            <Plus size={18} /> Nouveau
+          </button>
+        )}
+      </div>
+
+      {/* Quick overview: upcoming + recent */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Prochains matchs */}
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar size={18} className="text-accent" />
+            <h3 className="font-semibold text-foreground">Prochains matchs</h3>
+          </div>
+          {upcomingMatches.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Aucun match à venir</p>
+          ) : (
+            <div className="space-y-2.5">
+              {upcomingMatches.map(m => {
+                const champ = championships.find(c => c.id === m.championshipId);
+                return (
+                  <div key={m.id} className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <span>{m.homeTeam}</span>
+                        <span className="text-muted-foreground font-normal">vs</span>
+                        <span>{m.awayTeam}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        J{m.journee} • {champ?.name}
+                      </div>
+                    </div>
+                    <div className="text-xs font-medium text-accent bg-accent/10 px-2.5 py-1 rounded-lg">
+                      {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Derniers résultats */}
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Award size={18} className="text-accent" />
+            <h3 className="font-semibold text-foreground">Derniers résultats</h3>
+          </div>
+          {recentResults.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Aucun résultat</p>
+          ) : (
+            <div className="space-y-2.5">
+              {recentResults.map(m => (
+                <div key={m.id} className="flex items-center justify-between bg-secondary/50 rounded-xl px-4 py-3">
+                  <span className={`text-sm font-semibold flex-1 text-right ${m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                    {m.homeTeam}
+                  </span>
+                  <div className="mx-3 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-bold min-w-[60px] text-center">
+                    {m.homeScore} - {m.awayScore}
+                  </div>
+                  <span className={`text-sm font-semibold flex-1 ${m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                    {m.awayTeam}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Championships list */}
+      {championships.map(champ => {
+        const standings = getStandings(champ.id);
+        const champMatches = getChampMatches(champ.id).sort((a, b) => a.journee - b.journee || new Date(a.date).getTime() - new Date(b.date).getTime());
+        const isExpanded = expandedChamp === champ.id;
+        const journees = [...new Set(champMatches.map(m => m.journee))].sort((a, b) => a - b);
+
+        return (
+          <div key={champ.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+            {/* Champ header */}
+            <button
+              onClick={() => setExpandedChamp(isExpanded ? null : champ.id)}
+              className="w-full flex items-center justify-between p-5 hover:bg-secondary/30 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-accent to-accent/60 rounded-xl flex items-center justify-center">
+                  <Trophy size={20} className="text-accent-foreground" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-foreground">{champ.name}</h3>
+                  <p className="text-xs text-muted-foreground">{champ.season} • {champ.teams.length} équipes • {champMatches.length} matchs</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {canManage() && (
+                  <span onClick={(e) => { e.stopPropagation(); onDeleteChampionship(champ.id); }} className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all cursor-pointer">
+                    <Trash2 size={16} />
+                  </span>
+                )}
+                {isExpanded ? <ChevronUp size={20} className="text-muted-foreground" /> : <ChevronDown size={20} className="text-muted-foreground" />}
+              </div>
+            </button>
+
+            {isExpanded && (
+              <div className="border-t border-border p-5 space-y-6">
+                {/* Classement */}
+                <div>
+                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Award size={16} className="text-accent" /> Classement
+                  </h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                          <th className="text-left py-2.5 px-2">#</th>
+                          <th className="text-left py-2.5 px-2">Équipe</th>
+                          <th className="text-center py-2.5 px-2">MJ</th>
+                          <th className="text-center py-2.5 px-2">V</th>
+                          <th className="text-center py-2.5 px-2">N</th>
+                          <th className="text-center py-2.5 px-2">D</th>
+                          <th className="text-center py-2.5 px-2">BP</th>
+                          <th className="text-center py-2.5 px-2">BC</th>
+                          <th className="text-center py-2.5 px-2">Diff</th>
+                          <th className="text-center py-2.5 px-2 font-bold">Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {standings.map((s, i) => (
+                          <tr key={s.team} className={`border-b border-border/50 ${i < 3 ? 'bg-accent/5' : ''} hover:bg-secondary/30 transition-colors`}>
+                            <td className="py-2.5 px-2">
+                              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                i === 0 ? 'bg-yellow-400/20 text-yellow-600' : i === 1 ? 'bg-gray-300/20 text-gray-500' : i === 2 ? 'bg-amber-600/20 text-amber-700' : 'text-muted-foreground'
+                              }`}>{i + 1}</span>
+                            </td>
+                            <td className="py-2.5 px-2 font-semibold text-foreground">{s.team}</td>
+                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.played}</td>
+                            <td className="text-center py-2.5 px-2 text-emerald-500 font-medium">{s.won}</td>
+                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.drawn}</td>
+                            <td className="text-center py-2.5 px-2 text-red-400 font-medium">{s.lost}</td>
+                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.gf}</td>
+                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.ga}</td>
+                            <td className="text-center py-2.5 px-2 font-medium">
+                              <span className={s.gf - s.ga > 0 ? 'text-emerald-500' : s.gf - s.ga < 0 ? 'text-red-400' : 'text-muted-foreground'}>
+                                {s.gf - s.ga > 0 ? '+' : ''}{s.gf - s.ga}
+                              </span>
+                            </td>
+                            <td className="text-center py-2.5 px-2 font-bold text-foreground text-base">{s.points}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Matchs par journée */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <Calendar size={16} className="text-accent" /> Matchs
+                    </h4>
+                    {canManage() && (
+                      <button onClick={() => setShowAddMatch(champ.id)} className="text-sm flex items-center gap-1.5 text-accent hover:text-accent/80 font-medium transition-all">
+                        <Plus size={16} /> Ajouter un match
+                      </button>
+                    )}
+                  </div>
+
+                  {journees.map(j => (
+                    <div key={j} className="mb-4">
+                      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-1">Journée {j}</div>
+                      <div className="space-y-2">
+                        {champMatches.filter(m => m.journee === j).map(m => (
+                          <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3 gap-2">
+                            <div className="flex-1 text-right">
+                              <span className={`text-sm font-semibold ${m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                                {m.homeTeam}
+                              </span>
+                            </div>
+
+                            {m.played ? (
+                              <div className="bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm font-bold min-w-[60px] text-center">
+                                {m.homeScore} - {m.awayScore}
+                              </div>
+                            ) : editingMatch === m.id ? (
+                              <div className="flex items-center gap-1">
+                                <input type="number" min="0" value={editHome} onChange={e => setEditHome(Number(e.target.value))} className="w-10 text-center rounded-lg border border-border bg-background text-sm py-1" />
+                                <span className="text-muted-foreground text-xs">-</span>
+                                <input type="number" min="0" value={editAway} onChange={e => setEditAway(Number(e.target.value))} className="w-10 text-center rounded-lg border border-border bg-background text-sm py-1" />
+                                <button onClick={() => handleSaveScore(m.id)} className="text-xs bg-emerald-500 text-white px-2 py-1 rounded-lg font-medium">OK</button>
+                                <button onClick={() => setEditingMatch(null)} className="text-xs text-muted-foreground px-1">✕</button>
+                              </div>
+                            ) : (
+                              <div className="min-w-[60px] text-center">
+                                {canManage() ? (
+                                  <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-xs bg-accent/10 text-accent px-3 py-1 rounded-lg font-medium hover:bg-accent/20 transition-all">
+                                    Score
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="flex-1">
+                              <span className={`text-sm font-semibold ${m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-emerald-500' : 'text-foreground'}`}>
+                                {m.awayTeam}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-muted-foreground hidden sm:block">
+                              {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            </div>
+
+                            {canManage() && (
+                              <button onClick={() => onDeleteMatch(m.id)} className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all">
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {champMatches.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">Aucun match programmé</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {championships.length === 0 && (
+        <div className="text-center py-16 bg-card rounded-2xl border border-border">
+          <Trophy size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+          <p className="text-lg font-medium text-muted-foreground">Aucun championnat</p>
+          {canManage() && <p className="text-sm text-muted-foreground mt-1">Créez votre premier championnat</p>}
+        </div>
+      )}
+
+      {/* Modal: Add Championship */}
+      {showAddChamp && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowAddChamp(false)}>
+          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground mb-4">Nouveau Championnat</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Nom</label>
+                <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District U15" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Saison</label>
+                <input value={champSeason} onChange={e => setChampSeason(e.target.value)} placeholder="2024-2025" className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">Équipes (une par ligne)</label>
+                <textarea value={teamsInput} onChange={e => setTeamsInput(e.target.value)} rows={6} placeholder={"FCO\nAS Rivière\nFC Montagne\nUS Vallée"} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none" />
+                <p className="text-xs text-muted-foreground mt-1">{teamsInput.split('\n').filter(t => t.trim()).length} équipe(s)</p>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowAddChamp(false)} className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-secondary transition-all">Annuler</button>
+                <button onClick={handleAddChamp} className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-all">Créer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add Match */}
+      {showAddMatch && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setShowAddMatch(null)}>
+          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground mb-4">Ajouter un match</h3>
+            {(() => {
+              const champ = championships.find(c => c.id === showAddMatch);
+              if (!champ) return null;
+              return (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Journée</label>
+                    <input type="number" min="1" value={matchJournee} onChange={e => setMatchJournee(Number(e.target.value))} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Équipe domicile</label>
+                    <select value={matchHome} onChange={e => setMatchHome(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+                      <option value="">Sélectionner...</option>
+                      {champ.teams.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Équipe extérieur</label>
+                    <select value={matchAway} onChange={e => setMatchAway(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent">
+                      <option value="">Sélectionner...</option>
+                      {champ.teams.filter(t => t !== matchHome).map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Date</label>
+                    <input type="date" value={matchDate} onChange={e => setMatchDate(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowAddMatch(null)} className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-secondary transition-all">Annuler</button>
+                    <button onClick={() => handleAddMatch(showAddMatch)} className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-all">Ajouter</button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ChampionnatTab;

@@ -11,6 +11,7 @@ import StatsTab from '@/components/dashboard/StatsTab';
 import NewsTab from '@/components/dashboard/NewsTab';
 import CalendarTab from '@/components/dashboard/CalendarTab';
 import MembersTab from '@/components/dashboard/MembersTab';
+import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
 import AddNewsForm from '@/components/modals/AddNewsForm';
@@ -90,6 +91,7 @@ export interface AttendanceRecord {
 const tabs = [
   { id: 'presences', label: 'Présences', icon: Users },
   { id: 'stats', label: 'Statistiques', icon: TrendingUp },
+  { id: 'championnat', label: 'Championnat', icon: Trophy },
   { id: 'news', label: 'Actualités', icon: Bell },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'members', label: 'Membres', icon: Users },
@@ -106,6 +108,8 @@ const Dashboard = () => {
   const [cards, setCards] = useState<Card[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [newsComments, setNewsComments] = useState<NewsComment[]>([]);
+  const [championships, setChampionships] = useState<Championship[]>([]);
+  const [champMatches, setChampMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -182,6 +186,18 @@ const Dashboard = () => {
         const data: NewsComment[] = [];
         snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as NewsComment));
         setNewsComments(data);
+      }, (err) => setError(err.message)));
+
+      unsubs.push(onSnapshot(collection(db, 'championships'), (snapshot) => {
+        const data: Championship[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Championship));
+        setChampionships(data);
+      }, (err) => setError(err.message)));
+
+      unsubs.push(onSnapshot(collection(db, 'championship_matches'), (snapshot) => {
+        const data: Match[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Match));
+        setChampMatches(data);
       }, (err) => setError(err.message)));
 
       setLoading(false);
@@ -447,6 +463,56 @@ const Dashboard = () => {
 
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
+  // Championship CRUD
+  const addChampionship = async (data: { name: string; season: string; teams: string[] }) => {
+    if (!canManage()) return;
+    try {
+      await addDoc(collection(db, 'championships'), { ...data, createdAt: new Date().toISOString() });
+    } catch (err: any) { alert('Erreur: ' + err.message); }
+  };
+
+  const deleteChampionship = async (id: string) => {
+    if (!canManage()) return;
+    setConfirmModal({
+      title: 'Supprimer ce championnat ?',
+      message: 'Tous les matchs associés seront également supprimés.',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'championships', id));
+          const q = query(collection(db, 'championship_matches'), where('championshipId', '==', id));
+          const snapshot = await getDocs(q);
+          for (const d of snapshot.docs) { await deleteDoc(doc(db, 'championship_matches', d.id)); }
+        } catch (err: any) { alert('Erreur: ' + err.message); }
+      }
+    });
+  };
+
+  const addChampMatch = async (data: Omit<Match, 'id'>) => {
+    if (!canManage()) return;
+    try {
+      await addDoc(collection(db, 'championship_matches'), { ...data, createdAt: new Date().toISOString() });
+    } catch (err: any) { alert('Erreur: ' + err.message); }
+  };
+
+  const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
+    if (!canManage()) return;
+    try {
+      await updateDoc(doc(db, 'championship_matches', matchId), { homeScore, awayScore, played: true });
+    } catch (err: any) { alert('Erreur: ' + err.message); }
+  };
+
+  const deleteChampMatch = async (id: string) => {
+    if (!canManage()) return;
+    setConfirmModal({
+      title: 'Supprimer ce match ?',
+      message: 'Cette action est irréversible.',
+      onConfirm: async () => {
+        try { await deleteDoc(doc(db, 'championship_matches', id)); }
+        catch (err: any) { alert('Erreur: ' + err.message); }
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -588,6 +654,18 @@ const Dashboard = () => {
               deleteCard={deleteCard}
               onAddPlayer={() => setShowAddPlayer(true)}
               onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }}
+            />
+          )}
+          {activeTab === 'championnat' && (
+            <ChampionnatTab
+              championships={championships}
+              matches={champMatches}
+              canManage={canManage}
+              onAddChampionship={addChampionship}
+              onDeleteChampionship={deleteChampionship}
+              onAddMatch={addChampMatch}
+              onUpdateMatchScore={updateMatchScore}
+              onDeleteMatch={deleteChampMatch}
             />
           )}
           {activeTab === 'news' && (
