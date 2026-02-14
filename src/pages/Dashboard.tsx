@@ -469,13 +469,12 @@ const Dashboard = () => {
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
   // Championship CRUD
-  const addChampionship = async (data: { name: string; season: string; teams: string[]; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }> }) => {
+  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }> }) => {
     if (!canManage()) return;
     try {
       const { matches: importedMatches, ...champData } = data;
       const champRef = await addDoc(collection(db, 'championships'), { ...champData, createdAt: new Date().toISOString() });
       
-      // Auto-import matches if provided
       if (importedMatches && importedMatches.length > 0) {
         for (const m of importedMatches) {
           await addDoc(collection(db, 'championship_matches'), {
@@ -491,6 +490,59 @@ const Dashboard = () => {
           });
         }
       }
+    } catch (err: any) { alert('Erreur: ' + err.message); }
+  };
+
+  const refreshFromFFF = async (championshipId: string, fffUrl: string) => {
+    if (!canManage()) return;
+    try {
+      const { scrapeFFFTeams } = await import('@/lib/api/scrape-fff');
+      const result = await scrapeFFFTeams(fffUrl);
+      if (!result.success || !result.matches) {
+        alert(result.error || 'Impossible de récupérer les données');
+        return;
+      }
+
+      const existingMatches = champMatches.filter(m => m.championshipId === championshipId);
+      let updated = 0;
+      let added = 0;
+
+      for (const scraped of result.matches) {
+        // Find matching existing match by teams + date
+        const existing = existingMatches.find(m =>
+          m.homeTeam.toUpperCase() === scraped.homeTeam.toUpperCase() &&
+          m.awayTeam.toUpperCase() === scraped.awayTeam.toUpperCase() &&
+          m.date === scraped.date
+        );
+
+        if (existing) {
+          // Update score if match is now played and wasn't before
+          if (scraped.played && !existing.played && scraped.homeScore !== null && scraped.awayScore !== null) {
+            await updateDoc(doc(db, 'championship_matches', existing.id), {
+              homeScore: scraped.homeScore,
+              awayScore: scraped.awayScore,
+              played: true,
+            });
+            updated++;
+          }
+        } else {
+          // Add new match
+          await addDoc(collection(db, 'championship_matches'), {
+            championshipId,
+            homeTeam: scraped.homeTeam,
+            awayTeam: scraped.awayTeam,
+            homeScore: scraped.homeScore,
+            awayScore: scraped.awayScore,
+            date: scraped.date,
+            journee: scraped.journee,
+            played: scraped.played,
+            createdAt: new Date().toISOString(),
+          });
+          added++;
+        }
+      }
+
+      alert(`✅ Mise à jour terminée !\n${updated} score(s) mis à jour\n${added} nouveau(x) match(s) ajouté(s)`);
     } catch (err: any) { alert('Erreur: ' + err.message); }
   };
 
@@ -689,6 +741,7 @@ const Dashboard = () => {
               onAddMatch={addChampMatch}
               onUpdateMatchScore={updateMatchScore}
               onDeleteMatch={deleteChampMatch}
+              onRefreshFromFFF={refreshFromFFF}
             />
           )}
           {activeTab === 'news' && (

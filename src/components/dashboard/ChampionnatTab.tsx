@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2 } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw } from 'lucide-react';
 import { scrapeFFFTeams, type ScrapedMatch } from '@/lib/api/scrape-fff';
 
 export interface Championship {
@@ -7,6 +7,7 @@ export interface Championship {
   name: string;
   season: string;
   teams: string[];
+  fffUrl?: string;
   createdAt: string;
 }
 
@@ -26,11 +27,12 @@ interface Props {
   championships: Championship[];
   matches: Match[];
   canManage: () => boolean | undefined;
-  onAddChampionship: (data: { name: string; season: string; teams: string[]; matches?: ScrapedMatch[] }) => void;
+  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[] }) => void;
   onDeleteChampionship: (id: string) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
   onDeleteMatch: (id: string) => void;
+  onRefreshFromFFF?: (championshipId: string, fffUrl: string) => Promise<void>;
 }
 
 const ChampionnatTab: React.FC<Props> = ({
@@ -42,6 +44,7 @@ const ChampionnatTab: React.FC<Props> = ({
   onAddMatch,
   onUpdateMatchScore,
   onDeleteMatch,
+  onRefreshFromFFF,
 }) => {
   const [showAddChamp, setShowAddChamp] = useState(false);
   const [showAddMatch, setShowAddMatch] = useState<string | null>(null);
@@ -54,6 +57,7 @@ const ChampionnatTab: React.FC<Props> = ({
   const [fffUrl, setFffUrl] = useState('');
   const [isScrapingFFF, setIsScrapingFFF] = useState(false);
   const [importedMatches, setImportedMatches] = useState<ScrapedMatch[]>([]);
+  const [refreshingChamp, setRefreshingChamp] = useState<string | null>(null);
 
   // Add match form state
   const [matchHome, setMatchHome] = useState('');
@@ -105,7 +109,7 @@ const ChampionnatTab: React.FC<Props> = ({
     if (!champName.trim()) return;
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { alert('Ajoutez au moins 2 équipes'); return; }
-    onAddChampionship({ name: champName, season: champSeason, teams, matches: importedMatches.length > 0 ? importedMatches : undefined });
+    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined });
     setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setShowAddChamp(false);
   };
 
@@ -267,6 +271,23 @@ const ChampionnatTab: React.FC<Props> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {canManage() && champ.fffUrl && onRefreshFromFFF && (
+                  <span
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setRefreshingChamp(champ.id);
+                      try {
+                        await onRefreshFromFFF(champ.id, champ.fffUrl!);
+                      } finally {
+                        setRefreshingChamp(null);
+                      }
+                    }}
+                    className="p-2 rounded-lg hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all cursor-pointer"
+                    title="Mettre à jour les scores depuis la FFF"
+                  >
+                    <RefreshCw size={16} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
+                  </span>
+                )}
                 {canManage() && (
                   <span onClick={(e) => { e.stopPropagation(); onDeleteChampionship(champ.id); }} className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all cursor-pointer">
                     <Trash2 size={16} />
