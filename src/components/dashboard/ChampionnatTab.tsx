@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw } from 'lucide-react';
-import { scrapeFFFTeams, type ScrapedMatch } from '@/lib/api/scrape-fff';
+import { scrapeFFFTeams, type ScrapedMatch, type ScrapedStanding } from '@/lib/api/scrape-fff';
 
 export interface Championship {
   id: string;
@@ -8,6 +8,7 @@ export interface Championship {
   season: string;
   teams: string[];
   fffUrl?: string;
+  fffStandings?: ScrapedStanding[];
   createdAt: string;
 }
 
@@ -27,7 +28,7 @@ interface Props {
   championships: Championship[];
   matches: Match[];
   canManage: () => boolean | undefined;
-  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[] }) => void;
+  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[] }) => void;
   onDeleteChampionship: (id: string) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
@@ -57,6 +58,7 @@ const ChampionnatTab: React.FC<Props> = ({
   const [fffUrl, setFffUrl] = useState('');
   const [isScrapingFFF, setIsScrapingFFF] = useState(false);
   const [importedMatches, setImportedMatches] = useState<ScrapedMatch[]>([]);
+  const [importedStandings, setImportedStandings] = useState<ScrapedStanding[]>([]);
   const [refreshingChamp, setRefreshingChamp] = useState<string | null>(null);
 
   // Add match form state
@@ -75,12 +77,29 @@ const ChampionnatTab: React.FC<Props> = ({
   const getStandings = (champId: string) => {
     const champ = championships.find(c => c.id === champId);
     if (!champ) return [];
-    const champMatches = getChampMatches(champId).filter(m => m.played);
 
-    const stats: Record<string, { team: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number }> = {};
+    // Use FFF standings if available
+    if (champ.fffStandings && champ.fffStandings.length > 0) {
+      return champ.fffStandings.map(s => ({
+        team: s.team,
+        played: s.played,
+        won: s.won,
+        drawn: s.drawn,
+        lost: s.lost,
+        gf: s.goalsFor,
+        ga: s.goalsAgainst,
+        points: s.points,
+        forfeits: s.forfeits,
+        penalties: s.penalties,
+      }));
+    }
+
+    // Fallback: calculate from local matches
+    const champMatches = getChampMatches(champId).filter(m => m.played);
+    const stats: Record<string, { team: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; forfeits: number; penalties: number }> = {};
 
     champ.teams.forEach(team => {
-      stats[team] = { team, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0 };
+      stats[team] = { team, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0, forfeits: 0, penalties: 0 };
     });
 
     champMatches.forEach(m => {
@@ -109,8 +128,8 @@ const ChampionnatTab: React.FC<Props> = ({
     if (!champName.trim()) return;
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { alert('Ajoutez au moins 2 équipes'); return; }
-    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined });
-    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setShowAddChamp(false);
+    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined });
+    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setShowAddChamp(false);
   };
 
   const handleImportFFF = async () => {
@@ -122,6 +141,9 @@ const ChampionnatTab: React.FC<Props> = ({
         setTeamsInput(result.teams.join('\n'));
         if (result.matches && result.matches.length > 0) {
           setImportedMatches(result.matches);
+        }
+        if (result.standings && result.standings.length > 0) {
+          setImportedStandings(result.standings);
         }
       } else {
         alert(result.error || 'Aucune équipe trouvée sur cette page');
