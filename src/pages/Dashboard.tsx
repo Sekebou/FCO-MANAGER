@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, LogOut, Shield, Trophy, Lock, Menu, X 
+  Users, TrendingUp, Bell, Calendar, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy
 } from 'lucide-react';
 import PresencesTab from '@/components/dashboard/PresencesTab';
 import StatsTab from '@/components/dashboard/StatsTab';
@@ -130,6 +130,7 @@ const Dashboard = () => {
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [playerCreatedResult, setPlayerCreatedResult] = useState<{ name: string; email?: string; password?: string; withAccount: boolean } | null>(null);
 
   const canManage = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur');
   const canManageOwnPresence = (playerId: string) => {
@@ -259,9 +260,9 @@ const Dashboard = () => {
           playerId: playerRef.id,
           createdAt: new Date().toISOString(),
         });
-        alert(`✅ Joueur et compte créés !\nEmail: ${playerData.email}\nMot de passe: ${playerData.password}`);
+        setPlayerCreatedResult({ name: playerData.name, email: playerData.email, password: playerData.password, withAccount: true });
       } else {
-        alert('✅ Joueur créé !');
+        setPlayerCreatedResult({ name: playerData.name, withAccount: false });
       }
       setShowAddPlayer(false);
     } catch (err: any) {
@@ -815,6 +816,69 @@ const Dashboard = () => {
           onConfirm={confirmModal.onConfirm}
           onClose={() => setConfirmModal(null)}
         />
+      )}
+      {playerCreatedResult && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setPlayerCreatedResult(null)}>
+          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header with success icon */}
+            <div className="flex flex-col items-center pt-8 pb-4 px-6">
+              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-4">
+                <CheckCircle2 size={32} className="text-accent" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">
+                {playerCreatedResult.withAccount ? 'Joueur & compte créés' : 'Joueur créé'}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">{playerCreatedResult.name}</p>
+            </div>
+
+            {/* Account details */}
+            {playerCreatedResult.withAccount && playerCreatedResult.email && (
+              <div className="mx-6 mb-4 space-y-2">
+                <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
+                  <Mail size={16} className="text-accent shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Email</p>
+                    <p className="text-sm font-medium text-foreground truncate">{playerCreatedResult.email}</p>
+                  </div>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(playerCreatedResult.email || '')}
+                    className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+                    title="Copier"
+                  >
+                    <Copy size={14} className="text-muted-foreground" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
+                  <KeyRound size={16} className="text-accent shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mot de passe</p>
+                    <p className="text-sm font-medium text-foreground font-mono">{playerCreatedResult.password}</p>
+                  </div>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(playerCreatedResult.password || '')}
+                    className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+                    title="Copier"
+                  >
+                    <Copy size={14} className="text-muted-foreground" />
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground text-center mt-2 px-2">
+                  📋 Communique ces identifiants au joueur pour qu'il puisse se connecter
+                </p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
+              <button
+                onClick={() => setPlayerCreatedResult(null)}
+                className="w-full py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-accent/20"
+              >
+                Parfait !
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
