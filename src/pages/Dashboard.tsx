@@ -585,7 +585,13 @@ const Dashboard = () => {
     if (!canUpdateChampionnat()) return;
     try {
       await updateDoc(doc(db, 'championship_matches', matchId), { homeScore, awayScore, played: true });
-    } catch (err: any) { alert('Erreur: ' + err.message); }
+    } catch (err: any) {
+      if (err.code === 'permission-denied' || err.message?.includes('Missing or insufficient permissions')) {
+        alert('⛔ Permissions insuffisantes pour modifier les scores. Vérifiez les règles Firestore pour le rôle "' + (currentUser?.role || 'inconnu') + '".');
+      } else {
+        alert('Erreur: ' + err.message);
+      }
+    }
   };
 
   const deleteChampMatch = async (id: string) => {
