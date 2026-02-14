@@ -79,54 +79,28 @@ Deno.serve(async (req) => {
 });
 
 function extractTeamNames(markdown: string): string[] {
-  const lines = markdown.split('\n').map(l => l.trim()).filter(Boolean);
   const teams: string[] = [];
   const seen = new Set<string>();
 
-  // Common patterns on FFF pages: team names appear as list items, table rows, or standalone lines
-  // Filter out common non-team strings
-  const excludePatterns = [
-    /^#{1,6}\s/,           // Headers
-    /^classement/i,
-    /^journée/i,
-    /^poule/i,
-    /^groupe/i,
-    /^résultats/i,
-    /^calendrier/i,
-    /^\d+[eè]?me?\s+journée/i,
-    /^\[/,                  // Links
-    /^http/i,
-    /^\|/,                  // Table separators
-    /^---/,
-    /^pts|^mj|^mg|^mn|^mp|^bp|^bc|^diff/i,
-    /^\d+$/,                // Pure numbers
-  ];
-
-  for (const line of lines) {
-    // Clean markdown formatting
-    let cleaned = line
-      .replace(/\*\*/g, '')
-      .replace(/\*/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/^\||\|$/g, '')
-      .replace(/^[-*+]\s+/, '')
-      .replace(/^\d+\.\s+/, '')
-      .trim();
-
-    if (!cleaned || cleaned.length < 3 || cleaned.length > 60) continue;
-    if (excludePatterns.some(p => p.test(cleaned))) continue;
-    if (/^\d+\s*\|/.test(cleaned)) {
-      // Table row: extract team name (usually second column)
-      const parts = cleaned.split('|').map(s => s.trim());
-      const namePart = parts.find(p => p && !/^\d+$/.test(p) && p.length > 2);
-      if (namePart) cleaned = namePart;
-      else continue;
+  // Pattern 1: Extract from FFF club links like [![TEAM NAME](logo)\\nTEAM NAME](url)
+  // or [TEAM NAME](https://epreuves.fff.fr/competition/club/...)
+  const clubLinkPattern = /\[!\[([^\]]+)\]\([^)]*\)\\\\\s*\n?\s*([^\]]+)\]\(https:\/\/epreuves\.fff\.fr\/competition\/club\//g;
+  let match;
+  while ((match = clubLinkPattern.exec(markdown)) !== null) {
+    const name = match[2].trim();
+    if (name && !seen.has(name.toUpperCase())) {
+      seen.add(name.toUpperCase());
+      teams.push(name);
     }
+  }
 
-    // Check if it looks like a team name (contains letters, possibly with numbers like "U15")
-    if (/[a-zA-ZÀ-ÿ]{2,}/.test(cleaned) && !seen.has(cleaned.toLowerCase())) {
-      seen.add(cleaned.toLowerCase());
-      teams.push(cleaned);
+  // Pattern 2: Extract from classement table rows like "| [![undefined](logo) TEAM NAME](url) |"
+  const tablePattern = /\[!\[[^\]]*\]\([^)]*\)\s+([^\]]+)\]\(https:\/\/epreuves\.fff\.fr\/competition\/club\//g;
+  while ((match = tablePattern.exec(markdown)) !== null) {
+    const name = match[1].trim();
+    if (name && !seen.has(name.toUpperCase())) {
+      seen.add(name.toUpperCase());
+      teams.push(name);
     }
   }
 
