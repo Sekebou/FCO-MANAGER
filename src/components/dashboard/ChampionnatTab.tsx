@@ -203,13 +203,13 @@ const ChampionnatTab: React.FC<Props> = ({
             <div className="space-y-2.5">
               {recentResults.map(m => (
                 <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3.5">
-                  <span className={`text-sm font-bold flex-1 text-right ${m.homeScore !== null && m.awayScore !== null ? (m.homeScore > m.awayScore ? 'text-accent' : m.homeScore < m.awayScore ? 'text-destructive' : 'text-foreground') : 'text-foreground'}`}>
+                  <span className={`text-sm font-bold flex-1 text-right ${m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
                     {m.homeTeam}
                   </span>
                   <div className="mx-4 bg-primary text-primary-foreground px-5 py-1.5 rounded-xl text-base font-black min-w-[80px] text-center tracking-wider shadow-md">
                     {m.homeScore} - {m.awayScore}
                   </div>
-                  <span className={`text-sm font-bold flex-1 ${m.homeScore !== null && m.awayScore !== null ? (m.awayScore > m.homeScore ? 'text-accent' : m.awayScore < m.homeScore ? 'text-destructive' : 'text-foreground') : 'text-foreground'}`}>
+                  <span className={`text-sm font-bold flex-1 ${m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
                     {m.awayTeam}
                   </span>
                 </div>
@@ -323,7 +323,7 @@ const ChampionnatTab: React.FC<Props> = ({
                         {champMatches.filter(m => m.journee === j).map(m => (
                           <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3.5 gap-3">
                             <div className="flex-1 text-right">
-                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null ? (m.homeScore > m.awayScore ? 'text-accent' : m.homeScore < m.awayScore ? 'text-destructive' : 'text-foreground') : 'text-foreground'}`}>
+                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
                                 {m.homeTeam}
                               </span>
                             </div>
@@ -355,7 +355,7 @@ const ChampionnatTab: React.FC<Props> = ({
                             )}
 
                             <div className="flex-1">
-                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null ? (m.awayScore > m.homeScore ? 'text-accent' : m.awayScore < m.homeScore ? 'text-destructive' : 'text-foreground') : 'text-foreground'}`}>
+                              <span className={`text-sm font-bold ${m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
                                 {m.awayTeam}
                               </span>
                             </div>
