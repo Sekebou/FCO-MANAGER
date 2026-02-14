@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Player, Event, Card, AttendanceRecord } from '@/pages/Dashboard';
+import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap } from 'lucide-react';
 
@@ -8,6 +8,7 @@ interface Props {
   events: Event[];
   cards: Card[];
   attendanceRecords: AttendanceRecord[];
+  members: Member[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
   updatePlayerStats: (playerId: string, field: string, value: string) => void;
@@ -18,7 +19,30 @@ interface Props {
   onAddCard: (playerId: string) => void;
 }
 
-const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddPlayer, onAddCard }: Props) => {
+const PlayerAvatar: React.FC<{ player: Player; members: Member[]; size?: number; className?: string }> = ({ player, members, size = 44, className = '' }) => {
+  const member = members.find(m => m.playerId === player.id);
+  const photoURL = member?.photoURL;
+  const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  if (photoURL) {
+    return (
+      <img
+        src={photoURL}
+        alt={player.name}
+        className={`rounded-xl object-cover ${className}`}
+        style={{ width: size, height: size }}
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+    );
+  }
+  return (
+    <div className={`rounded-xl bg-primary flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
+      <span className="text-primary-foreground font-bold" style={{ fontSize: size * 0.3 }}>{initials}</span>
+    </div>
+  );
+};
+
+const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddPlayer, onAddCard }: Props) => {
   const calculateAttendanceRate = (playerId: string) => {
     // Combine: active events + saved attendance_records (from deleted events)
     let present = 0, total = 0;
@@ -113,11 +137,20 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                     {/* Avatar + Icon */}
                     <div className={`relative mb-3 ${isFirst ? 'scale-110' : ''} transition-transform`}>
                       <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} p-[2px] shadow-lg ${podiumGlows[podiumIdx]}`}>
-                        <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                          <span className="text-sm font-bold text-foreground">
-                            {item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                          </span>
-                        </div>
+                        {(() => {
+                          const member = members.find(m => m.playerId === item.player.id);
+                          const photoURL = member?.photoURL;
+                          if (photoURL) {
+                            return <img src={photoURL} alt={item.player.name} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+                          }
+                          return (
+                            <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                              <span className="text-sm font-bold text-foreground">
+                                {item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                       <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} flex items-center justify-center shadow-md`}>
                         <PodiumIcon size={12} className="text-white" />
@@ -194,9 +227,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                 {/* Player header */}
                 <div className="flex items-center justify-between p-5 pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm">{player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
-                    </div>
+                    <PlayerAvatar player={player} members={members} size={44} className="rounded-xl" />
                     <div>
                       <h3 className="font-bold text-foreground">{player.name}</h3>
                       <span className="text-xs font-medium text-muted-foreground px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>

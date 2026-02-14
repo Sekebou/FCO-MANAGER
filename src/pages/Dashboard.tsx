@@ -745,6 +745,7 @@ const Dashboard = () => {
               events={events}
               cards={cards}
               attendanceRecords={attendanceRecords}
+              members={members}
               currentUser={currentUser}
               canManage={canManage}
               updatePlayerStats={updatePlayerStats}
@@ -773,6 +774,7 @@ const Dashboard = () => {
             <NewsTab
               news={news}
               comments={newsComments}
+              members={members}
               currentUser={currentUser}
               canManage={canManage}
               deleteNews={deleteNews}
