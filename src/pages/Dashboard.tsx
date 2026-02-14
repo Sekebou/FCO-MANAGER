@@ -422,53 +422,55 @@ const Dashboard = () => {
       </nav>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto p-4 sm:p-6 animate-fade-in">
-        {activeTab === 'presences' && (
-          <PresencesTab
-            events={events}
-            players={players}
-            canManage={canManage}
-            canManageOwnPresence={canManageOwnPresence}
-            togglePresence={togglePresence}
-            deleteEvent={deleteEvent}
-            onAddPlayer={() => setShowAddPlayer(true)}
-            onAddEvent={() => setShowAddEvent(true)}
-          />
-        )}
-        {activeTab === 'stats' && (
-          <StatsTab
-            players={players}
-            events={events}
-            cards={cards}
-            currentUser={currentUser}
-            canManage={canManage}
-            updatePlayerStats={updatePlayerStats}
-            deletePlayer={deletePlayer}
-            getPlayerCards={getPlayerCards}
-            deleteCard={deleteCard}
-            onAddPlayer={() => setShowAddPlayer(true)}
-            onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }}
-          />
-        )}
-        {activeTab === 'news' && (
-          <NewsTab
-            news={news}
-            canManage={canManage}
-            deleteNews={deleteNews}
-            onAddNews={() => setShowAddNews(true)}
-          />
-        )}
-        {activeTab === 'calendar' && <CalendarTab events={events} />}
-        {activeTab === 'members' && (
-          <MembersTab
-            members={members}
-            players={players}
-            cards={cards}
-            currentUser={currentUser}
-            getPlayerCards={getPlayerCards}
-            onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
-          />
-        )}
+      <main className="max-w-7xl mx-auto p-4 sm:p-6">
+        <div key={activeTab} className="animate-fade-in">
+          {activeTab === 'presences' && (
+            <PresencesTab
+              events={events}
+              players={players}
+              canManage={canManage}
+              canManageOwnPresence={canManageOwnPresence}
+              togglePresence={togglePresence}
+              deleteEvent={deleteEvent}
+              onAddPlayer={() => setShowAddPlayer(true)}
+              onAddEvent={() => setShowAddEvent(true)}
+            />
+          )}
+          {activeTab === 'stats' && (
+            <StatsTab
+              players={players}
+              events={events}
+              cards={cards}
+              currentUser={currentUser}
+              canManage={canManage}
+              updatePlayerStats={updatePlayerStats}
+              deletePlayer={deletePlayer}
+              getPlayerCards={getPlayerCards}
+              deleteCard={deleteCard}
+              onAddPlayer={() => setShowAddPlayer(true)}
+              onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }}
+            />
+          )}
+          {activeTab === 'news' && (
+            <NewsTab
+              news={news}
+              canManage={canManage}
+              deleteNews={deleteNews}
+              onAddNews={() => setShowAddNews(true)}
+            />
+          )}
+          {activeTab === 'calendar' && <CalendarTab events={events} />}
+          {activeTab === 'members' && (
+            <MembersTab
+              members={members}
+              players={players}
+              cards={cards}
+              currentUser={currentUser}
+              getPlayerCards={getPlayerCards}
+              onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
+            />
+          )}
+        </div>
       </main>
 
       {/* Footer */}
