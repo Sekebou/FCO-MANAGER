@@ -10,10 +10,26 @@ export type ScrapedMatch = {
   played: boolean;
 };
 
+export type ScrapedStanding = {
+  rank: number;
+  team: string;
+  points: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  forfeits: number;
+  penalties: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDiff: number;
+};
+
 export type ScrapeResult = {
   success: boolean;
   teams?: string[];
   matches?: ScrapedMatch[];
+  standings?: ScrapedStanding[];
   rawMarkdown?: string;
   error?: string;
 };

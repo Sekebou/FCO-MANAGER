@@ -469,11 +469,11 @@ const Dashboard = () => {
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
   // Championship CRUD
-  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }> }) => {
+  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any> }) => {
     if (!canManage()) return;
     try {
-      const { matches: importedMatches, ...champData } = data;
-      const champRef = await addDoc(collection(db, 'championships'), { ...champData, createdAt: new Date().toISOString() });
+      const { matches: importedMatches, standings: importedStandings, ...champData } = data;
+      const champRef = await addDoc(collection(db, 'championships'), { ...champData, fffStandings: importedStandings || [], createdAt: new Date().toISOString() });
       
       if (importedMatches && importedMatches.length > 0) {
         for (const m of importedMatches) {
@@ -503,12 +503,18 @@ const Dashboard = () => {
         return;
       }
 
+      // Update standings from FFF
+      if (result.standings && result.standings.length > 0) {
+        await updateDoc(doc(db, 'championships', championshipId), {
+          fffStandings: result.standings,
+        });
+      }
+
       const existingMatches = champMatches.filter(m => m.championshipId === championshipId);
       let updated = 0;
       let added = 0;
 
       for (const scraped of result.matches) {
-        // Find matching existing match by teams + date
         const existing = existingMatches.find(m =>
           m.homeTeam.toUpperCase() === scraped.homeTeam.toUpperCase() &&
           m.awayTeam.toUpperCase() === scraped.awayTeam.toUpperCase() &&
@@ -516,7 +522,6 @@ const Dashboard = () => {
         );
 
         if (existing) {
-          // Update score if match is now played and wasn't before
           if (scraped.played && !existing.played && scraped.homeScore !== null && scraped.awayScore !== null) {
             await updateDoc(doc(db, 'championship_matches', existing.id), {
               homeScore: scraped.homeScore,
@@ -526,7 +531,6 @@ const Dashboard = () => {
             updated++;
           }
         } else {
-          // Add new match
           await addDoc(collection(db, 'championship_matches'), {
             championshipId,
             homeTeam: scraped.homeTeam,
@@ -542,7 +546,8 @@ const Dashboard = () => {
         }
       }
 
-      alert(`✅ Mise à jour terminée !\n${updated} score(s) mis à jour\n${added} nouveau(x) match(s) ajouté(s)`);
+      const standingsMsg = result.standings && result.standings.length > 0 ? `\nClassement mis à jour (${result.standings.length} équipes)` : '';
+      alert(`✅ Mise à jour terminée !\n${updated} score(s) mis à jour\n${added} nouveau(x) match(s) ajouté(s)${standingsMsg}`);
     } catch (err: any) { alert('Erreur: ' + err.message); }
   };
 

@@ -13,6 +13,21 @@ interface ScrapedMatch {
   played: boolean;
 }
 
+interface ScrapedStanding {
+  rank: number;
+  team: string;
+  points: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  forfeits: number;
+  penalties: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDiff: number;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -41,40 +56,63 @@ Deno.serve(async (req) => {
       formattedUrl = `https://${formattedUrl}`;
     }
 
+    // Derive the classement URL from the main URL
+    const classementUrl = formattedUrl.replace(/\/resultat-calendrier\/?$/, '/classement');
+
     console.log('Scraping FFF URL:', formattedUrl);
+    console.log('Scraping FFF classement URL:', classementUrl);
 
-    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: formattedUrl,
-        formats: ['markdown'],
-        onlyMainContent: true,
-        waitFor: 3000,
+    // Scrape both pages in parallel
+    const [mainResponse, classementResponse] = await Promise.all([
+      fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: formattedUrl,
+          formats: ['markdown'],
+          onlyMainContent: true,
+          waitFor: 3000,
+        }),
       }),
-    });
+      fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: classementUrl,
+          formats: ['markdown'],
+          onlyMainContent: true,
+          waitFor: 3000,
+        }),
+      }),
+    ]);
 
-    const data = await response.json();
+    const mainData = await mainResponse.json();
+    const classementData = await classementResponse.json();
 
-    if (!response.ok) {
-      console.error('Firecrawl API error:', data);
+    if (!mainResponse.ok) {
+      console.error('Firecrawl API error:', mainData);
       return new Response(
-        JSON.stringify({ success: false, error: data.error || `Request failed with status ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: mainData.error || `Request failed with status ${mainResponse.status}` }),
+        { status: mainResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const markdown = data.data?.markdown || data.markdown || '';
+    const markdown = mainData.data?.markdown || mainData.markdown || '';
+    const classementMarkdown = classementData.data?.markdown || classementData.markdown || '';
     const teams = extractTeamNames(markdown);
     const matches = extractMatches(markdown);
+    const standings = extractStandings(classementMarkdown);
 
-    console.log(`Found ${teams.length} teams, ${matches.length} matches`);
+    console.log(`Found ${teams.length} teams, ${matches.length} matches, ${standings.length} standings`);
 
     return new Response(
-      JSON.stringify({ success: true, teams, matches, rawMarkdown: markdown }),
+      JSON.stringify({ success: true, teams, matches, standings, rawMarkdown: markdown }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -113,26 +151,103 @@ function extractTeamNames(markdown: string): string[] {
   return teams;
 }
 
+function extractStandings(markdown: string): ScrapedStanding[] {
+  const standings: ScrapedStanding[] = [];
+
+  // Look for the detailed standings table
+  // Format: | rank | Pr. | Team | Pts | J. | G. | N. | P. | F. | P/Bo. | Bp. | Bc. | Diff. | Série |
+  const lines = markdown.split('\n');
+
+  let inStandingsTable = false;
+  let headerFound = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Detect the standings header row
+    if (trimmed.includes('| Pr.') && trimmed.includes('| Pts') && trimmed.includes('| Bp.')) {
+      inStandingsTable = true;
+      headerFound = false;
+      continue;
+    }
+
+    // Skip separator row
+    if (inStandingsTable && trimmed.match(/^\|[\s-|]+\|$/)) {
+      headerFound = true;
+      continue;
+    }
+
+    // Parse data rows
+    if (inStandingsTable && headerFound && trimmed.startsWith('|')) {
+      // Extract team name from the markdown link pattern
+      const teamMatch = trimmed.match(/\[!\[(?:undefined|[^\]]*)\]\([^)]*\)\s+([^\]]+)\]\(https:\/\/epreuves\.fff\.fr/);
+      if (!teamMatch) continue;
+
+      const teamName = teamMatch[1].trim();
+
+      // Split the row by | and parse numbers
+      // Format: | rank | pr | team_link | pts | j | g | n | p | f | p/bo | bp | bc | diff | serie |
+      const cells = trimmed.split('|').map(c => c.trim()).filter(Boolean);
+
+      if (cells.length >= 12) {
+        const rank = parseInt(cells[0], 10);
+        // cells[1] = Pr. (previous rank change)
+        // cells[2] = team link (already extracted)
+        const pts = parseInt(cells[3], 10);
+        const j = parseInt(cells[4], 10);
+        const g = parseInt(cells[5], 10);
+        const n = parseInt(cells[6], 10);
+        const p = parseInt(cells[7], 10);
+        const f = parseInt(cells[8], 10);
+        const pbo = parseInt(cells[9], 10);
+        const bp = parseInt(cells[10], 10);
+        const bc = parseInt(cells[11], 10);
+        const diff = parseInt(cells[12], 10);
+
+        if (!isNaN(rank) && teamName) {
+          standings.push({
+            rank,
+            team: teamName,
+            points: isNaN(pts) ? 0 : pts,
+            played: isNaN(j) ? 0 : j,
+            won: isNaN(g) ? 0 : g,
+            drawn: isNaN(n) ? 0 : n,
+            lost: isNaN(p) ? 0 : p,
+            forfeits: isNaN(f) ? 0 : f,
+            penalties: isNaN(pbo) ? 0 : pbo,
+            goalsFor: isNaN(bp) ? 0 : bp,
+            goalsAgainst: isNaN(bc) ? 0 : bc,
+            goalDiff: isNaN(diff) ? 0 : diff,
+          });
+        }
+      }
+    }
+
+    // End of table
+    if (inStandingsTable && headerFound && !trimmed.startsWith('|') && trimmed.length > 0) {
+      break;
+    }
+  }
+
+  return standings;
+}
+
 function extractMatches(markdown: string): ScrapedMatch[] {
   const matches: ScrapedMatch[] = [];
 
-  // French month mapping
   const monthMap: Record<string, string> = {
     'jan': '01', 'fév': '02', 'fev': '02', 'mar': '03', 'avr': '04',
     'mai': '05', 'jun': '06', 'jui': '07', 'jul': '07', 'aoû': '08', 'aou': '08',
     'sep': '09', 'oct': '10', 'nov': '11', 'déc': '12', 'dec': '12',
   };
 
-  // Split into lines for processing
   const lines = markdown.split('\n');
-
   let currentDate = '';
   let currentJournee = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
-    // Detect date lines like "dim 07 sep 2025 - 15h00" or "sam 15 nov 2025 - 18h30"
     const dateMatch = line.match(/^(?:lun|mar|mer|jeu|ven|sam|dim)\s+(\d{1,2})\s+(\w{3})\s+(\d{4})\s*-\s*(\d{1,2})h(\d{2})/i);
     if (dateMatch) {
       const day = dateMatch[1].padStart(2, '0');
@@ -143,35 +258,27 @@ function extractMatches(markdown: string): ScrapedMatch[] {
       continue;
     }
 
-    // Detect journée from competition links like "[Seniors D2 - Senior  Journée 3]"
     const journeeMatch = line.match(/Journée\s+(\d+)/i);
     if (journeeMatch) {
       currentJournee = parseInt(journeeMatch[1], 10);
       continue;
     }
 
-    // Detect match pattern: team1 link, then score link, then team2 link
-    // Home team pattern: [![TEAM](logo)\\
     const homeTeamMatch = line.match(/\[!\[([^\]]+)\]\([^)]*\)\\\\/);
     if (homeTeamMatch && currentDate) {
       const homeTeam = homeTeamMatch[1].trim();
-
-      // Look ahead for team name confirmation, score, and away team
       let homeTeamName = homeTeam;
       let awayTeamName = '';
       let homeScore: number | null = null;
       let awayScore: number | null = null;
       let played = false;
 
-      // Scan next lines for the rest of the match block
       for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
         const nextLine = lines[j].trim();
 
-        // Team name line right after logo (confirmation)
         if (nextLine.match(/^[A-ZÀ-Ÿ\s\d.'\/()-]+\]\(https:\/\/epreuves\.fff\.fr\/competition\/club\//)) {
           const teamName = nextLine.replace(/\]\(https:\/\/epreuves\.fff\.fr\/competition\/club\/.*$/, '').trim();
           if (!awayTeamName && teamName !== homeTeamName) {
-            // This could be the home team name or away team name
             if (homeScore !== null || awayScore !== null) {
               awayTeamName = teamName;
             } else {
@@ -180,10 +287,8 @@ function extractMatches(markdown: string): ScrapedMatch[] {
           }
         }
 
-        // Score pattern: [30](match-url) where digits represent the score
         const scoreMatch = nextLine.match(/^\[(\d{1,2})(\d{1,2})\]\(https:\/\/epreuves\.fff\.fr\/competition\/match\//);
         if (scoreMatch) {
-          // Score is encoded as concatenated digits, e.g. "40" = 4-0, "22" = 2-2, "13" = 1-3
           const scoreStr = scoreMatch[1] + scoreMatch[2];
           if (scoreStr.length === 2) {
             homeScore = parseInt(scoreStr[0], 10);
@@ -193,20 +298,17 @@ function extractMatches(markdown: string): ScrapedMatch[] {
           continue;
         }
 
-        // Unplayed match: [15:00](match-url)
         const timeMatch = nextLine.match(/^\[\d{1,2}:\d{2}\]\(https:\/\/epreuves\.fff\.fr\/competition\/match\//);
         if (timeMatch) {
           played = false;
           continue;
         }
 
-        // Away team pattern
         const awayTeamMatch = nextLine.match(/\[!\[([^\]]+)\]\([^)]*\)\\\\/);
         if (awayTeamMatch && !awayTeamName) {
           awayTeamName = awayTeamMatch[1].trim();
         }
 
-        // If we hit a new date or empty significant break, stop
         if (nextLine.match(/^(?:lun|mar|mer|jeu|ven|sam|dim)\s+\d{1,2}\s+\w{3}\s+\d{4}/i)) {
           break;
         }
@@ -222,13 +324,11 @@ function extractMatches(markdown: string): ScrapedMatch[] {
           journee: currentJournee || 1,
           played,
         });
-        // Skip ahead past this match block
         i += 4;
       }
     }
   }
 
-  // Deduplicate matches (same teams + same date)
   const seen = new Set<string>();
   return matches.filter(m => {
     const key = `${m.homeTeam}-${m.awayTeam}-${m.date}`;
