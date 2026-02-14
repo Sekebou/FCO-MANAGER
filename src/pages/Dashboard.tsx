@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, createUserWithEmailAndPassword, auth as firebaseAuth, sendPasswordResetEmail } from '@/lib/firebase';
 import { 
   Users, TrendingUp, Bell, Calendar, LogOut, Shield, Trophy, Lock, Menu, X 
@@ -239,6 +240,30 @@ const Dashboard = () => {
         presences: {},
         createdAt: new Date().toISOString(),
       });
+
+      // Envoyer les notifications par email via EmailJS
+      if (sendEmail) {
+        const memberEmails = members.filter(m => m.role === 'joueur').map(m => m.email);
+        const typeLabel = eventData.type === 'match' ? 'Match' : eventData.type === 'training' ? 'Entraînement' : 'Événement';
+        const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        for (const email of memberEmails) {
+          try {
+            await emailjs.send('service_7wmhc61', 'template_m28qlzo', {
+              to_email: email,
+              event_title: eventData.title,
+              event_type: typeLabel,
+              event_date: dateFormatted,
+            }, 'YAIU3poHgOd6cG6PI');
+          } catch (emailErr) {
+            console.error('Erreur envoi email à', email, emailErr);
+          }
+        }
+        alert(`✅ Événement créé et ${memberEmails.length} notification(s) envoyée(s)`);
+      } else {
+        alert('✅ Événement créé');
+      }
+
       setShowAddEvent(false);
     } catch (err: any) {
       alert('Erreur: ' + err.message);
