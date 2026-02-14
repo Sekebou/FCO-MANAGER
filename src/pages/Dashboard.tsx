@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
-import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, createUserWithEmailAndPassword, auth as firebaseAuth, sendPasswordResetEmail } from '@/lib/firebase';
+import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, createUserWithEmailAndPassword, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove } from '@/lib/firebase';
 import { 
   Users, TrendingUp, Bell, Calendar, LogOut, Shield, Trophy, Lock, Menu, X 
 } from 'lucide-react';
@@ -375,10 +375,10 @@ const Dashboard = () => {
       const newsItem = news.find(n => n.id === newsId);
       if (!newsItem) return;
       const likes = newsItem.likes || [];
-      const newLikes = likes.includes(currentUser.uid)
-        ? likes.filter(uid => uid !== currentUser.uid)
-        : [...likes, currentUser.uid];
-      await updateDoc(newsRef, { likes: newLikes });
+      const isLiked = likes.includes(currentUser.uid);
+      await updateDoc(newsRef, {
+        likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+      });
     } catch (err: any) {
       console.error('Error toggling like:', err);
     }
