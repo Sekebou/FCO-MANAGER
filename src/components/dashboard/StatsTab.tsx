@@ -93,8 +93,8 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                 const rate = item.attendance!.rate;
                 const isFirst = podiumIdx === 0;
                 const podiumIcons = [Crown, Medal, Award];
-                const podiumColors = ['text-warning', 'text-accent', 'text-orange-400'];
-                const podiumBgs = ['bg-warning/10 border-warning/20', 'bg-accent/10 border-accent/20', 'bg-orange-400/10 border-orange-400/20'];
+                const podiumColors = ['text-yellow-500', 'text-gray-400', 'text-amber-700'];
+                const podiumBgs = ['bg-yellow-500/10 border-yellow-500/30', 'bg-gray-400/10 border-gray-400/30', 'bg-amber-700/10 border-amber-700/30'];
                 const PodiumIcon = podiumIcons[podiumIdx];
                 return (
                   <div key={item.player.id} className={`flex flex-col items-center p-4 rounded-2xl border ${podiumBgs[podiumIdx]} ${isFirst ? 'scale-105 shadow-md' : ''} transition-all`}>
