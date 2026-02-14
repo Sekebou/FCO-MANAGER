@@ -1,10 +1,11 @@
 import React from 'react';
-import type { Event, Player } from '@/pages/Dashboard';
+import type { Event, Player, Member } from '@/pages/Dashboard';
 import { Calendar, Plus, Check, X, Trash2, Clock } from 'lucide-react';
 
 interface Props {
   events: Event[];
   players: Player[];
+  members: Member[];
   canManage: () => boolean | null;
   canManageOwnPresence: (playerId: string) => boolean | null;
   togglePresence: (eventId: string, playerId: string, status: string) => void;
@@ -13,7 +14,7 @@ interface Props {
   onAddEvent: () => void;
 }
 
-const PresencesTab = ({ events, players, canManage, canManageOwnPresence, togglePresence, deleteEvent, onAddPlayer, onAddEvent }: Props) => {
+const PresencesTab = ({ events, players, members, canManage, canManageOwnPresence, togglePresence, deleteEvent, onAddPlayer, onAddEvent }: Props) => {
   const upcomingEvents = events
     .filter(e => new Date(e.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -93,7 +94,22 @@ const PresencesTab = ({ events, players, canManage, canManageOwnPresence, toggle
                     const status = presences[player.id];
                     return (
                       <div key={player.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-xl">
-                        <span className="font-medium text-sm text-foreground">{player.name}</span>
+                        <div className="flex items-center gap-2.5">
+                          {(() => {
+                            const member = members.find(m => m.playerId === player.id);
+                            const photoURL = member?.photoURL;
+                            const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                            if (photoURL) {
+                              return <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+                            }
+                            return (
+                              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+                                <span className="text-primary-foreground text-[10px] font-bold">{initials}</span>
+                              </div>
+                            );
+                          })()}
+                          <span className="font-medium text-sm text-foreground">{player.name}</span>
+                        </div>
                         {canManageOwnPresence(player.id) ? (
                           <div className="flex gap-2">
                             <button

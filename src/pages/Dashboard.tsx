@@ -731,6 +731,7 @@ const Dashboard = () => {
             <PresencesTab
               events={events}
               players={players}
+              members={members}
               canManage={canManage}
               canManageOwnPresence={canManageOwnPresence}
               togglePresence={togglePresence}
