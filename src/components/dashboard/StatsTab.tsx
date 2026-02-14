@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Player, Event, Card } from '@/pages/Dashboard';
+import type { Player, Event, Card, AttendanceRecord } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Plus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award } from 'lucide-react';
 
@@ -7,6 +7,7 @@ interface Props {
   players: Player[];
   events: Event[];
   cards: Card[];
+  attendanceRecords: AttendanceRecord[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
   updatePlayerStats: (playerId: string, field: string, value: string) => void;
@@ -17,15 +18,28 @@ interface Props {
   onAddCard: (playerId: string) => void;
 }
 
-const StatsTab = ({ players, events, cards, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddPlayer, onAddCard }: Props) => {
+const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddPlayer, onAddCard }: Props) => {
   const calculateAttendanceRate = (playerId: string) => {
-    const trainings = events.filter(e => e.type === 'training');
-    if (trainings.length === 0) return null;
+    // Combine: active events + saved attendance_records (from deleted events)
     let present = 0, total = 0;
-    trainings.forEach(t => {
+
+    // From active events
+    events.filter(e => e.type === 'training').forEach(t => {
       const p = t.presences || {};
       if (p[playerId]) { total++; if (p[playerId] === 'present') present++; }
     });
+
+    // From saved records (deleted events)
+    const savedForPlayer = attendanceRecords.filter(r => r.playerId === playerId && r.eventType === 'training');
+    // Deduplicate by eventId (avoid counting same event twice if still active)
+    const activeEventIds = new Set(events.map(e => e.id));
+    savedForPlayer.forEach(r => {
+      if (!activeEventIds.has(r.eventId)) {
+        total++;
+        if (r.status === 'present') present++;
+      }
+    });
+
     if (total === 0) return null;
     return { rate: (present / total) * 100, present, total };
   };

@@ -66,6 +66,16 @@ export interface Card {
   suspendedUntil?: string;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  playerId: string;
+  eventId: string;
+  eventType: string;
+  eventDate: string;
+  status: string;
+  savedAt: string;
+}
+
 const tabs = [
   { id: 'presences', label: 'Présences', icon: Users },
   { id: 'stats', label: 'Statistiques', icon: TrendingUp },
@@ -83,6 +93,7 @@ const Dashboard = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -145,6 +156,12 @@ const Dashboard = () => {
         const data: Card[] = [];
         snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Card));
         setCards(data);
+      }, (err) => setError(err.message)));
+
+      unsubs.push(onSnapshot(collection(db, 'attendance_records'), (snapshot) => {
+        const data: AttendanceRecord[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as AttendanceRecord));
+        setAttendanceRecords(data);
       }, (err) => setError(err.message)));
 
       setLoading(false);
@@ -273,6 +290,22 @@ const Dashboard = () => {
   const deleteEvent = async (eventId: string) => {
     if (!window.confirm('Supprimer cet événement ?')) return;
     try {
+      // Save attendance records before deleting
+      const event = events.find(e => e.id === eventId);
+      if (event && event.presences) {
+        for (const [playerId, status] of Object.entries(event.presences)) {
+          if (status === 'present' || status === 'absent') {
+            await addDoc(collection(db, 'attendance_records'), {
+              playerId,
+              eventId,
+              eventType: event.type,
+              eventDate: event.date,
+              status,
+              savedAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
       await deleteDoc(doc(db, 'events', eventId));
     } catch (err: any) {
       alert('Erreur: ' + err.message);
@@ -466,6 +499,7 @@ const Dashboard = () => {
               players={players}
               events={events}
               cards={cards}
+              attendanceRecords={attendanceRecords}
               currentUser={currentUser}
               canManage={canManage}
               updatePlayerStats={updatePlayerStats}
