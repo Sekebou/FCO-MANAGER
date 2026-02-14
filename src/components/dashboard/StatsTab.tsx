@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Player, Event, Card, AttendanceRecord } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap } from 'lucide-react';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap } from 'lucide-react';
 
 interface Props {
   players: Player[];
@@ -182,13 +182,27 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                       <stat.icon size={15} className={`${stat.color} mb-1.5`} />
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</span>
                       {canManage() && stat.field ? (
-                        <input
-                          type="number"
-                          value={stat.value}
-                          onChange={(e) => updatePlayerStats(player.id, stat.field!, e.target.value)}
-                          className="text-xl font-bold w-full bg-transparent text-foreground outline-none text-center mt-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          min="0"
-                        />
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <button
+                            onClick={() => updatePlayerStats(player.id, stat.field!, String(Math.max(0, Number(stat.value) - 1)))}
+                            className="w-6 h-6 rounded-md bg-secondary hover:bg-destructive/15 hover:text-destructive flex items-center justify-center transition-all"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <input
+                            type="number"
+                            value={stat.value}
+                            onChange={(e) => updatePlayerStats(player.id, stat.field!, e.target.value)}
+                            className="text-xl font-bold w-10 bg-transparent text-foreground outline-none text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            min="0"
+                          />
+                          <button
+                            onClick={() => updatePlayerStats(player.id, stat.field!, String(Number(stat.value) + 1))}
+                            className="w-6 h-6 rounded-md bg-secondary hover:bg-accent/20 hover:text-accent flex items-center justify-center transition-all"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
                       ) : (
                         <div className="text-xl font-bold text-foreground mt-0.5">{stat.value}</div>
                       )}
