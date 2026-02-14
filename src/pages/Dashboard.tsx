@@ -469,10 +469,28 @@ const Dashboard = () => {
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
   // Championship CRUD
-  const addChampionship = async (data: { name: string; season: string; teams: string[] }) => {
+  const addChampionship = async (data: { name: string; season: string; teams: string[]; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }> }) => {
     if (!canManage()) return;
     try {
-      await addDoc(collection(db, 'championships'), { ...data, createdAt: new Date().toISOString() });
+      const { matches: importedMatches, ...champData } = data;
+      const champRef = await addDoc(collection(db, 'championships'), { ...champData, createdAt: new Date().toISOString() });
+      
+      // Auto-import matches if provided
+      if (importedMatches && importedMatches.length > 0) {
+        for (const m of importedMatches) {
+          await addDoc(collection(db, 'championship_matches'), {
+            championshipId: champRef.id,
+            homeTeam: m.homeTeam,
+            awayTeam: m.awayTeam,
+            homeScore: m.homeScore,
+            awayScore: m.awayScore,
+            date: m.date,
+            journee: m.journee,
+            played: m.played,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
     } catch (err: any) { alert('Erreur: ' + err.message); }
   };
 

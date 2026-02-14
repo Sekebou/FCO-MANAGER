@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2 } from 'lucide-react';
-import { scrapeFFFTeams } from '@/lib/api/scrape-fff';
+import { scrapeFFFTeams, type ScrapedMatch } from '@/lib/api/scrape-fff';
 
 export interface Championship {
   id: string;
@@ -26,7 +26,7 @@ interface Props {
   championships: Championship[];
   matches: Match[];
   canManage: () => boolean | undefined;
-  onAddChampionship: (data: { name: string; season: string; teams: string[] }) => void;
+  onAddChampionship: (data: { name: string; season: string; teams: string[]; matches?: ScrapedMatch[] }) => void;
   onDeleteChampionship: (id: string) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
@@ -53,6 +53,7 @@ const ChampionnatTab: React.FC<Props> = ({
   const [teamsInput, setTeamsInput] = useState('');
   const [fffUrl, setFffUrl] = useState('');
   const [isScrapingFFF, setIsScrapingFFF] = useState(false);
+  const [importedMatches, setImportedMatches] = useState<ScrapedMatch[]>([]);
 
   // Add match form state
   const [matchHome, setMatchHome] = useState('');
@@ -104,8 +105,8 @@ const ChampionnatTab: React.FC<Props> = ({
     if (!champName.trim()) return;
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { alert('Ajoutez au moins 2 équipes'); return; }
-    onAddChampionship({ name: champName, season: champSeason, teams });
-    setChampName(''); setTeamsInput(''); setFffUrl(''); setShowAddChamp(false);
+    onAddChampionship({ name: champName, season: champSeason, teams, matches: importedMatches.length > 0 ? importedMatches : undefined });
+    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setShowAddChamp(false);
   };
 
   const handleImportFFF = async () => {
@@ -115,6 +116,9 @@ const ChampionnatTab: React.FC<Props> = ({
       const result = await scrapeFFFTeams(fffUrl);
       if (result.success && result.teams && result.teams.length > 0) {
         setTeamsInput(result.teams.join('\n'));
+        if (result.matches && result.matches.length > 0) {
+          setImportedMatches(result.matches);
+        }
       } else {
         alert(result.error || 'Aucune équipe trouvée sur cette page');
       }
@@ -457,7 +461,13 @@ const ChampionnatTab: React.FC<Props> = ({
                     {isScrapingFFF ? 'Import...' : 'Importer'}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">Collez l'URL d'une page équipe/classement FFF pour importer les clubs</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Collez l'URL d'une page équipe/classement FFF pour importer les clubs et matchs</p>
+                {importedMatches.length > 0 && (
+                  <div className="mt-2 flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-lg">
+                    <Trophy size={14} />
+                    <span className="text-xs font-medium">{importedMatches.length} match(s) trouvé(s) — seront importés automatiquement</span>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipes (une par ligne)</label>
