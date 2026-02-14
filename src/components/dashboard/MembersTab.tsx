@@ -139,23 +139,18 @@ const MembersTab = ({ members, players, cards, currentUser, getPlayerCards, onRe
                       license.status === 'expiring' ? 'bg-warning/10 text-warning border border-warning/20' :
                       'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}>
-                      {/* Pulse ring */}
+                      {/* Glow pulse dot */}
                       <span className="relative flex h-3 w-3 shrink-0">
-                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                          license.status === 'active' ? 'bg-accent' :
-                          license.status === 'expiring' ? 'bg-warning' :
-                          'bg-destructive'
-                        }`} />
-                        <span className={`relative inline-flex rounded-full h-3 w-3 ${
-                          license.status === 'active' ? 'bg-accent' :
-                          license.status === 'expiring' ? 'bg-warning' :
-                          'bg-destructive'
+                        <span className={`absolute inline-flex h-full w-full rounded-full ${
+                          license.status === 'active' ? 'bg-accent glow-pulse-green' :
+                          license.status === 'expiring' ? 'bg-warning glow-pulse-orange' :
+                          'bg-destructive glow-pulse-red'
                         }`} />
                       </span>
                       <div>
-                        {license.status === 'expired' && `🎫 Licence expirée depuis ${license.days} jour${license.days > 1 ? 's' : ''} — Renouvellement requis`}
-                        {license.status === 'expiring' && `🎫 Licence à renouveler dans ${license.days} jour${license.days > 1 ? 's' : ''}`}
-                        {license.status === 'active' && `🎫 Licence active — Valide encore ${license.days} jour${license.days > 1 ? 's' : ''}`}
+                        {license.status === 'expired' && `Licence expirée depuis ${license.days} jour${license.days > 1 ? 's' : ''} — Renouvellement requis`}
+                        {license.status === 'expiring' && `Licence à renouveler dans ${license.days} jour${license.days > 1 ? 's' : ''}`}
+                        {license.status === 'active' && `Licence active — Valide encore ${license.days} jour${license.days > 1 ? 's' : ''}`}
                       </div>
                     </div>
                   )}
