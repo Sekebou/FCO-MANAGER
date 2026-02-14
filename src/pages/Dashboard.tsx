@@ -45,6 +45,16 @@ export interface NewsItem {
   content: string;
   author: string;
   date: string;
+  likes?: string[]; // array of user UIDs
+}
+
+export interface NewsComment {
+  id: string;
+  newsId: string;
+  authorName: string;
+  authorUid: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface Member {
@@ -95,6 +105,7 @@ const Dashboard = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [newsComments, setNewsComments] = useState<NewsComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -164,6 +175,13 @@ const Dashboard = () => {
         const data: AttendanceRecord[] = [];
         snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as AttendanceRecord));
         setAttendanceRecords(data);
+      }, (err) => setError(err.message)));
+
+      const commentsQ = query(collection(db, 'news_comments'), orderBy('createdAt', 'asc'));
+      unsubs.push(onSnapshot(commentsQ, (snapshot) => {
+        const data: NewsComment[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as NewsComment));
+        setNewsComments(data);
       }, (err) => setError(err.message)));
 
       setLoading(false);
@@ -350,6 +368,45 @@ const Dashboard = () => {
     });
   };
 
+  const toggleLike = async (newsId: string) => {
+    if (!currentUser) return;
+    try {
+      const newsRef = doc(db, 'news', newsId);
+      const newsItem = news.find(n => n.id === newsId);
+      if (!newsItem) return;
+      const likes = newsItem.likes || [];
+      const newLikes = likes.includes(currentUser.uid)
+        ? likes.filter(uid => uid !== currentUser.uid)
+        : [...likes, currentUser.uid];
+      await updateDoc(newsRef, { likes: newLikes });
+    } catch (err: any) {
+      console.error('Error toggling like:', err);
+    }
+  };
+
+  const addComment = async (newsId: string, content: string) => {
+    if (!currentUser || !content.trim()) return;
+    try {
+      await addDoc(collection(db, 'news_comments'), {
+        newsId,
+        authorName: currentUser.name,
+        authorUid: currentUser.uid,
+        content: content.trim(),
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      console.error('Error adding comment:', err);
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    try {
+      await deleteDoc(doc(db, 'news_comments', commentId));
+    } catch (err: any) {
+      console.error('Error deleting comment:', err);
+    }
+  };
+
   const addCard = async (cardData: any) => {
     if (currentUser?.role !== 'admin') return;
     try {
@@ -533,8 +590,13 @@ const Dashboard = () => {
           {activeTab === 'news' && (
             <NewsTab
               news={news}
+              comments={newsComments}
+              currentUser={currentUser}
               canManage={canManage}
               deleteNews={deleteNews}
+              toggleLike={toggleLike}
+              addComment={addComment}
+              deleteComment={deleteComment}
               onAddNews={() => setShowAddNews(true)}
             />
           )}
