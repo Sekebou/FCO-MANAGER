@@ -473,62 +473,79 @@ const ChampionnatTab: React.FC<Props> = ({
                   </div>
 
                   {journees.map(j => (
-                    <div key={j} className="mb-4">
-                      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-1">Journée {j}</div>
-                      <div className="space-y-2">
-                        {champMatches.filter(m => m.journee === j).map(m => (
-                          <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3.5 gap-3">
-                            <div className="flex items-center gap-2 flex-1 justify-end">
-                              <span className={`text-sm font-bold truncate ${m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
-                                {m.homeTeam}
-                              </span>
-                              <TeamLogo team={m.homeTeam} champId={champ.id} size={22} />
-                            </div>
-
-                            {m.played ? (
-                              <div className="bg-primary text-primary-foreground px-5 py-1.5 rounded-xl text-base font-black min-w-[80px] text-center tracking-wider shadow-md">
-                                {m.homeScore} - {m.awayScore}
+                    <div key={j} className="mb-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
+                          <Hash size={13} className="text-accent" />
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Journée {j}</span>
+                      </div>
+                      <div className="bg-secondary/30 rounded-xl border border-border/50 overflow-hidden divide-y divide-border/40">
+                        {champMatches.filter(m => m.journee === j).map(m => {
+                          const isHomeWin = m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore;
+                          const isAwayWin = m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore;
+                          const isDraw = m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore === m.awayScore;
+                          return (
+                            <div key={m.id} className="px-4 py-3.5 hover:bg-secondary/50 transition-colors">
+                              {/* Date row */}
+                              <div className="text-center mb-2">
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                                  {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
                               </div>
-                            ) : editingMatch === m.id ? (
-                              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5 shadow-sm">
-                                <input type="number" min="0" value={editHome} onChange={e => setEditHome(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
-                                <span className="text-muted-foreground font-bold text-lg">-</span>
-                                <input type="number" min="0" value={editAway} onChange={e => setEditAway(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
-                                <button onClick={() => handleSaveScore(m.id)} className="text-xs bg-accent text-accent-foreground px-3 py-1.5 rounded-lg font-semibold hover:brightness-110 transition-all shadow-sm">OK</button>
-                                <button onClick={() => setEditingMatch(null)} className="text-xs text-muted-foreground hover:text-foreground px-1.5 transition-colors">✕</button>
-                              </div>
-                            ) : (
-                              <div className="min-w-[60px] text-center">
-                                {canManage() ? (
-                                  <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-xs bg-accent/10 text-accent px-3 py-1 rounded-lg font-medium hover:bg-accent/20 transition-all">
-                                    Score
-                                  </button>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                              {/* Teams + Score */}
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2.5 flex-1 justify-end min-w-0">
+                                  <span className={`text-sm font-bold truncate text-right ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
+                                    {m.homeTeam}
                                   </span>
+                                  <TeamLogo team={m.homeTeam} champId={champ.id} size={28} />
+                                </div>
+
+                                {m.played ? (
+                                  <div className={`px-4 py-1.5 rounded-xl text-sm font-black min-w-[68px] text-center tracking-widest shadow-sm ${
+                                    isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
+                                  }`}>
+                                    {m.homeScore} - {m.awayScore}
+                                  </div>
+                                ) : editingMatch === m.id ? (
+                                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5 shadow-sm">
+                                    <input type="number" min="0" value={editHome} onChange={e => setEditHome(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
+                                    <span className="text-muted-foreground font-bold text-lg">-</span>
+                                    <input type="number" min="0" value={editAway} onChange={e => setEditAway(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
+                                    <button onClick={() => handleSaveScore(m.id)} className="text-xs bg-accent text-accent-foreground px-3 py-1.5 rounded-lg font-semibold hover:brightness-110 transition-all shadow-sm">OK</button>
+                                    <button onClick={() => setEditingMatch(null)} className="text-xs text-muted-foreground hover:text-foreground px-1.5 transition-colors">✕</button>
+                                  </div>
+                                ) : (
+                                  <div className="min-w-[68px] text-center">
+                                    {canManage() ? (
+                                      <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-xs bg-accent/10 text-accent px-3.5 py-1.5 rounded-lg font-medium hover:bg-accent/20 transition-all">
+                                        Score
+                                      </button>
+                                    ) : (
+                                      <div className="px-4 py-1.5 rounded-xl bg-secondary border border-border text-xs font-semibold text-muted-foreground min-w-[68px] text-center">
+                                        VS
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                  <TeamLogo team={m.awayTeam} champId={champ.id} size={28} />
+                                  <span className={`text-sm font-bold truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
+                                    {m.awayTeam}
+                                  </span>
+                                </div>
+
+                                {canManage() && (
+                                  <button onClick={() => onDeleteMatch(m.id)} className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all shrink-0">
+                                    <Trash2 size={14} />
+                                  </button>
                                 )}
                               </div>
-                            )}
-
-                            <div className="flex items-center gap-2 flex-1">
-                              <TeamLogo team={m.awayTeam} champId={champ.id} size={22} />
-                              <span className={`text-sm font-bold truncate ${m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
-                                {m.awayTeam}
-                              </span>
                             </div>
-
-                            <div className="text-xs text-muted-foreground hidden sm:block">
-                              {new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                            </div>
-
-                            {canManage() && (
-                              <button onClick={() => onDeleteMatch(m.id)} className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all">
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
