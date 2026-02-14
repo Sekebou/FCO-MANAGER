@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Event, Player } from '@/pages/Dashboard';
-import { Calendar, Plus, Check, X, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock } from 'lucide-react';
 
 interface Props {
   events: Event[];
@@ -58,9 +58,9 @@ const PresencesTab = ({ events, players, canManage, canManageOwnPresence, toggle
                     {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                   <div className="flex gap-4 mt-2 text-sm">
-                    <span className="text-success font-medium">✓ {presentCount}</span>
-                    <span className="text-destructive font-medium">✗ {absentCount}</span>
-                    <span className="text-muted-foreground">? {unknownCount}</span>
+                    <span className="flex items-center gap-1.5 text-success font-medium"><Check size={14} /> {presentCount} Présent{presentCount > 1 ? 's' : ''}</span>
+                    <span className="flex items-center gap-1.5 text-destructive font-medium"><X size={14} /> {absentCount} Absent{absentCount > 1 ? 's' : ''}</span>
+                    <span className="flex items-center gap-1.5 text-warning font-medium"><Clock size={14} /> {unknownCount} En attente</span>
                   </div>
                 </div>
                 <div className="flex gap-2 items-start">
@@ -108,12 +108,12 @@ const PresencesTab = ({ events, players, canManage, canManageOwnPresence, toggle
                             </button>
                           </div>
                         ) : (
-                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
                             status === 'present' ? 'bg-success/10 text-success' :
                             status === 'absent' ? 'bg-destructive/10 text-destructive' :
-                            'bg-muted text-muted-foreground'
+                            'bg-warning/10 text-warning'
                           }`}>
-                            {status === 'present' ? '✓ Présent' : status === 'absent' ? '✗ Absent' : '? Non confirmé'}
+                            {status === 'present' ? <><Check size={12} /> Présent</> : status === 'absent' ? <><X size={12} /> Absent</> : <><Clock size={12} /> En attente</>}
                           </span>
                         )}
                       </div>
