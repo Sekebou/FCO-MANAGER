@@ -93,7 +93,7 @@ const PresencesTab = ({ events, players, canManage, canManageOwnPresence, toggle
                             <button
                               onClick={() => togglePresence(event.id, player.id, 'present')}
                               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all ${
-                                status === 'present' ? 'bg-success text-success-foreground shadow-sm' : 'bg-card border border-border hover:border-success/50 text-muted-foreground'
+                                status === 'present' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
                               }`}
                             >
                               <Check size={14} /> Présent
