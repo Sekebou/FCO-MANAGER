@@ -792,7 +792,9 @@ const Dashboard = () => {
               players={players}
               cards={cards}
               currentUser={currentUser}
+              canManage={canManage}
               getPlayerCards={getPlayerCards}
+              deletePlayer={deletePlayer}
               onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
             />
           )}

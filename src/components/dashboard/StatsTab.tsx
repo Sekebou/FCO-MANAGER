@@ -233,11 +233,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                       <span className="text-xs font-medium text-muted-foreground px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
                     </div>
                   </div>
-                  {canManage() && (
-                    <button onClick={() => deletePlayer(player.id)} className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all">
-                      <Trash2 size={15} className="text-destructive" />
-                    </button>
-                  )}
+                
                 </div>
 
                 {/* Stats grid */}

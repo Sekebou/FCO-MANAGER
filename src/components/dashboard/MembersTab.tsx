@@ -1,18 +1,20 @@
 import React from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2 } from 'lucide-react';
 
 interface Props {
   members: Member[];
   players: Player[];
   cards: Card[];
   currentUser: AppUser | null;
+  canManage: () => boolean | null;
   getPlayerCards: (playerId: string) => Card[];
+  deletePlayer: (playerId: string) => void;
   onResetPassword: (member: Member) => void;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, getPlayerCards, onResetPassword }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, onResetPassword }: Props) => {
   const getLicenseStatus = (expiryDate: string) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
@@ -172,13 +174,23 @@ const MembersTab = ({ members, players, cards, currentUser, getPlayerCards, onRe
 
                   {/* Admin action - always at bottom */}
                   {currentUser?.role === 'admin' && (
-                    <button
-                      onClick={() => onResetPassword(member)}
-                      className="w-full flex items-center justify-center gap-2 bg-secondary hover:bg-primary hover:text-primary-foreground text-muted-foreground px-3 py-2.5 rounded-xl transition-all text-xs font-semibold mt-3"
-                    >
-                      <Lock size={13} />
-                      Réinitialiser le mot de passe
-                    </button>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => onResetPassword(member)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-secondary hover:bg-primary hover:text-primary-foreground text-muted-foreground px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                      >
+                        <Lock size={13} />
+                        Réinitialiser MDP
+                      </button>
+                      {player && (
+                        <button
+                          onClick={() => deletePlayer(player.id)}
+                          className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
