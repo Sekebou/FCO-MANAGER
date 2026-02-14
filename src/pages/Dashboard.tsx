@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy
 } from 'lucide-react';
 import PresencesTab from '@/components/dashboard/PresencesTab';
 import StatsTab from '@/components/dashboard/StatsTab';
@@ -131,6 +131,7 @@ const Dashboard = () => {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [playerCreatedResult, setPlayerCreatedResult] = useState<{ name: string; email?: string; password?: string; withAccount: boolean } | null>(null);
+  const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
 
   const canManage = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur');
   const canManageOwnPresence = (playerId: string) => {
@@ -322,9 +323,9 @@ const Dashboard = () => {
             console.error('Erreur envoi email à', email, emailErr);
           }
         }
-        alert(`✅ Événement créé et ${memberEmails.length} notification(s) envoyée(s)`);
+        setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: true, notifCount: memberEmails.length });
       } else {
-        alert('✅ Événement créé');
+        setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: false, notifCount: 0 });
       }
 
       setShowAddEvent(false);
@@ -872,6 +873,69 @@ const Dashboard = () => {
             <div className="p-4 border-t border-border">
               <button
                 onClick={() => setPlayerCreatedResult(null)}
+                className="w-full py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-accent/20"
+              >
+                Parfait !
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {eventCreatedResult && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setEventCreatedResult(null)}>
+          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex flex-col items-center pt-8 pb-4 px-6">
+              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-4">
+                <CalendarDays size={32} className="text-accent" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Événement créé avec succès</h3>
+              <p className="text-sm text-muted-foreground mt-1">{eventCreatedResult.title}</p>
+            </div>
+
+            {/* Details */}
+            <div className="mx-6 mb-4 space-y-2">
+              <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
+                <Calendar size={16} className="text-accent shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Date</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {new Date(eventCreatedResult.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
+                <Trophy size={16} className="text-accent shrink-0" />
+                <div className="flex-1">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Type</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {eventCreatedResult.type === 'match' ? '⚽ Match' : eventCreatedResult.type === 'training' ? '🏃 Entraînement' : '📌 Autre'}
+                  </p>
+                </div>
+              </div>
+              {eventCreatedResult.notified ? (
+                <div className="flex items-center gap-3 p-3 bg-accent/5 rounded-xl border border-accent/20">
+                  <Bell size={16} className="text-accent shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Notifications</p>
+                    <p className="text-sm font-medium text-accent">{eventCreatedResult.notifCount} joueur{eventCreatedResult.notifCount > 1 ? 's' : ''} notifié{eventCreatedResult.notifCount > 1 ? 's' : ''} par email</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
+                  <Bell size={16} className="text-muted-foreground shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Notifications</p>
+                    <p className="text-sm text-muted-foreground">Aucune notification envoyée</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
+              <button
+                onClick={() => setEventCreatedResult(null)}
                 className="w-full py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-accent/20"
               >
                 Parfait !
