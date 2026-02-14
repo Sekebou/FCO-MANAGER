@@ -24,7 +24,9 @@ import {
   orderBy,
   onSnapshot,
   setDoc,
-  getDoc
+  getDoc,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -62,5 +64,7 @@ export {
   onSnapshot,
   setDoc,
   getDoc,
+  arrayUnion,
+  arrayRemove,
   type User
 };
