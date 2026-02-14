@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { X, User, MapPin, Calendar, Mail, Lock, UserPlus } from 'lucide-react';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -11,38 +12,80 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
   });
 
   return (
-    <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-card rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-border shadow-xl animate-fade-in">
-        <h3 className="text-xl font-bold text-foreground mb-5">Ajouter un joueur</h3>
+    <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-card rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-border shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+              <UserPlus size={20} className="text-accent" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground">Ajouter un joueur</h3>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+            <X size={16} className="text-muted-foreground" />
+          </button>
+        </div>
 
-        <div className="mb-4 pb-4 border-b border-border">
-          <h4 className="font-medium mb-3 text-sm text-muted-foreground">📋 Informations</h4>
-          <input type="text" placeholder="Nom complet" className="w-full p-3 bg-secondary border border-border rounded-xl mb-3 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-          <select className="w-full p-3 bg-secondary border border-border rounded-xl mb-3 text-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })}>
-            <option>Gardien</option><option>Défenseur</option><option>Milieu</option><option>Attaquant</option>
-          </select>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">🎫 Expiration licence</label>
-            <input type="date" className="w-full p-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.licenseExpiry} onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })} />
+        {/* Body */}
+        <div className="p-5 space-y-4">
+          {/* Info section */}
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Informations</label>
+            <div className="relative">
+              <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="text" placeholder="Nom complet" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            </div>
+            <div className="relative">
+              <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <select className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })}>
+                <option>Gardien</option><option>Défenseur</option><option>Milieu</option><option>Attaquant</option>
+              </select>
+            </div>
+            <div className="relative">
+              <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="date" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.licenseExpiry} onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })} />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">Licence</span>
+            </div>
+          </div>
+
+          {/* Account section */}
+          <div className="space-y-3">
+            <label className="flex items-center gap-2.5 cursor-pointer group">
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.createAccount ? 'bg-accent border-accent' : 'border-border'}`}>
+                {formData.createAccount && <span className="text-accent-foreground text-xs">✓</span>}
+              </div>
+              <span className="text-sm font-medium text-foreground group-hover:text-accent transition-colors">Créer un compte joueur</span>
+            </label>
+            <input type="checkbox" className="hidden" checked={formData.createAccount} onChange={(e) => setFormData({ ...formData, createAccount: e.target.checked })} />
+
+            {formData.createAccount && (
+              <div className="space-y-3 p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent/60" />
+                  <input type="email" placeholder="Email" className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                </div>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-accent/60" />
+                  <input type="text" placeholder="Mot de passe (min. 6)" className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="mb-5">
-          <label className="flex items-center gap-2 mb-3 cursor-pointer">
-            <input type="checkbox" checked={formData.createAccount} onChange={(e) => setFormData({ ...formData, createAccount: e.target.checked })} className="w-4 h-4 accent-accent" />
-            <span className="font-medium text-sm text-foreground">🔐 Créer un compte</span>
-          </label>
-          {formData.createAccount && (
-            <div className="space-y-3 bg-accent/5 p-3 rounded-xl">
-              <input type="email" placeholder="Email" className="w-full p-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-              <input type="text" placeholder="Mot de passe (min. 6)" className="w-full p-3 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <button onClick={() => onSubmit(formData)} disabled={!formData.name || (formData.createAccount && (!formData.email || !formData.password))} className="flex-1 bg-accent text-accent-foreground p-3 rounded-xl font-medium hover:bg-accent/90 transition-all disabled:opacity-50 text-sm">Ajouter</button>
-          <button onClick={onClose} className="flex-1 bg-secondary text-foreground p-3 rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">Annuler</button>
+        {/* Footer */}
+        <div className="flex gap-3 p-5 border-t border-border">
+          <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+            Annuler
+          </button>
+          <button
+            onClick={() => onSubmit(formData)}
+            disabled={!formData.name || (formData.createAccount && (!formData.email || !formData.password))}
+            className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
+          >
+            Ajouter
+          </button>
         </div>
       </div>
     </div>
