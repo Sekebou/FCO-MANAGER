@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, signInWithEmailAndPassword, doc, getDoc } from '@/lib/firebase';
-import { Lock, Mail, LogIn, Loader2 } from 'lucide-react';
+import { Lock, Mail, LogIn, Loader2, Shield, ChevronRight } from 'lucide-react';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -9,6 +9,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,91 +55,161 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-primary flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] -top-48 -left-48 animate-pulse" />
-        <div className="absolute w-[400px] h-[400px] bg-accent/5 rounded-full blur-[100px] -bottom-32 -right-32 animate-pulse" style={{ animationDelay: '1.5s' }} />
+    <div className="min-h-screen bg-primary flex relative overflow-hidden">
+      {/* Decorative side */}
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
+        {/* Gradient orbs */}
+        <div className="absolute w-[600px] h-[600px] bg-accent/15 rounded-full blur-[150px] -top-32 -left-32" />
+        <div className="absolute w-[400px] h-[400px] bg-accent/10 rounded-full blur-[120px] bottom-0 right-0" />
+        
+        <div className="relative z-10 px-16 max-w-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-accent/20 backdrop-blur-sm rounded-3xl mb-8 border border-accent/30">
+            <span className="text-5xl">⚽</span>
+          </div>
+          <h1 className="text-5xl font-bold text-primary-foreground leading-tight mb-4">
+            FCO
+            <span className="block text-accent">Manager</span>
+          </h1>
+          <p className="text-primary-foreground/50 text-lg leading-relaxed">
+            Gérez votre équipe, suivez les présences et les performances de vos joueurs en un seul endroit.
+          </p>
+          
+          {/* Feature pills */}
+          <div className="mt-10 space-y-3">
+            {['Gestion des présences', 'Suivi des performances', 'Calendrier des événements'].map((feat) => (
+              <div key={feat} className="flex items-center gap-3 text-primary-foreground/40">
+                <div className="w-1.5 h-1.5 bg-accent rounded-full" />
+                <span className="text-sm font-medium">{feat}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent rounded-2xl mb-4 shadow-lg shadow-accent/30">
-            <span className="text-3xl">⚽</span>
+      {/* Login side */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-[420px] animate-fade-in">
+          {/* Mobile logo */}
+          <div className="lg:hidden text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/20 backdrop-blur-sm rounded-2xl mb-4 border border-accent/30">
+              <span className="text-3xl">⚽</span>
+            </div>
+            <h1 className="text-3xl font-bold text-primary-foreground">
+              FCO <span className="text-accent">Manager</span>
+            </h1>
           </div>
-          <h1 className="text-3xl font-bold text-primary-foreground">FCO Manager</h1>
-          <p className="text-primary-foreground/60 text-sm mt-1">Connectez-vous à votre espace</p>
-        </div>
 
-        {/* Card */}
-        <div className="bg-card rounded-2xl shadow-2xl p-8 border border-border/10">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent focus:border-transparent transition-all outline-none"
-                  placeholder="votre@email.com"
-                  required
-                />
+          {/* Header */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-primary-foreground">Connexion</h2>
+            <p className="text-primary-foreground/40 text-sm mt-1">Accédez à votre espace de gestion</p>
+          </div>
+
+          {/* Form card */}
+          <div className="bg-card/5 backdrop-blur-sm rounded-2xl p-6 sm:p-8 border border-primary-foreground/10">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-semibold text-primary-foreground/60 uppercase tracking-wider mb-2">
+                  Email
+                </label>
+                <div className={`relative rounded-xl transition-all duration-300 ${focused === 'email' ? 'ring-2 ring-accent/50' : ''}`}>
+                  <Mail className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'email' ? 'text-accent' : 'text-primary-foreground/30'}`} size={18} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={() => setFocused('email')}
+                    onBlur={() => setFocused(null)}
+                    className="w-full pl-11 pr-4 py-3.5 bg-primary-foreground/5 border border-primary-foreground/10 rounded-xl text-primary-foreground placeholder:text-primary-foreground/20 focus:border-accent/50 transition-all outline-none text-sm"
+                    placeholder="votre@email.com"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Mot de passe</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent focus:border-transparent transition-all outline-none"
-                  placeholder="••••••••"
-                  required
-                />
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-semibold text-primary-foreground/60 uppercase tracking-wider mb-2">
+                  Mot de passe
+                </label>
+                <div className={`relative rounded-xl transition-all duration-300 ${focused === 'password' ? 'ring-2 ring-accent/50' : ''}`}>
+                  <Lock className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'password' ? 'text-accent' : 'text-primary-foreground/30'}`} size={18} />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setFocused('password')}
+                    onBlur={() => setFocused(null)}
+                    className="w-full pl-11 pr-4 py-3.5 bg-primary-foreground/5 border border-primary-foreground/10 rounded-xl text-primary-foreground placeholder:text-primary-foreground/20 focus:border-accent/50 transition-all outline-none text-sm"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            {error && (
-              <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-xl text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-accent text-accent-foreground py-3 rounded-xl font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" size={20} />
-              ) : (
-                <LogIn size={20} />
+              {/* Error */}
+              {error && (
+                <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                  <Shield size={16} className="shrink-0" />
+                  {error}
+                </div>
               )}
-              {loading ? 'Connexion...' : 'Se connecter'}
-            </button>
-          </form>
 
-          {/* Help */}
-          <div className="mt-6 p-4 bg-secondary rounded-xl">
-            <p className="text-xs font-semibold text-muted-foreground mb-2">💡 Comptes par défaut</p>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              <p>• Admin : admin@fco-manager.local / admin123</p>
-              <p>• Coach : coach@fco-manager.local / coach123</p>
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="group w-full bg-accent text-accent-foreground py-3.5 rounded-xl font-semibold hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-accent/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <>
+                    Se connecter
+                    <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
+                {loading && 'Connexion...'}
+              </button>
+            </form>
+          </div>
+
+          {/* Help section */}
+          <div className="mt-6 p-4 rounded-xl border border-primary-foreground/5 bg-primary-foreground/[0.02]">
+            <p className="text-xs font-semibold text-primary-foreground/30 uppercase tracking-wider mb-3">Comptes démo</p>
+            <div className="space-y-2">
+              {[
+                { label: 'Admin', email: 'admin@fco-manager.local', pass: 'admin123' },
+                { label: 'Coach', email: 'coach@fco-manager.local', pass: 'coach123' },
+              ].map((account) => (
+                <button
+                  key={account.label}
+                  type="button"
+                  onClick={() => { setEmail(account.email); setPassword(account.pass); }}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-primary-foreground/5 hover:bg-primary-foreground/10 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-accent/15 flex items-center justify-center">
+                      <span className="text-accent text-xs font-bold">{account.label[0]}</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-medium text-primary-foreground/70">{account.label}</p>
+                      <p className="text-[10px] text-primary-foreground/30">{account.email}</p>
+                    </div>
+                  </div>
+                  <ChevronRight size={14} className="text-primary-foreground/20 group-hover:text-accent transition-colors" />
+                </button>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Status */}
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-success/10 border border-success/30 rounded-full">
-            <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-            <p className="text-xs text-success font-medium">Serveur connecté</p>
+          {/* Status */}
+          <div className="mt-6 flex justify-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-success/20 bg-success/5">
+              <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
+              <p className="text-[11px] text-success/70 font-medium">Connecté</p>
+            </div>
           </div>
         </div>
       </div>
