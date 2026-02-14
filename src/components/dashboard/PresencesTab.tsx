@@ -57,10 +57,16 @@ const PresencesTab = ({ events, players, canManage, canManageOwnPresence, toggle
                   <p className="text-muted-foreground text-sm mt-0.5">
                     {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
-                  <div className="flex gap-4 mt-2 text-sm">
-                    <span className="flex items-center gap-1.5 text-success font-medium"><Check size={14} /> {presentCount} Présent{presentCount > 1 ? 's' : ''}</span>
-                    <span className="flex items-center gap-1.5 text-destructive font-medium"><X size={14} /> {absentCount} Absent{absentCount > 1 ? 's' : ''}</span>
-                    <span className="flex items-center gap-1.5 text-warning font-medium"><Clock size={14} /> {unknownCount} En attente</span>
+                  <div className="flex gap-2 mt-3">
+                    <span className="flex items-center gap-1.5 bg-success/10 text-success px-3 py-1.5 rounded-full text-xs font-semibold">
+                      <Check size={13} /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-destructive/10 text-destructive px-3 py-1.5 rounded-full text-xs font-semibold">
+                      <X size={13} /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-warning/10 text-warning px-3 py-1.5 rounded-full text-xs font-semibold">
+                      <Clock size={13} /> {unknownCount} En attente
+                    </span>
                   </div>
                 </div>
                 <div className="flex gap-2 items-start">
