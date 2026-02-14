@@ -36,40 +36,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchUserProfile = async (user: User) => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists() && isMounted) {
+          const userData = userDoc.data();
+          const appUser: AppUser = {
+            uid: user.uid,
+            email: user.email || '',
+            role: userData.role,
+            name: userData.name,
+            username: userData.username || '',
+            playerId: userData.playerId || undefined,
+            photoURL: userData.photoURL || null,
+          };
+          sessionStorage.setItem('currentUser', JSON.stringify(appUser));
+          setCurrentUser(appUser);
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+      }
+    };
+
+    // Use cached data for instant display, then always refresh from Firestore
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!isMounted) return;
       setFirebaseUser(user);
       if (user) {
         const stored = sessionStorage.getItem('currentUser');
         if (stored) {
           setCurrentUser(JSON.parse(stored));
-        } else {
-          try {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              const appUser: AppUser = {
-                uid: user.uid,
-                email: user.email || '',
-                role: userData.role,
-                name: userData.name,
-                username: userData.username || '',
-                playerId: userData.playerId || undefined,
-                photoURL: userData.photoURL || null,
-              };
-              sessionStorage.setItem('currentUser', JSON.stringify(appUser));
-              setCurrentUser(appUser);
-            }
-          } catch (err) {
-            console.error('Error fetching user profile:', err);
-          }
         }
+        // Always refresh profile from Firestore to keep role up-to-date
+        await fetchUserProfile(user);
       } else {
         setCurrentUser(null);
         sessionStorage.removeItem('currentUser');
       }
-      setLoading(false);
+      if (isMounted) setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const logout = async () => {
