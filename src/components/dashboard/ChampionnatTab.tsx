@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw, Clock } from 'lucide-react';
 import { scrapeFFFTeams, type ScrapedMatch, type ScrapedStanding } from '@/lib/api/scrape-fff';
 
 export interface Championship {
@@ -244,26 +244,44 @@ const ChampionnatTab: React.FC<Props> = ({
         {/* Derniers résultats */}
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Award size={18} className="text-accent" />
+            <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
+              <Award size={16} className="text-accent" />
+            </div>
             <h3 className="font-semibold text-foreground">Derniers résultats</h3>
+            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{recentResults.length}</span>
           </div>
           {recentResults.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Aucun résultat</p>
+            <p className="text-sm text-muted-foreground text-center py-6">Aucun résultat</p>
           ) : (
-            <div className="space-y-2.5">
-              {recentResults.map(m => (
-                <div key={m.id} className="flex items-center bg-secondary/50 rounded-xl px-4 py-3.5">
-                  <span className={`text-sm font-bold flex-1 text-right ${m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore ? 'text-accent' : 'text-foreground'}`}>
-                    {m.homeTeam}
-                  </span>
-                  <div className="mx-4 bg-primary text-primary-foreground px-5 py-1.5 rounded-xl text-base font-black min-w-[80px] text-center tracking-wider shadow-md">
-                    {m.homeScore} - {m.awayScore}
+            <div className="space-y-2">
+              {recentResults.map(m => {
+                const isHomeWin = m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore;
+                const isAwayWin = m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore;
+                const isDraw = m.homeScore !== null && m.awayScore !== null && m.homeScore === m.awayScore;
+                return (
+                  <div key={m.id} className="rounded-xl border border-border/50 bg-secondary/30 overflow-hidden">
+                    <div className="flex items-center justify-center gap-1.5 py-1 bg-muted/50 text-[11px] text-muted-foreground">
+                      <CalendarDays size={10} />
+                      {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                      <span className="mx-1">•</span>
+                      <span>J{m.journee}</span>
+                    </div>
+                    <div className="flex items-center px-4 py-3">
+                      <span className={`text-sm font-bold flex-1 text-right truncate ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
+                        {m.homeTeam}
+                      </span>
+                      <div className={`mx-3 px-4 py-1 rounded-lg text-sm font-black min-w-[70px] text-center tracking-wider shadow-sm ${
+                        isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
+                      }`}>
+                        {m.homeScore} - {m.awayScore}
+                      </div>
+                      <span className={`text-sm font-bold flex-1 truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
+                        {m.awayTeam}
+                      </span>
+                    </div>
                   </div>
-                  <span className={`text-sm font-bold flex-1 ${m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore ? 'text-accent' : 'text-foreground'}`}>
-                    {m.awayTeam}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
