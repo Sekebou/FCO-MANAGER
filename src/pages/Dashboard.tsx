@@ -826,7 +826,7 @@ const Dashboard = () => {
                 <CheckCircle2 size={32} className="text-accent" />
               </div>
               <h3 className="text-lg font-bold text-foreground">
-                {playerCreatedResult.withAccount ? 'Joueur & compte créés' : 'Joueur créé'}
+                {playerCreatedResult.withAccount ? 'Joueur ajouté avec succès' : 'Joueur ajouté avec succès'}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">{playerCreatedResult.name}</p>
             </div>
