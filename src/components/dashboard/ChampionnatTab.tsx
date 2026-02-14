@@ -466,29 +466,33 @@ const ChampionnatTab: React.FC<Props> = ({
               {/* Body */}
               <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Journée</label>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Journée</label>
+                  <p className="text-[11px] text-muted-foreground/70 mb-2">Le numéro du tour (ex: J1 = 1er week-end de matchs)</p>
                   <input type="number" min="1" value={matchJournee} onChange={e => setMatchJournee(Number(e.target.value))} placeholder="Ex: 1" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
                 </div>
 
-                <div className="relative">
-                  <Home size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <select value={matchHome} onChange={e => setMatchHome(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none">
-                    <option value="">Équipe domicile...</option>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Équipe domicile</label>
+                  <p className="text-[11px] text-muted-foreground/70 mb-2">L'équipe qui reçoit (joue à la maison)</p>
+                  <select value={matchHome} onChange={e => setMatchHome(e.target.value)} className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none">
+                    <option value="">Sélectionner...</option>
                     {champ.teams.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
 
-                <div className="relative">
-                  <Plane size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <select value={matchAway} onChange={e => setMatchAway(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none">
-                    <option value="">Équipe extérieur...</option>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Équipe extérieur</label>
+                  <p className="text-[11px] text-muted-foreground/70 mb-2">L'équipe qui se déplace</p>
+                  <select value={matchAway} onChange={e => setMatchAway(e.target.value)} className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none">
+                    <option value="">Sélectionner...</option>
                     {champ.teams.filter(t => t !== matchHome).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
 
-                <div className="relative">
-                  <CalendarDays size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="date" value={matchDate} onChange={e => setMatchDate(e.target.value)} className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Date du match</label>
+                  <p className="text-[11px] text-muted-foreground/70 mb-2">Quand le match est prévu</p>
+                  <input type="date" value={matchDate} onChange={e => setMatchDate(e.target.value)} className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
                 </div>
               </div>
 
