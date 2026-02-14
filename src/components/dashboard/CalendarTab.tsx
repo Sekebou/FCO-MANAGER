@@ -11,7 +11,7 @@ const CalendarTab = ({ events }: Props) => {
   const future = sorted.filter(e => new Date(e.date) >= new Date());
 
   const EventCard = ({ event, isPast }: { event: Event; isPast?: boolean }) => (
-    <div className={`border-l-4 p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-card'} ${!isPast ? 'shadow-sm' : ''}`}>
+    <div className={`border-l-4 p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-accent/5'} ${!isPast ? 'shadow-sm' : ''}`}>
       <div className="flex justify-between items-start">
         <div>
           <h4 className={`font-semibold ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}>{event.title}</h4>

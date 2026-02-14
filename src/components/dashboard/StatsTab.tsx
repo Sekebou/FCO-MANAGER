@@ -40,7 +40,7 @@ const StatsTab = ({ players, events, cards, currentUser, canManage, updatePlayer
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-foreground">Statistiques</h2>
         {canManage() && (
-          <button onClick={onAddPlayer} className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all text-sm font-medium">
+          <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
             <Plus size={18} /> Ajouter un joueur
           </button>
         )}
