@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Player, Event, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Trash2, Activity, Target, Trophy, Check } from 'lucide-react';
+import { Plus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award } from 'lucide-react';
 
 interface Props {
   players: Player[];
@@ -48,34 +48,73 @@ const StatsTab = ({ players, events, cards, currentUser, canManage, updatePlayer
 
       {/* Attendance section - admin only */}
       {currentUser?.role === 'admin' && attendanceStats.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
-              <Check size={20} className="text-accent-foreground" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Taux de présence</h3>
-              <p className="text-xs text-muted-foreground">Classement aux entraînements</p>
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-5 border-b border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 bg-accent rounded-xl flex items-center justify-center shadow-sm">
+                  <Trophy size={20} className="text-accent-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Classement présences</h3>
+                  <p className="text-xs text-muted-foreground">Du plus assidu au moins assidu</p>
+                </div>
+              </div>
+              <div className="text-right hidden sm:block">
+                <div className="text-2xl font-bold text-accent">
+                  {attendanceStats.length > 0 ? attendanceStats[0].attendance!.rate.toFixed(0) : 0}%
+                </div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Meilleur taux</div>
+              </div>
             </div>
           </div>
-          <div className="space-y-3">
+
+          {/* Podium top 3 */}
+          {attendanceStats.length >= 3 && (
+            <div className="grid grid-cols-3 gap-3 p-5 bg-gradient-to-b from-accent/5 to-transparent">
+              {[1, 0, 2].map((podiumIdx) => {
+                const item = attendanceStats[podiumIdx];
+                if (!item) return null;
+                const rate = item.attendance!.rate;
+                const isFirst = podiumIdx === 0;
+                const podiumIcons = [Crown, Medal, Award];
+                const podiumColors = ['text-warning', 'text-accent', 'text-orange-400'];
+                const podiumBgs = ['bg-warning/10 border-warning/20', 'bg-accent/10 border-accent/20', 'bg-orange-400/10 border-orange-400/20'];
+                const PodiumIcon = podiumIcons[podiumIdx];
+                return (
+                  <div key={item.player.id} className={`flex flex-col items-center p-4 rounded-2xl border ${podiumBgs[podiumIdx]} ${isFirst ? 'scale-105 shadow-md' : ''} transition-all`}>
+                    <PodiumIcon size={isFirst ? 28 : 22} className={podiumColors[podiumIdx]} />
+                    <div className={`text-xs font-bold mt-1 ${podiumColors[podiumIdx]}`}>#{podiumIdx + 1}</div>
+                    <div className="text-sm font-bold text-foreground mt-2 text-center truncate w-full">{item.player.name}</div>
+                    <div className={`text-xl font-black mt-1 ${podiumColors[podiumIdx]}`}>{rate.toFixed(0)}%</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{item.attendance!.present}/{item.attendance!.total}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Full ranking list */}
+          <div className="p-5 space-y-2">
             {attendanceStats.map((item, index) => {
               const rate = item.attendance!.rate;
-              const colorClass = rate >= 80 ? 'bg-success' : rate >= 60 ? 'bg-accent' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
+              const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
+              const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
               return (
-                <div key={item.player.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl">
-                  <div className={`w-7 h-7 rounded-full ${colorClass} flex items-center justify-center text-xs font-bold text-card`}>
+                <div key={item.player.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl hover:bg-secondary transition-all">
+                  <div className={`w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center text-xs font-bold text-card shadow-sm`}>
                     {index + 1}
                   </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-foreground">{item.player.name}</div>
-                    <div className="text-xs text-muted-foreground">{item.attendance!.present}/{item.attendance!.total} présences</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">{item.player.name}</div>
+                    <div className="text-[10px] text-muted-foreground">{item.attendance!.present} présences sur {item.attendance!.total}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-24 h-2 bg-border rounded-full overflow-hidden">
-                      <div className={`h-full ${colorClass} transition-all`} style={{ width: `${rate}%` }} />
+                    <div className="w-28 h-2.5 bg-border rounded-full overflow-hidden">
+                      <div className={`h-full ${colorClass} rounded-full transition-all duration-500`} style={{ width: `${rate}%` }} />
                     </div>
-                    <span className="text-sm font-bold text-foreground w-12 text-right">{rate.toFixed(0)}%</span>
+                    <span className={`text-sm font-bold w-12 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
                   </div>
                 </div>
               );
