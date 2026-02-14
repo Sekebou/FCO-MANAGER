@@ -241,18 +241,18 @@ const ChampionnatTab: React.FC<Props> = ({
       {/* Quick overview: upcoming + recent */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Prochains matchs */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
             <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
               <Clock size={16} className="text-accent" />
             </div>
             <h3 className="font-semibold text-foreground">Prochains matchs</h3>
-            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{upcomingMatches.length}</span>
+            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full font-medium">{upcomingMatches.length}</span>
           </div>
           {upcomingMatches.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Aucun match à venir</p>
+            <p className="text-sm text-muted-foreground text-center py-10">Aucun match à venir</p>
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-border/50">
               {upcomingMatches.map((m, idx) => {
                 const champ = championships.find(c => c.id === m.championshipId);
                 const matchDate = new Date(m.date);
@@ -260,36 +260,36 @@ const ChampionnatTab: React.FC<Props> = ({
                 const diffDays = Math.ceil((matchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                 const isImminent = diffDays <= 3;
                 return (
-                  <div key={m.id} className={`relative rounded-xl border transition-all ${isImminent ? 'border-accent/30 bg-accent/5' : 'border-border/50 bg-secondary/30'} ${idx === 0 ? 'ring-1 ring-accent/20' : ''}`}>
-                    <div className="px-4 py-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <CalendarDays size={12} />
-                          <span className="font-medium">
-                            {matchDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-                          </span>
-                        </div>
-                        {isImminent && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full animate-pulse">
-                            {diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
-                          </span>
-                        )}
+                  <div key={m.id} className={`px-5 py-4 transition-all ${isImminent ? 'bg-accent/5' : ''} ${idx === 0 ? 'border-l-4 border-l-accent' : ''}`}>
+                    {/* Date + badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        {matchDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      </span>
+                      {isImminent && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full animate-pulse">
+                          {diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
+                        </span>
+                      )}
+                    </div>
+                    {/* Teams */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
+                        <span className="text-sm font-bold text-foreground truncate text-right">{m.homeTeam}</span>
+                        <TeamLogo team={m.homeTeam} champId={m.championshipId} size={32} />
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 flex-1 justify-end">
-                          <span className="text-sm font-bold text-foreground truncate">{m.homeTeam}</span>
-                          <TeamLogo team={m.homeTeam} champId={m.championshipId} size={22} />
-                        </div>
-                        <div className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-semibold shrink-0">VS</div>
-                        <div className="flex items-center gap-2 flex-1">
-                          <TeamLogo team={m.awayTeam} champId={m.championshipId} size={22} />
-                          <span className="text-sm font-bold text-foreground truncate">{m.awayTeam}</span>
-                        </div>
+                      <div className="px-4 py-2 rounded-xl bg-secondary border border-border text-xs font-black text-muted-foreground tracking-widest shrink-0 min-w-[56px] text-center">
+                        VS
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground">
-                        <Trophy size={10} />
-                        <span>J{m.journee} • {champ?.name}</span>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <TeamLogo team={m.awayTeam} champId={m.championshipId} size={32} />
+                        <span className="text-sm font-bold text-foreground truncate">{m.awayTeam}</span>
                       </div>
+                    </div>
+                    {/* Champ info */}
+                    <div className="flex items-center gap-1.5 mt-2.5 text-[11px] text-muted-foreground">
+                      <Trophy size={10} />
+                      <span>Journée {m.journee} • {champ?.name}</span>
                     </div>
                   </div>
                 );
@@ -299,44 +299,47 @@ const ChampionnatTab: React.FC<Props> = ({
         </div>
 
         {/* Derniers résultats */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
             <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
               <Award size={16} className="text-accent" />
             </div>
             <h3 className="font-semibold text-foreground">Derniers résultats</h3>
-            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{recentResults.length}</span>
+            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full font-medium">{recentResults.length}</span>
           </div>
           {recentResults.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Aucun résultat</p>
+            <p className="text-sm text-muted-foreground text-center py-10">Aucun résultat</p>
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-border/50">
               {recentResults.map(m => {
                 const isHomeWin = m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore;
                 const isAwayWin = m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore;
                 const isDraw = m.homeScore !== null && m.awayScore !== null && m.homeScore === m.awayScore;
                 return (
-                  <div key={m.id} className="rounded-xl border border-border/50 bg-secondary/30 overflow-hidden">
-                    <div className="flex items-center justify-center gap-1.5 py-1 bg-muted/50 text-[11px] text-muted-foreground">
-                      <CalendarDays size={10} />
-                      {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-                      <span className="mx-1">•</span>
-                      <span>J{m.journee}</span>
+                  <div key={m.id} className="px-5 py-4">
+                    {/* Date */}
+                    <div className="text-center mb-3">
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                        {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        <span className="mx-1.5">•</span>
+                        Journée {m.journee}
+                      </span>
                     </div>
-                    <div className="flex items-center px-4 py-3">
-                      <div className="flex items-center gap-2 flex-1 justify-end">
-                        <span className={`text-sm font-bold truncate ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
+                    {/* Teams + Score */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
+                        <span className={`text-sm font-bold truncate text-right ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
                           {m.homeTeam}
                         </span>
-                        <TeamLogo team={m.homeTeam} champId={m.championshipId} size={22} />
+                        <TeamLogo team={m.homeTeam} champId={m.championshipId} size={32} />
                       </div>
-                      <div className={`mx-3 px-4 py-1 rounded-lg text-sm font-black min-w-[70px] text-center tracking-wider shadow-sm ${
+                      <div className={`px-5 py-2 rounded-xl text-base font-black min-w-[72px] text-center tracking-widest shadow-sm ${
                         isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
                       }`}>
                         {m.homeScore} - {m.awayScore}
                       </div>
-                      <div className="flex items-center gap-2 flex-1">
-                        <TeamLogo team={m.awayTeam} champId={m.championshipId} size={22} />
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <TeamLogo team={m.awayTeam} champId={m.championshipId} size={32} />
                         <span className={`text-sm font-bold truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
                           {m.awayTeam}
                         </span>
