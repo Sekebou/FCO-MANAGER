@@ -29,6 +29,7 @@ interface Props {
   championships: Championship[];
   matches: Match[];
   canManage: () => boolean | undefined;
+  canUpdateChampionnat: () => boolean | undefined;
   onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string> }) => void;
   onDeleteChampionship: (id: string) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
@@ -41,6 +42,7 @@ const ChampionnatTab: React.FC<Props> = ({
   championships,
   matches,
   canManage,
+  canUpdateChampionnat,
   onAddChampionship,
   onDeleteChampionship,
   onAddMatch,
@@ -377,7 +379,7 @@ const ChampionnatTab: React.FC<Props> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {canManage() && champ.fffUrl && onRefreshFromFFF && (
+                {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
                   <span
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -508,17 +510,9 @@ const ChampionnatTab: React.FC<Props> = ({
                                   }`}>
                                     {m.homeScore} - {m.awayScore}
                                   </div>
-                                ) : editingMatch === m.id ? (
-                                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5 shadow-sm">
-                                    <input type="number" min="0" value={editHome} onChange={e => setEditHome(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
-                                    <span className="text-muted-foreground font-bold text-lg">-</span>
-                                    <input type="number" min="0" value={editAway} onChange={e => setEditAway(Number(e.target.value))} className="w-12 text-center rounded-lg border border-border bg-secondary text-base font-bold py-1.5 focus:ring-2 focus:ring-accent/50 outline-none" />
-                                    <button onClick={() => handleSaveScore(m.id)} className="text-xs bg-accent text-accent-foreground px-3 py-1.5 rounded-lg font-semibold hover:brightness-110 transition-all shadow-sm">OK</button>
-                                    <button onClick={() => setEditingMatch(null)} className="text-xs text-muted-foreground hover:text-foreground px-1.5 transition-colors">✕</button>
-                                  </div>
                                 ) : (
                                   <div className="min-w-[68px] text-center">
-                                    {canManage() ? (
+                                    {canUpdateChampionnat() ? (
                                       <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-xs bg-accent/10 text-accent px-3.5 py-1.5 rounded-lg font-medium hover:bg-accent/20 transition-all">
                                         Score
                                       </button>
@@ -703,6 +697,98 @@ const ChampionnatTab: React.FC<Props> = ({
                 </button>
                 <button onClick={() => handleAddMatch(showAddMatch)} disabled={!matchHome || !matchAway || !matchDate} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20">
                   Ajouter
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal: Edit Score */}
+      {editingMatch && (() => {
+        const match = matches.find(m => m.id === editingMatch);
+        if (!match) return null;
+        const champ = championships.find(c => c.id === match.championshipId);
+        return (
+          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setEditingMatch(null)}>
+            <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+                    <Award size={20} className="text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Entrer le score</h3>
+                    <p className="text-xs text-muted-foreground">Journée {match.journee} • {champ?.name}</p>
+                  </div>
+                </div>
+                <button onClick={() => setEditingMatch(null)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                  <X size={16} className="text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-6">
+                {/* Date */}
+                <div className="text-center">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    {new Date(match.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+
+                {/* Teams + Score inputs */}
+                <div className="flex items-center gap-4">
+                  {/* Home */}
+                  <div className="flex-1 text-center space-y-3">
+                    <div className="flex flex-col items-center gap-2">
+                      <TeamLogo team={match.homeTeam} champId={match.championshipId} size={40} />
+                      <span className="text-sm font-bold text-foreground leading-tight">{match.homeTeam}</span>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Home size={10} />
+                        <span>Domicile</span>
+                      </div>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editHome}
+                      onChange={e => setEditHome(Number(e.target.value))}
+                      className="w-20 mx-auto text-center rounded-xl border-2 border-border bg-secondary text-3xl font-black py-3 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Separator */}
+                  <div className="text-2xl font-black text-muted-foreground/50 pt-8">—</div>
+
+                  {/* Away */}
+                  <div className="flex-1 text-center space-y-3">
+                    <div className="flex flex-col items-center gap-2">
+                      <TeamLogo team={match.awayTeam} champId={match.championshipId} size={40} />
+                      <span className="text-sm font-bold text-foreground leading-tight">{match.awayTeam}</span>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Plane size={10} />
+                        <span>Extérieur</span>
+                      </div>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editAway}
+                      onChange={e => setEditAway(Number(e.target.value))}
+                      className="w-20 mx-auto text-center rounded-xl border-2 border-border bg-secondary text-3xl font-black py-3 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex gap-3 p-5 border-t border-border">
+                <button onClick={() => setEditingMatch(null)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+                  Annuler
+                </button>
+                <button onClick={() => handleSaveScore(editingMatch)} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-accent/20">
+                  Valider le score
                 </button>
               </div>
             </div>

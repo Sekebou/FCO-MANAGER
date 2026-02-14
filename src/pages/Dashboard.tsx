@@ -493,8 +493,10 @@ const Dashboard = () => {
     } catch (err: any) { alert('Erreur: ' + err.message); }
   };
 
+  const canUpdateChampionnat = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur' || currentUser.role === 'joueur');
+
   const refreshFromFFF = async (championshipId: string, fffUrl: string) => {
-    if (!canManage()) return;
+    if (!canUpdateChampionnat()) return;
     try {
       const { scrapeFFFTeams } = await import('@/lib/api/scrape-fff');
       const result = await scrapeFFFTeams(fffUrl);
@@ -580,7 +582,7 @@ const Dashboard = () => {
   };
 
   const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
-    if (!canManage()) return;
+    if (!canUpdateChampionnat()) return;
     try {
       await updateDoc(doc(db, 'championship_matches', matchId), { homeScore, awayScore, played: true });
     } catch (err: any) { alert('Erreur: ' + err.message); }
@@ -746,6 +748,7 @@ const Dashboard = () => {
               championships={championships}
               matches={champMatches}
               canManage={canManage}
+              canUpdateChampionnat={canUpdateChampionnat}
               onAddChampionship={addChampionship}
               onDeleteChampionship={deleteChampionship}
               onAddMatch={addChampMatch}
