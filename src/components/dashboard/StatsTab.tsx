@@ -86,23 +86,62 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
 
           {/* Podium top 3 */}
           {attendanceStats.length >= 3 && (
-            <div className="grid grid-cols-3 gap-3 p-5 bg-gradient-to-b from-accent/5 to-transparent">
+            <div className="flex items-end justify-center gap-4 p-6 pb-2 bg-gradient-to-b from-accent/5 to-transparent">
               {[1, 0, 2].map((podiumIdx) => {
                 const item = attendanceStats[podiumIdx];
                 if (!item) return null;
                 const rate = item.attendance!.rate;
                 const isFirst = podiumIdx === 0;
+                const podiumHeights = ['h-36', 'h-44', 'h-32'];
                 const podiumIcons = [Crown, Medal, Award];
-                const podiumColors = ['text-yellow-500', 'text-gray-400', 'text-amber-700'];
-                const podiumBgs = ['bg-yellow-500/10 border-yellow-500/30', 'bg-gray-400/10 border-gray-400/30', 'bg-amber-700/10 border-amber-700/30'];
+                const podiumGradients = [
+                  'from-gray-300 to-gray-400 border-gray-300/50',
+                  'from-yellow-400 to-amber-500 border-yellow-400/50',
+                  'from-amber-600 to-amber-700 border-amber-600/50',
+                ];
+                const podiumGlows = [
+                  'shadow-gray-300/20',
+                  'shadow-yellow-400/30',
+                  'shadow-amber-600/20',
+                ];
+                const podiumTextColors = ['text-gray-500', 'text-yellow-500', 'text-amber-700'];
+                const podiumRanks = [2, 1, 3];
                 const PodiumIcon = podiumIcons[podiumIdx];
+
                 return (
-                  <div key={item.player.id} className={`flex flex-col items-center p-4 rounded-2xl border ${podiumBgs[podiumIdx]} ${isFirst ? 'scale-105 shadow-md' : ''} transition-all`}>
-                    <PodiumIcon size={isFirst ? 28 : 22} className={podiumColors[podiumIdx]} />
-                    <div className={`text-xs font-bold mt-1 ${podiumColors[podiumIdx]}`}>#{podiumIdx + 1}</div>
-                    <div className="text-sm font-bold text-foreground mt-2 text-center truncate w-full">{item.player.name}</div>
-                    <div className={`text-xl font-black mt-1 ${podiumColors[podiumIdx]}`}>{rate.toFixed(0)}%</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">Présent à {item.attendance!.present}/{item.attendance!.total} entraînements</div>
+                  <div key={item.player.id} className="flex flex-col items-center flex-1 max-w-[140px]">
+                    {/* Avatar + Icon */}
+                    <div className={`relative mb-3 ${isFirst ? 'scale-110' : ''} transition-transform`}>
+                      <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} p-[2px] shadow-lg ${podiumGlows[podiumIdx]}`}>
+                        <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                          <span className="text-sm font-bold text-foreground">
+                            {item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} flex items-center justify-center shadow-md`}>
+                        <PodiumIcon size={12} className="text-white" />
+                      </div>
+                    </div>
+
+                    {/* Name */}
+                    <div className="text-xs font-bold text-foreground text-center truncate w-full mb-1">
+                      {item.player.name}
+                    </div>
+
+                    {/* Rate */}
+                    <div className={`text-lg font-black ${podiumTextColors[podiumIdx]} mb-2`}>
+                      {rate.toFixed(0)}%
+                    </div>
+
+                    {/* Podium bar */}
+                    <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-2xl bg-gradient-to-t ${podiumGradients[podiumIdx]} border border-b-0 flex flex-col items-center justify-start pt-3 relative overflow-hidden`}>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                      <span className="text-2xl font-black text-white/90 relative z-10">{podiumRanks[podiumIdx]}</span>
+                      <span className="text-[9px] text-white/70 font-medium relative z-10 mt-1">
+                        {item.attendance!.present}/{item.attendance!.total}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
