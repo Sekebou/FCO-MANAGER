@@ -18,6 +18,7 @@ import AddCardForm from '@/components/modals/AddCardForm';
 import ChangePasswordForm from '@/components/modals/ChangePasswordForm';
 import AdminResetPasswordForm from '@/components/modals/AdminResetPasswordForm';
 import AvatarModal from '@/components/modals/AvatarModal';
+import ConfirmModal from '@/components/modals/ConfirmModal';
 
 export interface Player {
   id: string;
@@ -108,6 +109,7 @@ const Dashboard = () => {
   const [showAdminResetPassword, setShowAdminResetPassword] = useState(false);
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const canManage = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur');
   const canManageOwnPresence = (playerId: string) => {
@@ -232,19 +234,23 @@ const Dashboard = () => {
 
   const deletePlayer = async (playerId: string) => {
     if (!canManage()) return;
-    if (!window.confirm('Supprimer ce joueur ?')) return;
-    try {
-      await deleteDoc(doc(db, 'players', playerId));
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('playerId', '==', playerId));
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
-        await deleteDoc(doc(db, 'users', snapshot.docs[0].id));
+    setConfirmModal({
+      title: 'Supprimer ce joueur ?',
+      message: 'Cette action est irréversible. Le joueur et son compte associé seront supprimés.',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'players', playerId));
+          const usersRef = collection(db, 'users');
+          const q = query(usersRef, where('playerId', '==', playerId));
+          const snapshot = await getDocs(q);
+          if (!snapshot.empty) {
+            await deleteDoc(doc(db, 'users', snapshot.docs[0].id));
+          }
+        } catch (err: any) {
+          alert('Erreur: ' + err.message);
+        }
       }
-      alert('✅ Joueur supprimé');
-    } catch (err: any) {
-      alert('Erreur: ' + err.message);
-    }
+    });
   };
 
   const addEvent = async (eventData: any) => {
@@ -288,28 +294,32 @@ const Dashboard = () => {
   };
 
   const deleteEvent = async (eventId: string) => {
-    if (!window.confirm('Supprimer cet événement ?')) return;
-    try {
-      // Save attendance records before deleting
-      const event = events.find(e => e.id === eventId);
-      if (event && event.presences) {
-        for (const [playerId, status] of Object.entries(event.presences)) {
-          if (status === 'present' || status === 'absent') {
-            await addDoc(collection(db, 'attendance_records'), {
-              playerId,
-              eventId,
-              eventType: event.type,
-              eventDate: event.date,
-              status,
-              savedAt: new Date().toISOString(),
-            });
+    setConfirmModal({
+      title: 'Supprimer cet événement ?',
+      message: 'Les données de présence seront archivées avant la suppression.',
+      onConfirm: async () => {
+        try {
+          const event = events.find(e => e.id === eventId);
+          if (event && event.presences) {
+            for (const [playerId, status] of Object.entries(event.presences)) {
+              if (status === 'present' || status === 'absent') {
+                await addDoc(collection(db, 'attendance_records'), {
+                  playerId,
+                  eventId,
+                  eventType: event.type,
+                  eventDate: event.date,
+                  status,
+                  savedAt: new Date().toISOString(),
+                });
+              }
+            }
           }
+          await deleteDoc(doc(db, 'events', eventId));
+        } catch (err: any) {
+          alert('Erreur: ' + err.message);
         }
       }
-      await deleteDoc(doc(db, 'events', eventId));
-    } catch (err: any) {
-      alert('Erreur: ' + err.message);
-    }
+    });
   };
 
   const addNews = async (newsData: any) => {
@@ -327,12 +337,17 @@ const Dashboard = () => {
   };
 
   const deleteNews = async (newsId: string) => {
-    if (!window.confirm('Supprimer cette actualité ?')) return;
-    try {
-      await deleteDoc(doc(db, 'news', newsId));
-    } catch (err: any) {
-      alert('Erreur: ' + err.message);
-    }
+    setConfirmModal({
+      title: 'Supprimer cette actualité ?',
+      message: 'Cette action est irréversible.',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'news', newsId));
+        } catch (err: any) {
+          alert('Erreur: ' + err.message);
+        }
+      }
+    });
   };
 
   const addCard = async (cardData: any) => {
@@ -351,12 +366,17 @@ const Dashboard = () => {
 
   const deleteCard = async (cardId: string) => {
     if (currentUser?.role !== 'admin') return;
-    if (!window.confirm('Supprimer ce carton ?')) return;
-    try {
-      await deleteDoc(doc(db, 'cards', cardId));
-    } catch (err: any) {
-      alert('Erreur: ' + err.message);
-    }
+    setConfirmModal({
+      title: 'Supprimer ce carton ?',
+      message: 'Cette action est irréversible.',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'cards', cardId));
+        } catch (err: any) {
+          alert('Erreur: ' + err.message);
+        }
+      }
+    });
   };
 
   const updatePlayerStats = async (playerId: string, field: string, value: string) => {
@@ -556,6 +576,14 @@ const Dashboard = () => {
           onAvatarUpdated={(photoURL) => {
             setCurrentUser({ ...currentUser, photoURL });
           }}
+        />
+      )}
+      {confirmModal && (
+        <ConfirmModal
+          title={confirmModal.title}
+          message={confirmModal.message}
+          onConfirm={confirmModal.onConfirm}
+          onClose={() => setConfirmModal(null)}
         />
       )}
     </div>

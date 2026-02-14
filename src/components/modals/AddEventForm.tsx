@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { X, CalendarDays, Type, Bell } from 'lucide-react';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -8,31 +9,90 @@ interface Props {
 const AddEventForm = ({ onSubmit, onClose }: Props) => {
   const [formData, setFormData] = useState({ title: '', date: '', type: 'match', sendNotification: true });
 
+  const typeOptions = [
+    { value: 'match', label: '⚽ Match', color: 'bg-accent/10 border-accent/30 text-accent' },
+    { value: 'training', label: '🏃 Entraînement', color: 'bg-purple-500/10 border-purple-500/30 text-purple-600' },
+    { value: 'other', label: '📌 Autre', color: 'bg-muted border-border text-muted-foreground' },
+  ];
+
   return (
-    <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-card rounded-2xl p-6 max-w-md w-full border border-border shadow-xl animate-fade-in">
-        <h3 className="text-xl font-bold text-foreground mb-5">Ajouter un événement</h3>
-        <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full p-3 bg-secondary border border-border rounded-xl mb-3 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
-        <input type="date" className="w-full p-3 bg-secondary border border-border rounded-xl mb-3 text-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
-        <select className="w-full p-3 bg-secondary border border-border rounded-xl mb-3 text-foreground outline-none focus:ring-2 focus:ring-accent text-sm" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
-          <option value="match">Match</option><option value="training">Entraînement</option><option value="other">Autre</option>
-        </select>
-
-        {(formData.type === 'match' || formData.type === 'training') && (
-          <div className="mb-4 p-3 bg-accent/5 border border-accent/20 rounded-xl">
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={formData.sendNotification} onChange={(e) => setFormData({ ...formData, sendNotification: e.target.checked })} className="mt-1 accent-accent" />
-              <div>
-                <span className="font-medium text-sm text-foreground">📧 Notifier les joueurs</span>
-                <p className="text-xs text-muted-foreground mt-0.5">Email de confirmation de présence</p>
-              </div>
-            </label>
+    <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-card rounded-2xl w-full max-w-md border border-border shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+              <CalendarDays size={20} className="text-accent" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground">Nouvel événement</h3>
           </div>
-        )}
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+            <X size={16} className="text-muted-foreground" />
+          </button>
+        </div>
 
-        <div className="flex gap-2">
-          <button onClick={() => onSubmit(formData)} disabled={!formData.title || !formData.date} className="flex-1 bg-accent text-accent-foreground p-3 rounded-xl font-medium hover:bg-accent/90 transition-all disabled:opacity-50 text-sm">Ajouter</button>
-          <button onClick={onClose} className="flex-1 bg-secondary text-foreground p-3 rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">Annuler</button>
+        {/* Body */}
+        <div className="p-5 space-y-4">
+          <div className="relative">
+            <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+          </div>
+
+          <div className="relative">
+            <CalendarDays size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input type="date" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
+          </div>
+
+          {/* Type selector */}
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
+            <div className="grid grid-cols-3 gap-2">
+              {typeOptions.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: opt.value })}
+                  className={`py-2.5 px-3 rounded-xl text-xs font-semibold border-2 transition-all ${
+                    formData.type === opt.value ? opt.color + ' scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notification */}
+          {(formData.type === 'match' || formData.type === 'training') && (
+            <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.sendNotification ? 'bg-accent border-accent' : 'border-border'}`}>
+                  {formData.sendNotification && <span className="text-accent-foreground text-xs">✓</span>}
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    <Bell size={14} className="text-accent" /> Notifier les joueurs
+                  </span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Email de confirmation de présence</p>
+                </div>
+              </label>
+              <input type="checkbox" className="hidden" checked={formData.sendNotification} onChange={(e) => setFormData({ ...formData, sendNotification: e.target.checked })} />
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 p-5 border-t border-border">
+          <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+            Annuler
+          </button>
+          <button
+            onClick={() => onSubmit(formData)}
+            disabled={!formData.title || !formData.date}
+            className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
+          >
+            Créer
+          </button>
         </div>
       </div>
     </div>
