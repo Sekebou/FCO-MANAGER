@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, deleteApp } from 'firebase/app';
 import { 
   getAuth, 
   signInWithEmailAndPassword,
@@ -42,6 +42,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Secondary app for creating users without switching the current session
+export const createUserWithoutSignIn = async (email: string, password: string) => {
+  const secondaryApp = initializeApp(firebaseConfig, 'secondary');
+  const secondaryAuth = getAuth(secondaryApp);
+  try {
+    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    return userCredential;
+  } finally {
+    await signOut(secondaryAuth);
+    await deleteApp(secondaryApp);
+  }
+};
 
 export {
   signInWithEmailAndPassword,
