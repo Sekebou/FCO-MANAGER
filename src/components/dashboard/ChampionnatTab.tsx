@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2 } from 'lucide-react';
+import { scrapeFFFTeams } from '@/lib/api/scrape-fff';
 
 export interface Championship {
   id: string;
@@ -50,6 +51,8 @@ const ChampionnatTab: React.FC<Props> = ({
   const [champName, setChampName] = useState('');
   const [champSeason, setChampSeason] = useState('2024-2025');
   const [teamsInput, setTeamsInput] = useState('');
+  const [fffUrl, setFffUrl] = useState('');
+  const [isScrapingFFF, setIsScrapingFFF] = useState(false);
 
   // Add match form state
   const [matchHome, setMatchHome] = useState('');
@@ -102,7 +105,24 @@ const ChampionnatTab: React.FC<Props> = ({
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { alert('Ajoutez au moins 2 équipes'); return; }
     onAddChampionship({ name: champName, season: champSeason, teams });
-    setChampName(''); setTeamsInput(''); setShowAddChamp(false);
+    setChampName(''); setTeamsInput(''); setFffUrl(''); setShowAddChamp(false);
+  };
+
+  const handleImportFFF = async () => {
+    if (!fffUrl.trim()) return;
+    setIsScrapingFFF(true);
+    try {
+      const result = await scrapeFFFTeams(fffUrl);
+      if (result.success && result.teams && result.teams.length > 0) {
+        setTeamsInput(result.teams.join('\n'));
+      } else {
+        alert(result.error || 'Aucune équipe trouvée sur cette page');
+      }
+    } catch {
+      alert('Erreur lors de la récupération des équipes');
+    } finally {
+      setIsScrapingFFF(false);
+    }
   };
 
   const handleAddMatch = (champId: string) => {
@@ -419,6 +439,25 @@ const ChampionnatTab: React.FC<Props> = ({
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saison</label>
                 <input value={champSeason} onChange={e => setChampSeason(e.target.value)} placeholder="2024-2025" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Importer depuis la FFF</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input value={fffUrl} onChange={e => setFffUrl(e.target.value)} placeholder="URL epreuves.fff.fr..." className="w-full pl-9 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleImportFFF}
+                    disabled={!fffUrl.trim() || isScrapingFFF}
+                    className="px-4 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center gap-2 whitespace-nowrap"
+                  >
+                    {isScrapingFFF ? <Loader2 size={14} className="animate-spin" /> : <Link size={14} />}
+                    {isScrapingFFF ? 'Import...' : 'Importer'}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">Collez l'URL d'une page équipe/classement FFF pour importer les clubs</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipes (une par ligne)</label>
