@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Player, Event, Card, AttendanceRecord } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award } from 'lucide-react';
+import { Plus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap } from 'lucide-react';
 
 interface Props {
   players: Player[];
@@ -145,99 +145,101 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
         <div className="grid gap-4">
           {players.map(player => {
             const playerCards = getPlayerCards(player.id);
+            const matches = player.matches || 0;
+            const goals = player.goals || 0;
+            const assists = player.assists || 0;
+            const avgGoals = matches > 0 ? (goals / matches).toFixed(2) : '—';
+
             return (
-              <div key={player.id} className="bg-card border border-border rounded-2xl p-5 animate-fade-in">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg text-foreground">{player.name}</h3>
-                    <p className="text-sm text-muted-foreground">{player.position}</p>
+              <div key={player.id} className="bg-card border border-border rounded-2xl overflow-hidden animate-fade-in">
+                {/* Player header */}
+                <div className="flex items-center justify-between p-5 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-primary flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-sm">{player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-foreground">{player.name}</h3>
+                      <span className="text-xs font-medium text-muted-foreground px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
+                    </div>
                   </div>
                   {canManage() && (
-                    <button onClick={() => deletePlayer(player.id)} className="text-destructive hover:bg-destructive/10 p-2 rounded-lg transition-all text-sm flex items-center gap-1">
-                      <Trash2 size={16} />
+                    <button onClick={() => deletePlayer(player.id)} className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all">
+                      <Trash2 size={15} className="text-destructive" />
                     </button>
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-accent/5 p-3 rounded-xl">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Activity size={14} className="text-accent" />
-                      <span className="text-xs text-muted-foreground">Matchs</span>
+                {/* Stats grid */}
+                <div className="grid grid-cols-4 gap-px bg-border mx-5 rounded-xl overflow-hidden mb-4">
+                  {[
+                    { icon: Activity, label: 'Matchs', value: matches, field: 'matches', color: 'text-accent' },
+                    { icon: Target, label: 'Buts', value: goals, field: 'goals', color: 'text-success' },
+                    { icon: Zap, label: 'Passes D.', value: assists, field: 'assists', color: 'text-purple-500' },
+                    { icon: TrendingUp, label: 'Moy/Match', value: avgGoals, field: null, color: 'text-muted-foreground' },
+                  ].map((stat) => (
+                    <div key={stat.label} className="bg-card p-3 flex flex-col items-center text-center">
+                      <stat.icon size={15} className={`${stat.color} mb-1.5`} />
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{stat.label}</span>
+                      {canManage() && stat.field ? (
+                        <input
+                          type="number"
+                          value={stat.value}
+                          onChange={(e) => updatePlayerStats(player.id, stat.field!, e.target.value)}
+                          className="text-xl font-bold w-full bg-transparent text-foreground outline-none text-center mt-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          min="0"
+                        />
+                      ) : (
+                        <div className="text-xl font-bold text-foreground mt-0.5">{stat.value}</div>
+                      )}
                     </div>
-                    {canManage() ? (
-                      <input type="number" value={player.matches || 0} onChange={(e) => updatePlayerStats(player.id, 'matches', e.target.value)} className="text-xl font-bold w-full bg-transparent text-foreground outline-none" min="0" />
-                    ) : (
-                      <div className="text-xl font-bold text-foreground">{player.matches || 0}</div>
-                    )}
-                  </div>
-                  <div className="bg-success/5 p-3 rounded-xl">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Target size={14} className="text-success" />
-                      <span className="text-xs text-muted-foreground">Buts</span>
-                    </div>
-                    {canManage() ? (
-                      <input type="number" value={player.goals || 0} onChange={(e) => updatePlayerStats(player.id, 'goals', e.target.value)} className="text-xl font-bold w-full bg-transparent text-foreground outline-none" min="0" />
-                    ) : (
-                      <div className="text-xl font-bold text-foreground">{player.goals || 0}</div>
-                    )}
-                  </div>
-                  <div className="bg-purple-50 p-3 rounded-xl">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Trophy size={14} className="text-purple-600" />
-                      <span className="text-xs text-muted-foreground">Passes D.</span>
-                    </div>
-                    {canManage() ? (
-                      <input type="number" value={player.assists || 0} onChange={(e) => updatePlayerStats(player.id, 'assists', e.target.value)} className="text-xl font-bold w-full bg-transparent text-foreground outline-none" min="0" />
-                    ) : (
-                      <div className="text-xl font-bold text-foreground">{player.assists || 0}</div>
-                    )}
-                  </div>
+                  ))}
                 </div>
 
-                {(player.matches || 0) > 0 && (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Moyenne: {((player.goals || 0) / (player.matches || 1)).toFixed(2)} buts/match
-                  </p>
-                )}
-
                 {/* Cards section */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-sm text-muted-foreground">Cartons</h4>
+                <div className="px-5 pb-5">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <Shield size={14} className="text-muted-foreground" />
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cartons</h4>
+                    </div>
                     {currentUser?.role === 'admin' && (
-                      <button onClick={() => onAddCard(player.id)} className="text-xs bg-destructive/10 text-destructive px-2.5 py-1 rounded-lg hover:bg-destructive/20 font-medium transition-all">
-                        + Carton
+                      <button onClick={() => onAddCard(player.id)} className="text-xs text-destructive font-semibold hover:bg-destructive/10 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+                        <Plus size={12} /> Carton
                       </button>
                     )}
                   </div>
                   {playerCards.length === 0 ? (
-                    <div className="bg-success/5 border border-success/20 rounded-xl p-2 text-center">
-                      <p className="text-xs text-success font-medium">✅ Aucun carton</p>
+                    <div className="flex items-center gap-2 py-2.5 px-3 bg-secondary/50 rounded-xl">
+                      <Check size={14} className="text-success" />
+                      <p className="text-xs text-muted-foreground font-medium">Aucun carton</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {playerCards.map(card => (
-                        <div key={card.id} className={`border rounded-xl p-3 ${card.type === 'yellow' ? 'bg-warning/5 border-warning/30' : 'bg-destructive/5 border-destructive/30'}`}>
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${card.type === 'yellow' ? 'bg-warning text-warning-foreground' : 'bg-destructive text-destructive-foreground'}`}>
-                                  {card.type === 'yellow' ? '🟨 JAUNE' : '🟥 ROUGE'}
-                                </span>
-                                <span className="text-xs text-muted-foreground">{new Date(card.date).toLocaleDateString('fr-FR')}</span>
-                              </div>
-                              <p className="text-sm text-foreground mt-1">{card.reason}</p>
-                              {card.suspendedUntil && (
-                                <p className="text-xs text-destructive font-medium mt-1">⚠️ Suspendu jusqu'au {new Date(card.suspendedUntil).toLocaleDateString('fr-FR')}</p>
-                              )}
+                        <div key={card.id} className={`flex items-center gap-3 p-3 rounded-xl border ${card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'}`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${card.type === 'yellow' ? 'bg-warning/20' : 'bg-destructive/20'}`}>
+                            <AlertTriangle size={14} className={card.type === 'yellow' ? 'text-warning' : 'text-destructive'} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
+                                {card.type === 'yellow' ? 'JAUNE' : 'ROUGE'}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Calendar size={10} /> {new Date(card.date).toLocaleDateString('fr-FR')}
+                              </span>
                             </div>
-                            {currentUser?.role === 'admin' && (
-                              <button onClick={() => deleteCard(card.id)} className="text-destructive hover:bg-destructive/10 p-1 rounded-lg transition-all">
-                                <Trash2 size={14} />
-                              </button>
+                            <p className="text-xs text-foreground truncate mt-0.5">{card.reason}</p>
+                            {card.suspendedUntil && (
+                              <p className="text-[10px] text-destructive font-medium mt-0.5">Suspendu → {new Date(card.suspendedUntil).toLocaleDateString('fr-FR')}</p>
                             )}
                           </div>
+                          {currentUser?.role === 'admin' && (
+                            <button onClick={() => deleteCard(card.id)} className="w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all shrink-0">
+                              <Trash2 size={13} className="text-destructive/60" />
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
