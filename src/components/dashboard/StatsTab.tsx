@@ -71,7 +71,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, currentUser, canM
                   <Trophy size={20} className="text-accent-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Classement présences</h3>
+                  <h3 className="text-lg font-bold text-foreground">Classement présences aux entraînements</h3>
                   <p className="text-xs text-muted-foreground">Du plus assidu au moins assidu</p>
                 </div>
               </div>
