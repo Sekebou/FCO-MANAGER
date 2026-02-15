@@ -20,7 +20,7 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
             <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
               <UserPlus size={20} className="text-accent" />
             </div>
-            <h3 className="text-lg font-bold text-foreground">Ajouter un joueur</h3>
+            <h3 className="text-lg font-bold text-foreground">Ajouter un membre</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
             <X size={16} className="text-muted-foreground" />
@@ -29,28 +29,7 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
 
         {/* Body */}
         <div className="p-5 space-y-4">
-          {/* Info section */}
-          <div className="space-y-3">
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Informations</label>
-            <div className="relative">
-              <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" placeholder="Nom complet" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-            </div>
-            <div className="relative">
-              <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <select className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })}>
-                <option>Gardien</option><option>Défenseur</option><option>Milieu</option><option>Attaquant</option>
-              </select>
-            </div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Expiration de licence</label>
-            <div className="relative">
-              <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="date" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.licenseExpiry} onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })} />
-            </div>
-            <p className="text-[11px] text-muted-foreground mt-1">📋 Date de fin de validité de la licence FFF du joueur</p>
-          </div>
-
-          {/* Role section */}
+          {/* Role section - first so it controls visibility */}
           <div className="space-y-3">
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rôle</label>
             <div className="relative">
@@ -66,6 +45,31 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
                 <option value="admin">Administrateur</option>
               </select>
             </div>
+          </div>
+
+          {/* Info section */}
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Informations</label>
+            <div className="relative">
+              <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="text" placeholder="Nom complet" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            </div>
+            {formData.role !== 'photographe' && (
+              <>
+                <div className="relative">
+                  <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <select className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none" value={formData.position} onChange={(e) => setFormData({ ...formData, position: e.target.value })}>
+                    <option>Gardien</option><option>Défenseur</option><option>Milieu</option><option>Attaquant</option>
+                  </select>
+                </div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Expiration de licence</label>
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input type="date" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.licenseExpiry} onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })} />
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">📋 Date de fin de validité de la licence FFF du joueur</p>
+              </>
+            )}
           </div>
 
           {/* Account section */}

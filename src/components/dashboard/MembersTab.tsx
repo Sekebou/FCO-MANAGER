@@ -132,7 +132,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                       <Mail size={12} className="text-accent shrink-0" />
                       <span className="truncate">{member.email}</span>
                     </div>
-                    {player && (
+                    {player && member.role !== 'photographe' && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Target size={12} className="text-accent shrink-0" />
                         <span>Poste : <span className="font-medium text-foreground">{player.position}</span></span>
@@ -144,8 +144,8 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                     </div>
                   </div>
 
-                  {/* Stats bar */}
-                  {player && (
+                  {/* Stats bar - hidden for photographe */}
+                  {player && member.role !== 'photographe' && (
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       <div className="bg-accent/5 rounded-xl p-2.5 text-center">
                         <Activity size={14} className="text-accent mx-auto mb-1" />
@@ -165,8 +165,8 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                     </div>
                   )}
 
-                  {/* License badge */}
-                  {license && (
+                  {/* License badge - hidden for photographe */}
+                  {license && member.role !== 'photographe' && (
                     <div className={`relative flex items-center gap-3 p-3 rounded-xl text-xs font-semibold mb-3 overflow-hidden ${
                       license.status === 'active' ? 'bg-accent/10 text-accent border border-accent/20' :
                       license.status === 'expiring' ? 'bg-warning/10 text-warning border border-warning/20' :
@@ -187,8 +187,8 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                     </div>
                   )}
 
-                  {/* Cards */}
-                  {playerCards.length > 0 && (
+                  {/* Cards - hidden for photographe */}
+                  {playerCards.length > 0 && member.role !== 'photographe' && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {playerCards.map(card => (
                         <span key={card.id} className={`px-2 py-1 rounded-lg text-[10px] font-bold ${

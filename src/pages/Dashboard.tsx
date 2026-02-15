@@ -270,28 +270,35 @@ const Dashboard = () => {
         userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
       }
 
-      // Account created successfully (or not needed) — now create the player
-      const playerRef = await addDoc(collection(db, 'players'), {
-        name: playerData.name,
-        position: playerData.position,
-        matches: 0,
-        goals: 0,
-        assists: 0,
-        licenseExpiry: playerData.licenseExpiry || null,
-        createdAt: new Date().toISOString(),
-      });
+      // For photographe, don't create a player document
+      const isPhotographe = playerData.role === 'photographe';
+      let playerRefId: string | undefined;
+
+      if (!isPhotographe) {
+        const playerRef = await addDoc(collection(db, 'players'), {
+          name: playerData.name,
+          position: playerData.position,
+          matches: 0,
+          goals: 0,
+          assists: 0,
+          licenseExpiry: playerData.licenseExpiry || null,
+          createdAt: new Date().toISOString(),
+        });
+        playerRefId = playerRef.id;
+      }
 
       if (userCredential) {
         const user = userCredential.user;
         const username = playerData.email.split('@')[0];
-        await setDoc(doc(db, 'users', user.uid), {
+        const userData: any = {
           email: playerData.email,
           username,
           role: playerData.role || 'joueur',
           name: playerData.name,
-          playerId: playerRef.id,
           createdAt: new Date().toISOString(),
-        });
+        };
+        if (playerRefId) userData.playerId = playerRefId;
+        await setDoc(doc(db, 'users', user.uid), userData);
         setPlayerCreatedResult({ name: playerData.name, email: playerData.email, password: playerData.password, withAccount: true });
       } else {
         setPlayerCreatedResult({ name: playerData.name, withAccount: false });
