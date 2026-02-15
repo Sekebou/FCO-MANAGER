@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
@@ -13,6 +13,7 @@ import NewsTab from '@/components/dashboard/NewsTab';
 import CalendarTab from '@/components/dashboard/CalendarTab';
 import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
+import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
 import AddNewsForm from '@/components/modals/AddNewsForm';
@@ -95,6 +96,7 @@ const tabs = [
   { id: 'championnat', label: 'Championnat', icon: Trophy },
   { id: 'news', label: 'Actualités', icon: Bell },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
+  { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: Users },
 ];
 
@@ -116,6 +118,8 @@ const Dashboard = () => {
   const [newsComments, setNewsComments] = useState<NewsComment[]>([]);
   const [championships, setChampionships] = useState<Championship[]>([]);
   const [champMatches, setChampMatches] = useState<Match[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -135,6 +139,7 @@ const Dashboard = () => {
   const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
 
   const canManage = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur');
+  const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur' || currentUser.role === 'photographe'));
   const canManageOwnPresence = (playerId: string) => {
     if (canManage()) return true;
     return currentUser && currentUser.role === 'joueur' && currentUser.playerId === playerId;
@@ -206,6 +211,19 @@ const Dashboard = () => {
         const data: Match[] = [];
         snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Match));
         setChampMatches(data);
+      }, (err) => setError(err.message)));
+
+      const albumsQ = query(collection(db, 'albums'), orderBy('createdAt', 'desc'));
+      unsubs.push(onSnapshot(albumsQ, (snapshot) => {
+        const data: Album[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Album));
+        setAlbums(data);
+      }, (err) => setError(err.message)));
+
+      unsubs.push(onSnapshot(collection(db, 'gallery_photos'), (snapshot) => {
+        const data: Photo[] = [];
+        snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Photo));
+        setGalleryPhotos(data);
       }, (err) => setError(err.message)));
 
       setLoading(false);
@@ -619,6 +637,96 @@ const Dashboard = () => {
     });
   };
 
+  // Gallery CRUD
+  const createAlbum = async (data: { name: string; description?: string }) => {
+    if (!canManagePhotos()) return;
+    await addDoc(collection(db, 'albums'), {
+      ...data,
+      createdBy: currentUser!.uid,
+      createdAt: new Date().toISOString(),
+    });
+  };
+
+  const deleteAlbum = (albumId: string) => {
+    if (!canManagePhotos()) return;
+    setConfirmModal({
+      title: 'Supprimer cet album ?',
+      message: 'Toutes les photos de cet album seront supprimées.',
+      onConfirm: async () => {
+        try {
+          // Delete all photos in album
+          const albumPhotos = galleryPhotos.filter(p => p.albumId === albumId);
+          for (const photo of albumPhotos) {
+            try {
+              await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-photos`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+                body: JSON.stringify({ path: photo.storagePath }),
+              });
+            } catch {}
+            await deleteDoc(doc(db, 'gallery_photos', photo.id));
+          }
+          await deleteDoc(doc(db, 'albums', albumId));
+          toast.success('Album supprimé');
+        } catch (err: any) {
+          toast.error('Erreur: ' + err.message);
+        }
+      }
+    });
+  };
+
+  const uploadPhotos = async (albumId: string, files: File[]) => {
+    if (!canManagePhotos()) return;
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('albumId', albumId);
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-photos`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Upload failed');
+      }
+
+      const { url, path } = await res.json();
+      await addDoc(collection(db, 'gallery_photos'), {
+        albumId,
+        url,
+        storagePath: path,
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: currentUser!.uid,
+        uploaderName: currentUser!.name,
+      });
+    }
+  };
+
+  const deletePhoto = (photo: { id: string; storagePath: string }) => {
+    if (!canManagePhotos()) return;
+    setConfirmModal({
+      title: 'Supprimer cette photo ?',
+      message: 'Cette action est irréversible.',
+      onConfirm: async () => {
+        try {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-photos`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+            body: JSON.stringify({ path: photo.storagePath }),
+          });
+          await deleteDoc(doc(db, 'gallery_photos', photo.id));
+          toast.success('Photo supprimée');
+        } catch (err: any) {
+          toast.error('Erreur: ' + err.message);
+        }
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -689,7 +797,7 @@ const Dashboard = () => {
                 <div className="hidden sm:block text-left">
                   <div className="text-sm font-semibold text-primary-foreground leading-tight">{currentUser?.name}</div>
                   <div className="text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
-                    {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : 'Joueur'}
+                    {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : currentUser?.role === 'photographe' ? 'Photographe' : 'Joueur'}
                   </div>
                 </div>
               </button>
@@ -791,6 +899,18 @@ const Dashboard = () => {
             />
           )}
           {activeTab === 'calendar' && <CalendarTab events={events} />}
+          {activeTab === 'gallery' && (
+            <GalleryTab
+              albums={albums}
+              photos={galleryPhotos}
+              currentUser={currentUser}
+              canManagePhotos={canManagePhotos}
+              onCreateAlbum={createAlbum}
+              onDeleteAlbum={deleteAlbum}
+              onUploadPhotos={uploadPhotos}
+              onDeletePhoto={deletePhoto}
+            />
+          )}
           {activeTab === 'members' && (
             <MembersTab
               members={members}

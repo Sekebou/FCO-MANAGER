@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera } from 'lucide-react';
 
 interface Props {
   members: Member[];
@@ -32,6 +32,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   const roleConfig = {
     admin: { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     entraineur: { icon: Dumbbell, color: 'accent', label: 'Entraîneur', gradient: 'from-emerald-500/20 to-teal-500/20' },
+    photographe: { icon: Camera, color: 'accent', label: 'Photographe', gradient: 'from-purple-500/20 to-pink-500/20' },
     joueur: { icon: UserCircle, color: 'primary', label: 'Joueur', gradient: 'from-blue-500/20 to-indigo-500/20' },
   };
 
