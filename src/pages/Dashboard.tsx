@@ -287,7 +287,7 @@ const Dashboard = () => {
         await setDoc(doc(db, 'users', user.uid), {
           email: playerData.email,
           username,
-          role: 'joueur',
+          role: playerData.role || 'joueur',
           name: playerData.name,
           playerId: playerRef.id,
           createdAt: new Date().toISOString(),

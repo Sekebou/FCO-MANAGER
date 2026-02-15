@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, MapPin, Calendar, Mail, Lock, UserPlus } from 'lucide-react';
+import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield } from 'lucide-react';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -8,7 +8,7 @@ interface Props {
 
 const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
   const [formData, setFormData] = useState({
-    name: '', position: 'Attaquant', createAccount: true, email: '', password: '', licenseExpiry: ''
+    name: '', position: 'Attaquant', createAccount: true, email: '', password: '', licenseExpiry: '', role: 'joueur'
   });
 
   return (
@@ -48,6 +48,24 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
               <input type="date" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.licenseExpiry} onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })} />
             </div>
             <p className="text-[11px] text-muted-foreground mt-1">📋 Date de fin de validité de la licence FFF du joueur</p>
+          </div>
+
+          {/* Role section */}
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rôle</label>
+            <div className="relative">
+              <Shield size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <select
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              >
+                <option value="joueur">Joueur</option>
+                <option value="entraineur">Entraîneur</option>
+                <option value="photographe">Photographe</option>
+                <option value="admin">Administrateur</option>
+              </select>
+            </div>
           </div>
 
           {/* Account section */}
