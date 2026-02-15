@@ -760,8 +760,7 @@ const Dashboard = () => {
               deletePlayer={deletePlayer}
               getPlayerCards={getPlayerCards}
               deleteCard={deleteCard}
-              onAddPlayer={() => setShowAddPlayer(true)}
-              onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }}
+               onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }}
             />
           )}
           {activeTab === 'championnat' && (
@@ -802,7 +801,8 @@ const Dashboard = () => {
               canManage={canManage}
               getPlayerCards={getPlayerCards}
               deletePlayer={deletePlayer}
-              onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
+               onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
+               onAddPlayer={() => setShowAddPlayer(true)}
             />
           )}
         </div>
