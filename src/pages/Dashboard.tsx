@@ -245,6 +245,13 @@ const Dashboard = () => {
   const addPlayer = async (playerData: any) => {
     if (!canManage()) return;
     try {
+      // Create auth account FIRST — if it fails, no player is created
+      let userCredential: any = null;
+      if (playerData.createAccount && playerData.email && playerData.password) {
+        userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
+      }
+
+      // Account created successfully (or not needed) — now create the player
       const playerRef = await addDoc(collection(db, 'players'), {
         name: playerData.name,
         position: playerData.position,
@@ -255,8 +262,7 @@ const Dashboard = () => {
         createdAt: new Date().toISOString(),
       });
 
-      if (playerData.createAccount && playerData.email && playerData.password) {
-        const userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
+      if (userCredential) {
         const user = userCredential.user;
         const username = playerData.email.split('@')[0];
         await setDoc(doc(db, 'users', user.uid), {
