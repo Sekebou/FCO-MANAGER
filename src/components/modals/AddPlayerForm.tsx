@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield } from 'lucide-react';
+import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield, Users } from 'lucide-react';
+import { TEAMS } from '@/pages/Dashboard';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -8,7 +9,7 @@ interface Props {
 
 const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
   const [formData, setFormData] = useState({
-    name: '', position: 'Attaquant', createAccount: true, email: '', password: '', licenseExpiry: '', role: 'joueur'
+    name: '', position: 'Attaquant', createAccount: true, email: '', password: '', licenseExpiry: '', role: 'joueur', team: ''
   });
 
   return (
@@ -47,6 +48,25 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
             </div>
           </div>
 
+          {/* Team section - for joueur and entraineur */}
+          {(formData.role === 'joueur' || formData.role === 'entraineur') && (
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Équipe</label>
+              <div className="relative">
+                <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <select
+                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
+                  value={formData.team}
+                  onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                >
+                  <option value="">— Sélectionner une équipe —</option>
+                  {TEAMS.map(t => (
+                    <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           {/* Info section */}
           <div className="space-y-3">
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Informations</label>

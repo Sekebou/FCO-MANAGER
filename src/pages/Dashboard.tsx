@@ -23,6 +23,14 @@ import AdminResetPasswordForm from '@/components/modals/AdminResetPasswordForm';
 import AvatarModal from '@/components/modals/AvatarModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 
+export const TEAMS = [
+  { id: 'A', label: 'Équipe A', division: 'D1' },
+  { id: 'B', label: 'Équipe B', division: 'D4' },
+  { id: 'C', label: 'Équipe C', division: 'D6' },
+] as const;
+
+export type TeamId = typeof TEAMS[number]['id'];
+
 export interface Player {
   id: string;
   name: string;
@@ -31,6 +39,7 @@ export interface Player {
   goals?: number;
   assists?: number;
   licenseExpiry?: string;
+  team?: string;
 }
 
 export interface Event {
@@ -69,6 +78,7 @@ export interface Member {
   photoURL?: string | null;
   createdAt: string;
   username?: string;
+  team?: string;
 }
 
 export interface Card {
@@ -123,6 +133,25 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<string>(() => {
+    if (!currentUser) return '';
+    if (currentUser.role === 'admin') return localStorage.getItem('fco-selected-team') || '';
+    return currentUser.team || '';
+  });
+
+  const handleTeamChange = (team: string) => {
+    setSelectedTeam(team);
+    localStorage.setItem('fco-selected-team', team);
+  };
+
+  // Filtered data for team-scoped tabs
+  const filteredPlayers = selectedTeam ? players.filter(p => p.team === selectedTeam) : players;
+  const filteredChampionships = selectedTeam
+    ? championships.filter(c => (c as any).team === selectedTeam)
+    : championships;
+  const filteredChampMatches = selectedTeam
+    ? champMatches.filter(m => filteredChampionships.some(c => c.id === m.championshipId))
+    : champMatches;
 
   // Modals
   const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -282,6 +311,7 @@ const Dashboard = () => {
           goals: 0,
           assists: 0,
           licenseExpiry: playerData.licenseExpiry || null,
+          team: playerData.team || null,
           createdAt: new Date().toISOString(),
         });
         playerRefId = playerRef.id;
@@ -295,6 +325,7 @@ const Dashboard = () => {
           username,
           role: playerData.role || 'joueur',
           name: playerData.name,
+          team: playerData.team || null,
           createdAt: new Date().toISOString(),
         };
         if (playerRefId) userData.playerId = playerRefId;
@@ -527,7 +558,7 @@ const Dashboard = () => {
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
   // Championship CRUD
-  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
+  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; team?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
     if (!canManage()) return;
     try {
       const { matches: importedMatches, standings: importedStandings, teamLogos: importedLogos, ...champData } = data;
@@ -842,24 +873,43 @@ const Dashboard = () => {
       {/* Navigation Tabs */}
       <nav className="bg-card border-b border-border sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className={`${mobileMenuOpen ? 'flex flex-col' : 'hidden'} md:flex md:flex-row overflow-x-auto`}>
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => { handleTabChange(tab.id); setMobileMenuOpen(false); }}
-                  className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${
-                    activeTab === tab.id
-                      ? 'border-accent text-accent'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                  }`}
+          <div className="flex items-center justify-between">
+            <div className={`${mobileMenuOpen ? 'flex flex-col' : 'hidden'} md:flex md:flex-row overflow-x-auto flex-1`}>
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { handleTabChange(tab.id); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${
+                      activeTab === tab.id
+                        ? 'border-accent text-accent'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Team selector - visible on stats/championnat tabs */}
+            {(activeTab === 'stats' || activeTab === 'championnat') && (
+              <div className="flex items-center gap-2 py-2 pl-4 border-l border-border">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:block">Équipe</span>
+                <select
+                  value={selectedTeam}
+                  onChange={(e) => handleTeamChange(e.target.value)}
+                  disabled={currentUser?.role !== 'admin'}
+                  className="bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Icon size={18} />
-                  {tab.label}
-                </button>
-              );
-            })}
+                  {currentUser?.role === 'admin' && <option value="">Toutes les équipes</option>}
+                  {TEAMS.map(t => (
+                    <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </nav>
@@ -881,7 +931,7 @@ const Dashboard = () => {
           )}
           {activeTab === 'stats' && (
             <StatsTab
-              players={players}
+              players={filteredPlayers}
               events={events}
               cards={cards}
               attendanceRecords={attendanceRecords}
@@ -897,8 +947,8 @@ const Dashboard = () => {
           )}
           {activeTab === 'championnat' && (
             <ChampionnatTab
-              championships={championships}
-              matches={champMatches}
+              championships={filteredChampionships}
+              matches={filteredChampMatches}
               canManage={canManage}
               canUpdateChampionnat={canUpdateChampionnat}
               onAddChampionship={addChampionship}
