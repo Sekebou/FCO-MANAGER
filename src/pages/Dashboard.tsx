@@ -42,12 +42,34 @@ export interface Player {
   team?: string;
 }
 
+export interface Convocation {
+  status: 'titulaire' | 'remplacant' | 'non_convoque' | 'repos';
+  position?: string;
+  number?: number;
+}
+
+export const POSITIONS = [
+  'Gardien',
+  'Défenseur central',
+  'Latéral droit',
+  'Latéral gauche',
+  'Milieu défensif',
+  'Milieu central',
+  'Milieu offensif',
+  'Ailier droit',
+  'Ailier gauche',
+  'Attaquant',
+] as const;
+
 export interface Event {
   id: string;
   title: string;
   date: string;
   type: string;
+  team?: string;
   presences?: Record<string, string>;
+  convocations?: Record<string, Convocation>;
+  convocationsPublished?: boolean;
   createdAt?: string;
 }
 
@@ -394,15 +416,27 @@ const Dashboard = () => {
     try {
       const sendEmail = eventData.sendNotification;
       delete eventData.sendNotification;
-      await addDoc(collection(db, 'events'), {
+      
+      // For match events, attach the coach's team
+      const eventToSave: any = {
         ...eventData,
         presences: {},
         createdAt: new Date().toISOString(),
-      });
+      };
+      if (eventData.type === 'match' && currentUser?.team) {
+        eventToSave.team = currentUser.team;
+      }
+      
+      await addDoc(collection(db, 'events'), eventToSave);
 
       // Envoyer les notifications par email via EmailJS
       if (sendEmail) {
-        const memberEmails = members.filter(m => m.role === 'joueur').map(m => m.email);
+        // For match events, only notify players of the same team
+        let targetMembers = members.filter(m => m.role === 'joueur');
+        if (eventData.type === 'match' && currentUser?.team) {
+          targetMembers = targetMembers.filter(m => m.team === currentUser.team);
+        }
+        const memberEmails = targetMembers.map(m => m.email);
         const typeLabel = eventData.type === 'match' ? 'Match' : eventData.type === 'training' ? 'Entraînement' : 'Événement';
         const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -931,11 +965,44 @@ const Dashboard = () => {
               events={events}
               players={players}
               members={members}
+              currentUser={currentUser}
               canManage={canManage}
               canManageOwnPresence={canManageOwnPresence}
               togglePresence={togglePresence}
               deleteEvent={deleteEvent}
-               onAddEvent={() => setShowAddEvent(true)}
+              onAddEvent={() => setShowAddEvent(true)}
+              onUpdateConvocations={async (eventId, convocations) => {
+                try {
+                  await updateDoc(doc(db, 'events', eventId), { convocations, convocationsPublished: true });
+                  toast.success('Convocations publiées !');
+                } catch (err: any) {
+                  toast.error('Erreur: ' + err.message);
+                }
+              }}
+              onSendConvocationEmails={async (eventId) => {
+                const event = events.find(e => e.id === eventId);
+                if (!event?.convocations) return;
+                const dateFormatted = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                let sent = 0;
+                for (const [playerId, conv] of Object.entries(event.convocations)) {
+                  const player = players.find(p => p.id === playerId);
+                  const member = members.find(m => m.playerId === playerId);
+                  if (!member?.email || !player) continue;
+                  const statusLabel = conv.status === 'titulaire' ? 'Convoqué (Titulaire)' : conv.status === 'remplacant' ? 'Convoqué (Remplaçant)' : conv.status === 'repos' ? 'En repos' : 'Non convoqué';
+                  try {
+                    await emailjs.send('service_7wmhc61', 'template_m28qlzo', {
+                      to_email: member.email,
+                      event_title: `Convocation - ${event.title}`,
+                      event_type: statusLabel + (conv.position ? ` — Poste: ${conv.position}` : ''),
+                      event_date: dateFormatted,
+                    }, 'YAIU3poHgOd6cG6PI');
+                    sent++;
+                  } catch (emailErr) {
+                    console.error('Erreur envoi convocation à', member.email, emailErr);
+                  }
+                }
+                toast.success(`${sent} joueur${sent > 1 ? 's' : ''} notifié${sent > 1 ? 's' : ''} par email`);
+              }}
             />
           )}
           {activeTab === 'stats' && (
@@ -985,7 +1052,7 @@ const Dashboard = () => {
               onAddNews={() => setShowAddNews(true)}
             />
           )}
-          {activeTab === 'calendar' && <CalendarTab events={events} />}
+          {activeTab === 'calendar' && <CalendarTab events={events} currentUser={currentUser} />}
           {activeTab === 'gallery' && (
             <GalleryTab
               albums={albums}

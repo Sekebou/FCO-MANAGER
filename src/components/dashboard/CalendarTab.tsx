@@ -1,34 +1,61 @@
 import React from 'react';
 import type { Event } from '@/pages/Dashboard';
+import { TEAMS } from '@/pages/Dashboard';
+
+interface AppUser {
+  uid: string;
+  role: string;
+  team?: string;
+  [key: string]: any;
+}
 
 interface Props {
   events: Event[];
+  currentUser?: AppUser | null;
 }
 
-const CalendarTab = ({ events }: Props) => {
-  const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+const CalendarTab = ({ events, currentUser }: Props) => {
+  // Filter: match = team-specific, training/other = global
+  const filteredEvents = events.filter(e => {
+    if (e.type !== 'match') return true;
+    if (!currentUser || currentUser.role === 'admin') return true;
+    if (!e.team) return true;
+    return e.team === currentUser?.team;
+  });
+
+  const sorted = [...filteredEvents].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const past = sorted.filter(e => new Date(e.date) < new Date());
   const future = sorted.filter(e => new Date(e.date) >= new Date());
 
-  const EventCard = ({ event, isPast }: { event: Event; isPast?: boolean }) => (
-    <div className={`border-l-4 p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-accent/5'} ${!isPast ? 'shadow-sm' : ''}`}>
-      <div className="flex justify-between items-start">
-        <div>
-          <h4 className={`font-semibold ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}>{event.title}</h4>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
+  const EventCard = ({ event, isPast }: { event: Event; isPast?: boolean }) => {
+    const teamLabel = event.team ? TEAMS.find(t => t.id === event.team)?.label : null;
+    return (
+      <div className={`border-l-4 p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-accent/5'} ${!isPast ? 'shadow-sm' : ''}`}>
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className={`font-semibold ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}>{event.title}</h4>
+              {teamLabel && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
+                  {teamLabel}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+            event.type === 'match' ? 'bg-accent/10 text-accent' :
+            event.type === 'training' ? 'bg-purple-100 text-purple-700' :
+            'bg-muted text-muted-foreground'
+          }`}>
+            {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
+          </span>
         </div>
-        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-          event.type === 'match' ? 'bg-accent/10 text-accent' :
-          event.type === 'training' ? 'bg-purple-100 text-purple-700' :
-          'bg-muted text-muted-foreground'
-        }`}>
-          {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
-        </span>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-8">
