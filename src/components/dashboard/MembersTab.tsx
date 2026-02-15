@@ -11,12 +11,13 @@ interface Props {
   canManage: () => boolean | null;
   getPlayerCards: (playerId: string) => Card[];
   deletePlayer: (playerId: string) => void;
+  deleteMember: (memberId: string, playerId?: string) => void;
   onResetPassword: (member: Member) => void;
   onAddPlayer: () => void;
   onChangeRole: (memberId: string, newRole: string, password: string) => Promise<void>;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, onResetPassword, onAddPlayer, onChangeRole }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onAddPlayer, onChangeRole }: Props) => {
   const [roleChangeRequest, setRoleChangeRequest] = useState<{ memberId: string; memberName: string; newRole: string } | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
@@ -240,14 +241,12 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           <Lock size={13} />
                           Réinitialiser MDP
                         </button>
-                        {player && (
-                          <button
-                            onClick={() => deletePlayer(player.id)}
-                            className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => deleteMember(member.id, member.playerId)}
+                          className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </div>
                   )}
