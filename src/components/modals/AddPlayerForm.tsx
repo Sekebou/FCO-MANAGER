@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield, Users } from 'lucide-react';
 import { TEAMS } from '@/pages/Dashboard';
+import type { AppUser } from '@/contexts/AuthContext';
 
 interface Props {
   onSubmit: (data: any) => void;
   onClose: () => void;
+  currentUser: AppUser | null;
 }
 
-const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
+const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
+  const isAdmin = currentUser?.role === 'admin';
+  const isCoach = currentUser?.role === 'entraineur';
+
   const [formData, setFormData] = useState({
-    name: '', position: 'Attaquant', createAccount: true, email: '', password: '', licenseExpiry: '', role: 'joueur', team: ''
+    name: '', position: 'Attaquant', createAccount: true, email: '', password: '', licenseExpiry: '',
+    role: isCoach ? 'joueur' : 'joueur',
+    team: isCoach ? (currentUser?.team || '') : ''
   });
 
   return (
@@ -30,41 +37,57 @@ const AddPlayerForm = ({ onSubmit, onClose }: Props) => {
 
         {/* Body */}
         <div className="p-5 space-y-4">
-          {/* Role section - first so it controls visibility */}
+          {/* Role section */}
           <div className="space-y-3">
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rôle</label>
-            <div className="relative">
-              <Shield size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <select
-                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              >
-                <option value="joueur">Joueur</option>
-                <option value="entraineur">Entraîneur</option>
-                <option value="photographe">Photographe</option>
-                <option value="admin">Administrateur</option>
-              </select>
-            </div>
+            {isAdmin ? (
+              <div className="relative">
+                <Shield size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <select
+                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
+                  value={formData.role}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                >
+                  <option value="joueur">Joueur</option>
+                  <option value="entraineur">Entraîneur</option>
+                  <option value="photographe">Photographe</option>
+                  <option value="admin">Administrateur</option>
+                </select>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-accent/10 border border-accent/20 rounded-xl">
+                <Shield size={14} className="text-accent shrink-0" />
+                <span className="text-sm font-medium text-foreground">Joueur</span>
+              </div>
+            )}
           </div>
 
           {/* Team section - for joueur and entraineur */}
           {(formData.role === 'joueur' || formData.role === 'entraineur') && (
             <div className="space-y-3">
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Équipe</label>
-              <div className="relative">
-                <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
-                  value={formData.team}
-                  onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                >
-                  <option value="">— Sélectionner une équipe —</option>
-                  {TEAMS.map(t => (
-                    <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
-                  ))}
-                </select>
-              </div>
+              {isAdmin ? (
+                <div className="relative">
+                  <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <select
+                    className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
+                    value={formData.team}
+                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                  >
+                    <option value="">— Sélectionner une équipe —</option>
+                    {TEAMS.map(t => (
+                      <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
+                    ))}
+                  </select>
+                </div>
+              ) : currentUser?.team ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-accent/10 border border-accent/20 rounded-xl">
+                  <Users size={14} className="text-accent shrink-0" />
+                  <span className="text-sm font-medium text-foreground">
+                    {TEAMS.find(t => t.id === currentUser.team)?.label} ({TEAMS.find(t => t.id === currentUser.team)?.division})
+                  </span>
+                </div>
+              ) : null}
             </div>
           )}
           {/* Info section */}

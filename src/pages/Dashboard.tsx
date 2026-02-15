@@ -292,6 +292,13 @@ const Dashboard = () => {
 
   const addPlayer = async (playerData: any) => {
     if (!canManage()) return;
+
+    // Coaches can only create joueur accounts with their own team
+    if (currentUser?.role === 'entraineur') {
+      playerData.role = 'joueur';
+      playerData.team = currentUser.team || '';
+    }
+
     try {
       // Create auth account FIRST — if it fails, no player is created
       let userCredential: any = null;
@@ -1047,7 +1054,7 @@ const Dashboard = () => {
       </footer>
 
       {/* Modals */}
-      {showAddPlayer && <AddPlayerForm onSubmit={addPlayer} onClose={() => setShowAddPlayer(false)} />}
+      {showAddPlayer && <AddPlayerForm onSubmit={addPlayer} onClose={() => setShowAddPlayer(false)} currentUser={currentUser} />}
       {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} />}
       {showAddNews && <AddNewsForm onSubmit={addNews} onClose={() => setShowAddNews(false)} />}
       {showAddCard && <AddCardForm players={players} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
