@@ -43,6 +43,9 @@ const CalendarTab = ({ events, currentUser }: Props) => {
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {event.createdByName && (
+                <span className="text-muted-foreground/60"> · par {event.createdByName}</span>
+              )}
             </p>
           </div>
           <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${

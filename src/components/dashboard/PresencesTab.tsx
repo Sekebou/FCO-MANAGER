@@ -132,6 +132,9 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                   </div>
                   <p className="text-muted-foreground text-sm mt-0.5">
                     {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    {event.createdByName && (
+                      <span className="text-muted-foreground/60"> · par {event.createdByName}</span>
+                    )}
                   </p>
                   <div className="flex gap-2 mt-3">
                     <span className="flex items-center gap-1.5 bg-accent/10 text-accent px-3 py-1.5 rounded-full text-xs font-semibold">

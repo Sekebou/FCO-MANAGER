@@ -71,6 +71,7 @@ export interface Event {
   convocations?: Record<string, Convocation>;
   convocationsPublished?: boolean;
   createdBy?: string;
+  createdByName?: string;
   createdAt?: string;
 }
 
@@ -423,6 +424,7 @@ const Dashboard = () => {
         ...eventData,
         presences: {},
         createdBy: currentUser?.uid || '',
+        createdByName: currentUser?.name || '',
         createdAt: new Date().toISOString(),
       };
       if (eventData.type === 'match' && currentUser?.team) {
