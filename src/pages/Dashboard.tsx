@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
-import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn } from '@/lib/firebase';
+import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
   Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera
 } from 'lucide-react';
@@ -922,12 +922,23 @@ const Dashboard = () => {
               deletePlayer={deletePlayer}
                onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
                onAddPlayer={() => setShowAddPlayer(true)}
-               onChangeRole={async (memberId, newRole) => {
+               onChangeRole={async (memberId, newRole, password) => {
                  try {
+                   // Re-authenticate admin before changing role
+                   const user = firebaseAuth.currentUser;
+                   if (!user || !user.email) throw new Error('Non authentifié');
+                   const credential = EmailAuthProvider.credential(user.email, password);
+                   await reauthenticateWithCredential(user, credential);
+                   
                    await updateDoc(doc(db, 'users', memberId), { role: newRole });
-                   toast.success('Rôle mis à jour');
+                   toast.success('Rôle mis à jour avec succès');
                  } catch (err: any) {
-                   toast.error('Erreur: ' + err.message);
+                   if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                     toast.error('Mot de passe incorrect');
+                   } else {
+                     toast.error('Erreur: ' + err.message);
+                   }
+                   throw err;
                  }
                }}
             />
