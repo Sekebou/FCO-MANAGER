@@ -939,6 +939,7 @@ const Dashboard = () => {
           {activeTab === 'stats' && (
             <StatsTab
               players={filteredPlayers}
+              allPlayers={players}
               events={events}
               cards={cards}
               attendanceRecords={attendanceRecords}
