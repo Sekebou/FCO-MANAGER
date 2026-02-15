@@ -169,7 +169,7 @@ const Dashboard = () => {
   const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
 
   const canManage = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur');
-  const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur' || currentUser.role === 'photographe'));
+  const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'photographe'));
   const canManageOwnPresence = (playerId: string) => {
     if (canManage()) return true;
     return currentUser && currentUser.role === 'joueur' && currentUser.playerId === playerId;
