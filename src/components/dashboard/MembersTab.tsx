@@ -183,20 +183,27 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                   {/* Admin actions - always at bottom */}
                   {currentUser?.role === 'admin' && (
                     <div className="space-y-2 mt-3">
-                      {/* Role selector */}
-                      <div className="flex items-center gap-2">
-                        <Shield size={13} className="text-muted-foreground shrink-0" />
-                        <select
-                          value={member.role}
-                          onChange={(e) => onChangeRole(member.id, e.target.value)}
-                          className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
-                        >
-                          <option value="joueur">Joueur</option>
-                          <option value="entraineur">Entraîneur</option>
-                          <option value="photographe">Photographe</option>
-                          <option value="admin">Administrateur</option>
-                        </select>
-                      </div>
+                      {/* Role selector - disabled if viewing own admin account */}
+                      {member.id === currentUser?.uid && member.role === 'admin' ? (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-xl">
+                          <Shield size={13} className="text-warning shrink-0" />
+                          <span className="text-xs text-muted-foreground italic">Vous ne pouvez pas modifier votre propre rôle admin</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Shield size={13} className="text-muted-foreground shrink-0" />
+                          <select
+                            value={member.role}
+                            onChange={(e) => onChangeRole(member.id, e.target.value)}
+                            className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
+                          >
+                            <option value="joueur">Joueur</option>
+                            <option value="entraineur">Entraîneur</option>
+                            <option value="photographe">Photographe</option>
+                            <option value="admin">Administrateur</option>
+                          </select>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <button
                           onClick={() => onResetPassword(member)}
