@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { auth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from '@/lib/firebase';
 import { Lock, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   onClose: () => void;
@@ -24,7 +25,7 @@ const ChangePasswordForm = ({ onClose }: Props) => {
       const credential = EmailAuthProvider.credential(user.email, formData.currentPassword);
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, formData.newPassword);
-      alert('✅ Mot de passe modifié !');
+      toast.success('Mot de passe modifié avec succès !');
       onClose();
     } catch (err: any) {
       if (err.code === 'auth/wrong-password') setError('Mot de passe actuel incorrect');

@@ -6,6 +6,7 @@ import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDo
 import { 
   Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy
 } from 'lucide-react';
+import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
 import StatsTab from '@/components/dashboard/StatsTab';
 import NewsTab from '@/components/dashboard/NewsTab';
@@ -224,7 +225,7 @@ const Dashboard = () => {
   // CRUD functions
   const togglePresence = async (eventId: string, playerId: string, status: string) => {
     if (!canManageOwnPresence(playerId)) {
-      alert('Vous ne pouvez gérer que votre propre présence');
+      toast.warning('Vous ne pouvez gérer que votre propre présence');
       return;
     }
     try {
@@ -238,7 +239,7 @@ const Dashboard = () => {
       }
       await updateDoc(doc(db, 'events', eventId), { presences: currentPresences });
     } catch (err: any) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -281,7 +282,7 @@ const Dashboard = () => {
     } catch (err: any) {
       let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = 'Ce nom d\'utilisateur existe déjà.';
-      alert('❌ Erreur: ' + msg);
+      toast.error(msg);
     }
   };
 
@@ -300,7 +301,7 @@ const Dashboard = () => {
             await deleteDoc(doc(db, 'users', snapshot.docs[0].id));
           }
         } catch (err: any) {
-          alert('Erreur: ' + err.message);
+          toast.error('Erreur: ' + err.message);
         }
       }
     });
@@ -342,7 +343,7 @@ const Dashboard = () => {
 
       setShowAddEvent(false);
     } catch (err: any) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -369,7 +370,7 @@ const Dashboard = () => {
           }
           await deleteDoc(doc(db, 'events', eventId));
         } catch (err: any) {
-          alert('Erreur: ' + err.message);
+          toast.error('Erreur: ' + err.message);
         }
       }
     });
@@ -385,7 +386,7 @@ const Dashboard = () => {
       });
       setShowAddNews(false);
     } catch (err: any) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -397,7 +398,7 @@ const Dashboard = () => {
         try {
           await deleteDoc(doc(db, 'news', newsId));
         } catch (err: any) {
-          alert('Erreur: ' + err.message);
+          toast.error('Erreur: ' + err.message);
         }
       }
     });
@@ -452,7 +453,7 @@ const Dashboard = () => {
       setShowAddCard(false);
       setSelectedPlayerForCard(null);
     } catch (err: any) {
-      alert('Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     }
   };
 
@@ -465,7 +466,7 @@ const Dashboard = () => {
         try {
           await deleteDoc(doc(db, 'cards', cardId));
         } catch (err: any) {
-          alert('Erreur: ' + err.message);
+          toast.error('Erreur: ' + err.message);
         }
       }
     });
@@ -504,7 +505,7 @@ const Dashboard = () => {
           });
         }
       }
-    } catch (err: any) { alert('Erreur: ' + err.message); }
+    } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
   const canUpdateChampionnat = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur' || currentUser.role === 'joueur');
@@ -581,7 +582,7 @@ const Dashboard = () => {
           const q = query(collection(db, 'championship_matches'), where('championshipId', '==', id));
           const snapshot = await getDocs(q);
           for (const d of snapshot.docs) { await deleteDoc(doc(db, 'championship_matches', d.id)); }
-        } catch (err: any) { alert('Erreur: ' + err.message); }
+        } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
   };
@@ -590,7 +591,7 @@ const Dashboard = () => {
     if (!canManage()) return;
     try {
       await addDoc(collection(db, 'championship_matches'), { ...data, createdAt: new Date().toISOString() });
-    } catch (err: any) { alert('Erreur: ' + err.message); }
+    } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
   const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
@@ -599,9 +600,9 @@ const Dashboard = () => {
       await updateDoc(doc(db, 'championship_matches', matchId), { homeScore, awayScore, played: true });
     } catch (err: any) {
       if (err.code === 'permission-denied' || err.message?.includes('Missing or insufficient permissions')) {
-        alert('⛔ Permissions insuffisantes pour modifier les scores. Vérifiez les règles Firestore pour le rôle "' + (currentUser?.role || 'inconnu') + '".');
+        toast.error('Permissions insuffisantes pour modifier les scores. Vérifiez les règles Firestore pour le rôle "' + (currentUser?.role || 'inconnu') + '".');
       } else {
-        alert('Erreur: ' + err.message);
+        toast.error('Erreur: ' + err.message);
       }
     }
   };
@@ -613,7 +614,7 @@ const Dashboard = () => {
       message: 'Cette action est irréversible.',
       onConfirm: async () => {
         try { await deleteDoc(doc(db, 'championship_matches', id)); }
-        catch (err: any) { alert('Erreur: ' + err.message); }
+        catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
   };
