@@ -602,23 +602,31 @@ const ChampionnatTab: React.FC<Props> = ({
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
                 <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District D1" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe du club</label>
-                <div className="relative">
-                  <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <select
-                    value={champTeam}
-                    onChange={e => setChampTeam(e.target.value)}
-                    disabled={!isAdmin}
-                    className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    <option value="">— Sélectionner —</option>
-                    {TEAMS.map(t => (
-                      <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
-                    ))}
-                  </select>
+              {isAdmin ? (
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe du club</label>
+                  <div className="relative">
+                    <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <select
+                      value={champTeam}
+                      onChange={e => setChampTeam(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
+                    >
+                      <option value="">— Sélectionner —</option>
+                      {TEAMS.map(t => (
+                        <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
+              ) : currentUserTeam ? (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-accent/10 border border-accent/20 rounded-xl">
+                  <Users size={14} className="text-accent shrink-0" />
+                  <span className="text-sm font-medium text-foreground">
+                    {TEAMS.find(t => t.id === currentUserTeam)?.label} ({TEAMS.find(t => t.id === currentUserTeam)?.division})
+                  </span>
+                </div>
+              ) : null}
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saison</label>
                 <input value={champSeason} onChange={e => setChampSeason(e.target.value)} placeholder="2024-2025" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
