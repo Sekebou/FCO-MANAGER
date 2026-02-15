@@ -6,6 +6,7 @@ import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Awa
 
 interface Props {
   players: Player[];
+  allPlayers?: Player[];
   events: Event[];
   cards: Card[];
   attendanceRecords: AttendanceRecord[];
@@ -42,7 +43,7 @@ const PlayerAvatar: React.FC<{ player: Player; members: Member[]; size?: number;
   );
 };
 
-const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
+const StatsTab = ({ players, allPlayers, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
   const calculateAttendanceRate = (playerId: string) => {
     // Combine: active events + saved attendance_records (from deleted events)
     let present = 0, total = 0;
@@ -68,7 +69,8 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
     return { rate: (present / total) * 100, present, total };
   };
 
-  const attendanceStats = players
+  const attendancePlayers = allPlayers || players;
+  const attendanceStats = attendancePlayers
     .map(p => ({ player: p, attendance: calculateAttendanceRate(p.id) }))
     .filter(i => i.attendance !== null)
     .sort((a, b) => (b.attendance?.rate || 0) - (a.attendance?.rate || 0));
@@ -80,7 +82,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
       </div>
 
       {/* Attendance section - admin only */}
-      {currentUser?.role === 'admin' && attendanceStats.length > 0 && (
+      {(currentUser?.role === 'admin' || currentUser?.role === 'entraineur') && attendanceStats.length > 0 && (
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-5 border-b border-border">
