@@ -989,12 +989,17 @@ const Dashboard = () => {
                   const member = members.find(m => m.playerId === playerId);
                   if (!member?.email || !player) continue;
                   const statusLabel = conv.status === 'titulaire' ? 'Convoqué (Titulaire)' : conv.status === 'remplacant' ? 'Convoqué (Remplaçant)' : conv.status === 'repos' ? 'En repos' : 'Non convoqué';
+                  const teamLabel = event.team ? (TEAMS.find(t => t.id === event.team)?.label || '') : '';
                   try {
-                    await emailjs.send('service_7wmhc61', 'template_m28qlzo', {
+                    await emailjs.send('service_7wmhc61', 'template_p3ig9nv', {
                       to_email: member.email,
-                      event_title: `Convocation - ${event.title}`,
-                      event_type: statusLabel + (conv.position ? ` — Poste: ${conv.position}` : ''),
-                      event_date: dateFormatted,
+                      player_name: player.name,
+                      match_title: event.title,
+                      match_date: dateFormatted,
+                      team_name: teamLabel,
+                      convocation_status: statusLabel,
+                      position: conv.position || '—',
+                      jersey_number: conv.number ? `#${conv.number}` : '—',
                     }, 'YAIU3poHgOd6cG6PI');
                     sent++;
                   } catch (emailErr) {
