@@ -69,16 +69,8 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
     eventPlayers.forEach(p => {
       if (event.convocations?.[p.id]) {
         draft[p.id] = event.convocations[p.id];
-      } else {
-        const presence = event.presences?.[p.id];
-        if (presence === 'present') {
-          draft[p.id] = { status: 'titulaire' };
-        } else if (presence === 'absent') {
-          draft[p.id] = { status: 'non_convoque' };
-        } else {
-          draft[p.id] = { status: 'non_convoque' };
-        }
       }
+      // No pre-fill: coach decides everything from scratch
     });
     setDraftConvocations(draft);
   };
