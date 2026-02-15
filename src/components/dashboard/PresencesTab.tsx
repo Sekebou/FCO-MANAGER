@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS, TEAMS } from '@/pages/Dashboard';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Moon, Star, Hash, Crosshair, Pencil } from 'lucide-react';
 
 interface AppUser {
   uid: string;
@@ -27,10 +27,10 @@ interface Props {
 }
 
 const CONVOCATION_STATUSES = [
-  { value: 'titulaire', label: 'Titulaire', color: 'bg-accent text-accent-foreground', icon: '🟢' },
-  { value: 'remplacant', label: 'Remplaçant', color: 'bg-blue-500 text-white', icon: '🔵' },
-  { value: 'non_convoque', label: 'Non convoqué', color: 'bg-muted text-muted-foreground', icon: '⚪' },
-  { value: 'repos', label: 'Repos', color: 'bg-warning/20 text-warning', icon: '🟡' },
+  { value: 'titulaire', label: 'Titulaire', shortLabel: 'Titu', activeClass: 'bg-accent text-accent-foreground ring-2 ring-accent/30', dotClass: 'bg-accent', icon: Star },
+  { value: 'remplacant', label: 'Remplaçant', shortLabel: 'Rempl', activeClass: 'bg-primary text-primary-foreground ring-2 ring-primary/30', dotClass: 'bg-primary', icon: UserCheck },
+  { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non conv.', activeClass: 'bg-muted text-muted-foreground ring-2 ring-border', dotClass: 'bg-muted-foreground/40', icon: UserX },
+  { value: 'repos', label: 'Repos', shortLabel: 'Repos', activeClass: 'bg-warning/15 text-warning ring-2 ring-warning/30', dotClass: 'bg-warning', icon: Moon },
 ] as const;
 
 const PresencesTab = ({ events, players, members, currentUser, canManage, canManageOwnPresence, togglePresence, deleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
@@ -234,7 +234,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                         {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                       {isConvocationExpanded && (
-                        <div className="space-y-2 animate-fade-in">
+                        <div className="space-y-1.5 animate-fade-in">
                           {Object.entries(event.convocations)
                             .sort((a, b) => {
                               const order = { titulaire: 0, remplacant: 1, repos: 2, non_convoque: 3 };
@@ -244,33 +244,33 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                               const player = players.find(p => p.id === playerId);
                               if (!player) return null;
                               const statusInfo = CONVOCATION_STATUSES.find(s => s.value === conv.status);
+                              const StatusIcon = statusInfo?.icon || UserX;
                               return (
-                                <div key={playerId} className="flex items-center justify-between p-3 bg-secondary/50 rounded-xl">
+                                <div key={playerId} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-lg group hover:bg-secondary/70 transition-all">
                                   <div className="flex items-center gap-2.5">
-                                    <span className="text-sm">{statusInfo?.icon}</span>
+                                    <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
                                     <span className="font-medium text-sm text-foreground">{player.name}</span>
                                     {conv.position && (
-                                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{conv.position}</span>
+                                      <span className="text-[11px] text-muted-foreground/80 font-medium">{conv.position}</span>
                                     )}
                                     {conv.number && (
-                                      <span className="text-xs font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">#{conv.number}</span>
+                                      <span className="text-[11px] font-bold text-foreground/60">#{conv.number}</span>
                                     )}
                                   </div>
-                                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusInfo?.color}`}>
-                                    {statusInfo?.label}
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <StatusIcon size={13} className="text-muted-foreground" />
+                                    <span className="text-[11px] font-semibold text-muted-foreground">{statusInfo?.label}</span>
+                                  </div>
                                 </div>
                               );
                             })}
                           {canManage() && (
-                            <div className="flex gap-2 mt-3">
-                              <button
-                                onClick={() => startConvocationMode(event.id, event)}
-                                className="text-sm text-accent hover:underline font-medium"
-                              >
-                                Modifier les convocations
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => startConvocationMode(event.id, event)}
+                              className="mt-2 flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 font-medium transition-colors"
+                            >
+                              <Pencil size={12} /> Modifier
+                            </button>
                           )}
                         </div>
                       )}
@@ -279,59 +279,93 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
 
                   {/* Convocation mode (coach editing) */}
                   {isConvocationMode && (
-                    <div className="space-y-3 animate-fade-in">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Shield size={16} className="text-accent" />
-                        <h4 className="font-semibold text-sm text-foreground">Gestion des convocations</h4>
+                    <div className="space-y-1 animate-fade-in">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Shield size={16} className="text-accent" />
+                          <h4 className="font-semibold text-sm text-foreground">Gestion des convocations</h4>
+                        </div>
+                        <div className="flex gap-1">
+                          {CONVOCATION_STATUSES.map(s => {
+                            const Icon = s.icon;
+                            const count = Object.values(draftConvocations).filter(d => d.status === s.value).length;
+                            return (
+                              <span key={s.value} className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                                <div className={`w-1.5 h-1.5 rounded-full ${s.dotClass}`} />
+                                {count}
+                              </span>
+                            );
+                          })}
+                        </div>
                       </div>
+
                       {eventPlayers.map(player => {
                         const draft = draftConvocations[player.id] || { status: 'non_convoque' as const };
                         const isConvoked = draft.status === 'titulaire' || draft.status === 'remplacant';
+                        const presence = event.presences?.[player.id];
                         return (
-                          <div key={player.id} className="p-3 bg-secondary/50 rounded-xl space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm text-foreground">{player.name}</span>
-                              <div className="flex gap-1">
-                                {CONVOCATION_STATUSES.map(s => (
-                                  <button
-                                    key={s.value}
-                                    onClick={() => updateDraft(player.id, { status: s.value as Convocation['status'] })}
-                                    className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                                      draft.status === s.value ? s.color + ' shadow-sm' : 'bg-card border border-border text-muted-foreground hover:border-accent/30'
-                                    }`}
-                                  >
-                                    {s.icon} {s.label}
-                                  </button>
-                                ))}
+                          <div key={player.id} className="p-3 bg-secondary/30 rounded-xl space-y-2.5 border border-transparent hover:border-border/50 transition-all">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-medium text-sm text-foreground truncate">{player.name}</span>
+                                {presence && (
+                                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${presence === 'present' ? 'bg-accent' : 'bg-destructive'}`} title={presence === 'present' ? 'Présent' : 'Absent'} />
+                                )}
+                              </div>
+                              <div className="flex gap-0.5 shrink-0">
+                                {CONVOCATION_STATUSES.map(s => {
+                                  const Icon = s.icon;
+                                  const isActive = draft.status === s.value;
+                                  return (
+                                    <button
+                                      key={s.value}
+                                      onClick={() => updateDraft(player.id, { status: s.value as Convocation['status'] })}
+                                      className={`relative px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1 ${
+                                        isActive ? s.activeClass : 'bg-card border border-border/60 text-muted-foreground/70 hover:bg-secondary hover:text-foreground'
+                                      }`}
+                                      title={s.label}
+                                    >
+                                      <Icon size={12} />
+                                      <span className="hidden sm:inline">{s.shortLabel}</span>
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                             {isConvoked && (
-                              <div className="flex gap-2 animate-fade-in">
-                                <select
-                                  value={draft.position || ''}
-                                  onChange={(e) => updateDraft(player.id, { position: e.target.value || undefined })}
-                                  className="flex-1 bg-card border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-accent/50"
-                                >
-                                  <option value="">Poste...</option>
-                                  {POSITIONS.map(pos => (
-                                    <option key={pos} value={pos}>{pos}</option>
-                                  ))}
-                                </select>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max="99"
-                                  value={draft.number || ''}
-                                  onChange={(e) => updateDraft(player.id, { number: parseInt(e.target.value) || undefined })}
-                                  placeholder="N°"
-                                  className="w-16 bg-card border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground outline-none focus:ring-2 focus:ring-accent/50"
-                                />
+                              <div className="flex gap-2 animate-fade-in pl-0.5">
+                                <div className="flex-1 relative">
+                                  <Crosshair size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                                  <select
+                                    value={draft.position || ''}
+                                    onChange={(e) => updateDraft(player.id, { position: e.target.value || undefined })}
+                                    className="w-full pl-8 pr-3 py-1.5 bg-card border border-border/60 rounded-lg text-xs text-foreground outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 appearance-none transition-all"
+                                  >
+                                    <option value="">Poste...</option>
+                                    {POSITIONS.map(pos => (
+                                      <option key={pos} value={pos}>{pos}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="relative w-[72px]">
+                                  <Hash size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="99"
+                                    value={draft.number || ''}
+                                    onChange={(e) => updateDraft(player.id, { number: parseInt(e.target.value) || undefined })}
+                                    placeholder="N°"
+                                    className="w-full pl-8 pr-2 py-1.5 bg-card border border-border/60 rounded-lg text-xs text-foreground outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                                  />
+                                </div>
                               </div>
                             )}
                           </div>
                         );
                       })}
-                      <div className="flex gap-2 mt-4">
+
+                      <div className="flex gap-2 pt-3">
                         <button
                           onClick={() => setConvocationMode(null)}
                           className="flex-1 py-2.5 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
@@ -340,16 +374,16 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                         </button>
                         <button
                           onClick={() => publishConvocations(event.id)}
-                          className="flex-1 py-2.5 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm flex items-center justify-center gap-2"
+                          className="flex-1 py-2.5 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm flex items-center justify-center gap-2 shadow-sm"
                         >
-                          <Check size={16} /> Publier
+                          <Check size={15} /> Publier
                         </button>
                         <button
                           onClick={() => { publishConvocations(event.id); setTimeout(() => onSendConvocationEmails(event.id), 500); }}
-                          className="py-2.5 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all text-sm flex items-center gap-2"
+                          className="py-2.5 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all text-sm flex items-center gap-2 shadow-sm"
                           title="Publier et notifier par email"
                         >
-                          <Send size={14} /> Email
+                          <Send size={13} />
                         </button>
                       </div>
                     </div>
