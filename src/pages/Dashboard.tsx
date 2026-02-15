@@ -743,8 +743,7 @@ const Dashboard = () => {
               canManageOwnPresence={canManageOwnPresence}
               togglePresence={togglePresence}
               deleteEvent={deleteEvent}
-              onAddPlayer={() => setShowAddPlayer(true)}
-              onAddEvent={() => setShowAddEvent(true)}
+               onAddEvent={() => setShowAddEvent(true)}
             />
           )}
           {activeTab === 'stats' && (
