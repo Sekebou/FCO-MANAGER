@@ -70,6 +70,7 @@ export interface Event {
   presences?: Record<string, string>;
   convocations?: Record<string, Convocation>;
   convocationsPublished?: boolean;
+  createdBy?: string;
   createdAt?: string;
 }
 
@@ -421,6 +422,7 @@ const Dashboard = () => {
       const eventToSave: any = {
         ...eventData,
         presences: {},
+        createdBy: currentUser?.uid || '',
         createdAt: new Date().toISOString(),
       };
       if (eventData.type === 'match' && currentUser?.team) {
@@ -463,7 +465,19 @@ const Dashboard = () => {
     }
   };
 
+  const canDeleteEvent = (event: Event) => {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    if (currentUser.role === 'entraineur') return event.createdBy === currentUser.uid;
+    return false;
+  };
+
   const deleteEvent = async (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (event && !canDeleteEvent(event)) {
+      toast.warning('Vous ne pouvez supprimer que les événements que vous avez créés');
+      return;
+    }
     setConfirmModal({
       title: 'Supprimer cet événement ?',
       message: 'Les données de présence seront archivées avant la suppression.',
@@ -970,6 +984,7 @@ const Dashboard = () => {
               canManageOwnPresence={canManageOwnPresence}
               togglePresence={togglePresence}
               deleteEvent={deleteEvent}
+              canDeleteEvent={canDeleteEvent}
               onAddEvent={() => setShowAddEvent(true)}
               onUpdateConvocations={async (eventId, convocations) => {
                 try {
