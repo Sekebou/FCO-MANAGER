@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2 } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus } from 'lucide-react';
 
 interface Props {
   members: Member[];
@@ -12,9 +12,10 @@ interface Props {
   getPlayerCards: (playerId: string) => Card[];
   deletePlayer: (playerId: string) => void;
   onResetPassword: (member: Member) => void;
+  onAddPlayer: () => void;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, onResetPassword }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, onResetPassword, onAddPlayer }: Props) => {
   const getLicenseStatus = (expiryDate: string) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
@@ -39,7 +40,12 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
       {/* Header with stats */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold text-foreground">Membres du club</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
+          {canManage() && (
+            <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
+              <Plus size={18} /> Ajouter un joueur
+            </button>
+          )}
           <div className="flex items-center gap-2 bg-warning/10 text-warning px-3 py-2 rounded-xl">
             <Shield size={14} />
             <span className="text-xs font-bold">{admins.length}</span>

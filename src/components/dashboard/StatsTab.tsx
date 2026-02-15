@@ -15,7 +15,6 @@ interface Props {
   deletePlayer: (playerId: string) => void;
   getPlayerCards: (playerId: string) => Card[];
   deleteCard: (cardId: string) => void;
-  onAddPlayer: () => void;
   onAddCard: (playerId: string) => void;
 }
 
@@ -42,7 +41,7 @@ const PlayerAvatar: React.FC<{ player: Player; members: Member[]; size?: number;
   );
 };
 
-const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddPlayer, onAddCard }: Props) => {
+const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
   const calculateAttendanceRate = (playerId: string) => {
     // Combine: active events + saved attendance_records (from deleted events)
     let present = 0, total = 0;
@@ -77,11 +76,6 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-foreground">Statistiques</h2>
-        {canManage() && (
-          <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
-            <Plus size={18} /> Ajouter un joueur
-          </button>
-        )}
       </div>
 
       {/* Attendance section - admin only */}
