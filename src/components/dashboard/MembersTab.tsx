@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2 } from 'lucide-react';
 
 interface Props {
   members: Member[];
@@ -13,10 +13,33 @@ interface Props {
   deletePlayer: (playerId: string) => void;
   onResetPassword: (member: Member) => void;
   onAddPlayer: () => void;
-  onChangeRole: (memberId: string, newRole: string) => void;
+  onChangeRole: (memberId: string, newRole: string, password: string) => Promise<void>;
 }
 
 const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, onResetPassword, onAddPlayer, onChangeRole }: Props) => {
+  const [roleChangeRequest, setRoleChangeRequest] = useState<{ memberId: string; memberName: string; newRole: string } | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [roleChangeLoading, setRoleChangeLoading] = useState(false);
+
+  const handleRoleChangeConfirm = async () => {
+    if (!roleChangeRequest || !confirmPassword) return;
+    setRoleChangeLoading(true);
+    try {
+      await onChangeRole(roleChangeRequest.memberId, roleChangeRequest.newRole, confirmPassword);
+      setRoleChangeRequest(null);
+      setConfirmPassword('');
+    } catch {
+      // error handled by parent
+    } finally {
+      setRoleChangeLoading(false);
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur' };
+    return labels[role] || role;
+  };
+
   const getLicenseStatus = (expiryDate: string) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
@@ -194,7 +217,12 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           <Shield size={13} className="text-muted-foreground shrink-0" />
                           <select
                             value={member.role}
-                            onChange={(e) => onChangeRole(member.id, e.target.value)}
+                            onChange={(e) => {
+                              const newRole = e.target.value;
+                              if (newRole !== member.role) {
+                                setRoleChangeRequest({ memberId: member.id, memberName: member.name, newRole });
+                              }
+                            }}
                             className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
                           >
                             <option value="joueur">Joueur</option>
@@ -227,6 +255,59 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Password confirmation modal for role change */}
+      {roleChangeRequest && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => { setRoleChangeRequest(null); setConfirmPassword(''); }}>
+          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-warning/10 rounded-xl flex items-center justify-center">
+                  <KeyRound size={20} className="text-warning" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Confirmation</h3>
+              </div>
+              <button onClick={() => { setRoleChangeRequest(null); setConfirmPassword(''); }} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                <X size={16} className="text-muted-foreground" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Vous êtes sur le point de changer le rôle de <span className="font-semibold text-foreground">{roleChangeRequest.memberName}</span> en <span className="font-semibold text-foreground">{getRoleLabel(roleChangeRequest.newRole)}</span>.
+              </p>
+              <p className="text-sm text-muted-foreground">Entrez votre mot de passe pour confirmer :</p>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="password"
+                  placeholder="Votre mot de passe"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && confirmPassword) handleRoleChangeConfirm(); }}
+                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 p-5 pt-0">
+              <button
+                onClick={() => { setRoleChangeRequest(null); setConfirmPassword(''); }}
+                className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleRoleChangeConfirm}
+                disabled={!confirmPassword || roleChangeLoading}
+                className="flex-1 py-3 bg-warning text-warning-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-warning/20 flex items-center justify-center gap-2"
+              >
+                {roleChangeLoading ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+                Confirmer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
