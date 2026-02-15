@@ -9,6 +9,7 @@ export interface AppUser {
   username?: string;
   playerId?: string;
   photoURL?: string | null;
+  team?: string;
 }
 
 interface AuthContextType {
@@ -51,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             username: userData.username || '',
             playerId: userData.playerId || undefined,
             photoURL: userData.photoURL || null,
+            team: userData.team || undefined,
           };
           sessionStorage.setItem('currentUser', JSON.stringify(appUser));
           setCurrentUser(appUser);
