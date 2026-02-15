@@ -287,7 +287,7 @@ const StatsTab = ({ players, allPlayers, events, cards, attendanceRecords, membe
                       <Shield size={14} className="text-muted-foreground" />
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cartons</h4>
                     </div>
-                    {currentUser?.role === 'admin' && (
+                    {canManage() && (
                       <button onClick={() => onAddCard(player.id)} className="text-xs text-destructive font-semibold hover:bg-destructive/10 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
                         <Plus size={12} /> Ajouter un carton
                       </button>
@@ -319,7 +319,7 @@ const StatsTab = ({ players, allPlayers, events, cards, attendanceRecords, membe
                               <p className="text-[10px] text-destructive font-medium mt-0.5">Suspendu → {new Date(card.suspendedUntil).toLocaleDateString('fr-FR')}</p>
                             )}
                           </div>
-                          {currentUser?.role === 'admin' && (
+                          {canManage() && (
                             <button onClick={() => deleteCard(card.id)} className="w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all shrink-0">
                               <Trash2 size={13} className="text-destructive/60" />
                             </button>

@@ -197,13 +197,26 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
 
                   {/* Cards - hidden for photographe */}
                   {playerCards.length > 0 && member.role !== 'photographe' && (
-                    <div className="flex flex-wrap gap-1.5 mb-3">
+                    <div className="space-y-2 mb-3">
                       {playerCards.map(card => (
-                        <span key={card.id} className={`px-2 py-1 rounded-lg text-[10px] font-bold ${
-                          card.type === 'yellow' ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive'
+                        <div key={card.id} className={`p-2.5 rounded-xl border text-xs ${
+                          card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'
                         }`}>
-                          {card.type === 'yellow' ? '🟨' : '🟥'} {card.reason.substring(0, 20)}{card.reason.length > 20 ? '…' : ''}
-                        </span>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
+                              {card.type === 'yellow' ? '🟨 JAUNE' : '🟥 ROUGE'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <CalendarDays size={10} /> {new Date(card.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
+                          <p className="text-foreground">{card.reason}</p>
+                          {card.suspendedUntil && (
+                            <p className="text-[10px] text-destructive font-semibold mt-1">
+                              ⛔ Suspendu jusqu'au {new Date(card.suspendedUntil).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            </p>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
