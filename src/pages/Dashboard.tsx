@@ -332,6 +332,24 @@ const Dashboard = () => {
     });
   };
 
+  const deleteMember = async (memberId: string, playerId?: string) => {
+    if (!canManage()) return;
+    setConfirmModal({
+      title: 'Supprimer ce membre ?',
+      message: 'Cette action est irréversible. Le membre et ses données associées seront supprimés.',
+      onConfirm: async () => {
+        try {
+          if (playerId) {
+            await deleteDoc(doc(db, 'players', playerId));
+          }
+          await deleteDoc(doc(db, 'users', memberId));
+        } catch (err: any) {
+          toast.error('Erreur: ' + err.message);
+        }
+      }
+    });
+  };
+
   const addEvent = async (eventData: any) => {
     if (!canManage()) return;
     try {
@@ -927,6 +945,7 @@ const Dashboard = () => {
               canManage={canManage}
               getPlayerCards={getPlayerCards}
               deletePlayer={deletePlayer}
+              deleteMember={deleteMember}
                onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
                onAddPlayer={() => setShowAddPlayer(true)}
                onChangeRole={async (memberId, newRole, password) => {
