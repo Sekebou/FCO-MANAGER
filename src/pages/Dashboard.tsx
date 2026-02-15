@@ -913,6 +913,10 @@ const Dashboard = () => {
                   <div className="text-sm font-semibold text-primary-foreground leading-tight">{currentUser?.name}</div>
                   <div className="text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
                     {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : currentUser?.role === 'photographe' ? 'Photographe' : 'Joueur'}
+                    {currentUser?.team && (() => {
+                      const teamInfo = TEAMS.find(t => t.id === currentUser.team);
+                      return teamInfo ? ` · ${teamInfo.label} (${teamInfo.division})` : '';
+                    })()}
                   </div>
                 </div>
               </button>
