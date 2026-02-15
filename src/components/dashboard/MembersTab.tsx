@@ -13,9 +13,10 @@ interface Props {
   deletePlayer: (playerId: string) => void;
   onResetPassword: (member: Member) => void;
   onAddPlayer: () => void;
+  onChangeRole: (memberId: string, newRole: string) => void;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, onResetPassword, onAddPlayer }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, onResetPassword, onAddPlayer, onChangeRole }: Props) => {
   const getLicenseStatus = (expiryDate: string) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
@@ -179,24 +180,40 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                   {/* Spacer to push button to bottom */}
                   <div className="flex-1" />
 
-                  {/* Admin action - always at bottom */}
+                  {/* Admin actions - always at bottom */}
                   {currentUser?.role === 'admin' && (
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => onResetPassword(member)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-secondary hover:bg-primary hover:text-primary-foreground text-muted-foreground px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
-                      >
-                        <Lock size={13} />
-                        Réinitialiser MDP
-                      </button>
-                      {player && (
-                        <button
-                          onClick={() => deletePlayer(player.id)}
-                          className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                    <div className="space-y-2 mt-3">
+                      {/* Role selector */}
+                      <div className="flex items-center gap-2">
+                        <Shield size={13} className="text-muted-foreground shrink-0" />
+                        <select
+                          value={member.role}
+                          onChange={(e) => onChangeRole(member.id, e.target.value)}
+                          className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
                         >
-                          <Trash2 size={13} />
+                          <option value="joueur">Joueur</option>
+                          <option value="entraineur">Entraîneur</option>
+                          <option value="photographe">Photographe</option>
+                          <option value="admin">Administrateur</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => onResetPassword(member)}
+                          className="flex-1 flex items-center justify-center gap-2 bg-secondary hover:bg-primary hover:text-primary-foreground text-muted-foreground px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                        >
+                          <Lock size={13} />
+                          Réinitialiser MDP
                         </button>
-                      )}
+                        {player && (
+                          <button
+                            onClick={() => deletePlayer(player.id)}
+                            className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

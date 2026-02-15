@@ -922,6 +922,14 @@ const Dashboard = () => {
               deletePlayer={deletePlayer}
                onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
                onAddPlayer={() => setShowAddPlayer(true)}
+               onChangeRole={async (memberId, newRole) => {
+                 try {
+                   await updateDoc(doc(db, 'users', memberId), { role: newRole });
+                   toast.success('Rôle mis à jour');
+                 } catch (err: any) {
+                   toast.error('Erreur: ' + err.message);
+                 }
+               }}
             />
           )}
         </div>
