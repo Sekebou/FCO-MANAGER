@@ -527,7 +527,7 @@ const Dashboard = () => {
   };
 
   const addCard = async (cardData: any) => {
-    if (currentUser?.role !== 'admin') return;
+    if (!canManage()) return;
     try {
       await addDoc(collection(db, 'cards'), {
         ...cardData,
@@ -541,7 +541,7 @@ const Dashboard = () => {
   };
 
   const deleteCard = async (cardId: string) => {
-    if (currentUser?.role !== 'admin') return;
+    if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce carton ?',
       message: 'Cette action est irréversible.',
