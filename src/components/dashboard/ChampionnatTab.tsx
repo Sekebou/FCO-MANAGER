@@ -31,6 +31,8 @@ export interface Match {
 interface Props {
   championships: Championship[];
   matches: Match[];
+  currentUserRole?: string;
+  currentUserTeam?: string;
   canManage: () => boolean | undefined;
   canUpdateChampionnat: () => boolean | undefined;
   onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; team?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string> }) => void;
@@ -44,6 +46,8 @@ interface Props {
 const ChampionnatTab: React.FC<Props> = ({
   championships,
   matches,
+  currentUserRole,
+  currentUserTeam,
   canManage,
   canUpdateChampionnat,
   onAddChampionship,
@@ -60,7 +64,8 @@ const ChampionnatTab: React.FC<Props> = ({
   // Add championship form state
   const [champName, setChampName] = useState('');
   const [champSeason, setChampSeason] = useState('2024-2025');
-  const [champTeam, setChampTeam] = useState('');
+  const isAdmin = currentUserRole === 'admin';
+  const [champTeam, setChampTeam] = useState(isAdmin ? '' : (currentUserTeam || ''));
   const [teamsInput, setTeamsInput] = useState('');
   const [fffUrl, setFffUrl] = useState('');
   const [isScrapingFFF, setIsScrapingFFF] = useState(false);
@@ -166,7 +171,7 @@ const ChampionnatTab: React.FC<Props> = ({
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { toast.warning('Ajoutez au moins 2 équipes'); return; }
     onAddChampionship({ name: champName, season: champSeason, teams, team: champTeam, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined });
-    setChampName(''); setChampTeam(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setShowAddChamp(false);
+    setChampName(''); setChampTeam(isAdmin ? '' : (currentUserTeam || '')); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setShowAddChamp(false);
   };
 
   const handleImportFFF = async () => {
@@ -604,7 +609,8 @@ const ChampionnatTab: React.FC<Props> = ({
                   <select
                     value={champTeam}
                     onChange={e => setChampTeam(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
+                    disabled={!isAdmin}
+                    className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     <option value="">— Sélectionner —</option>
                     {TEAMS.map(t => (
