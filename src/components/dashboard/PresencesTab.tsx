@@ -21,6 +21,7 @@ interface Props {
   canManageOwnPresence: (playerId: string) => boolean | null;
   togglePresence: (eventId: string, playerId: string, status: string) => void;
   deleteEvent: (eventId: string) => void;
+  canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
   onUpdateConvocations: (eventId: string, convocations: Record<string, Convocation>) => void;
   onSendConvocationEmails: (eventId: string) => void;
@@ -33,7 +34,7 @@ const CONVOCATION_STATUSES = [
   { value: 'repos', label: 'Repos', shortLabel: 'Repos', activeClass: 'bg-warning/15 text-warning ring-2 ring-warning/30', dotClass: 'bg-warning', icon: Moon },
 ] as const;
 
-const PresencesTab = ({ events, players, members, currentUser, canManage, canManageOwnPresence, togglePresence, deleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
+const PresencesTab = ({ events, players, members, currentUser, canManage, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
@@ -152,7 +153,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                   }`}>
                     {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
                   </span>
-                  {canManage() && (
+                  {canDeleteEvent(event) && (
                     <button onClick={() => deleteEvent(event.id)} className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg transition-all">
                       <Trash2 size={16} />
                     </button>
