@@ -56,6 +56,7 @@ export interface NewsItem {
   title: string;
   content: string;
   author: string;
+  authorId?: string;
   date: string;
   likes?: string[]; // array of user UIDs
 }
@@ -462,6 +463,7 @@ const Dashboard = () => {
     try {
       await addDoc(collection(db, 'news'), {
         ...newsData,
+        authorId: currentUser?.uid || '',
         date: new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString(),
       });

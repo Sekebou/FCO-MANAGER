@@ -87,7 +87,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, deleteNews, 
                       <span className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
                   </div>
-                  {canManage() && (
+                  {(currentUser?.role === 'admin' || (currentUser?.role === 'entraineur' && item.authorId === currentUser?.uid)) && (
                     <button onClick={() => deleteNews(item.id)} className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all">
                       <Trash2 size={15} className="text-destructive" />
                     </button>
