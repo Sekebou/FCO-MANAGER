@@ -949,6 +949,8 @@ const Dashboard = () => {
             <ChampionnatTab
               championships={filteredChampionships}
               matches={filteredChampMatches}
+              currentUserRole={currentUser?.role}
+              currentUserTeam={currentUser?.team}
               canManage={canManage}
               canUpdateChampionnat={canUpdateChampionnat}
               onAddChampionship={addChampionship}
