@@ -1017,6 +1017,20 @@ const Dashboard = () => {
                    throw err;
                  }
                }}
+               onChangeTeam={async (memberId, newTeam) => {
+                 if (currentUser?.role !== 'admin') return;
+                 try {
+                   await updateDoc(doc(db, 'users', memberId), { team: newTeam || null });
+                   // Also update the player document if exists
+                   const member = members.find(m => m.id === memberId);
+                   if (member?.playerId) {
+                     await updateDoc(doc(db, 'players', member.playerId), { team: newTeam || null });
+                   }
+                   toast.success('Équipe mise à jour');
+                 } catch (err: any) {
+                   toast.error('Erreur: ' + err.message);
+                 }
+               }}
             />
           )}
         </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
+import { TEAMS } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2 } from 'lucide-react';
 
@@ -15,9 +16,10 @@ interface Props {
   onResetPassword: (member: Member) => void;
   onAddPlayer: () => void;
   onChangeRole: (memberId: string, newRole: string, password: string) => Promise<void>;
+  onChangeTeam: (memberId: string, newTeam: string) => Promise<void>;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onAddPlayer, onChangeRole }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onAddPlayer, onChangeRole, onChangeTeam }: Props) => {
   const [roleChangeRequest, setRoleChangeRequest] = useState<{ memberId: string; memberName: string; newRole: string } | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
@@ -124,6 +126,11 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-${config.color}/10 text-${config.color}`}>
                         {config.label}
                       </span>
+                      {member.team && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent">
+                          {TEAMS.find(t => t.id === member.team)?.label} ({TEAMS.find(t => t.id === member.team)?.division})
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -230,6 +237,23 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                             <option value="entraineur">Entraîneur</option>
                             <option value="photographe">Photographe</option>
                             <option value="admin">Administrateur</option>
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Team selector - for joueur/entraineur */}
+                      {(member.role === 'joueur' || member.role === 'entraineur') && (
+                        <div className="flex items-center gap-2">
+                          <Users size={13} className="text-muted-foreground shrink-0" />
+                          <select
+                            value={member.team || ''}
+                            onChange={(e) => onChangeTeam(member.id, e.target.value)}
+                            className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
+                          >
+                            <option value="">Aucune équipe</option>
+                            {TEAMS.map(t => (
+                              <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
+                            ))}
                           </select>
                         </div>
                       )}
