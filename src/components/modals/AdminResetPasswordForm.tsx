@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { auth, sendPasswordResetEmail } from '@/lib/firebase';
 import type { Member } from '@/pages/Dashboard';
 import { Lock, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   member: Member;
@@ -19,7 +20,7 @@ const AdminResetPasswordForm = ({ member, onClose }: Props) => {
       setSuccess(true);
       setTimeout(onClose, 3000);
     } catch (err: any) {
-      alert('❌ Erreur: ' + err.message);
+      toast.error('Erreur: ' + err.message);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3 } from 'lucide-react';
 import { scrapeFFFTeams, type ScrapedMatch, type ScrapedStanding } from '@/lib/api/scrape-fff';
+import { toast } from 'sonner';
 
 export interface Championship {
   id: string;
@@ -159,7 +160,7 @@ const ChampionnatTab: React.FC<Props> = ({
   const handleAddChamp = () => {
     if (!champName.trim()) return;
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
-    if (teams.length < 2) { alert('Ajoutez au moins 2 équipes'); return; }
+    if (teams.length < 2) { toast.warning('Ajoutez au moins 2 équipes'); return; }
     onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined });
     setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setShowAddChamp(false);
   };
@@ -181,10 +182,10 @@ const ChampionnatTab: React.FC<Props> = ({
           setImportedLogos(result.teamLogos);
         }
       } else {
-        alert(result.error || 'Aucune équipe trouvée sur cette page');
+        toast.error(result.error || 'Aucune équipe trouvée sur cette page');
       }
     } catch {
-      alert('Erreur lors de la récupération des équipes');
+      toast.error('Erreur lors de la récupération des équipes');
     } finally {
       setIsScrapingFFF(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Player } from '@/pages/Dashboard';
 import { X, AlertCircle, Calendar, MessageSquare } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   players: Player[];
@@ -15,7 +16,7 @@ const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) =>
   });
 
   const handleSubmit = () => {
-    if (!formData.playerId || !formData.reason || !formData.date) { alert('Remplissez tous les champs obligatoires'); return; }
+    if (!formData.playerId || !formData.reason || !formData.date) { toast.warning('Remplissez tous les champs obligatoires'); return; }
     onSubmit(formData);
   };
 
