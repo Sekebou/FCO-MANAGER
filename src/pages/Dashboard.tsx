@@ -218,13 +218,13 @@ const Dashboard = () => {
         const data: Album[] = [];
         snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Album));
         setAlbums(data);
-      }, (err) => setError(err.message)));
+      }, (err) => console.warn('Albums permission error:', err.message)));
 
       unsubs.push(onSnapshot(collection(db, 'gallery_photos'), (snapshot) => {
         const data: Photo[] = [];
         snapshot.forEach((d) => data.push({ id: d.id, ...d.data() } as Photo));
         setGalleryPhotos(data);
-      }, (err) => setError(err.message)));
+      }, (err) => console.warn('Gallery photos permission error:', err.message)));
 
       setLoading(false);
     } catch (err: any) {
