@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
-import { db, doc, updateDoc } from '@/lib/firebase';
+import React, { useState, useRef, useEffect } from 'react';
+import { db, doc, updateDoc, getDoc } from '@/lib/firebase';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Loader2, Camera, Trash2, X, User, Upload } from 'lucide-react';
+import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -13,7 +13,34 @@ interface Props {
 const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
   const [uploading, setUploading] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(currentUser.photoURL || null);
+  const [licenseExpiry, setLicenseExpiry] = useState('');
+  const [loadingLicense, setLoadingLicense] = useState(true);
+  const [savingLicense, setSavingLicense] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isNonPlayer = currentUser.role === 'photographe';
+
+  // Load player license data
+  useEffect(() => {
+    const loadPlayerData = async () => {
+      if (!currentUser.playerId || isNonPlayer) {
+        setLoadingLicense(false);
+        return;
+      }
+      try {
+        const playerDoc = await getDoc(doc(db, 'players', currentUser.playerId));
+        if (playerDoc.exists()) {
+          const data = playerDoc.data();
+          setLicenseExpiry(data.licenseExpiry || '');
+        }
+      } catch (err) {
+        console.error('Error loading player data:', err);
+      } finally {
+        setLoadingLicense(false);
+      }
+    };
+    loadPlayerData();
+  }, [currentUser.playerId, isNonPlayer]);
 
   const compressImage = (file: File, maxWidth = 300, quality = 0.7): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -78,6 +105,19 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
     }
   };
 
+  const handleSaveLicense = async () => {
+    if (!currentUser.playerId) return;
+    setSavingLicense(true);
+    try {
+      await updateDoc(doc(db, 'players', currentUser.playerId), { licenseExpiry: licenseExpiry || null });
+      toast.success('Licence mise à jour !');
+    } catch (err: any) {
+      toast.error('Erreur: ' + err.message);
+    } finally {
+      setSavingLicense(false);
+    }
+  };
+
   const initials = currentUser.name
     .split(' ')
     .map(n => n[0])
@@ -90,7 +130,7 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
       <div className="bg-card rounded-2xl max-w-sm w-full border border-border shadow-xl animate-fade-in overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border">
-          <h3 className="text-lg font-bold text-foreground">Photo de profil</h3>
+          <h3 className="text-lg font-bold text-foreground">Mon profil</h3>
           <button
             onClick={onClose}
             disabled={uploading}
@@ -101,33 +141,33 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
         </div>
 
         {/* Avatar preview */}
-        <div className="flex flex-col items-center py-8 px-6">
+        <div className="flex flex-col items-center py-6 px-6">
           <div className="relative group">
             {photoURL ? (
               <img
                 src={photoURL}
                 alt="Avatar"
-                className="w-32 h-32 rounded-full object-cover border-4 border-border shadow-lg"
+                className="w-28 h-28 rounded-full object-cover border-4 border-border shadow-lg"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center border-4 border-border shadow-lg">
-                <span className="text-3xl font-bold text-primary">{initials}</span>
+              <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center border-4 border-border shadow-lg">
+                <span className="text-2xl font-bold text-primary">{initials}</span>
               </div>
             )}
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="absolute bottom-1 right-1 w-10 h-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50"
+              className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50"
             >
-              <Camera size={18} />
+              <Camera size={16} />
             </button>
           </div>
-          <p className="mt-4 text-sm font-semibold text-foreground">{currentUser.name}</p>
-          <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
+          <p className="mt-3 text-sm font-semibold text-foreground">{currentUser.name}</p>
+          <p className="text-xs text-muted-foreground capitalize">{currentUser.role === 'admin+' ? 'Administrateur' : currentUser.role}</p>
         </div>
 
-        {/* Actions */}
-        <div className="p-5 pt-0 space-y-2.5">
+        {/* Photo actions */}
+        <div className="px-5 space-y-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -138,7 +178,7 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="w-full bg-accent text-accent-foreground py-3 rounded-xl font-medium hover:bg-accent/90 transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 text-sm"
+            className="w-full bg-accent text-accent-foreground py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
           >
             {uploading ? (
               <><Loader2 size={16} className="animate-spin" /> Traitement...</>
@@ -150,12 +190,51 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
             <button
               onClick={handleDelete}
               disabled={uploading}
-              className="w-full bg-destructive/10 text-destructive py-3 rounded-xl font-medium hover:bg-destructive/20 transition-all disabled:opacity-50 text-sm flex items-center justify-center gap-2.5"
+              className="w-full bg-destructive/10 text-destructive py-2.5 rounded-xl font-medium hover:bg-destructive/20 transition-all disabled:opacity-50 text-sm flex items-center justify-center gap-2"
             >
               <Trash2 size={16} /> Supprimer la photo
             </button>
           )}
         </div>
+
+        {/* License section - visible for non-photographe with playerId */}
+        {!isNonPlayer && currentUser.playerId && (
+          <div className="px-5 pt-4 pb-5">
+            <div className="border-t border-border pt-4">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Expiration licence FFF
+              </label>
+              {loadingLicense ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground py-3">
+                  <Loader2 size={14} className="animate-spin" /> Chargement...
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="date"
+                      className="w-full pl-9 pr-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 text-sm transition-all"
+                      value={licenseExpiry}
+                      onChange={(e) => setLicenseExpiry(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    onClick={handleSaveLicense}
+                    disabled={savingLicense}
+                    className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all disabled:opacity-50 text-sm flex items-center gap-1.5"
+                  >
+                    {savingLicense ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    OK
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom padding if no license section */}
+        {(isNonPlayer || !currentUser.playerId) && <div className="pb-5" />}
       </div>
     </div>
   );

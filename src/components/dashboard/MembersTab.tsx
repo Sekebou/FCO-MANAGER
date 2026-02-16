@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin } from 'lucide-react';
 
 interface Props {
   members: Member[];
@@ -16,9 +16,10 @@ interface Props {
   
   onInvitePlayer: () => void;
   onChangeRole: (memberId: string, newRole: string, password: string) => Promise<void>;
+  onChangePosition: (playerId: string, newPosition: string) => Promise<void>;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onInvitePlayer, onChangeRole }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onInvitePlayer, onChangeRole, onChangePosition }: Props) => {
   const [roleChangeRequest, setRoleChangeRequest] = useState<{ memberId: string; memberName: string; newRole: string } | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
@@ -147,7 +148,24 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                     {player && member.role !== 'photographe' && member.role !== 'dirigeant' && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Target size={12} className="text-accent shrink-0" />
-                        <span>Poste : <span className="font-medium text-foreground">{player.position}</span></span>
+                        {canManage() ? (
+                          <div className="flex items-center gap-1">
+                            <span>Poste :</span>
+                            <select
+                              value={player.position || ''}
+                              onChange={(e) => onChangePosition(player.id, e.target.value)}
+                              className="bg-transparent border-none outline-none font-medium text-foreground text-xs cursor-pointer hover:text-primary transition-colors appearance-none pr-3"
+                            >
+                              <option value="">Non défini</option>
+                              <option value="Gardien">Gardien</option>
+                              <option value="Défenseur">Défenseur</option>
+                              <option value="Milieu">Milieu</option>
+                              <option value="Attaquant">Attaquant</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <span>Poste : <span className="font-medium text-foreground">{player.position || 'Non défini'}</span></span>
+                        )}
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
