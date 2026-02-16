@@ -69,28 +69,45 @@ const PitchView: React.FC<Props> = ({ convocations, players }) => {
     <div className="mt-4">
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Composition</h4>
       <div
-        className="relative w-full max-w-sm mx-auto rounded-xl overflow-hidden border border-border bg-card"
+        className="relative w-full max-w-sm mx-auto rounded-xl overflow-hidden border border-border"
         style={{ aspectRatio: '68 / 52.5' }}
         onClick={() => setSelectedPlayer(null)}
       >
+        {/* Grass stripes */}
+        <div className="absolute inset-0">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-full"
+              style={{
+                top: `${i * 12.5}%`,
+                height: '12.5%',
+                backgroundColor: i % 2 === 0 ? 'hsl(142 40% 38%)' : 'hsl(142 40% 33%)',
+              }}
+            />
+          ))}
+        </div>
+
         {/* Half-pitch markings */}
         <svg viewBox="0 0 68 52.5" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
           {/* Outline */}
-          <rect x="1" y="0" width="66" height="51.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          <rect x="1" y="0" width="66" height="51.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
           {/* Midfield line (top) */}
-          <line x1="1" y1="0.5" x2="67" y2="0.5" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          <line x1="1" y1="0.5" x2="67" y2="0.5" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
           {/* Center circle (half) */}
-          <path d="M 24.85 0.5 A 9.15 9.15 0 0 1 43.15 0.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          <path d="M 24.85 0.5 A 9.15 9.15 0 0 1 43.15 0.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
+          {/* Center spot */}
+          <circle cx="34" cy="0.5" r="0.5" fill="rgba(255,255,255,0.6)" />
           {/* Penalty area */}
-          <rect x="13.84" y="35" width="40.32" height="16.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          <rect x="13.84" y="35" width="40.32" height="16.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
           {/* Goal area */}
-          <rect x="22.14" y="46" width="23.72" height="5.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          <rect x="22.14" y="46" width="23.72" height="5.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
           {/* Penalty spot */}
-          <circle cx="34" cy="40" r="0.5" fill="hsl(var(--muted-foreground))" opacity="0.4" />
+          <circle cx="34" cy="40" r="0.5" fill="rgba(255,255,255,0.5)" />
           {/* Penalty arc */}
-          <path d="M 25 35 A 9.15 9.15 0 0 0 43 35" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          <path d="M 25 35 A 9.15 9.15 0 0 0 43 35" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
           {/* Goal */}
-          <rect x="27" y="51.5" width="14" height="1.5" rx="0.3" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="0.4" opacity="0.5" />
+          <rect x="27" y="51.5" width="14" height="2" rx="0.3" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
         </svg>
 
         {/* Players */}
@@ -110,7 +127,7 @@ const PitchView: React.FC<Props> = ({ convocations, players }) => {
               }`}>
                 {p.conv.number || '?'}
               </div>
-              <span className="mt-0.5 text-[9px] sm:text-[10px] font-semibold text-foreground text-center leading-tight max-w-[60px] truncate">
+              <span className="mt-0.5 text-[9px] sm:text-[10px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] text-center leading-tight max-w-[60px] truncate">
                 {p.name.split(' ').pop()}
               </span>
             </div>
