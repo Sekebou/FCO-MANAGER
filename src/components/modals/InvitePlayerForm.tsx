@@ -166,7 +166,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {mode === 'email'
                   ? <>Un lien d'inscription sera envoyé par email. La personne pourra créer son compte en renseignant son nom, prénom et mot de passe. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
-                  : <>Un lien d'inscription sera généré. Partagez-le directement à la personne concernée. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  : <>Un lien unique sera généré pour <span className="font-semibold text-foreground">un seul compte</span>. Partagez-le directement à la personne concernée. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
                 }
               </p>
             </div>
