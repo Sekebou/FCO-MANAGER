@@ -94,7 +94,7 @@ const Auth = () => {
           {/* Title - single line */}
           <h1 className="text-5xl font-extrabold text-white leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
             <span className="inline-block animate-[glowText_4s_ease-in-out_infinite]">FCO</span>
-            <span className="text-3xl font-semibold text-white/50 ml-3 tracking-wide">MANAGER</span>
+            <span className="text-3xl font-semibold text-white/50 ml-3 tracking-wide uppercase">Manager</span>
           </h1>
 
           {/* Subtitle */}
@@ -149,7 +149,7 @@ const Auth = () => {
               <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">
-              FCO <span className="text-primary">Manager</span>
+              FCO <span className="text-primary uppercase">Manager</span>
             </h1>
           </div>
 
