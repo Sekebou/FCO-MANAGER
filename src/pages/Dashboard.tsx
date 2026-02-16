@@ -518,6 +518,7 @@ const Dashboard = () => {
     try {
       await addDoc(collection(db, 'news'), {
         ...newsData,
+        author: currentUser?.name || '',
         authorId: currentUser?.uid || '',
         date: new Date().toISOString().split('T')[0],
         createdAt: new Date().toISOString(),
