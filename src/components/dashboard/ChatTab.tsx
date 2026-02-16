@@ -196,37 +196,19 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-180px)] max-h-[800px] bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="relative">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-md">
-            <MessageCircle size={22} className="text-accent-foreground" />
-          </div>
-          {recentUsers.size > 0 && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-card" />
-          )}
-        </div>
-        <div className="flex-1">
-          <h2 className="text-lg font-bold text-foreground tracking-tight">Discussion du club</h2>
-          <p className="text-xs text-muted-foreground">
-            {messages.length} message{messages.length > 1 ? 's' : ''}
-            {recentUsers.size > 0 && (
-              <span className="text-emerald-500 font-medium"> · {recentUsers.size} actif{recentUsers.size > 1 ? 's' : ''}</span>
-            )}
-          </p>
-        </div>
-        {/* Admin reset button */}
-        {isAdmin && messages.length > 0 && (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Admin reset button - compact inline */}
+      {isAdmin && messages.length > 0 && (
+        <div className="flex items-center justify-end px-3 py-1.5 border-b border-border">
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-all"
+            className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all"
             title="Supprimer tous les messages"
           >
-            <Trash2 size={18} />
+            <Trash2 size={15} />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Reset confirmation modal */}
       {showResetConfirm && (
