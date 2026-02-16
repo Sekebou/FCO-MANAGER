@@ -1,51 +1,58 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { auth, db, signInWithEmailAndPassword, doc, getDoc } from '@/lib/firebase';
-import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar } from 'lucide-react';
-import clubLogo from '@/assets/logo.svg';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { auth, db, signInWithEmailAndPassword, doc, getDoc } from "@/lib/firebase";
+import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar } from "lucide-react";
+import clubLogo from "@/assets/logo.svg";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userDoc = await getDoc(doc(db, "users", user.uid));
 
       if (!userDoc.exists()) {
-        throw new Error('Profil utilisateur introuvable. Contactez l\'administrateur.');
+        throw new Error("Profil utilisateur introuvable. Contactez l'administrateur.");
       }
 
       const userData = userDoc.data();
-      sessionStorage.setItem('currentUser', JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        role: userData.role,
-        name: userData.name,
-        username: userData.username || '',
-        playerId: userData.playerId || null,
-        photoURL: userData.photoURL || null,
-      }));
+      sessionStorage.setItem(
+        "currentUser",
+        JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          role: userData.role,
+          name: userData.name,
+          username: userData.username || "",
+          playerId: userData.playerId || null,
+          photoURL: userData.photoURL || null,
+        }),
+      );
 
-      navigate('/');
+      navigate("/");
     } catch (err: any) {
-      let message = 'Erreur de connexion';
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        message = 'Email ou mot de passe incorrect';
-      } else if (err.code === 'auth/invalid-email') {
-        message = 'Email invalide';
-      } else if (err.code === 'auth/too-many-requests') {
-        message = 'Trop de tentatives. Réessayez plus tard.';
+      let message = "Erreur de connexion";
+      if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password" ||
+        err.code === "auth/invalid-credential"
+      ) {
+        message = "Email ou mot de passe incorrect";
+      } else if (err.code === "auth/invalid-email") {
+        message = "Email invalide";
+      } else if (err.code === "auth/too-many-requests") {
+        message = "Trop de tentatives. Réessayez plus tard.";
       } else if (err.message) {
         message = err.message;
       }
@@ -70,10 +77,13 @@ const Auth = () => {
         <div className="absolute top-1/2 right-12 w-12 h-12 rounded-full border border-white/[0.05] animate-[floatSlow_8s_ease-in-out_infinite_4s]" />
 
         {/* Subtle dot grid */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
-          backgroundSize: '32px 32px',
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
+            backgroundSize: "32px 32px",
+          }}
+        />
 
         <div className="relative z-10 px-16 max-w-lg flex flex-col items-center text-center">
           {/* Club logo - large and prominent */}
@@ -84,23 +94,23 @@ const Auth = () => {
           {/* Title - single line */}
           <h1 className="text-5xl font-extrabold text-white leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
             <span className="inline-block animate-[glowText_4s_ease-in-out_infinite]">FCO</span>
-            <span className="text-3xl font-semibold text-white/50 ml-3 tracking-wide">Manager</span>
+            <span className="text-3xl font-semibold text-white/50 ml-3 tracking-wide">MANAGER</span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-white/35 text-lg leading-relaxed animate-[fadeSlideUp_0.8s_ease-out_0.2s_both]">
             Gérez votre équipe, suivez les présences et les performances de vos joueurs en un seul endroit.
           </p>
-          
+
           {/* Separator line */}
           <div className="mt-8 mb-8 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[fadeSlideUp_0.8s_ease-out_0.3s_both]" />
 
           {/* Feature pills - 3 features + "et bien plus" */}
           <div className="space-y-3 w-full">
             {[
-              { Icon: Users, text: 'Gestion des présences' },
-              { Icon: TrendingUp, text: 'Suivi des performances' },
-              { Icon: Calendar, text: 'Calendrier des événements' },
+              { Icon: Users, text: "Gestion des présences" },
+              { Icon: TrendingUp, text: "Suivi des performances" },
+              { Icon: Calendar, text: "Calendrier des événements" },
             ].map((feat, i) => (
               <div
                 key={feat.text}
@@ -111,7 +121,10 @@ const Auth = () => {
                 <span className="text-sm font-medium text-white/60">{feat.text}</span>
               </div>
             ))}
-            <p className="text-xs text-white/30 font-medium pt-1 animate-[fadeSlideUp_0.6s_ease-out_both]" style={{ animationDelay: '0.76s' }}>
+            <p
+              className="text-xs text-white/30 font-medium pt-1 animate-[fadeSlideUp_0.6s_ease-out_both]"
+              style={{ animationDelay: "0.76s" }}
+            >
               … et bien d'autres fonctionnalités
             </p>
           </div>
@@ -154,13 +167,18 @@ const Auth = () => {
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Email
                 </label>
-                <div className={`relative rounded-xl transition-all duration-300 ${focused === 'email' ? 'ring-2 ring-primary/30 shadow-md shadow-primary/5' : ''}`}>
-                  <Mail className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'email' ? 'text-primary' : 'text-muted-foreground/50'}`} size={18} />
+                <div
+                  className={`relative rounded-xl transition-all duration-300 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}
+                >
+                  <Mail
+                    className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`}
+                    size={18}
+                  />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocused('email')}
+                    onFocus={() => setFocused("email")}
                     onBlur={() => setFocused(null)}
                     className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
                     placeholder="votre@email.com"
@@ -174,13 +192,18 @@ const Auth = () => {
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Mot de passe
                 </label>
-                <div className={`relative rounded-xl transition-all duration-300 ${focused === 'password' ? 'ring-2 ring-primary/30 shadow-md shadow-primary/5' : ''}`}>
-                  <Lock className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'password' ? 'text-primary' : 'text-muted-foreground/50'}`} size={18} />
+                <div
+                  className={`relative rounded-xl transition-all duration-300 ${focused === "password" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}
+                >
+                  <Lock
+                    className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "password" ? "text-primary" : "text-muted-foreground/50"}`}
+                    size={18}
+                  />
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocused('password')}
+                    onFocus={() => setFocused("password")}
                     onBlur={() => setFocused(null)}
                     className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
                     placeholder="••••••••"
@@ -211,7 +234,7 @@ const Auth = () => {
                     <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
                   </>
                 )}
-                {loading && 'Connexion...'}
+                {loading && "Connexion..."}
               </button>
             </form>
           </div>
@@ -221,13 +244,16 @@ const Auth = () => {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Comptes démo</p>
             <div className="space-y-2">
               {[
-                { label: 'Admin', email: 'admin@fco-manager.local', pass: 'admin123' },
-                { label: 'Coach', email: 'coach@fco-manager.local', pass: 'coach123' },
+                { label: "Admin", email: "admin@fco-manager.local", pass: "admin123" },
+                { label: "Coach", email: "coach@fco-manager.local", pass: "coach123" },
               ].map((account) => (
                 <button
                   key={account.label}
                   type="button"
-                  onClick={() => { setEmail(account.email); setPassword(account.pass); }}
+                  onClick={() => {
+                    setEmail(account.email);
+                    setPassword(account.pass);
+                  }}
                   className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-card hover:bg-primary/5 border border-border hover:border-primary/20 transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-3">
@@ -239,7 +265,10 @@ const Auth = () => {
                       <p className="text-[10px] text-muted-foreground">{account.email}</p>
                     </div>
                   </div>
-                  <ChevronRight size={14} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200" />
+                  <ChevronRight
+                    size={14}
+                    className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200"
+                  />
                 </button>
               ))}
             </div>
