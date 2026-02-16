@@ -3,6 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db, signInWithEmailAndPassword, doc, getDoc } from '@/lib/firebase';
 import { Lock, Mail, LogIn, Loader2, Shield, ChevronRight } from 'lucide-react';
 
+const FlatBall = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="48" fill="currentColor" opacity="0.08" />
+    <circle cx="50" cy="50" r="48" stroke="currentColor" strokeWidth="1.5" opacity="0.15" />
+    {/* Pentagon center */}
+    <polygon points="50,30 62,40 58,55 42,55 38,40" fill="currentColor" opacity="0.15" />
+    {/* Pentagon top */}
+    <polygon points="50,8 60,18 50,30 40,18" fill="currentColor" opacity="0.1" />
+    {/* Pentagon right top */}
+    <polygon points="75,20 78,35 62,40 50,30 60,18" fill="currentColor" opacity="0.12" />
+    {/* Pentagon right bottom */}
+    <polygon points="78,35 82,55 70,65 58,55 62,40" fill="currentColor" opacity="0.1" />
+    {/* Pentagon left bottom */}
+    <polygon points="22,55 18,35 38,40 42,55 30,65" fill="currentColor" opacity="0.12" />
+    {/* Pentagon left top */}
+    <polygon points="18,35 25,20 40,18 50,30 38,40" fill="currentColor" opacity="0.1" />
+    {/* Pentagon bottom */}
+    <polygon points="30,65 42,55 50,70 58,55 70,65 62,80 38,80" fill="currentColor" opacity="0.08" />
+    {/* Seam lines */}
+    <path d="M50 8 L50 30 M75 20 L62 40 M78 35 L62 40 M82 55 L58 55 M70 65 L58 55 M62 80 L50 70 M38 80 L50 70 M30 65 L42 55 M22 55 L42 55 M18 35 L38 40 M25 20 L38 40 M40 18 L50 30 M60 18 L50 30" stroke="currentColor" strokeWidth="0.8" opacity="0.12" />
+  </svg>
+);
+
 const Auth = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -58,7 +81,13 @@ const Auth = () => {
     <div className="min-h-screen flex relative overflow-hidden">
       {/* Decorative side - blue club */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-primary">
-        {/* Gradient orbs */}
+        {/* Floating flat balls */}
+        <FlatBall className="absolute top-12 right-16 w-24 h-24 text-white animate-[spin_40s_linear_infinite]" />
+        <FlatBall className="absolute bottom-20 left-12 w-16 h-16 text-white animate-[spin_30s_linear_infinite_reverse]" />
+        <FlatBall className="absolute top-1/3 right-8 w-10 h-10 text-white animate-[spin_25s_linear_infinite]" />
+        <FlatBall className="absolute bottom-1/3 left-32 w-14 h-14 text-white animate-[spin_35s_linear_infinite_reverse]" />
+        <FlatBall className="absolute top-[60%] right-32 w-8 h-8 text-white animate-[spin_20s_linear_infinite]" />
+
         <div className="absolute w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] -top-32 -left-32" />
         <div className="absolute w-[400px] h-[400px] bg-white/5 rounded-full blur-[120px] bottom-0 right-0" />
         
@@ -87,7 +116,11 @@ const Auth = () => {
       </div>
 
       {/* Login side - white */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background relative">
+        {/* Subtle floating balls on white side */}
+        <FlatBall className="absolute top-8 right-8 w-12 h-12 text-primary/20 animate-[spin_35s_linear_infinite]" />
+        <FlatBall className="absolute bottom-12 left-8 w-10 h-10 text-primary/15 animate-[spin_28s_linear_infinite_reverse]" />
+        <FlatBall className="absolute top-1/4 left-6 w-6 h-6 text-primary/10 animate-[spin_22s_linear_infinite]" />
         <div className="w-full max-w-[420px] animate-fade-in">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-10">
