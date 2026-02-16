@@ -126,6 +126,11 @@
     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
   }
 
+  @keyframes fadeSlideUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
   .glow-pulse-green {
     box-shadow: 0 0 6px 2px hsl(230 85% 45% / 0.5), 0 0 16px 4px hsl(230 85% 45% / 0.2);
     animation: glowPulse 2s ease-in-out infinite;
