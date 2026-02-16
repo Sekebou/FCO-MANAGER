@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db, signInWithEmailAndPassword, doc, getDoc } from "@/lib/firebase";
-import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar } from "lucide-react";
+import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, doc, getDoc } from "@/lib/firebase";
+import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft } from "lucide-react";
 import clubLogo from "@/assets/logo.svg";
+import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -11,6 +12,8 @@ const Auth = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +62,33 @@ const Auth = () => {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError("Veuillez entrer votre adresse email");
+      return;
+    }
+    setError("");
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      toast.success("Un email de réinitialisation a été envoyé à " + email.trim());
+      setForgotMode(false);
+    } catch (err: any) {
+      if (err.code === "auth/user-not-found") {
+        setError("Aucun compte associé à cet email");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Email invalide");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Trop de tentatives. Réessayez plus tard.");
+      } else {
+        setError("Erreur lors de l'envoi. Réessayez.");
+      }
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -161,82 +191,160 @@ const Auth = () => {
 
           {/* Form card */}
           <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Email
-                </label>
-                <div
-                  className={`relative rounded-xl transition-all duration-300 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}
+            {forgotMode ? (
+              /* Forgot password form */
+              <form onSubmit={handleForgotPassword} className="space-y-5">
+                <button
+                  type="button"
+                  onClick={() => { setForgotMode(false); setError(""); }}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
                 >
-                  <Mail
-                    className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`}
-                    size={18}
-                  />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFocused("email")}
-                    onBlur={() => setFocused(null)}
-                    className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
-                    placeholder="votre@email.com"
-                    required
-                  />
-                </div>
-              </div>
+                  <ArrowLeft size={16} />
+                  Retour
+                </button>
 
-              {/* Password */}
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Mot de passe
-                </label>
-                <div
-                  className={`relative rounded-xl transition-all duration-300 ${focused === "password" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}
-                >
-                  <Lock
-                    className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "password" ? "text-primary" : "text-muted-foreground/50"}`}
-                    size={18}
-                  />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onFocus={() => setFocused("password")}
-                    onBlur={() => setFocused(null)}
-                    className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
-                    placeholder="••••••••"
-                    required
-                  />
+                <div>
+                  <h3 className="text-lg font-bold text-foreground mb-1">Mot de passe oublié</h3>
+                  <p className="text-sm text-muted-foreground">Entrez votre email pour recevoir un lien de réinitialisation.</p>
                 </div>
-              </div>
 
-              {/* Error */}
-              {error && (
-                <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
-                  <Shield size={16} className="shrink-0" />
-                  {error}
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Email
+                  </label>
+                  <div
+                    className={`relative rounded-xl transition-all duration-300 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}
+                  >
+                    <Mail
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`}
+                      size={18}
+                    />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setFocused("email")}
+                      onBlur={() => setFocused(null)}
+                      className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                      placeholder="votre@email.com"
+                      required
+                    />
+                  </div>
                 </div>
-              )}
 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-              >
-                {loading ? (
-                  <Loader2 className="animate-spin" size={20} />
-                ) : (
-                  <>
-                    Se connecter
-                    <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
-                  </>
+                {error && (
+                  <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                    <Shield size={16} className="shrink-0" />
+                    {error}
+                  </div>
                 )}
-                {loading && "Connexion..."}
-              </button>
-            </form>
+
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resetLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Envoi...
+                    </>
+                  ) : (
+                    <>
+                      Envoyer le lien
+                      <Mail size={18} />
+                    </>
+                  )}
+                </button>
+              </form>
+            ) : (
+              /* Login form */
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    Email
+                  </label>
+                  <div
+                    className={`relative rounded-xl transition-all duration-300 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}
+                  >
+                    <Mail
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`}
+                      size={18}
+                    />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setFocused("email")}
+                      onBlur={() => setFocused(null)}
+                      className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                      placeholder="votre@email.com"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Mot de passe
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => { setForgotMode(true); setError(""); }}
+                      className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                    >
+                      Mot de passe oublié ?
+                    </button>
+                  </div>
+                  <div
+                    className={`relative rounded-xl transition-all duration-300 ${focused === "password" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}
+                  >
+                    <Lock
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "password" ? "text-primary" : "text-muted-foreground/50"}`}
+                      size={18}
+                    />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setFocused("password")}
+                      onBlur={() => setFocused(null)}
+                      className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                    <Shield size={16} className="shrink-0" />
+                    {error}
+                  </div>
+                )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    <>
+                      Se connecter
+                      <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
+                    </>
+                  )}
+                  {loading && "Connexion..."}
+                </button>
+              </form>
+            )}
           </div>
 
           {/* Help section */}
