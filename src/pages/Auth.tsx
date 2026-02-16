@@ -75,7 +75,7 @@ const Auth = () => {
     setResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, email.trim());
-      toast.success("Un email de réinitialisation a été envoyé à " + email.trim());
+      toast.success("Email envoyé ! Vérifiez aussi vos spams / courriers indésirables.", { duration: 6000 });
       setForgotMode(false);
     } catch (err: any) {
       if (err.code === "auth/user-not-found") {
