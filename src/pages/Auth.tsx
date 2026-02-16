@@ -278,7 +278,7 @@ const Auth = () => {
           <div className="mt-6 flex justify-center animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-success/20 bg-success/5">
               <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-              <p className="text-[11px] text-success/70 font-medium">Connecté</p>
+              <p className="text-[11px] text-success/70 font-medium">Connecté au serveur</p>
             </div>
           </div>
         </div>
