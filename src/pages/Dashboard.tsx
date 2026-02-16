@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, ClipboardList, CircleDot
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
@@ -925,7 +925,7 @@ const Dashboard = () => {
                       </>
                     ) : currentUser?.role === 'entraineur' ? (
                       <>
-                        <Dumbbell size={10} />
+                        <ClipboardList size={10} />
                         <span>Entraîneur</span>
                       </>
                     ) : currentUser?.role === 'photographe' ? (
@@ -935,7 +935,7 @@ const Dashboard = () => {
                       </>
                     ) : (
                       <>
-                        <UserCircle size={10} />
+                        <CircleDot size={10} />
                         <span>Joueur</span>
                       </>
                     )}
