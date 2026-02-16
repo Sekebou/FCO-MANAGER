@@ -132,7 +132,11 @@ const tabs = [
 const Dashboard = () => {
   const { currentUser, logout, setCurrentUser } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('fco-active-tab') || 'presences');
+  const [activeTab, setActiveTab] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab');
+    return tabFromUrl || localStorage.getItem('fco-active-tab') || 'presences';
+  });
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -462,7 +466,7 @@ const Dashboard = () => {
               event_type_label: typeLabels[eventData.type] || 'Événement',
               type_icon: typeIcons[eventData.type] || '📅',
               event_date: dateFormatted,
-              response_link: 'https://blue-pitch-dash.lovable.app',
+              response_link: 'https://blue-pitch-dash.lovable.app/?tab=presences',
             });
           } catch (emailErr) {
             console.error('Erreur envoi email à', email, emailErr);
