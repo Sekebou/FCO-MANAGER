@@ -1143,6 +1143,14 @@ const Dashboard = () => {
                     throw err;
                   }
                 }}
+                onChangePosition={async (playerId, newPosition) => {
+                  try {
+                    await updateDoc(doc(db, 'players', playerId), { position: newPosition });
+                    toast.success('Poste mis à jour');
+                  } catch (err: any) {
+                    toast.error('Erreur: ' + err.message);
+                  }
+                }}
             />
           )}
         </div>
