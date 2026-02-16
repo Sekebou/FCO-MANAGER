@@ -462,6 +462,7 @@ const Dashboard = () => {
               event_type_label: typeLabels[eventData.type] || 'Événement',
               type_icon: typeIcons[eventData.type] || '📅',
               event_date: dateFormatted,
+              response_link: 'https://blue-pitch-dash.lovable.app',
             });
           } catch (emailErr) {
             console.error('Erreur envoi email à', email, emailErr);

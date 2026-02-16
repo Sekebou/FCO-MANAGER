@@ -23,6 +23,11 @@ export async function sendNotificationEmail(params: {
   event_type_label: string;
   type_icon: string;
   event_date: string;
+  response_link?: string;
 }) {
-  return emailjs.send(SERVICE_ID, TEMPLATES.notification, params, PUBLIC_KEY);
+  const templateParams = {
+    ...params,
+    response_link: params.response_link || 'https://blue-pitch-dash.lovable.app',
+  };
+  return emailjs.send(SERVICE_ID, TEMPLATES.notification, templateParams, PUBLIC_KEY);
 }
