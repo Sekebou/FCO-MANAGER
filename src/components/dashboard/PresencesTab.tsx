@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
+import PitchView from './PitchView';
 import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil } from 'lucide-react';
 
 interface AppUser {
@@ -264,6 +265,11 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Pitch view for published convocations */}
+                  {event.convocationsPublished && event.convocations && !isConvocationMode && (
+                    <PitchView convocations={event.convocations} players={players} />
                   )}
 
                   {/* Convocation mode (coach editing) */}
