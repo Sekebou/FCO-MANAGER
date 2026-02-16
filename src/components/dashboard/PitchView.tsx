@@ -73,15 +73,14 @@ const PitchView: React.FC<Props> = ({ convocations, players }) => {
         style={{ aspectRatio: '68 / 52.5' }}
         onClick={() => setSelectedPlayer(null)}
       >
-        {/* Grass stripes */}
-        <div className="absolute inset-0">
-          {[...Array(8)].map((_, i) => (
+        {/* Vertical grass stripes */}
+        <div className="absolute inset-0 flex">
+          {[...Array(10)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-full"
+              className="h-full"
               style={{
-                top: `${i * 12.5}%`,
-                height: '12.5%',
+                flex: 1,
                 backgroundColor: i % 2 === 0 ? 'hsl(142 40% 38%)' : 'hsl(142 40% 33%)',
               }}
             />
@@ -91,13 +90,13 @@ const PitchView: React.FC<Props> = ({ convocations, players }) => {
         {/* Half-pitch markings */}
         <svg viewBox="0 0 68 52.5" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
           {/* Outline */}
-          <rect x="1" y="0" width="66" height="51.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
+          <rect x="1" y="0" width="66" height="51.5" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
           {/* Midfield line (top) */}
-          <line x1="1" y1="0.5" x2="67" y2="0.5" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
-          {/* Center circle (half) */}
-          <path d="M 24.85 0.5 A 9.15 9.15 0 0 1 43.15 0.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
-          {/* Center spot */}
-          <circle cx="34" cy="0.5" r="0.5" fill="rgba(255,255,255,0.6)" />
+          <line x1="1" y1="0.5" x2="67" y2="0.5" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
+          {/* Center circle (half) - visible arc going downward */}
+          <path d="M 24.85 0.5 A 9.15 9.15 0 0 1 43.15 0.5" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
+          {/* Center spot on the line */}
+          <circle cx="34" cy="0.5" r="0.6" fill="rgba(255,255,255,0.7)" />
           {/* Penalty area */}
           <rect x="13.84" y="35" width="40.32" height="16.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
           {/* Goal area */}
