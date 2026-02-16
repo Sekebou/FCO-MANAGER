@@ -888,9 +888,9 @@ const Dashboard = () => {
               <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-primary-foreground">
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center shadow-sm border border-white/10">
-                  <img src={clubLogo} alt="FCO Logo" className="w-7 h-7 object-contain" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15">
+                  <img src={clubLogo} alt="FCO Logo" className="w-8 h-8 object-contain drop-shadow-md" />
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-primary-foreground leading-tight">FCO Manager</h1>
