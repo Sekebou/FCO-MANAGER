@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.svg';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ import CalendarTab from '@/components/dashboard/CalendarTab';
 import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
+import ChatTab from '@/components/dashboard/ChatTab';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
 import AddNewsForm from '@/components/modals/AddNewsForm';
@@ -126,6 +127,7 @@ const tabs = [
   { id: 'news', label: 'Actualités', icon: Bell },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
+  { id: 'chat', label: 'Discussion', icon: MessageCircle },
   { id: 'members', label: 'Membres', icon: Users },
 ];
 
@@ -1096,6 +1098,9 @@ const Dashboard = () => {
               onUploadPhotos={uploadPhotos}
               onDeletePhoto={deletePhoto}
             />
+          )}
+          {activeTab === 'chat' && (
+            <ChatTab currentUser={currentUser} />
           )}
           {activeTab === 'members' && (
             <MembersTab
