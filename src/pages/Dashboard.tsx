@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { sendInvitationEmail, sendNotificationEmail } from '@/lib/emailjs';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -451,18 +452,16 @@ const Dashboard = () => {
         const memberEmails = targetMembers.map(m => m.email);
         const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+        const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
+        const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
         for (const email of memberEmails) {
           try {
-            await supabase.functions.invoke('send-email', {
-              body: {
-                type: 'event',
-                to: email,
-                params: {
-                  event_title: eventData.title,
-                  event_type: eventData.type,
-                  event_date: dateFormatted,
-                },
-              },
+            await sendNotificationEmail({
+              to_email: email,
+              event_title: eventData.title,
+              event_type_label: typeLabels[eventData.type] || 'Événement',
+              type_icon: typeIcons[eventData.type] || '📅',
+              event_date: dateFormatted,
             });
           } catch (emailErr) {
             console.error('Erreur envoi email à', email, emailErr);
@@ -1043,19 +1042,12 @@ const Dashboard = () => {
                   const statusLabel = conv.status === 'convoque' ? 'Convoqué' : 'Non convoqué';
                   const teamLabel = '';
                     try {
-                      await supabase.functions.invoke('send-email', {
-                        body: {
-                          type: 'convocation',
-                          to: member.email,
-                          params: {
-                            player_name: player.name,
-                            match_title: event.title,
-                            match_date: dateFormatted,
-                            status: statusLabel,
-                            position: conv.position || '—',
-                            jersey_number: conv.number ? `#${conv.number}` : '—',
-                          },
-                        },
+                      await sendNotificationEmail({
+                        to_email: member.email,
+                        event_title: `${event.title} — ${statusLabel}`,
+                        event_type_label: statusLabel,
+                        type_icon: '🏟️',
+                        event_date: dateFormatted,
                       });
                     sent++;
                   } catch (emailErr) {
@@ -1219,16 +1211,11 @@ const Dashboard = () => {
               // Send email via Resend
               const roleLabels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', dirigeant: 'Dirigeant', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Admin+' };
               try {
-                await supabase.functions.invoke('send-email', {
-                  body: {
-                    type: 'invitation',
-                    to: data.email,
-                    params: {
-                      invite_link: link,
-                      role_label: roleLabels[data.role] || data.role,
-                      inviter_name: currentUser?.name || 'Un administrateur',
-                    },
-                  },
+                await sendInvitationEmail({
+                  to_email: data.email,
+                  invite_link: link,
+                  role_label: roleLabels[data.role] || data.role,
+                  inviter_name: currentUser?.name || 'Un administrateur',
                 });
                 toast.success('Invitation envoyée par email !');
               } catch (emailErr) {
