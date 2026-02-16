@@ -9,8 +9,8 @@ interface Props {
 }
 
 const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
-  const isSuperAdmin = currentUser?.role === 'superadmin';
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
+  const isSuperAdmin = currentUser?.role === 'admin+';
   const isCoach = currentUser?.role === 'entraineur';
 
   const [formData, setFormData] = useState({
@@ -51,7 +51,7 @@ const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
                   <option value="entraineur">Entraîneur</option>
                   <option value="photographe">Photographe</option>
                   <option value="admin">Administrateur</option>
-                  {isSuperAdmin && <option value="superadmin">Super Admin</option>}
+                  {isSuperAdmin && <option value="admin+">Admin+</option>}
                 </select>
               </div>
             ) : (

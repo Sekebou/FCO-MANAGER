@@ -87,7 +87,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, deleteNews, 
                       <span className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
                   </div>
-                  {(currentUser?.role === 'superadmin' || currentUser?.role === 'admin' || (currentUser?.role === 'entraineur' && item.authorId === currentUser?.uid)) && (
+                  {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || (currentUser?.role === 'entraineur' && item.authorId === currentUser?.uid)) && (
                     <button onClick={() => deleteNews(item.id)} className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all">
                       <Trash2 size={15} className="text-destructive" />
                     </button>
@@ -139,7 +139,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, deleteNews, 
                               <span className="text-[10px] text-muted-foreground">
                                 {new Date(comment.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à {new Date(comment.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                               </span>
-                              {(currentUser?.uid === comment.authorUid || currentUser?.role === 'superadmin' || currentUser?.role === 'admin') && (
+                              {(currentUser?.uid === comment.authorUid || currentUser?.role === 'admin+' || currentUser?.role === 'admin') && (
                                 <button onClick={() => deleteComment(comment.id)} className="text-[10px] text-destructive/60 hover:text-destructive font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                                   Supprimer
                                 </button>

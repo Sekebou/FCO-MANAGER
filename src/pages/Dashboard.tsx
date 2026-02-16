@@ -164,8 +164,8 @@ const Dashboard = () => {
   const [playerCreatedResult, setPlayerCreatedResult] = useState<{ name: string; email?: string; password?: string; withAccount: boolean } | null>(null);
   const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
 
-  const canManage = () => currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'entraineur');
-  const canManagePhotos = () => !!(currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'photographe'));
+  const canManage = () => currentUser && (currentUser.role === 'admin+' || currentUser.role === 'admin' || currentUser.role === 'entraineur');
+  const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin+' || currentUser.role === 'admin' || currentUser.role === 'photographe'));
   const canManageOwnPresence = (playerId: string) => {
     if (canManage()) return true;
     return currentUser && currentUser.role === 'joueur' && currentUser.playerId === playerId;
@@ -294,13 +294,13 @@ const Dashboard = () => {
     if (currentUser?.role === 'entraineur') {
       playerData.role = 'joueur';
     }
-    // Only superadmin can create admin accounts
-    if (playerData.role === 'admin' && currentUser?.role !== 'superadmin') {
+    // Only admin+ can create admin accounts
+    if (playerData.role === 'admin' && currentUser?.role !== 'admin+') {
       // admin can still create admin via the form, keep existing behavior
     }
-    // Nobody except superadmin can assign superadmin role
-    if (playerData.role === 'superadmin' && currentUser?.role !== 'superadmin') {
-      toast.error('Seul le Super Admin peut attribuer ce rôle');
+    // Nobody except admin+ can assign admin+ role
+    if (playerData.role === 'admin+' && currentUser?.role !== 'admin+') {
+      toast.error("Seul l'Admin+ peut attribuer ce rôle");
       return;
     }
 
@@ -382,15 +382,15 @@ const Dashboard = () => {
     const targetMember = members.find(m => m.id === memberId);
     if (!targetMember) return;
 
-    // Nobody can delete a superadmin
-    if (targetMember.role === 'superadmin') {
-      toast.error('Le compte Super Admin ne peut pas être supprimé');
+    // Nobody can delete an admin+
+    if (targetMember.role === 'admin+') {
+      toast.error("Le compte Admin+ ne peut pas être supprimé");
       return;
     }
 
-    // Only superadmin can delete admin accounts
-    if (targetMember.role === 'admin' && currentUser?.role !== 'superadmin') {
-      toast.error('Seul le Super Admin peut supprimer un compte Administrateur');
+    // Only admin+ can delete admin accounts
+    if (targetMember.role === 'admin' && currentUser?.role !== 'admin+') {
+      toast.error("Seul l'Admin+ peut supprimer un compte Administrateur");
       return;
     }
 
@@ -458,7 +458,7 @@ const Dashboard = () => {
 
   const canDeleteEvent = (event: Event) => {
     if (!currentUser) return false;
-    if (currentUser.role === 'superadmin' || currentUser.role === 'admin') return true;
+    if (currentUser.role === 'admin+' || currentUser.role === 'admin') return true;
     if (currentUser.role === 'entraineur') return event.createdBy === currentUser.uid;
     return false;
   };
@@ -1072,14 +1072,14 @@ const Dashboard = () => {
                 onChangeRole={async (memberId, newRole, password) => {
                   try {
                     const targetMember = members.find(m => m.id === memberId);
-                    // Cannot change superadmin's role
-                    if (targetMember?.role === 'superadmin') {
-                      toast.error('Le rôle Super Admin ne peut pas être modifié');
+                    // Cannot change admin+'s role
+                    if (targetMember?.role === 'admin+') {
+                      toast.error("Le rôle Admin+ ne peut pas être modifié");
                       throw new Error('forbidden');
                     }
-                    // Only superadmin can change admin roles or assign admin/superadmin
-                    if ((targetMember?.role === 'admin' || newRole === 'admin' || newRole === 'superadmin') && currentUser?.role !== 'superadmin') {
-                      toast.error('Seul le Super Admin peut modifier le rôle Administrateur');
+                    // Only admin+ can change admin roles or assign admin/admin+
+                    if ((targetMember?.role === 'admin' || newRole === 'admin' || newRole === 'admin+') && currentUser?.role !== 'admin+') {
+                      toast.error("Seul l'Admin+ peut modifier le rôle Administrateur");
                       throw new Error('forbidden');
                     }
                     // Re-authenticate before changing role

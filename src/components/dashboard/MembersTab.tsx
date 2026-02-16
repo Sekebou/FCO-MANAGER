@@ -37,7 +37,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   };
 
   const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur', superadmin: 'Super Admin' };
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Admin+' };
     return labels[role] || role;
   };
 
@@ -50,13 +50,13 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     return { status: 'active', text: 'Active', days };
   };
 
-  const superAdmins = members.filter(m => m.role === 'superadmin');
+  const superAdmins = members.filter(m => m.role === 'admin+');
   const admins = members.filter(m => m.role === 'admin');
   const coaches = members.filter(m => m.role === 'entraineur');
   const playerMembers = members.filter(m => m.role === 'joueur');
 
-  const roleConfig = {
-    superadmin: { icon: Shield, color: 'destructive', label: 'Super Admin', gradient: 'from-red-500/20 to-rose-500/20' },
+  const roleConfig: Record<string, any> = {
+    'admin+': { icon: Shield, color: 'destructive', label: 'Admin+', gradient: 'from-red-500/20 to-rose-500/20' },
     admin: { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     entraineur: { icon: Dumbbell, color: 'accent', label: 'Entraîneur', gradient: 'from-emerald-500/20 to-teal-500/20' },
     photographe: { icon: Camera, color: 'accent', label: 'Photographe', gradient: 'from-purple-500/20 to-pink-500/20' },
@@ -109,7 +109,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             const player = member.playerId ? players.find(p => p.id === member.playerId) : null;
             const license = player?.licenseExpiry ? getLicenseStatus(player.licenseExpiry) : null;
             const playerCards = player ? getPlayerCards(player.id) : [];
-            const config = roleConfig[member.role as keyof typeof roleConfig] || roleConfig.joueur;
+            const config = roleConfig[member.role] || roleConfig.joueur;
             const RoleIcon = config.icon;
 
             return (
@@ -226,21 +226,21 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                   <div className="flex-1" />
 
                   {/* Admin actions - always at bottom */}
-                  {(currentUser?.role === 'superadmin' || currentUser?.role === 'admin') && (
+                  {(currentUser?.role === 'admin+' || currentUser?.role === 'admin') && (
                     <div className="space-y-2 mt-3">
                       {/* Role selector logic */}
                       {(() => {
-                        const isSuperAdmin = currentUser?.role === 'superadmin';
-                        const targetIsSuperAdmin = member.role === 'superadmin';
+                        const isSuperAdmin = currentUser?.role === 'admin+';
+                        const targetIsSuperAdmin = member.role === 'admin+';
                         const targetIsAdmin = member.role === 'admin';
                         const isSelf = member.id === currentUser?.uid;
 
-                        // SuperAdmin can't change own role, nobody changes superadmin role
+                        // Admin+ can't change own role, nobody changes admin+ role
                         if (targetIsSuperAdmin) {
                           return (
                             <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-xl">
                               <Shield size={13} className="text-destructive shrink-0" />
-                              <span className="text-xs text-muted-foreground italic">Rôle Super Admin — Intouchable</span>
+                              <span className="text-xs text-muted-foreground italic">Rôle Admin+ — Intouchable</span>
                             </div>
                           );
                         }
@@ -257,7 +257,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           return (
                             <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-xl">
                               <Shield size={13} className="text-warning shrink-0" />
-                              <span className="text-xs text-muted-foreground italic">Seul le Super Admin peut modifier un rôle Admin</span>
+                              <span className="text-xs text-muted-foreground italic">Seul l'Admin+ peut modifier un rôle Admin</span>
                             </div>
                           );
                         }
@@ -279,7 +279,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                               <option value="entraineur">Entraîneur</option>
                               <option value="photographe">Photographe</option>
                               <option value="admin">Administrateur</option>
-                              {isSuperAdmin && <option value="superadmin">Super Admin</option>}
+                              {isSuperAdmin && <option value="admin+">Admin+</option>}
                             </select>
                           </div>
                         );
@@ -293,8 +293,8 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           <Lock size={13} />
                           Réinitialiser MDP
                         </button>
-                        {/* Hide delete button for superadmin accounts and admin-on-admin */}
-                        {member.role !== 'superadmin' && (currentUser?.role === 'superadmin' || member.role !== 'admin') && (
+                        {/* Hide delete button for admin+ accounts and admin-on-admin */}
+                        {member.role !== 'admin+' && (currentUser?.role === 'admin+' || member.role !== 'admin') && (
                           <button
                             onClick={() => deleteMember(member.id, member.playerId)}
                             className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
