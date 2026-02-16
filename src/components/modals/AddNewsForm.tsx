@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, Megaphone, User } from 'lucide-react';
+import { X, FileText, Megaphone } from 'lucide-react';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -7,7 +7,7 @@ interface Props {
 }
 
 const AddNewsForm = ({ onSubmit, onClose }: Props) => {
-  const [formData, setFormData] = useState({ title: '', content: '', author: '' });
+  const [formData, setFormData] = useState({ title: '', content: '' });
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={onClose}>
@@ -39,10 +39,6 @@ const AddNewsForm = ({ onSubmit, onClose }: Props) => {
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
           />
 
-          <div className="relative">
-            <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Auteur" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.author} onChange={(e) => setFormData({ ...formData, author: e.target.value })} />
-          </div>
         </div>
 
         {/* Footer */}
