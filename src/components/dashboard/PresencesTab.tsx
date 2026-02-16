@@ -19,6 +19,7 @@ interface Props {
   members: Member[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
+  canCreateEvent: () => boolean | null;
   canManageOwnPresence: (playerId: string) => boolean | null;
   togglePresence: (eventId: string, playerId: string, status: string) => void;
   deleteEvent: (eventId: string) => void;
@@ -33,7 +34,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, currentUser, canManage, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
+const PresencesTab = ({ events, players, members, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
@@ -79,7 +80,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
       <div className="flex justify-between items-center flex-wrap gap-3">
         <h2 className="text-2xl font-bold text-foreground">Gestion des présences</h2>
         <div className="flex gap-2">
-          {canManage() && (
+          {canCreateEvent() && (
             <button onClick={onAddEvent} className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all text-sm font-medium">
               <Plus size={18} /> Événement
             </button>

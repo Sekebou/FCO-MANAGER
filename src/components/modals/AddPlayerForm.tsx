@@ -49,6 +49,7 @@ const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
                 >
                   <option value="joueur">Joueur</option>
                   <option value="entraineur">Entraîneur</option>
+                  <option value="dirigeant">Dirigeant</option>
                   <option value="photographe">Photographe</option>
                   <option value="admin">Administrateur</option>
                   {isSuperAdmin && <option value="admin+">Admin+</option>}
@@ -69,7 +70,7 @@ const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input type="text" placeholder="Nom complet" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
             </div>
-            {formData.role !== 'photographe' && (
+            {formData.role !== 'photographe' && formData.role !== 'dirigeant' && (
               <>
                 <div className="relative">
                   <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />

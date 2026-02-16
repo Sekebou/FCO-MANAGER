@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
@@ -168,12 +168,17 @@ const Dashboard = () => {
   const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin+' || currentUser.role === 'admin' || currentUser.role === 'photographe'));
   const canManageOwnPresence = (playerId: string) => {
     if (canManage()) return true;
-    return currentUser && currentUser.role === 'joueur' && currentUser.playerId === playerId;
+    return currentUser && (currentUser.role === 'joueur' || currentUser.role === 'dirigeant') && currentUser.playerId === playerId;
   };
+  // Dirigeant can create news and training events
+  const canCreateNews = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
+  const canCreateEvent = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
 
-  // Filter out players linked to admin+ accounts (ghost mode)
+  // Filter out players linked to admin+ and dirigeant accounts (ghost mode for stats)
   const adminPlusPlayerIds = members.filter(m => m.role === 'admin+' && m.playerId).map(m => m.playerId);
+  const dirigeantPlayerIds = members.filter(m => m.role === 'dirigeant' && m.playerId).map(m => m.playerId);
   const visiblePlayers = players.filter(p => !adminPlusPlayerIds.includes(p.id));
+  const visiblePlayersForStats = players.filter(p => !adminPlusPlayerIds.includes(p.id) && !dirigeantPlayerIds.includes(p.id));
   const visibleMembers = members.filter(m => m.role !== 'admin+');
 
   useEffect(() => {
@@ -316,11 +321,11 @@ const Dashboard = () => {
         userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
       }
 
-      // For photographe, don't create a player document
-      const isPhotographe = playerData.role === 'photographe';
+      // For photographe/dirigeant, don't create a player document
+      const isNonPlayer = playerData.role === 'photographe' || playerData.role === 'dirigeant';
       let playerRefId: string | undefined;
 
-      if (!isPhotographe) {
+      if (!isNonPlayer) {
         const playerRef = await addDoc(collection(db, 'players'), {
           name: playerData.name,
           position: playerData.position,
@@ -416,7 +421,12 @@ const Dashboard = () => {
   };
 
   const addEvent = async (eventData: any) => {
-    if (!canManage()) return;
+    if (!canCreateEvent()) return;
+    // Dirigeant can only create training events
+    if (currentUser?.role === 'dirigeant' && eventData.type === 'match') {
+      toast.error("Les dirigeants ne peuvent créer que des entraînements");
+      return;
+    }
     try {
       const sendEmail = eventData.sendNotification;
       delete eventData.sendNotification;
@@ -465,6 +475,7 @@ const Dashboard = () => {
     if (!currentUser) return false;
     if (currentUser.role === 'admin+' || currentUser.role === 'admin') return true;
     if (currentUser.role === 'entraineur') return event.createdBy === currentUser.uid;
+    if (currentUser.role === 'dirigeant') return event.createdBy === currentUser.uid;
     return false;
   };
 
@@ -503,7 +514,7 @@ const Dashboard = () => {
   };
 
   const addNews = async (newsData: any) => {
-    if (!canManage()) return;
+    if (!canCreateNews()) return;
     try {
       await addDoc(collection(db, 'news'), {
         ...newsData,
@@ -933,6 +944,11 @@ const Dashboard = () => {
                         <Camera size={10} />
                         <span>Photographe</span>
                       </>
+                    ) : currentUser?.role === 'dirigeant' ? (
+                      <>
+                        <Briefcase size={10} />
+                        <span>Dirigeant</span>
+                      </>
                     ) : (
                       <>
                         <UserCircle size={10} />
@@ -992,6 +1008,7 @@ const Dashboard = () => {
               members={visibleMembers}
               currentUser={currentUser}
               canManage={canManage}
+              canCreateEvent={canCreateEvent}
               canManageOwnPresence={canManageOwnPresence}
               togglePresence={togglePresence}
               deleteEvent={deleteEvent}
@@ -1038,7 +1055,7 @@ const Dashboard = () => {
           )}
           {activeTab === 'stats' && (
             <StatsTab
-              players={visiblePlayers}
+              players={visiblePlayersForStats}
               events={events}
               cards={cards}
               attendanceRecords={attendanceRecords}
@@ -1074,6 +1091,7 @@ const Dashboard = () => {
               members={members}
               currentUser={currentUser}
               canManage={canManage}
+              canCreateNews={canCreateNews}
               deleteNews={deleteNews}
               toggleLike={toggleLike}
               addComment={addComment}
@@ -1151,7 +1169,7 @@ const Dashboard = () => {
 
       {/* Modals */}
       {showAddPlayer && <AddPlayerForm onSubmit={addPlayer} onClose={() => setShowAddPlayer(false)} currentUser={currentUser} />}
-      {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} />}
+      {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} isDirigeant={currentUser?.role === 'dirigeant'} />}
       {showAddNews && <AddNewsForm onSubmit={addNews} onClose={() => setShowAddNews(false)} />}
       {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
       {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
