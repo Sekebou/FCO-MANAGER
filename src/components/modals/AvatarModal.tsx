@@ -20,27 +20,35 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
 
   const isNonPlayer = currentUser.role === 'photographe';
 
-  // Load player license data
+  // Load license data from user doc
   useEffect(() => {
-    const loadPlayerData = async () => {
-      if (!currentUser.playerId || isNonPlayer) {
+    const loadLicenseData = async () => {
+      if (isNonPlayer) {
         setLoadingLicense(false);
         return;
       }
       try {
-        const playerDoc = await getDoc(doc(db, 'players', currentUser.playerId));
-        if (playerDoc.exists()) {
-          const data = playerDoc.data();
-          setLicenseExpiry(data.licenseExpiry || '');
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          // Try user doc first, fallback to player doc
+          if (data.licenseExpiry) {
+            setLicenseExpiry(data.licenseExpiry);
+          } else if (currentUser.playerId) {
+            const playerDoc = await getDoc(doc(db, 'players', currentUser.playerId));
+            if (playerDoc.exists()) {
+              setLicenseExpiry(playerDoc.data().licenseExpiry || '');
+            }
+          }
         }
       } catch (err) {
-        console.error('Error loading player data:', err);
+        console.error('Error loading license data:', err);
       } finally {
         setLoadingLicense(false);
       }
     };
-    loadPlayerData();
-  }, [currentUser.playerId, isNonPlayer]);
+    loadLicenseData();
+  }, [currentUser.uid, currentUser.playerId, isNonPlayer]);
 
   const compressImage = (file: File, maxWidth = 300, quality = 0.7): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -106,10 +114,18 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
   };
 
   const handleSaveLicense = async () => {
-    if (!currentUser.playerId) return;
     setSavingLicense(true);
     try {
-      await updateDoc(doc(db, 'players', currentUser.playerId), { licenseExpiry: licenseExpiry || null });
+      // Save to user's own doc (always writable by the user)
+      await updateDoc(doc(db, 'users', currentUser.uid), { licenseExpiry: licenseExpiry || null });
+      // Also update player doc if possible (admin/coach will have perms)
+      if (currentUser.playerId) {
+        try {
+          await updateDoc(doc(db, 'players', currentUser.playerId), { licenseExpiry: licenseExpiry || null });
+        } catch {
+          // Player doc update may fail for non-staff, that's ok
+        }
+      }
       toast.success('Licence mise à jour !');
     } catch (err: any) {
       toast.error('Erreur: ' + err.message);
