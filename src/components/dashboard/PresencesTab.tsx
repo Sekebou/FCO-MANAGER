@@ -236,15 +236,16 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                               const statusInfo = CONVOCATION_STATUSES.find(s => s.value === conv.status);
                               const StatusIcon = statusInfo?.icon || UserX;
                               const isMatchPast = new Date(event.date) < new Date();
+                              const canSeeDetails = isMatchPast || canManage();
                               return (
                                 <div key={playerId} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-lg group hover:bg-secondary/70 transition-all">
                                   <div className="flex items-center gap-2.5">
                                     <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
                                     <span className="font-medium text-sm text-foreground">{player.name}</span>
-                                    {isMatchPast && conv.position && (
+                                    {canSeeDetails && conv.position && (
                                       <span className="text-[11px] text-muted-foreground/80 font-medium">{conv.position}</span>
                                     )}
-                                    {isMatchPast && conv.number && (
+                                    {canSeeDetails && conv.number && (
                                       <span className="text-[11px] font-bold text-foreground/60">#{conv.number}</span>
                                     )}
                                   </div>
@@ -268,8 +269,8 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                     </div>
                   )}
 
-                  {/* Pitch view for published convocations - only visible after the match */}
-                  {event.convocationsPublished && event.convocations && !isConvocationMode && new Date(event.date) < new Date() && (
+                  {/* Pitch view - visible after match OR for admin/coach */}
+                  {event.convocationsPublished && event.convocations && !isConvocationMode && (new Date(event.date) < new Date() || canManage()) && (
                     <PitchView convocations={event.convocations} players={players} />
                   )}
 
