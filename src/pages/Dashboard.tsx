@@ -1111,7 +1111,7 @@ const Dashboard = () => {
               deletePlayer={deletePlayer}
               deleteMember={deleteMember}
                onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
-               onAddPlayer={() => setShowAddPlayer(true)}
+               
                onInvitePlayer={() => setShowInvitePlayer(true)}
                 onChangeRole={async (memberId, newRole, password) => {
                   try {

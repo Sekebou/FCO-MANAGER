@@ -13,12 +13,12 @@ interface Props {
   deletePlayer: (playerId: string) => void;
   deleteMember: (memberId: string, playerId?: string) => void;
   onResetPassword: (member: Member) => void;
-  onAddPlayer: () => void;
+  
   onInvitePlayer: () => void;
   onChangeRole: (memberId: string, newRole: string, password: string) => Promise<void>;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onAddPlayer, onInvitePlayer, onChangeRole }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onInvitePlayer, onChangeRole }: Props) => {
   const [roleChangeRequest, setRoleChangeRequest] = useState<{ memberId: string; memberName: string; newRole: string } | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
@@ -76,9 +76,6 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             <div className="flex gap-2">
               <button onClick={onInvitePlayer} className="bg-primary/10 text-primary px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/20 transition-all text-sm font-medium border border-primary/20">
                 <Send size={16} /> Inviter
-              </button>
-              <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
-                <Plus size={18} /> Ajouter
               </button>
             </div>
           )}
