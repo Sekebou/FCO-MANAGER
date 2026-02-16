@@ -1,11 +1,9 @@
 import React from 'react';
 import type { Event } from '@/pages/Dashboard';
-import { TEAMS } from '@/pages/Dashboard';
 
 interface AppUser {
   uid: string;
   role: string;
-  team?: string;
   [key: string]: any;
 }
 
@@ -15,20 +13,12 @@ interface Props {
 }
 
 const CalendarTab = ({ events, currentUser }: Props) => {
-  // Filter: match = team-specific, training/other = global
-  const filteredEvents = events.filter(e => {
-    if (e.type !== 'match') return true;
-    if (!currentUser || currentUser.role === 'admin') return true;
-    if (!e.team) return true;
-    return e.team === currentUser?.team;
-  });
-
-  const sorted = [...filteredEvents].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const past = sorted.filter(e => new Date(e.date) < new Date());
   const future = sorted.filter(e => new Date(e.date) >= new Date());
 
   const EventCard = ({ event, isPast }: { event: Event; isPast?: boolean }) => {
-    const teamLabel = event.team ? TEAMS.find(t => t.id === event.team)?.label : null;
+    const teamLabel = null;
     return (
       <div className={`border-l-4 p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-accent/5'} ${!isPast ? 'shadow-sm' : ''}`}>
         <div className="flex justify-between items-start">

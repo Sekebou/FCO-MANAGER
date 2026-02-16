@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users } from 'lucide-react';
 import { scrapeFFFTeams, type ScrapedMatch, type ScrapedStanding } from '@/lib/api/scrape-fff';
 import { toast } from 'sonner';
-import { TEAMS } from '@/pages/Dashboard';
+
 
 export interface Championship {
   id: string;
@@ -32,10 +32,9 @@ interface Props {
   championships: Championship[];
   matches: Match[];
   currentUserRole?: string;
-  currentUserTeam?: string;
   canManage: () => boolean | undefined;
   canUpdateChampionnat: () => boolean | undefined;
-  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; team?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string> }) => void;
+  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string> }) => void;
   onDeleteChampionship: (id: string) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
@@ -47,7 +46,6 @@ const ChampionnatTab: React.FC<Props> = ({
   championships,
   matches,
   currentUserRole,
-  currentUserTeam,
   canManage,
   canUpdateChampionnat,
   onAddChampionship,
@@ -65,7 +63,6 @@ const ChampionnatTab: React.FC<Props> = ({
   const [champName, setChampName] = useState('');
   const [champSeason, setChampSeason] = useState('2024-2025');
   const isAdmin = currentUserRole === 'admin';
-  const [champTeam, setChampTeam] = useState(isAdmin ? '' : (currentUserTeam || ''));
   const [teamsInput, setTeamsInput] = useState('');
   const [fffUrl, setFffUrl] = useState('');
   const [isScrapingFFF, setIsScrapingFFF] = useState(false);
@@ -167,11 +164,10 @@ const ChampionnatTab: React.FC<Props> = ({
 
   const handleAddChamp = () => {
     if (!champName.trim()) return;
-    if (!champTeam) { toast.warning('Sélectionnez une équipe'); return; }
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { toast.warning('Ajoutez au moins 2 équipes'); return; }
-    onAddChampionship({ name: champName, season: champSeason, teams, team: champTeam, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined });
-    setChampName(''); setChampTeam(isAdmin ? '' : (currentUserTeam || '')); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setShowAddChamp(false);
+    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined });
+    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setShowAddChamp(false);
   };
 
   const handleImportFFF = async () => {
@@ -389,7 +385,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 <div className="text-left">
                   <h3 className="font-bold text-foreground">{champ.name}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {champ.team && <span className="inline-flex items-center gap-1 bg-accent/10 text-accent px-2 py-0.5 rounded-md font-semibold mr-2">{TEAMS.find(t => t.id === champ.team)?.label || champ.team}</span>}
                     {champ.season} • {champ.teams.length} équipes • {champMatches.length} matchs
                   </p>
                 </div>
@@ -602,31 +597,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
                 <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District D1" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
               </div>
-              {isAdmin ? (
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe du club</label>
-                  <div className="relative">
-                    <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <select
-                      value={champTeam}
-                      onChange={e => setChampTeam(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
-                    >
-                      <option value="">— Sélectionner —</option>
-                      {TEAMS.map(t => (
-                        <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : currentUserTeam ? (
-                <div className="flex items-center gap-2 px-3 py-2.5 bg-accent/10 border border-accent/20 rounded-xl">
-                  <Users size={14} className="text-accent shrink-0" />
-                  <span className="text-sm font-medium text-foreground">
-                    {TEAMS.find(t => t.id === currentUserTeam)?.label} ({TEAMS.find(t => t.id === currentUserTeam)?.division})
-                  </span>
-                </div>
-              ) : null}
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saison</label>
                 <input value={champSeason} onChange={e => setChampSeason(e.target.value)} placeholder="2024-2025" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
@@ -668,7 +638,7 @@ const ChampionnatTab: React.FC<Props> = ({
               <button onClick={() => setShowAddChamp(false)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
                 Annuler
               </button>
-              <button onClick={handleAddChamp} disabled={!champName.trim() || !champTeam || teamsInput.split('\n').filter(t => t.trim()).length < 2} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20">
+              <button onClick={handleAddChamp} disabled={!champName.trim() || teamsInput.split('\n').filter(t => t.trim()).length < 2} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20">
                 Créer
               </button>
             </div>

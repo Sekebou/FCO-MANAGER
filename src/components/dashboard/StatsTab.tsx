@@ -1,12 +1,10 @@
 import React from 'react';
-import type { Player, Event, Card, AttendanceRecord, Member, TEAMS } from '@/pages/Dashboard';
-import { TEAMS as TEAM_LIST } from '@/pages/Dashboard';
+import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap } from 'lucide-react';
 
 interface Props {
   players: Player[];
-  allPlayers?: Player[];
   events: Event[];
   cards: Card[];
   attendanceRecords: AttendanceRecord[];
@@ -43,7 +41,7 @@ const PlayerAvatar: React.FC<{ player: Player; members: Member[]; size?: number;
   );
 };
 
-const StatsTab = ({ players, allPlayers, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
+const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
   const calculateAttendanceRate = (playerId: string) => {
     // Combine: active events + saved attendance_records (from deleted events)
     let present = 0, total = 0;
@@ -69,7 +67,7 @@ const StatsTab = ({ players, allPlayers, events, cards, attendanceRecords, membe
     return { rate: (present / total) * 100, present, total };
   };
 
-  const attendancePlayers = allPlayers || players;
+  const attendancePlayers = players;
   const attendanceStats = attendancePlayers
     .map(p => ({ player: p, attendance: calculateAttendanceRate(p.id) }))
     .filter(i => i.attendance !== null)
@@ -228,13 +226,8 @@ const StatsTab = ({ players, allPlayers, events, cards, attendanceRecords, membe
                      <div>
                       <h3 className="font-bold text-foreground">{player.name}</h3>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-muted-foreground px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
-                        {player.team && (
-                          <span className="text-[10px] font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded-md">
-                            {TEAM_LIST.find(t => t.id === player.team)?.label}
-                          </span>
-                        )}
-                      </div>
+                         <span className="text-xs font-medium text-muted-foreground px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
+                       </div>
                     </div>
                   </div>
                 

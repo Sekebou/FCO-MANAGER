@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield, Users } from 'lucide-react';
-import { TEAMS } from '@/pages/Dashboard';
+import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield } from 'lucide-react';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface Props {
@@ -16,7 +15,6 @@ const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
   const [formData, setFormData] = useState({
     name: '', position: 'Attaquant', createAccount: true, email: '', password: '', licenseExpiry: '',
     role: isCoach ? 'joueur' : 'joueur',
-    team: isCoach ? (currentUser?.team || '') : ''
   });
 
   return (
@@ -62,34 +60,6 @@ const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             )}
           </div>
 
-          {/* Team section - for joueur and entraineur */}
-          {(formData.role === 'joueur' || formData.role === 'entraineur') && (
-            <div className="space-y-3">
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Équipe</label>
-              {isAdmin ? (
-                <div className="relative">
-                  <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <select
-                    className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all appearance-none"
-                    value={formData.team}
-                    onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                  >
-                    <option value="">— Sélectionner une équipe —</option>
-                    {TEAMS.map(t => (
-                      <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
-                    ))}
-                  </select>
-                </div>
-              ) : currentUser?.team ? (
-                <div className="flex items-center gap-2 px-3 py-2.5 bg-accent/10 border border-accent/20 rounded-xl">
-                  <Users size={14} className="text-accent shrink-0" />
-                  <span className="text-sm font-medium text-foreground">
-                    {TEAMS.find(t => t.id === currentUser.team)?.label} ({TEAMS.find(t => t.id === currentUser.team)?.division})
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          )}
           {/* Info section */}
           <div className="space-y-3">
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Informations</label>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
-import { POSITIONS, TEAMS } from '@/pages/Dashboard';
+import { POSITIONS } from '@/pages/Dashboard';
 import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Moon, Star, Hash, Crosshair, Pencil } from 'lucide-react';
 
 interface AppUser {
@@ -39,26 +39,13 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
 
-  // Filter events: training = global, match = team-specific
-  const filterEventsByTeam = (evts: Event[]) => {
-    if (!currentUser) return evts;
-    if (currentUser.role === 'admin') return evts;
-    return evts.filter(e => {
-      if (e.type !== 'match') return true; // training/other = global
-      if (!e.team) return true; // legacy events without team
-      return e.team === currentUser.team;
-    });
-  };
-
-  const upcomingEvents = filterEventsByTeam(events)
+  // All events visible to everyone (no team filtering)
+  const upcomingEvents = events
     .filter(e => new Date(e.date) >= new Date())
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Get players relevant for a match event (same team)
-  const getPlayersForEvent = (event: Event) => {
-    if (event.type === 'match' && event.team) {
-      return players.filter(p => p.team === event.team);
-    }
+  // All players participate in all events
+  const getPlayersForEvent = (_event: Event) => {
     return players;
   };
 
@@ -116,7 +103,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
           const unknownCount = eventPlayers.length - presentCount - absentCount;
           const isConvocationMode = convocationMode === event.id;
           const isConvocationExpanded = expandedConvocations[event.id];
-          const teamLabel = event.team ? TEAMS.find(t => t.id === event.team)?.label : null;
+          const teamLabel = null;
 
           return (
             <div key={event.id} className="bg-card border border-border rounded-2xl p-5 shadow-sm animate-fade-in">
