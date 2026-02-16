@@ -28,8 +28,8 @@ interface Props {
 }
 
 const CONVOCATION_STATUSES = [
-  { value: 'convoque', label: 'Convoqué', shortLabel: 'Conv.', activeClass: 'bg-accent text-accent-foreground ring-2 ring-accent/30', dotClass: 'bg-accent', icon: UserCheck },
-  { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non conv.', activeClass: 'bg-muted text-muted-foreground ring-2 ring-border', dotClass: 'bg-muted-foreground/40', icon: UserX },
+  { value: 'convoque', label: 'Convoqué', shortLabel: 'Convoqué', activeClass: 'bg-accent text-accent-foreground ring-2 ring-accent/30 shadow-sm', dotClass: 'bg-accent', icon: UserCheck },
+  { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
 const PresencesTab = ({ events, players, members, currentUser, canManage, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
