@@ -257,9 +257,9 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                           {canManage() && (
                             <button
                               onClick={() => startConvocationMode(event.id, event)}
-                              className="mt-2 flex items-center gap-1.5 text-xs text-accent hover:text-accent/80 font-medium transition-colors"
+                              className="mt-3 w-full flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors"
                             >
-                              <Pencil size={12} /> Modifier
+                              <Pencil size={14} /> Modifier les convocations
                             </button>
                           )}
                         </div>
