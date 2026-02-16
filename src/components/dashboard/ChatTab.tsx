@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle } from 'lucide-react';
-import { db, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, firestoreLimit } from '@/lib/firebase';
+import { Send, MessageCircle, Trash2, AlertTriangle } from 'lucide-react';
+import { db, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, firestoreLimit, deleteDoc, doc, getDocs } from '@/lib/firebase';
 import type { AppUser } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface ChatMessage {
   id: string;
@@ -48,9 +49,13 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
 
   useEffect(() => {
     const q = query(
@@ -96,6 +101,32 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
       setNewMessage(text);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    try {
+      await deleteDoc(doc(db, 'chat_messages', msgId));
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      toast.error('Impossible de supprimer ce message');
+    }
+  };
+
+  const handleResetChat = async () => {
+    if (!isAdmin) return;
+    setResetting(true);
+    try {
+      const snapshot = await getDocs(collection(db, 'chat_messages'));
+      const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, 'chat_messages', d.id)));
+      await Promise.all(deletePromises);
+      toast.success(`${snapshot.docs.length} message(s) supprimé(s)`);
+      setShowResetConfirm(false);
+    } catch (err) {
+      console.error('Error resetting chat:', err);
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -158,7 +189,6 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
     return prev.createdAt.toDate().toDateString() !== curr.createdAt.toDate().toDateString();
   };
 
-  // Online indicator (count unique users in last 5 min)
   const recentUsers = new Set(
     messages
       .filter(m => m.createdAt?.toDate && (Date.now() - m.createdAt.toDate().getTime()) < 300000)
@@ -186,10 +216,53 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
             )}
           </p>
         </div>
+        {/* Admin reset button */}
+        {isAdmin && messages.length > 0 && (
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="p-2 rounded-xl text-destructive hover:bg-destructive/10 transition-all"
+            title="Supprimer tous les messages"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
       </div>
 
+      {/* Reset confirmation modal */}
+      {showResetConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-2xl">
+          <div className="bg-card border border-border rounded-2xl p-6 mx-4 max-w-sm w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-destructive" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">Vider la discussion ?</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">
+              Tous les messages ({messages.length}) seront définitivement supprimés. Cette action est irréversible.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                disabled={resetting}
+                className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleResetChat}
+                disabled={resetting}
+                className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm disabled:opacity-50"
+              >
+                {resetting ? 'Suppression...' : 'Tout supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages area */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5 relative" style={{ scrollbarWidth: 'thin' }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 py-12">
             <div className="w-20 h-20 rounded-3xl bg-secondary/80 flex items-center justify-center">
@@ -206,10 +279,10 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
           const own = isOwnMessage(msg);
           const consecutive = isConsecutive(idx);
           const showDateSep = isDifferentDay(idx);
+          const canDelete = own || isAdmin;
 
           return (
             <React.Fragment key={msg.id}>
-              {/* Date separator */}
               {showDateSep && (
                 <div className="flex items-center gap-3 py-3">
                   <div className="flex-1 h-px bg-border" />
@@ -220,7 +293,7 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
                 </div>
               )}
 
-              <div className={`flex items-end gap-2.5 ${own ? 'flex-row-reverse' : ''} ${consecutive ? 'mt-0.5' : 'mt-4'}`}>
+              <div className={`group flex items-end gap-2.5 ${own ? 'flex-row-reverse' : ''} ${consecutive ? 'mt-0.5' : 'mt-4'}`}>
                 {/* Avatar */}
                 {!own && !consecutive ? (
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 overflow-hidden shadow-sm ${ROLE_COLORS[msg.userRole] || 'bg-muted-foreground'}`}>
@@ -246,14 +319,34 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
                       </span>
                     </div>
                   )}
-                  <div
-                    className={`px-4 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
-                      own
-                        ? 'bg-gradient-to-br from-accent to-accent/90 text-accent-foreground rounded-2xl rounded-br-lg'
-                        : 'bg-secondary text-foreground rounded-2xl rounded-bl-lg border border-border/50'
-                    }`}
-                  >
-                    {msg.text}
+                  <div className="flex items-center gap-1.5">
+                    {own && canDelete && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                    <div
+                      className={`px-4 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
+                        own
+                          ? 'bg-gradient-to-br from-accent to-accent/90 text-accent-foreground rounded-2xl rounded-br-lg'
+                          : 'bg-secondary text-foreground rounded-2xl rounded-bl-lg border border-border/50'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                    {!own && canDelete && (
+                      <button
+                        onClick={() => handleDeleteMessage(msg.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                   {!consecutive && (
                     <span className={`text-[10px] text-muted-foreground/70 mt-1 ${own ? 'mr-1' : 'ml-1'}`}>
