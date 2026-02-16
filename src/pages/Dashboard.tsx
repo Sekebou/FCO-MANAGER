@@ -6,6 +6,7 @@ import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDo
 import { 
   Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase
 } from 'lucide-react';
+import clubLogo from '@/assets/logo.svg';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
 import StatsTab from '@/components/dashboard/StatsTab';
@@ -888,8 +889,8 @@ const Dashboard = () => {
                 {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center shadow-sm">
-                  <span className="text-lg">⚽</span>
+                <div className="w-9 h-9 bg-white/15 rounded-lg flex items-center justify-center shadow-sm border border-white/10">
+                  <img src={clubLogo} alt="FCO Logo" className="w-7 h-7 object-contain" />
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-primary-foreground leading-tight">FCO Manager</h1>
