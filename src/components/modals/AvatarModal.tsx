@@ -8,9 +8,11 @@ interface Props {
   currentUser: AppUser;
   onClose: () => void;
   onAvatarUpdated: (photoURL: string | null) => void;
+  focusLicense?: boolean;
 }
 
-const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
+const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false }: Props) => {
+  const licenseRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(currentUser.photoURL || null);
   const [licenseExpiry, setLicenseExpiry] = useState('');
@@ -49,6 +51,13 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
     };
     loadLicenseData();
   }, [currentUser.uid, currentUser.playerId, isNonPlayer]);
+
+  // Scroll to license section when focusLicense is set
+  useEffect(() => {
+    if (focusLicense && !loadingLicense && licenseRef.current) {
+      licenseRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [focusLicense, loadingLicense]);
 
   const compressImage = (file: File, maxWidth = 300, quality = 0.7): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -215,7 +224,7 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated }: Props) => {
 
         {/* License section - visible for non-photographe with playerId */}
         {!isNonPlayer && currentUser.playerId && (
-          <div className="px-5 pt-4 pb-5">
+          <div ref={licenseRef} className={`px-5 pt-4 pb-5 ${focusLicense ? 'ring-2 ring-primary/30 rounded-xl mx-2 bg-primary/5 transition-all' : ''}`}>
             <div className="border-t border-border pt-4">
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Expiration licence FFF
