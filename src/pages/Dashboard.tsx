@@ -127,7 +127,6 @@ const tabs = [
   { id: 'news', label: 'Actualités', icon: Bell },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
-  { id: 'chat', label: 'Discussion', icon: MessageCircle },
   { id: 'members', label: 'Membres', icon: Users },
 ];
 
@@ -158,6 +157,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Modals
   const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -1099,9 +1099,7 @@ const Dashboard = () => {
               onDeletePhoto={deletePhoto}
             />
           )}
-          {activeTab === 'chat' && (
-            <ChatTab currentUser={currentUser} />
-          )}
+          {/* Chat removed from tabs, now a floating bubble */}
           {activeTab === 'members' && (
             <MembersTab
               members={visibleMembers}
@@ -1149,6 +1147,35 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Floating Chat Bubble */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {chatOpen && (
+          <div className="w-[360px] h-[520px] max-h-[80vh] max-w-[calc(100vw-2rem)] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground border-b border-border">
+              <div className="flex items-center gap-2">
+                <MessageCircle size={18} />
+                <span className="font-semibold text-sm">Discussion</span>
+              </div>
+              <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/10 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ChatTab currentUser={currentUser} />
+            </div>
+          </div>
+        )}
+        <button
+          onClick={() => setChatOpen(prev => !prev)}
+          className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 ${
+            chatOpen ? 'bg-muted text-muted-foreground' : 'bg-accent text-accent-foreground'
+          }`}
+          title="Discussion"
+        >
+          {chatOpen ? <X size={24} /> : <MessageCircle size={24} />}
+        </button>
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-border bg-card mt-8 p-4 text-center">
