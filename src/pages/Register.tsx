@@ -1,0 +1,338 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { db, doc, getDoc, updateDoc, collection, addDoc, setDoc } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { initializeApp, getApps } from 'firebase/app';
+import { Lock, Mail, User, Loader2, Shield, ChevronRight, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import clubLogo from '@/assets/logo.svg';
+
+const Register = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+
+  const [invitation, setInvitation] = useState<any>(null);
+  const [status, setStatus] = useState<'loading' | 'valid' | 'expired' | 'used' | 'not_found'>('loading');
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', password: '', confirmPassword: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) {
+      setStatus('not_found');
+      return;
+    }
+    const checkInvitation = async () => {
+      try {
+        const invDoc = await getDoc(doc(db, 'invitations', token));
+        if (!invDoc.exists()) {
+          setStatus('not_found');
+          return;
+        }
+        const data = invDoc.data();
+        if (data.status === 'used') {
+          setStatus('used');
+          return;
+        }
+        if (new Date(data.expiresAt) < new Date()) {
+          setStatus('expired');
+          return;
+        }
+        setInvitation(data);
+        setStatus('valid');
+      } catch (err) {
+        console.error('Error checking invitation:', err);
+        setStatus('not_found');
+      }
+    };
+    checkInvitation();
+  }, [token]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      setError('Veuillez remplir tous les champs');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Get Firebase config from existing app
+      const existingApp = getApps()[0];
+      const config = existingApp.options;
+
+      // Create a temporary app to avoid signing out any current session
+      const tempApp = initializeApp(config, 'register-temp');
+      const tempAuth = getAuth(tempApp);
+
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
+      const userCredential = await createUserWithEmailAndPassword(tempAuth, invitation.email, formData.password);
+      const user = userCredential.user;
+
+      // Create player doc if role is not photographe
+      const isNonPlayer = invitation.role === 'photographe';
+      let playerRefId: string | undefined;
+
+      if (!isNonPlayer) {
+        const playerRef = await addDoc(collection(db, 'players'), {
+          name: fullName,
+          position: invitation.position || 'Attaquant',
+          matches: 0,
+          goals: 0,
+          assists: 0,
+          licenseExpiry: invitation.licenseExpiry || null,
+          team: null,
+          createdAt: new Date().toISOString(),
+        });
+        playerRefId = playerRef.id;
+      }
+
+      // Create user doc
+      const username = invitation.email.split('@')[0];
+      const userData: any = {
+        email: invitation.email,
+        username,
+        role: invitation.role,
+        name: fullName,
+        team: null,
+        createdAt: new Date().toISOString(),
+      };
+      if (playerRefId) userData.playerId = playerRefId;
+      await setDoc(doc(db, 'users', user.uid), userData);
+
+      // Mark invitation as used
+      await updateDoc(doc(db, 'invitations', token!), { status: 'used', usedAt: new Date().toISOString(), usedBy: user.uid });
+
+      // Sign out from temp app
+      await tempAuth.signOut();
+      const { deleteApp } = await import('firebase/app');
+      await deleteApp(tempApp);
+
+      setSuccess(true);
+    } catch (err: any) {
+      let msg = err.message;
+      if (err.code === 'auth/email-already-in-use') msg = 'Un compte avec cet email existe déjà.';
+      else if (err.code === 'auth/invalid-email') msg = 'Email invalide.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', dirigeant: 'Dirigeant', admin: 'Administrateur' };
+    return labels[role] || role;
+  };
+
+  // Error/status screens
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
+
+  if (status === 'not_found' || status === 'expired' || status === 'used') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-4">
+            <img src={clubLogo} alt="FCO" className="w-14 h-14 object-contain" />
+          </div>
+          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${status === 'expired' ? 'bg-warning/10' : 'bg-destructive/10'}`}>
+            {status === 'expired' ? <AlertTriangle size={28} className="text-warning" /> : <XCircle size={28} className="text-destructive" />}
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">
+            {status === 'not_found' && "Invitation introuvable"}
+            {status === 'expired' && "Invitation expirée"}
+            {status === 'used' && "Invitation déjà utilisée"}
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            {status === 'not_found' && "Ce lien d'invitation n'existe pas ou est invalide."}
+            {status === 'expired' && "Ce lien d'invitation a expiré. Demandez un nouveau lien à votre administrateur."}
+            {status === 'used' && "Ce lien a déjà été utilisé pour créer un compte."}
+          </p>
+          <button onClick={() => navigate('/auth')} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-all">
+            Aller à la connexion
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Success screen
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="w-full max-w-sm text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 rounded-2xl mb-4">
+            <CheckCircle2 size={32} className="text-accent" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">Compte créé avec succès !</h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Vous pouvez maintenant vous connecter avec votre email et votre mot de passe.
+          </p>
+          <button onClick={() => navigate('/auth')} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+            Se connecter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Registration form
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
+      <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
+
+      <div className="w-full max-w-[420px] relative z-10">
+        {/* Logo */}
+        <div className="text-center mb-8 animate-[fadeSlideUp_0.6s_ease-out_both]">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-4 border border-primary/20 shadow-lg shadow-primary/10">
+            <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Créer votre compte</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Vous avez été invité en tant que <span className="font-semibold text-primary">{getRoleLabel(invitation?.role)}</span>
+          </p>
+        </div>
+
+        {/* Form */}
+        <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
+          {/* Email display */}
+          <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50 mb-5">
+            <Mail size={16} className="text-primary shrink-0" />
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Email</p>
+              <p className="text-sm font-medium text-foreground">{invitation?.email}</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* First name */}
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Prénom</label>
+              <div className={`relative rounded-xl transition-all duration-300 ${focused === 'firstName' ? 'ring-2 ring-primary/30 shadow-md shadow-primary/5' : ''}`}>
+                <User className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'firstName' ? 'text-primary' : 'text-muted-foreground/50'}`} size={18} />
+                <input
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  onFocus={() => setFocused('firstName')}
+                  onBlur={() => setFocused(null)}
+                  className="w-full pl-11 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                  placeholder="Votre prénom"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Last name */}
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
+              <div className={`relative rounded-xl transition-all duration-300 ${focused === 'lastName' ? 'ring-2 ring-primary/30 shadow-md shadow-primary/5' : ''}`}>
+                <User className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'lastName' ? 'text-primary' : 'text-muted-foreground/50'}`} size={18} />
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  onFocus={() => setFocused('lastName')}
+                  onBlur={() => setFocused(null)}
+                  className="w-full pl-11 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                  placeholder="Votre nom"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mot de passe</label>
+              <div className={`relative rounded-xl transition-all duration-300 ${focused === 'password' ? 'ring-2 ring-primary/30 shadow-md shadow-primary/5' : ''}`}>
+                <Lock className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'password' ? 'text-primary' : 'text-muted-foreground/50'}`} size={18} />
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onFocus={() => setFocused('password')}
+                  onBlur={() => setFocused(null)}
+                  className="w-full pl-11 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                  placeholder="Minimum 6 caractères"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Confirm password */}
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confirmer le mot de passe</label>
+              <div className={`relative rounded-xl transition-all duration-300 ${focused === 'confirm' ? 'ring-2 ring-primary/30 shadow-md shadow-primary/5' : ''}`}>
+                <Lock className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'confirm' ? 'text-primary' : 'text-muted-foreground/50'}`} size={18} />
+                <input
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  onFocus={() => setFocused('confirm')}
+                  onBlur={() => setFocused(null)}
+                  className="w-full pl-11 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                  placeholder="Confirmez votre mot de passe"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                <Shield size={16} className="shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Création en cours...
+                </>
+              ) : (
+                <>
+                  Créer mon compte
+                  <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Link to login */}
+        <div className="mt-6 text-center animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
+          <button onClick={() => navigate('/auth')} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            Déjà un compte ? <span className="font-semibold">Se connecter</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;
