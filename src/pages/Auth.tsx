@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, signInWithEmailAndPassword, doc, getDoc } from '@/lib/firebase';
 import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar } from 'lucide-react';
+import clubLogo from '@/assets/logo.svg';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ const Auth = () => {
         <div className="relative z-10 px-16 max-w-lg">
           {/* Animated icon */}
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl mb-8 border border-white/20 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/15 transition-all duration-500">
-            <span className="text-5xl">⚽</span>
+            <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
           </div>
 
           {/* Title with shimmer highlight */}
@@ -129,7 +130,7 @@ const Auth = () => {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-10 animate-[fadeSlideUp_0.6s_ease-out_both]">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4 border border-primary/20">
-              <span className="text-3xl">⚽</span>
+              <img src={clubLogo} alt="FCO Logo" className="w-10 h-10 object-contain" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">
               FCO <span className="text-primary">Manager</span>
