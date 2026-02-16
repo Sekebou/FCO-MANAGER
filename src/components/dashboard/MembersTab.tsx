@@ -50,9 +50,10 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     return { status: 'active', text: 'Active', days };
   };
 
-  const admins = members.filter(m => m.role === 'admin' || m.role === 'admin+');
-  const coaches = members.filter(m => m.role === 'entraineur');
-  const playerMembers = members.filter(m => m.role === 'joueur');
+  const visibleMembers = members.filter(m => m.role !== 'admin+');
+  const admins = visibleMembers.filter(m => m.role === 'admin');
+  const coaches = visibleMembers.filter(m => m.role === 'entraineur');
+  const playerMembers = visibleMembers.filter(m => m.role === 'joueur');
 
   const roleConfig: Record<string, any> = {
     'admin+': { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
@@ -86,19 +87,19 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             <span className="text-xs font-bold">{playerMembers.length}</span>
           </div>
           <div className="flex items-center gap-2 bg-secondary text-foreground px-3 py-2 rounded-xl">
-            <span className="text-xs font-bold">Total : {members.length}</span>
+            <span className="text-xs font-bold">Total : {visibleMembers.length}</span>
           </div>
         </div>
       </div>
 
-      {members.length === 0 ? (
+      {visibleMembers.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
           <Users className="mx-auto mb-3 text-muted-foreground" size={48} />
           <p className="text-muted-foreground font-medium">Aucun membre</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {members.map(member => {
+          {visibleMembers.map(member => {
             const player = member.playerId ? players.find(p => p.id === member.playerId) : null;
             const license = player?.licenseExpiry ? getLicenseStatus(player.licenseExpiry) : null;
             const playerCards = player ? getPlayerCards(player.id) : [];
