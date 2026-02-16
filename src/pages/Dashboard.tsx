@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import emailjs from '@emailjs/browser';
+import { supabase } from '@/integrations/supabase/client';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
   Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase
@@ -445,21 +445,25 @@ const Dashboard = () => {
       
       await addDoc(collection(db, 'events'), eventToSave);
 
-      // Envoyer les notifications par email via EmailJS
+      // Envoyer les notifications par email via Resend
       if (sendEmail) {
         const targetMembers = members.filter(m => m.role === 'joueur');
         const memberEmails = targetMembers.map(m => m.email);
-        const typeLabel = eventData.type === 'match' ? 'Match' : eventData.type === 'training' ? 'Entraînement' : 'Événement';
         const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
         for (const email of memberEmails) {
           try {
-            await emailjs.send('service_7wmhc61', 'template_m28qlzo', {
-              to_email: email,
-              event_title: eventData.title,
-              event_type: typeLabel,
-              event_date: dateFormatted,
-            }, 'YAIU3poHgOd6cG6PI');
+            await supabase.functions.invoke('send-email', {
+              body: {
+                type: 'event',
+                to: email,
+                params: {
+                  event_title: eventData.title,
+                  event_type: eventData.type,
+                  event_date: dateFormatted,
+                },
+              },
+            });
           } catch (emailErr) {
             console.error('Erreur envoi email à', email, emailErr);
           }
@@ -1038,17 +1042,21 @@ const Dashboard = () => {
                   if (!member?.email || !player) continue;
                   const statusLabel = conv.status === 'convoque' ? 'Convoqué' : 'Non convoqué';
                   const teamLabel = '';
-                  try {
-                    await emailjs.send('service_7wmhc61', 'template_p3ig9nv', {
-                      to_email: member.email,
-                      player_name: player.name,
-                      match_title: event.title,
-                      match_date: dateFormatted,
-                      team_name: teamLabel,
-                      convocation_status: statusLabel,
-                      position: conv.position || '—',
-                      jersey_number: conv.number ? `#${conv.number}` : '—',
-                    }, 'YAIU3poHgOd6cG6PI');
+                    try {
+                      await supabase.functions.invoke('send-email', {
+                        body: {
+                          type: 'convocation',
+                          to: member.email,
+                          params: {
+                            player_name: player.name,
+                            match_title: event.title,
+                            match_date: dateFormatted,
+                            status: statusLabel,
+                            position: conv.position || '—',
+                            jersey_number: conv.number ? `#${conv.number}` : '—',
+                          },
+                        },
+                      });
                     sent++;
                   } catch (emailErr) {
                     console.error('Erreur envoi convocation à', member.email, emailErr);
@@ -1208,15 +1216,20 @@ const Dashboard = () => {
               // Generate the invitation link
               const link = `${window.location.origin}/register?token=${token}`;
 
-              // Try to send email via EmailJS
+              // Send email via Resend
+              const roleLabels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', dirigeant: 'Dirigeant', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Admin+' };
               try {
-                await emailjs.send('service_7wmhc61', 'template_m28qlzo', {
-                  to_email: data.email,
-                  event_title: "Invitation FCO Manager",
-                  event_type: "Invitation",
-                  event_date: `Rôle : ${data.role === 'joueur' ? 'Joueur' : data.role === 'entraineur' ? 'Entraîneur' : data.role === 'dirigeant' ? 'Dirigeant' : data.role === 'photographe' ? 'Photographe' : 'Administrateur'}`,
-                  message: `Vous avez été invité à rejoindre FCO Manager. Cliquez sur ce lien pour créer votre compte : ${link}\n\nCe lien expire dans 48 heures.`,
-                }, 'YAIU3poHgOd6cG6PI');
+                await supabase.functions.invoke('send-email', {
+                  body: {
+                    type: 'invitation',
+                    to: data.email,
+                    params: {
+                      invite_link: link,
+                      role_label: roleLabels[data.role] || data.role,
+                      inviter_name: currentUser?.name || 'Un administrateur',
+                    },
+                  },
+                });
                 toast.success('Invitation envoyée par email !');
               } catch (emailErr) {
                 console.error('Erreur envoi email:', emailErr);
