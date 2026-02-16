@@ -667,7 +667,12 @@ const ChampionnatTab: React.FC<Props> = ({
                     {isScrapingFFF ? 'Import...' : 'Importer'}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">Collez l'URL d'une page équipe/classement FFF pour importer les clubs et matchs</p>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Collez l'URL d'une page équipe/classement FFF pour importer les clubs et matchs.{' '}
+                  <a href="https://epreuves.fff.fr" target="_blank" rel="noopener noreferrer" className="text-accent underline hover:brightness-110 transition-all">
+                    Trouver mon championnat sur epreuves.fff.fr
+                  </a>
+                </p>
                 {importedMatches.length > 0 && (
                   <div className="mt-2 flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-lg">
                     <Trophy size={14} />
