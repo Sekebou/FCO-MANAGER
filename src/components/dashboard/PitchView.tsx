@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Convocation } from '@/pages/Dashboard';
 
 interface Player {
@@ -11,21 +11,20 @@ interface Props {
   players: Player[];
 }
 
-// Map positions to (x%, y%) on a vertical pitch (top = attack, bottom = goal)
+// Half-pitch: goal at bottom (y=100%), midfield at top (y=0%)
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
-  'Gardien':            { x: 50, y: 90 },
-  'Défenseur central':  { x: 50, y: 72 },
-  'Latéral droit':      { x: 82, y: 70 },
-  'Latéral gauche':     { x: 18, y: 70 },
-  'Milieu défensif':    { x: 50, y: 54 },
+  'Attaquant':          { x: 50, y: 8 },
+  'Ailier gauche':      { x: 15, y: 14 },
+  'Ailier droit':       { x: 85, y: 14 },
+  'Milieu offensif':    { x: 50, y: 28 },
   'Milieu central':     { x: 50, y: 42 },
-  'Milieu offensif':    { x: 50, y: 30 },
-  'Ailier droit':       { x: 80, y: 24 },
-  'Ailier gauche':      { x: 20, y: 24 },
-  'Attaquant':          { x: 50, y: 12 },
+  'Milieu défensif':    { x: 50, y: 52 },
+  'Latéral gauche':     { x: 14, y: 65 },
+  'Latéral droit':      { x: 86, y: 65 },
+  'Défenseur central':  { x: 50, y: 68 },
+  'Gardien':            { x: 50, y: 90 },
 };
 
-// When multiple players share the same position, spread them horizontally
 function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
   const groups: Record<string, typeof basePlayers> = {};
   basePlayers.forEach(p => {
@@ -40,7 +39,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     if (group.length === 1) {
       result.push({ ...group[0], x: base.x, y: base.y });
     } else {
-      const spread = Math.min(20, 14 * (group.length - 1));
+      const spread = Math.min(28, 16 * (group.length - 1));
       group.forEach((p, i) => {
         const offset = -spread / 2 + (spread / (group.length - 1)) * i;
         result.push({ ...p, x: Math.max(8, Math.min(92, base.x + offset)), y: base.y });
@@ -51,6 +50,8 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
 }
 
 const PitchView: React.FC<Props> = ({ convocations, players }) => {
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+
   const convokedPlayers = Object.entries(convocations)
     .filter(([, conv]) => conv.status === 'convoque' && conv.position)
     .map(([playerId, conv]) => {
@@ -62,48 +63,77 @@ const PitchView: React.FC<Props> = ({ convocations, players }) => {
   if (convokedPlayers.length === 0) return null;
 
   const positioned = getSpreadCoords(convokedPlayers);
+  const selected = selectedPlayer ? positioned.find(p => p.id === selectedPlayer) : null;
 
   return (
     <div className="mt-4">
       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Composition</h4>
-      <div className="relative w-full aspect-[68/105] max-w-sm mx-auto rounded-xl overflow-hidden border-2 border-accent/30">
-        {/* Pitch background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-green-700 to-green-600" />
-        
-        {/* Pitch markings */}
-        <svg viewBox="0 0 68 105" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
+      <div
+        className="relative w-full max-w-sm mx-auto rounded-xl overflow-hidden border border-border bg-card"
+        style={{ aspectRatio: '68 / 52.5' }}
+        onClick={() => setSelectedPlayer(null)}
+      >
+        {/* Half-pitch markings */}
+        <svg viewBox="0 0 68 52.5" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
           {/* Outline */}
-          <rect x="1" y="1" width="66" height="103" rx="0" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.5" />
-          {/* Center line */}
-          <line x1="1" y1="52.5" x2="67" y2="52.5" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" />
-          {/* Center circle */}
-          <circle cx="34" cy="52.5" r="9.15" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" />
-          <circle cx="34" cy="52.5" r="0.6" fill="rgba(255,255,255,0.4)" />
-          {/* Top penalty area */}
-          <rect x="13.84" y="1" width="40.32" height="16.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" />
-          <rect x="22.14" y="1" width="23.72" height="5.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" />
-          <circle cx="34" cy="11" r="0.5" fill="rgba(255,255,255,0.4)" />
-          {/* Bottom penalty area */}
-          <rect x="13.84" y="87.5" width="40.32" height="16.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" />
-          <rect x="22.14" y="98.5" width="23.72" height="5.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" />
-          <circle cx="34" cy="94" r="0.5" fill="rgba(255,255,255,0.4)" />
+          <rect x="1" y="0" width="66" height="51.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          {/* Midfield line (top) */}
+          <line x1="1" y1="0.5" x2="67" y2="0.5" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          {/* Center circle (half) */}
+          <path d="M 24.85 0.5 A 9.15 9.15 0 0 1 43.15 0.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          {/* Penalty area */}
+          <rect x="13.84" y="35" width="40.32" height="16.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          {/* Goal area */}
+          <rect x="22.14" y="46" width="23.72" height="5.5" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          {/* Penalty spot */}
+          <circle cx="34" cy="40" r="0.5" fill="hsl(var(--muted-foreground))" opacity="0.4" />
+          {/* Penalty arc */}
+          <path d="M 25 35 A 9.15 9.15 0 0 0 43 35" fill="none" stroke="hsl(var(--border))" strokeWidth="0.4" />
+          {/* Goal */}
+          <rect x="27" y="51.5" width="14" height="1.5" rx="0.3" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="0.4" opacity="0.5" />
         </svg>
 
         {/* Players */}
-        {positioned.map(p => (
-          <div
-            key={p.id}
-            className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ left: `${p.x}%`, top: `${p.y}%` }}
-          >
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-xs sm:text-sm shadow-lg border-2 border-white/80">
-              {p.conv.number || '?'}
+        {positioned.map(p => {
+          const isSelected = selectedPlayer === p.id;
+          return (
+            <div
+              key={p.id}
+              className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10"
+              style={{ left: `${p.x}%`, top: `${p.y}%` }}
+              onClick={(e) => { e.stopPropagation(); setSelectedPlayer(isSelected ? null : p.id); }}
+            >
+              <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all border-2 ${
+                isSelected 
+                  ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-110' 
+                  : 'bg-accent text-accent-foreground border-accent/50 shadow-md hover:scale-105'
+              }`}>
+                {p.conv.number || '?'}
+              </div>
+              <span className="mt-0.5 text-[9px] sm:text-[10px] font-semibold text-foreground text-center leading-tight max-w-[60px] truncate">
+                {p.name.split(' ').pop()}
+              </span>
             </div>
-            <span className="mt-0.5 text-[9px] sm:text-[10px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] text-center leading-tight max-w-[60px] truncate">
-              {p.name.split(' ').pop()}
-            </span>
+          );
+        })}
+
+        {/* Player detail popup */}
+        {selected && (
+          <div
+            className="absolute z-20 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl p-3 min-w-[140px] -translate-x-1/2 animate-fade-in"
+            style={{
+              left: `${Math.max(20, Math.min(80, selected.x))}%`,
+              top: `${Math.max(0, selected.y - 22)}%`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-bold text-sm">{selected.name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{selected.conv.position}</p>
+            {selected.conv.number && (
+              <p className="text-xs font-semibold text-accent mt-0.5">N° {selected.conv.number}</p>
+            )}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );
