@@ -16,7 +16,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     { value: 'other', label: '📌 Autre', color: 'bg-muted border-border text-muted-foreground' },
   ];
 
-  const typeOptions = isDirigeant ? allTypeOptions.filter(o => o.value !== 'match') : allTypeOptions;
+  const typeOptions = isDirigeant ? allTypeOptions.filter(o => o.value === 'training') : allTypeOptions;
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={onClose}>
