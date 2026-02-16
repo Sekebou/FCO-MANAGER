@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar } from 'lucide-react';
+import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar, Share2 } from 'lucide-react';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface Props {
-  onSubmit: (data: { email: string; role: string; licenseExpiry?: string; position?: string }) => void;
+  onSubmit: (data: { email?: string; role: string; licenseExpiry?: string; position?: string; mode: 'email' | 'link' }) => void;
   onClose: () => void;
   currentUser: AppUser | null;
 }
@@ -12,6 +12,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
   const isSuperAdmin = currentUser?.role === 'admin+';
 
+  const [mode, setMode] = useState<'email' | 'link'>('email');
   const [formData, setFormData] = useState({
     email: '',
     role: 'joueur',
@@ -20,12 +21,13 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
   });
 
   const handleSubmit = () => {
-    if (!formData.email) return;
+    if (mode === 'email' && !formData.email) return;
     onSubmit({
-      email: formData.email,
+      email: mode === 'email' ? formData.email : undefined,
       role: formData.role,
       licenseExpiry: formData.licenseExpiry || undefined,
       position: formData.position || undefined,
+      mode,
     });
   };
 
@@ -39,7 +41,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               <Send size={20} className="text-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-foreground">Inviter par email</h3>
+              <h3 className="text-lg font-bold text-foreground">Inviter un membre</h3>
               <p className="text-xs text-muted-foreground whitespace-nowrap">La création du compte est réalisée par l'utilisateur.</p>
             </div>
           </div>
@@ -50,6 +52,28 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
 
         {/* Body */}
         <div className="p-5 space-y-4">
+          {/* Mode toggle */}
+          <div className="flex gap-2 p-1 bg-secondary rounded-xl">
+            <button
+              onClick={() => setMode('email')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                mode === 'email' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Mail size={15} />
+              Par email
+            </button>
+            <button
+              onClick={() => setMode('link')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                mode === 'link' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Share2 size={15} />
+              Par lien
+            </button>
+          </div>
+
           {/* Role */}
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rôle attribué</label>
@@ -77,20 +101,22 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             )}
           </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email du destinataire</label>
-            <div className="relative">
-              <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="email"
-                placeholder="joueur@email.com"
-                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 text-sm transition-all"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
+          {/* Email - only in email mode */}
+          {mode === 'email' && (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Email du destinataire</label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="email"
+                  placeholder="joueur@email.com"
+                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 text-sm transition-all"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Optional: Position */}
           {formData.role !== 'photographe' && (
@@ -138,7 +164,10 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             <div className="flex items-start gap-2">
               <Link2 size={14} className="text-primary shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Un lien d'inscription sera envoyé par email. La personne pourra créer son compte en renseignant son nom, prénom et mot de passe. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.
+                {mode === 'email'
+                  ? <>Un lien d'inscription sera envoyé par email. La personne pourra créer son compte en renseignant son nom, prénom et mot de passe. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  : <>Un lien d'inscription sera généré. Partagez-le directement à la personne concernée. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                }
               </p>
             </div>
           </div>
@@ -151,11 +180,14 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!formData.email}
+            disabled={mode === 'email' && !formData.email}
             className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
           >
-            <Send size={16} />
-            Envoyer l'invitation
+            {mode === 'email' ? (
+              <><Send size={16} /> Envoyer</>
+            ) : (
+              <><Share2 size={16} /> Générer le lien</>
+            )}
           </button>
         </div>
       </div>

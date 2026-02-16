@@ -1206,7 +1206,7 @@ const Dashboard = () => {
 
               // Store invitation in Firestore
               await setDoc(doc(db, 'invitations', token), {
-                email: data.email,
+                email: data.email || null,
                 role: data.role,
                 position: data.position || null,
                 licenseExpiry: data.licenseExpiry || null,
@@ -1220,23 +1220,27 @@ const Dashboard = () => {
               // Generate the invitation link
               const link = `${window.location.origin}/register?token=${token}`;
 
-              // Send email via Resend
-              const roleLabels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', dirigeant: 'Dirigeant', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Admin+' };
-              try {
-                await sendInvitationEmail({
-                  to_email: data.email,
-                  invite_link: link,
-                  role_label: roleLabels[data.role] || data.role,
-                  inviter_name: currentUser?.name || 'Un administrateur',
-                });
-                toast.success('Invitation envoyée par email !');
-              } catch (emailErr) {
-                console.error('Erreur envoi email:', emailErr);
-                toast.warning("Email non envoyé, mais le lien a été généré");
+              if (data.mode === 'email' && data.email) {
+                // Send email
+                const roleLabels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', dirigeant: 'Dirigeant', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Admin+' };
+                try {
+                  await sendInvitationEmail({
+                    to_email: data.email,
+                    invite_link: link,
+                    role_label: roleLabels[data.role] || data.role,
+                    inviter_name: currentUser?.name || 'Un administrateur',
+                  });
+                  toast.success('Invitation envoyée par email !');
+                } catch (emailErr) {
+                  console.error('Erreur envoi email:', emailErr);
+                  toast.warning("Email non envoyé, mais le lien a été généré");
+                }
+              } else {
+                toast.success('Lien d\'invitation généré !');
               }
 
               setShowInvitePlayer(false);
-              setInviteResult({ email: data.email, link });
+              setInviteResult({ email: data.email || '', link });
             } catch (err: any) {
               toast.error('Erreur: ' + err.message);
             }
@@ -1250,8 +1254,8 @@ const Dashboard = () => {
               <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-4">
                 <CheckCircle2 size={32} className="text-accent" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">Invitation envoyée</h3>
-              <p className="text-sm text-muted-foreground mt-1">{inviteResult.email}</p>
+              <h3 className="text-lg font-bold text-foreground">{inviteResult.email ? 'Invitation envoyée' : 'Lien généré'}</h3>
+              {inviteResult.email && <p className="text-sm text-muted-foreground mt-1">{inviteResult.email}</p>}
             </div>
             <div className="mx-6 mb-4 space-y-2">
               <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
