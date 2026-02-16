@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Smile } from 'lucide-react';
+import { Send, MessageCircle } from 'lucide-react';
 import { db, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, firestoreLimit } from '@/lib/firebase';
 import type { AppUser } from '@/contexts/AuthContext';
 
@@ -18,6 +18,15 @@ interface Props {
 }
 
 const ROLE_COLORS: Record<string, string> = {
+  'admin+': 'bg-red-500',
+  'admin': 'bg-orange-500',
+  'entraineur': 'bg-accent',
+  'joueur': 'bg-emerald-500',
+  'photographe': 'bg-purple-500',
+  'dirigeant': 'bg-amber-600',
+};
+
+const ROLE_TEXT_COLORS: Record<string, string> = {
   'admin+': 'text-red-500',
   'admin': 'text-orange-500',
   'entraineur': 'text-accent',
@@ -26,11 +35,21 @@ const ROLE_COLORS: Record<string, string> = {
   'dirigeant': 'text-amber-600',
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  'admin+': 'Super Admin',
+  'admin': 'Admin',
+  'entraineur': 'Entraîneur',
+  'joueur': 'Joueur',
+  'photographe': 'Photo',
+  'dirigeant': 'Dirigeant',
+};
+
 const ChatTab: React.FC<Props> = ({ currentUser }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -46,6 +65,8 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
         ...doc.data(),
       } as ChatMessage));
       setMessages(msgs);
+    }, (error) => {
+      console.warn('Chat listener error:', error);
     });
 
     return () => unsubscribe();
@@ -57,20 +78,22 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
 
   const handleSend = async () => {
     if (!newMessage.trim() || !currentUser || sending) return;
+    const text = newMessage.trim();
+    setNewMessage('');
     setSending(true);
     try {
       await addDoc(collection(db, 'chat_messages'), {
-        text: newMessage.trim(),
+        text,
         userId: currentUser.uid,
         userName: currentUser.name,
         userRole: currentUser.role,
         userPhoto: currentUser.photoURL || null,
         createdAt: serverTimestamp(),
       });
-      setNewMessage('');
       inputRef.current?.focus();
     } catch (err) {
       console.error('Error sending message:', err);
+      setNewMessage(text);
     } finally {
       setSending(false);
     }
@@ -98,13 +121,25 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
     return `${date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} ${time}`;
   };
 
+  const formatDateSeparator = (timestamp: any) => {
+    if (!timestamp?.toDate) return '';
+    const date = timestamp.toDate();
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    if (isToday) return "Aujourd'hui";
+    if (isYesterday) return 'Hier';
+    return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   const isOwnMessage = (msg: ChatMessage) => msg.userId === currentUser?.uid;
 
-  // Group consecutive messages from the same user
   const isConsecutive = (idx: number) => {
     if (idx === 0) return false;
     const prev = messages[idx - 1];
@@ -112,74 +147,122 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
     if (prev.userId !== curr.userId) return false;
     if (!prev.createdAt?.toDate || !curr.createdAt?.toDate) return false;
     const diff = curr.createdAt.toDate().getTime() - prev.createdAt.toDate().getTime();
-    return diff < 120000; // 2 min
+    return diff < 120000;
   };
 
+  const isDifferentDay = (idx: number) => {
+    if (idx === 0) return true;
+    const prev = messages[idx - 1];
+    const curr = messages[idx];
+    if (!prev.createdAt?.toDate || !curr.createdAt?.toDate) return false;
+    return prev.createdAt.toDate().toDateString() !== curr.createdAt.toDate().toDateString();
+  };
+
+  // Online indicator (count unique users in last 5 min)
+  const recentUsers = new Set(
+    messages
+      .filter(m => m.createdAt?.toDate && (Date.now() - m.createdAt.toDate().getTime()) < 300000)
+      .map(m => m.userId)
+  );
+
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] max-h-[700px]">
+    <div className="flex flex-col h-[calc(100vh-180px)] max-h-[800px] bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 pb-4 border-b border-border mb-0">
-        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-          <MessageCircle size={20} className="text-accent" />
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-card/80 backdrop-blur-sm">
+        <div className="relative">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-md">
+            <MessageCircle size={22} className="text-accent-foreground" />
+          </div>
+          {recentUsers.size > 0 && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-500 rounded-full border-2 border-card" />
+          )}
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Discussion</h2>
-          <p className="text-sm text-muted-foreground">{messages.length} message(s)</p>
+        <div className="flex-1">
+          <h2 className="text-lg font-bold text-foreground tracking-tight">Discussion du club</h2>
+          <p className="text-xs text-muted-foreground">
+            {messages.length} message{messages.length > 1 ? 's' : ''}
+            {recentUsers.size > 0 && (
+              <span className="text-emerald-500 font-medium"> · {recentUsers.size} actif{recentUsers.size > 1 ? 's' : ''}</span>
+            )}
+          </p>
         </div>
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto py-4 space-y-1 scrollbar-thin">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-            <MessageCircle size={48} className="opacity-30" />
-            <p className="text-sm">Aucun message. Lancez la conversation !</p>
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 py-12">
+            <div className="w-20 h-20 rounded-3xl bg-secondary/80 flex items-center justify-center">
+              <MessageCircle size={36} className="opacity-40" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium">Aucun message pour l'instant</p>
+              <p className="text-xs mt-1 opacity-70">Soyez le premier à lancer la conversation ! 💬</p>
+            </div>
           </div>
         )}
+
         {messages.map((msg, idx) => {
           const own = isOwnMessage(msg);
           const consecutive = isConsecutive(idx);
+          const showDateSep = isDifferentDay(idx);
+
           return (
-            <div
-              key={msg.id}
-              className={`flex items-end gap-2 ${own ? 'flex-row-reverse' : ''} ${consecutive ? 'mt-0.5' : 'mt-3'}`}
-            >
-              {/* Avatar */}
-              {!own && !consecutive ? (
-                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0 overflow-hidden">
-                  {msg.userPhoto ? (
-                    <img src={msg.userPhoto} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    getInitials(msg.userName)
+            <React.Fragment key={msg.id}>
+              {/* Date separator */}
+              {showDateSep && (
+                <div className="flex items-center gap-3 py-3">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[11px] font-medium text-muted-foreground bg-card px-3 py-1 rounded-full border border-border shadow-sm">
+                    {formatDateSeparator(msg.createdAt)}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+              )}
+
+              <div className={`flex items-end gap-2.5 ${own ? 'flex-row-reverse' : ''} ${consecutive ? 'mt-0.5' : 'mt-4'}`}>
+                {/* Avatar */}
+                {!own && !consecutive ? (
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 overflow-hidden shadow-sm ${ROLE_COLORS[msg.userRole] || 'bg-muted-foreground'}`}>
+                    {msg.userPhoto ? (
+                      <img src={msg.userPhoto} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      getInitials(msg.userName)
+                    )}
+                  </div>
+                ) : !own ? (
+                  <div className="w-9 shrink-0" />
+                ) : null}
+
+                {/* Bubble */}
+                <div className={`max-w-[78%] flex flex-col ${own ? 'items-end' : 'items-start'}`}>
+                  {!consecutive && !own && (
+                    <div className="flex items-center gap-1.5 mb-1 ml-1">
+                      <span className={`text-xs font-bold ${ROLE_TEXT_COLORS[msg.userRole] || 'text-muted-foreground'}`}>
+                        {msg.userName}
+                      </span>
+                      <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${ROLE_COLORS[msg.userRole] || 'bg-muted-foreground'} text-white opacity-80`}>
+                        {ROLE_LABELS[msg.userRole] || msg.userRole}
+                      </span>
+                    </div>
+                  )}
+                  <div
+                    className={`px-4 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
+                      own
+                        ? 'bg-gradient-to-br from-accent to-accent/90 text-accent-foreground rounded-2xl rounded-br-lg'
+                        : 'bg-secondary text-foreground rounded-2xl rounded-bl-lg border border-border/50'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                  {!consecutive && (
+                    <span className={`text-[10px] text-muted-foreground/70 mt-1 ${own ? 'mr-1' : 'ml-1'}`}>
+                      {formatTime(msg.createdAt)}
+                    </span>
                   )}
                 </div>
-              ) : !own ? (
-                <div className="w-8 shrink-0" />
-              ) : null}
-
-              {/* Bubble */}
-              <div className={`max-w-[75%] ${own ? 'items-end' : 'items-start'} flex flex-col`}>
-                {!consecutive && !own && (
-                  <span className={`text-xs font-semibold mb-0.5 ml-1 ${ROLE_COLORS[msg.userRole] || 'text-muted-foreground'}`}>
-                    {msg.userName}
-                  </span>
-                )}
-                <div
-                  className={`px-3.5 py-2 text-sm leading-relaxed break-words ${
-                    own
-                      ? 'bg-accent text-accent-foreground rounded-2xl rounded-br-md'
-                      : 'bg-secondary text-foreground rounded-2xl rounded-bl-md'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-                {!consecutive && (
-                  <span className="text-[10px] text-muted-foreground mt-0.5 mx-1">
-                    {formatTime(msg.createdAt)}
-                  </span>
-                )}
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
         <div ref={messagesEndRef} />
@@ -187,28 +270,37 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
 
       {/* Input bar */}
       {currentUser ? (
-        <div className="border-t border-border pt-3 flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Écrivez un message..."
-            className="flex-1 px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all"
-            maxLength={1000}
-          />
-          <button
-            onClick={handleSend}
-            disabled={!newMessage.trim() || sending}
-            className="p-3 bg-accent text-accent-foreground rounded-xl hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Send size={18} />
-          </button>
+        <div className="border-t border-border px-4 py-3 bg-card/80 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 overflow-hidden ${ROLE_COLORS[currentUser.role] || 'bg-muted-foreground'}`}>
+              {currentUser.photoURL ? (
+                <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" />
+              ) : (
+                getInitials(currentUser.name)
+              )}
+            </div>
+            <input
+              ref={inputRef}
+              type="text"
+              value={newMessage}
+              onChange={e => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Écrivez un message..."
+              className="flex-1 px-4 py-2.5 bg-secondary border border-border rounded-2xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 text-sm transition-all"
+              maxLength={1000}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!newMessage.trim() || sending}
+              className="p-2.5 bg-gradient-to-br from-accent to-accent/80 text-accent-foreground rounded-2xl hover:shadow-md hover:scale-105 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+            >
+              <Send size={18} />
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="border-t border-border pt-3 text-center text-sm text-muted-foreground">
-          Connectez-vous pour envoyer des messages
+        <div className="border-t border-border px-4 py-4 text-center text-sm text-muted-foreground bg-secondary/50">
+          🔒 Connectez-vous pour participer à la discussion
         </div>
       )}
     </div>
