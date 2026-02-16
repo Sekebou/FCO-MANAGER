@@ -3,7 +3,7 @@ import { sendInvitationEmail, sendNotificationEmail } from '@/lib/emailjs';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
+import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
   Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle
 } from 'lucide-react';
@@ -170,6 +170,7 @@ const Dashboard = () => {
   const [showAdminResetPassword, setShowAdminResetPassword] = useState(false);
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showLicenseReminder, setShowLicenseReminder] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [showInvitePlayer, setShowInvitePlayer] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ email: string; link: string } | null>(null);
@@ -282,6 +283,35 @@ const Dashboard = () => {
 
     return () => unsubs.forEach(u => u());
   }, [currentUser, navigate]);
+
+  // License reminder check — show popup if user has no license set
+  useEffect(() => {
+    if (!currentUser || currentUser.role === 'photographe' || currentUser.role === 'admin+') return;
+    const checkLicense = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const userData = userDoc.exists() ? userDoc.data() : null;
+        const userLicense = userData?.licenseExpiry;
+        
+        // Also check player doc
+        let playerLicense: string | null = null;
+        if (currentUser.playerId) {
+          try {
+            const playerDoc = await getDoc(doc(db, 'players', currentUser.playerId));
+            playerLicense = playerDoc.exists() ? playerDoc.data()?.licenseExpiry || null : null;
+          } catch {}
+        }
+        
+        const hasLicense = !!(userLicense || playerLicense);
+        if (!hasLicense) {
+          setShowLicenseReminder(true);
+        }
+      } catch (err) {
+        console.warn('License check error:', err);
+      }
+    };
+    checkLicense();
+  }, [currentUser]);
 
   const handleLogout = async () => {
     await logout();
@@ -1308,6 +1338,35 @@ const Dashboard = () => {
             setCurrentUser({ ...currentUser, photoURL });
           }}
         />
+      )}
+      {showLicenseReminder && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setShowLicenseReminder(false)}>
+          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center pt-8 pb-4 px-6">
+              <div className="w-16 h-16 bg-warning/10 rounded-2xl flex items-center justify-center mb-4">
+                <Shield size={32} className="text-warning" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Licence non renseignée</h3>
+              <p className="text-sm text-muted-foreground mt-2 text-center">
+                Votre date d'expiration de licence FFF n'est pas encore renseignée. Merci de la mettre à jour dans votre profil.
+              </p>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-border">
+              <button
+                onClick={() => setShowLicenseReminder(false)}
+                className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+              >
+                Plus tard
+              </button>
+              <button
+                onClick={() => { setShowLicenseReminder(false); setShowAvatarModal(true); }}
+                className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-primary/20"
+              >
+                Mettre à jour
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {confirmModal && (
         <ConfirmModal
