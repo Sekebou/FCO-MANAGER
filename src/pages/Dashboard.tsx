@@ -164,8 +164,8 @@ const Dashboard = () => {
   const [playerCreatedResult, setPlayerCreatedResult] = useState<{ name: string; email?: string; password?: string; withAccount: boolean } | null>(null);
   const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
 
-  const canManage = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'entraineur');
-  const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'photographe'));
+  const canManage = () => currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'entraineur');
+  const canManagePhotos = () => !!(currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'photographe'));
   const canManageOwnPresence = (playerId: string) => {
     if (canManage()) return true;
     return currentUser && currentUser.role === 'joueur' && currentUser.playerId === playerId;
@@ -294,6 +294,15 @@ const Dashboard = () => {
     if (currentUser?.role === 'entraineur') {
       playerData.role = 'joueur';
     }
+    // Only superadmin can create admin accounts
+    if (playerData.role === 'admin' && currentUser?.role !== 'superadmin') {
+      // admin can still create admin via the form, keep existing behavior
+    }
+    // Nobody except superadmin can assign superadmin role
+    if (playerData.role === 'superadmin' && currentUser?.role !== 'superadmin') {
+      toast.error('Seul le Super Admin peut attribuer ce rôle');
+      return;
+    }
 
     try {
       // Create auth account FIRST — if it fails, no player is created
@@ -368,6 +377,23 @@ const Dashboard = () => {
 
   const deleteMember = async (memberId: string, playerId?: string) => {
     if (!canManage()) return;
+    
+    // Find the target member
+    const targetMember = members.find(m => m.id === memberId);
+    if (!targetMember) return;
+
+    // Nobody can delete a superadmin
+    if (targetMember.role === 'superadmin') {
+      toast.error('Le compte Super Admin ne peut pas être supprimé');
+      return;
+    }
+
+    // Only superadmin can delete admin accounts
+    if (targetMember.role === 'admin' && currentUser?.role !== 'superadmin') {
+      toast.error('Seul le Super Admin peut supprimer un compte Administrateur');
+      return;
+    }
+
     setConfirmModal({
       title: 'Supprimer ce membre ?',
       message: 'Cette action est irréversible. Le membre et ses données associées seront supprimés.',
@@ -432,7 +458,7 @@ const Dashboard = () => {
 
   const canDeleteEvent = (event: Event) => {
     if (!currentUser) return false;
-    if (currentUser.role === 'admin') return true;
+    if (currentUser.role === 'superadmin' || currentUser.role === 'admin') return true;
     if (currentUser.role === 'entraineur') return event.createdBy === currentUser.uid;
     return false;
   };
@@ -1043,25 +1069,36 @@ const Dashboard = () => {
               deleteMember={deleteMember}
                onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
                onAddPlayer={() => setShowAddPlayer(true)}
-               onChangeRole={async (memberId, newRole, password) => {
-                 try {
-                   // Re-authenticate admin before changing role
-                   const user = firebaseAuth.currentUser;
-                   if (!user || !user.email) throw new Error('Non authentifié');
-                   const credential = EmailAuthProvider.credential(user.email, password);
-                   await reauthenticateWithCredential(user, credential);
-                   
-                   await updateDoc(doc(db, 'users', memberId), { role: newRole });
-                   toast.success('Rôle mis à jour avec succès');
-                 } catch (err: any) {
-                   if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-                     toast.error('Mot de passe incorrect');
-                   } else {
-                     toast.error('Erreur: ' + err.message);
-                   }
-                   throw err;
-                 }
-               }}
+                onChangeRole={async (memberId, newRole, password) => {
+                  try {
+                    const targetMember = members.find(m => m.id === memberId);
+                    // Cannot change superadmin's role
+                    if (targetMember?.role === 'superadmin') {
+                      toast.error('Le rôle Super Admin ne peut pas être modifié');
+                      throw new Error('forbidden');
+                    }
+                    // Only superadmin can change admin roles or assign admin/superadmin
+                    if ((targetMember?.role === 'admin' || newRole === 'admin' || newRole === 'superadmin') && currentUser?.role !== 'superadmin') {
+                      toast.error('Seul le Super Admin peut modifier le rôle Administrateur');
+                      throw new Error('forbidden');
+                    }
+                    // Re-authenticate before changing role
+                    const user = firebaseAuth.currentUser;
+                    if (!user || !user.email) throw new Error('Non authentifié');
+                    const credential = EmailAuthProvider.credential(user.email, password);
+                    await reauthenticateWithCredential(user, credential);
+                    
+                    await updateDoc(doc(db, 'users', memberId), { role: newRole });
+                    toast.success('Rôle mis à jour avec succès');
+                  } catch (err: any) {
+                    if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                      toast.error('Mot de passe incorrect');
+                    } else if (err.message !== 'forbidden') {
+                      toast.error('Erreur: ' + err.message);
+                    }
+                    throw err;
+                  }
+                }}
             />
           )}
         </div>

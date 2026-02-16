@@ -37,7 +37,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   };
 
   const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur' };
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur', superadmin: 'Super Admin' };
     return labels[role] || role;
   };
 
@@ -50,11 +50,13 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     return { status: 'active', text: 'Active', days };
   };
 
+  const superAdmins = members.filter(m => m.role === 'superadmin');
   const admins = members.filter(m => m.role === 'admin');
   const coaches = members.filter(m => m.role === 'entraineur');
   const playerMembers = members.filter(m => m.role === 'joueur');
 
   const roleConfig = {
+    superadmin: { icon: Shield, color: 'destructive', label: 'Super Admin', gradient: 'from-red-500/20 to-rose-500/20' },
     admin: { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     entraineur: { icon: Dumbbell, color: 'accent', label: 'Entraîneur', gradient: 'from-emerald-500/20 to-teal-500/20' },
     photographe: { icon: Camera, color: 'accent', label: 'Photographe', gradient: 'from-purple-500/20 to-pink-500/20' },
@@ -71,6 +73,12 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
               <Plus size={18} /> Ajouter un joueur
             </button>
+          )}
+          {superAdmins.length > 0 && (
+            <div className="flex items-center gap-2 bg-destructive/10 text-destructive px-3 py-2 rounded-xl">
+              <Shield size={14} />
+              <span className="text-xs font-bold">{superAdmins.length}</span>
+            </div>
           )}
           <div className="flex items-center gap-2 bg-warning/10 text-warning px-3 py-2 rounded-xl">
             <Shield size={14} />
@@ -218,34 +226,64 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                   <div className="flex-1" />
 
                   {/* Admin actions - always at bottom */}
-                  {currentUser?.role === 'admin' && (
+                  {(currentUser?.role === 'superadmin' || currentUser?.role === 'admin') && (
                     <div className="space-y-2 mt-3">
-                      {/* Role selector - disabled if viewing own admin account */}
-                      {member.id === currentUser?.uid && member.role === 'admin' ? (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-xl">
-                          <Shield size={13} className="text-warning shrink-0" />
-                          <span className="text-xs text-muted-foreground italic">Vous ne pouvez pas modifier votre propre rôle admin</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <Shield size={13} className="text-muted-foreground shrink-0" />
-                          <select
-                            value={member.role}
-                            onChange={(e) => {
-                              const newRole = e.target.value;
-                              if (newRole !== member.role) {
-                                setRoleChangeRequest({ memberId: member.id, memberName: member.name, newRole });
-                              }
-                            }}
-                            className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
-                          >
-                            <option value="joueur">Joueur</option>
-                            <option value="entraineur">Entraîneur</option>
-                            <option value="photographe">Photographe</option>
-                            <option value="admin">Administrateur</option>
-                          </select>
-                        </div>
-                      )}
+                      {/* Role selector logic */}
+                      {(() => {
+                        const isSuperAdmin = currentUser?.role === 'superadmin';
+                        const targetIsSuperAdmin = member.role === 'superadmin';
+                        const targetIsAdmin = member.role === 'admin';
+                        const isSelf = member.id === currentUser?.uid;
+
+                        // SuperAdmin can't change own role, nobody changes superadmin role
+                        if (targetIsSuperAdmin) {
+                          return (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-xl">
+                              <Shield size={13} className="text-destructive shrink-0" />
+                              <span className="text-xs text-muted-foreground italic">Rôle Super Admin — Intouchable</span>
+                            </div>
+                          );
+                        }
+                        // Admin can't change own admin role or other admins' roles
+                        if (!isSuperAdmin && (isSelf && currentUser?.role === 'admin')) {
+                          return (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-xl">
+                              <Shield size={13} className="text-warning shrink-0" />
+                              <span className="text-xs text-muted-foreground italic">Vous ne pouvez pas modifier votre propre rôle admin</span>
+                            </div>
+                          );
+                        }
+                        if (!isSuperAdmin && targetIsAdmin) {
+                          return (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 border border-border rounded-xl">
+                              <Shield size={13} className="text-warning shrink-0" />
+                              <span className="text-xs text-muted-foreground italic">Seul le Super Admin peut modifier un rôle Admin</span>
+                            </div>
+                          );
+                        }
+                        // Show role selector
+                        return (
+                          <div className="flex items-center gap-2">
+                            <Shield size={13} className="text-muted-foreground shrink-0" />
+                            <select
+                              value={member.role}
+                              onChange={(e) => {
+                                const newRole = e.target.value;
+                                if (newRole !== member.role) {
+                                  setRoleChangeRequest({ memberId: member.id, memberName: member.name, newRole });
+                                }
+                              }}
+                              className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
+                            >
+                              <option value="joueur">Joueur</option>
+                              <option value="entraineur">Entraîneur</option>
+                              <option value="photographe">Photographe</option>
+                              <option value="admin">Administrateur</option>
+                              {isSuperAdmin && <option value="superadmin">Super Admin</option>}
+                            </select>
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex gap-2">
                         <button
@@ -255,12 +293,15 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           <Lock size={13} />
                           Réinitialiser MDP
                         </button>
-                        <button
-                          onClick={() => deleteMember(member.id, member.playerId)}
-                          className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        {/* Hide delete button for superadmin accounts and admin-on-admin */}
+                        {member.role !== 'superadmin' && (currentUser?.role === 'superadmin' || member.role !== 'admin') && (
+                          <button
+                            onClick={() => deleteMember(member.id, member.playerId)}
+                            className="flex items-center justify-center gap-2 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive px-3 py-2.5 rounded-xl transition-all text-xs font-semibold"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
