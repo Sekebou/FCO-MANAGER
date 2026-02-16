@@ -35,7 +35,7 @@ export interface Player {
 }
 
 export interface Convocation {
-  status: 'titulaire' | 'remplacant' | 'non_convoque' | 'repos';
+  status: 'convoque' | 'non_convoque';
   position?: string;
   number?: number;
 }
@@ -951,7 +951,7 @@ const Dashboard = () => {
                   const player = players.find(p => p.id === playerId);
                   const member = members.find(m => m.playerId === playerId);
                   if (!member?.email || !player) continue;
-                  const statusLabel = conv.status === 'titulaire' ? 'Convoqué (Titulaire)' : conv.status === 'remplacant' ? 'Convoqué (Remplaçant)' : conv.status === 'repos' ? 'En repos' : 'Non convoqué';
+                  const statusLabel = conv.status === 'convoque' ? 'Convoqué' : 'Non convoqué';
                   const teamLabel = '';
                   try {
                     await emailjs.send('service_7wmhc61', 'template_p3ig9nv', {

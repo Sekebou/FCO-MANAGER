@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Moon, Star, Hash, Crosshair, Pencil } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil } from 'lucide-react';
 
 interface AppUser {
   uid: string;
@@ -28,10 +28,8 @@ interface Props {
 }
 
 const CONVOCATION_STATUSES = [
-  { value: 'titulaire', label: 'Titulaire', shortLabel: 'Titu', activeClass: 'bg-accent text-accent-foreground ring-2 ring-accent/30', dotClass: 'bg-accent', icon: Star },
-  { value: 'remplacant', label: 'Remplaçant', shortLabel: 'Rempl', activeClass: 'bg-primary text-primary-foreground ring-2 ring-primary/30', dotClass: 'bg-primary', icon: UserCheck },
+  { value: 'convoque', label: 'Convoqué', shortLabel: 'Conv.', activeClass: 'bg-accent text-accent-foreground ring-2 ring-accent/30', dotClass: 'bg-accent', icon: UserCheck },
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non conv.', activeClass: 'bg-muted text-muted-foreground ring-2 ring-border', dotClass: 'bg-muted-foreground/40', icon: UserX },
-  { value: 'repos', label: 'Repos', shortLabel: 'Repos', activeClass: 'bg-warning/15 text-warning ring-2 ring-warning/30', dotClass: 'bg-warning', icon: Moon },
 ] as const;
 
 const PresencesTab = ({ events, players, members, currentUser, canManage, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
@@ -227,9 +225,9 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                       {isConvocationExpanded && (
                         <div className="space-y-1.5 animate-fade-in">
                           {Object.entries(event.convocations)
-                            .sort((a, b) => {
-                              const order = { titulaire: 0, remplacant: 1, repos: 2, non_convoque: 3 };
-                              return (order[a[1].status] || 3) - (order[b[1].status] || 3);
+                          .sort((a, b) => {
+                              const order = { convoque: 0, non_convoque: 1 };
+                              return (order[a[1].status] ?? 1) - (order[b[1].status] ?? 1);
                             })
                             .map(([playerId, conv]) => {
                               const player = players.find(p => p.id === playerId);
@@ -292,7 +290,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
 
                       {eventPlayers.map(player => {
                         const draft = draftConvocations[player.id] || { status: 'non_convoque' as const };
-                        const isConvoked = draft.status === 'titulaire' || draft.status === 'remplacant';
+                        const isConvoked = draft.status === 'convoque';
                         const presence = event.presences?.[player.id];
                         return (
                           <div key={player.id} className="p-3 bg-secondary/30 rounded-xl space-y-2.5 border border-transparent hover:border-border/50 transition-all">
