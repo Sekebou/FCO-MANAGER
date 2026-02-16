@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send } from 'lucide-react';
 
 interface Props {
   members: Member[];
@@ -14,10 +14,11 @@ interface Props {
   deleteMember: (memberId: string, playerId?: string) => void;
   onResetPassword: (member: Member) => void;
   onAddPlayer: () => void;
+  onInvitePlayer: () => void;
   onChangeRole: (memberId: string, newRole: string, password: string) => Promise<void>;
 }
 
-const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onAddPlayer, onChangeRole }: Props) => {
+const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayerCards, deletePlayer, deleteMember, onResetPassword, onAddPlayer, onInvitePlayer, onChangeRole }: Props) => {
   const [roleChangeRequest, setRoleChangeRequest] = useState<{ memberId: string; memberName: string; newRole: string } | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
@@ -72,9 +73,14 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
         <h2 className="text-2xl font-bold text-foreground">Membres du club</h2>
         <div className="flex gap-2 items-center flex-wrap">
           {canManage() && (
-            <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
-              <Plus size={18} /> Ajouter un joueur
-            </button>
+            <div className="flex gap-2">
+              <button onClick={onInvitePlayer} className="bg-primary/10 text-primary px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/20 transition-all text-sm font-medium border border-primary/20">
+                <Send size={16} /> Inviter
+              </button>
+              <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
+                <Plus size={18} /> Ajouter
+              </button>
+            </div>
           )}
           <div className="flex items-center gap-2 bg-warning/10 text-warning px-3 py-2 rounded-xl">
             <Shield size={14} />

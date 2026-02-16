@@ -23,6 +23,7 @@ import ChangePasswordForm from '@/components/modals/ChangePasswordForm';
 import AdminResetPasswordForm from '@/components/modals/AdminResetPasswordForm';
 import AvatarModal from '@/components/modals/AvatarModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
+import InvitePlayerForm from '@/components/modals/InvitePlayerForm';
 
 
 export interface Player {
@@ -162,6 +163,8 @@ const Dashboard = () => {
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [showInvitePlayer, setShowInvitePlayer] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ email: string; link: string } | null>(null);
   const [playerCreatedResult, setPlayerCreatedResult] = useState<{ name: string; email?: string; password?: string; withAccount: boolean } | null>(null);
   const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
 
@@ -329,7 +332,7 @@ const Dashboard = () => {
       if (!isNonPlayer) {
         const playerRef = await addDoc(collection(db, 'players'), {
           name: playerData.name,
-          position: playerData.position,
+          position: playerData.position || 'Non défini',
           matches: 0,
           goals: 0,
           assists: 0,
@@ -1126,6 +1129,7 @@ const Dashboard = () => {
               deleteMember={deleteMember}
                onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
                onAddPlayer={() => setShowAddPlayer(true)}
+               onInvitePlayer={() => setShowInvitePlayer(true)}
                 onChangeRole={async (memberId, newRole, password) => {
                   try {
                     const targetMember = members.find(m => m.id === memberId);
@@ -1171,6 +1175,99 @@ const Dashboard = () => {
 
       {/* Modals */}
       {showAddPlayer && <AddPlayerForm onSubmit={addPlayer} onClose={() => setShowAddPlayer(false)} currentUser={currentUser} />}
+      {showInvitePlayer && (
+        <InvitePlayerForm
+          currentUser={currentUser}
+          onClose={() => setShowInvitePlayer(false)}
+          onSubmit={async (data) => {
+            try {
+              // Coaches can only invite joueur
+              if (currentUser?.role === 'entraineur') data.role = 'joueur';
+              if (data.role === 'admin+' && currentUser?.role !== 'admin+') {
+                toast.error("Seul l'Admin+ peut attribuer ce rôle");
+                return;
+              }
+
+              // Generate a unique token
+              const token = crypto.randomUUID();
+              const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
+              // Store invitation in Firestore
+              await setDoc(doc(db, 'invitations', token), {
+                email: data.email,
+                role: data.role,
+                position: data.position || null,
+                licenseExpiry: data.licenseExpiry || null,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+                createdBy: currentUser?.uid || '',
+                createdByName: currentUser?.name || '',
+                expiresAt,
+              });
+
+              // Generate the invitation link
+              const link = `${window.location.origin}/register?token=${token}`;
+
+              // Try to send email via EmailJS
+              try {
+                await emailjs.send('service_7wmhc61', 'template_m28qlzo', {
+                  to_email: data.email,
+                  event_title: "Invitation FCO Manager",
+                  event_type: "Invitation",
+                  event_date: `Rôle : ${data.role === 'joueur' ? 'Joueur' : data.role === 'entraineur' ? 'Entraîneur' : data.role === 'dirigeant' ? 'Dirigeant' : data.role === 'photographe' ? 'Photographe' : 'Administrateur'}`,
+                  message: `Vous avez été invité à rejoindre FCO Manager. Cliquez sur ce lien pour créer votre compte : ${link}\n\nCe lien expire dans 48 heures.`,
+                }, 'YAIU3poHgOd6cG6PI');
+                toast.success('Invitation envoyée par email !');
+              } catch (emailErr) {
+                console.error('Erreur envoi email:', emailErr);
+                toast.warning("Email non envoyé, mais le lien a été généré");
+              }
+
+              setShowInvitePlayer(false);
+              setInviteResult({ email: data.email, link });
+            } catch (err: any) {
+              toast.error('Erreur: ' + err.message);
+            }
+          }}
+        />
+      )}
+      {inviteResult && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setInviteResult(null)}>
+          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-col items-center pt-8 pb-4 px-6">
+              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-4">
+                <CheckCircle2 size={32} className="text-accent" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Invitation envoyée</h3>
+              <p className="text-sm text-muted-foreground mt-1">{inviteResult.email}</p>
+            </div>
+            <div className="mx-6 mb-4 space-y-2">
+              <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
+                <Mail size={16} className="text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Lien d'inscription</p>
+                  <p className="text-xs font-medium text-foreground truncate">{inviteResult.link}</p>
+                </div>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(inviteResult.link); toast.success('Lien copié !'); }}
+                  className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+                  title="Copier"
+                >
+                  <Copy size={14} className="text-muted-foreground" />
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center mt-2 px-2">
+                📋 Vous pouvez aussi partager ce lien directement. Il expire dans 48h.
+              </p>
+            </div>
+            <div className="p-4 border-t border-border">
+              <button onClick={() => setInviteResult(null)} className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all text-sm">
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} isDirigeant={currentUser?.role === 'dirigeant'} />}
       {showAddNews && <AddNewsForm onSubmit={addNews} onClose={() => setShowAddNews(false)} />}
       {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
