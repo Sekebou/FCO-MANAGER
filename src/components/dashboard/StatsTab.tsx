@@ -80,7 +80,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
       </div>
 
       {/* Attendance section - admin only */}
-      {(currentUser?.role === 'superadmin' || currentUser?.role === 'admin' || currentUser?.role === 'entraineur') && attendanceStats.length > 0 && (
+      {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || currentUser?.role === 'entraineur') && attendanceStats.length > 0 && (
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-5 border-b border-border">

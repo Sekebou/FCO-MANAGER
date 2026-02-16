@@ -65,7 +65,7 @@ const ChampionnatTab: React.FC<Props> = ({
   const [champName, setChampName] = useState('');
   const [champSeason, setChampSeason] = useState('2024-2025');
   const [champTeam, setChampTeam] = useState<string>('A');
-  const isAdmin = currentUserRole === 'admin' || currentUserRole === 'superadmin';
+  const isAdmin = currentUserRole === 'admin' || currentUserRole === 'admin+';
   const [teamsInput, setTeamsInput] = useState('');
   const [fffUrl, setFffUrl] = useState('');
   const [isScrapingFFF, setIsScrapingFFF] = useState(false);
