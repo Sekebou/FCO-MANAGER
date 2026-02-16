@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 
-// ─── Email Templates ───
+// ─── Modern Dark Email Layout ───
 
 const baseLayout = (content: string) => `
 <!DOCTYPE html>
@@ -17,28 +17,34 @@ const baseLayout = (content: string) => `
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
-<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:32px 16px;">
+<body style="margin:0;padding:0;background-color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f172a;padding:40px 16px;">
     <tr>
       <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
-          <!-- Header -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;">
+          <!-- Logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);padding:28px 32px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:1px;">⚽ FCO MANAGER</h1>
+            <td align="center" style="padding-bottom:24px;">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:linear-gradient(135deg,#3b82f6,#6366f1);padding:12px 24px;border-radius:14px;">
+                    <span style="color:#ffffff;font-size:20px;font-weight:800;letter-spacing:1.5px;">⚽ FCO MANAGER</span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
-          <!-- Body -->
+          <!-- Card -->
           <tr>
-            <td style="padding:32px;">
+            <td style="background-color:#1e293b;border-radius:20px;overflow:hidden;border:1px solid #334155;">
               ${content}
             </td>
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding:20px 32px;background-color:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
-              <p style="margin:0;font-size:11px;color:#94a3b8;">Football Club Organisation · FCO Manager</p>
-              <p style="margin:4px 0 0;font-size:11px;color:#cbd5e1;">Cet email a été envoyé automatiquement, merci de ne pas répondre.</p>
+            <td style="padding:24px 16px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#475569;">Football Club Organisation · FCO Manager</p>
+              <p style="margin:6px 0 0;font-size:10px;color:#334155;">Email automatique · Ne pas répondre</p>
             </td>
           </tr>
         </table>
@@ -49,7 +55,7 @@ const baseLayout = (content: string) => `
 </html>
 `;
 
-const buttonStyle = `display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#1e40af,#3b82f6);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;`;
+const buttonStyle = `display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:14px;letter-spacing:0.5px;`;
 
 // ─── Template: Invitation ───
 function invitationEmail(params: {
@@ -58,30 +64,46 @@ function invitationEmail(params: {
   inviter_name: string;
 }) {
   return baseLayout(`
-    <h2 style="margin:0 0 8px;font-size:20px;color:#1e293b;">Vous êtes invité ! 🎉</h2>
-    <p style="margin:0 0 20px;font-size:14px;color:#64748b;line-height:1.6;">
-      <strong style="color:#1e293b;">${params.inviter_name}</strong> vous invite à rejoindre 
-      <strong style="color:#1e293b;">FCO Manager</strong> en tant que 
-      <span style="display:inline-block;padding:2px 10px;background:#dbeafe;color:#1e40af;border-radius:6px;font-size:13px;font-weight:600;">${params.role_label}</span>
-    </p>
-    <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.6;">
-      Cliquez sur le bouton ci-dessous pour créer votre compte et rejoindre l'équipe.
-    </p>
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td align="center">
-          <a href="${params.invite_link}" target="_blank" style="${buttonStyle}">
-            Créer mon compte →
-          </a>
-        </td>
-      </tr>
-    </table>
-    <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;text-align:center;">
-      Ou copiez ce lien :<br/>
-      <a href="${params.invite_link}" style="color:#3b82f6;word-break:break-all;font-size:12px;">${params.invite_link}</a>
-    </p>
-    <div style="margin:24px 0 0;padding:12px 16px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
-      <p style="margin:0;font-size:12px;color:#92400e;">⏳ Ce lien expire dans <strong>48 heures</strong>.</p>
+    <div style="padding:36px 32px 28px;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <span style="display:inline-block;font-size:44px;margin-bottom:8px;">🎉</span>
+        <h2 style="margin:0;font-size:22px;font-weight:800;color:#f1f5f9;">Vous êtes invité !</h2>
+      </div>
+      <div style="background:#0f172a;border-radius:14px;padding:20px 24px;border:1px solid #334155;margin-bottom:24px;">
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td style="padding:8px 0;border-bottom:1px solid #1e293b;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Invité par</span><br/>
+              <span style="font-size:15px;font-weight:700;color:#e2e8f0;">${params.inviter_name}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Rôle</span><br/>
+              <span style="display:inline-block;margin-top:4px;padding:4px 14px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border-radius:8px;font-size:13px;font-weight:700;">${params.role_label}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <p style="margin:0 0 24px;font-size:14px;color:#94a3b8;line-height:1.7;text-align:center;">
+        Créez votre compte pour rejoindre l'équipe et accéder à toutes les fonctionnalités.
+      </p>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td align="center">
+            <a href="${params.invite_link}" target="_blank" style="${buttonStyle}">
+              Créer mon compte →
+            </a>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:20px 0 0;font-size:11px;color:#475569;text-align:center;line-height:1.6;">
+        Ou copiez ce lien :<br/>
+        <a href="${params.invite_link}" style="color:#60a5fa;word-break:break-all;font-size:11px;">${params.invite_link}</a>
+      </p>
+    </div>
+    <div style="padding:14px 32px;background:#0f172a;border-top:1px solid #334155;text-align:center;">
+      <span style="font-size:12px;color:#f59e0b;font-weight:600;">⏳ Ce lien expire dans 48 heures</span>
     </div>
   `);
 }
@@ -92,36 +114,44 @@ function eventNotificationEmail(params: {
   event_type: string;
   event_date: string;
 }) {
-  const typeIcon = params.event_type === 'match' ? '🏟️' : params.event_type === 'training' ? '🏋️' : '📅';
-  const typeColor = params.event_type === 'match' ? '#dc2626' : '#059669';
-  const typeBg = params.event_type === 'match' ? '#fef2f2' : '#ecfdf5';
+  const isMatch = params.event_type === 'match';
+  const isTraining = params.event_type === 'training';
+  const typeIcon = isMatch ? '🏟️' : isTraining ? '🏋️' : '📅';
+  const typeLabel = isMatch ? 'Match' : isTraining ? 'Entraînement' : 'Événement';
+  const accentColor = isMatch ? '#ef4444' : '#10b981';
+  const accentBg = isMatch ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
 
   return baseLayout(`
-    <h2 style="margin:0 0 8px;font-size:20px;color:#1e293b;">Nouvel événement ${typeIcon}</h2>
-    <p style="margin:0 0 20px;font-size:14px;color:#64748b;">Un événement a été ajouté au calendrier.</p>
-    <div style="padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:20px;">
-      <table cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-          <td style="padding:6px 0;">
-            <span style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Événement</span><br/>
-            <span style="font-size:16px;font-weight:700;color:#1e293b;">${params.event_title}</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;">
-            <span style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Type</span><br/>
-            <span style="display:inline-block;padding:3px 12px;background:${typeBg};color:${typeColor};border-radius:6px;font-size:13px;font-weight:600;">${params.event_type === 'match' ? 'Match' : params.event_type === 'training' ? 'Entraînement' : 'Événement'}</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;">
-            <span style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Date</span><br/>
-            <span style="font-size:15px;font-weight:600;color:#1e293b;">📅 ${params.event_date}</span>
-          </td>
-        </tr>
-      </table>
+    <div style="padding:36px 32px 28px;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <span style="display:inline-block;font-size:44px;margin-bottom:8px;">${typeIcon}</span>
+        <h2 style="margin:0;font-size:22px;font-weight:800;color:#f1f5f9;">Nouvel événement</h2>
+        <p style="margin:8px 0 0;font-size:14px;color:#64748b;">Un événement a été ajouté au calendrier</p>
+      </div>
+      <div style="background:#0f172a;border-radius:14px;padding:20px 24px;border:1px solid #334155;">
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #1e293b;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Événement</span><br/>
+              <span style="font-size:17px;font-weight:800;color:#f1f5f9;">${params.event_title}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #1e293b;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Type</span><br/>
+              <span style="display:inline-block;margin-top:4px;padding:4px 14px;background:${accentBg};color:${accentColor};border-radius:8px;font-size:13px;font-weight:700;border:1px solid ${accentColor}30;">${typeLabel}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Date</span><br/>
+              <span style="font-size:15px;font-weight:700;color:#e2e8f0;">📅 ${params.event_date}</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <p style="margin:24px 0 0;font-size:13px;color:#475569;text-align:center;">Connectez-vous à FCO Manager pour plus de détails 💪</p>
     </div>
-    <p style="margin:0;font-size:13px;color:#94a3b8;text-align:center;">Connectez-vous à FCO Manager pour plus de détails.</p>
   `);
 }
 
@@ -135,53 +165,55 @@ function convocationEmail(params: {
   jersey_number: string;
 }) {
   const isConvoque = params.status === 'Convoqué';
-  const statusColor = isConvoque ? '#059669' : '#dc2626';
-  const statusBg = isConvoque ? '#ecfdf5' : '#fef2f2';
-  const statusBorder = isConvoque ? '#a7f3d0' : '#fecaca';
+  const statusColor = isConvoque ? '#10b981' : '#ef4444';
+  const statusBg = isConvoque ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
   const statusIcon = isConvoque ? '✅' : '❌';
 
   return baseLayout(`
-    <h2 style="margin:0 0 8px;font-size:20px;color:#1e293b;">Convocation 🏟️</h2>
-    <p style="margin:0 0 20px;font-size:14px;color:#64748b;">
-      Bonjour <strong style="color:#1e293b;">${params.player_name}</strong>, voici votre convocation.
-    </p>
-    <!-- Status Banner -->
-    <div style="padding:16px 20px;background:${statusBg};border:2px solid ${statusBorder};border-radius:12px;text-align:center;margin-bottom:20px;">
-      <span style="font-size:28px;">${statusIcon}</span>
-      <p style="margin:8px 0 0;font-size:18px;font-weight:800;color:${statusColor};">${params.status}</p>
+    <div style="padding:36px 32px 28px;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <span style="display:inline-block;font-size:44px;margin-bottom:8px;">🏟️</span>
+        <h2 style="margin:0;font-size:22px;font-weight:800;color:#f1f5f9;">Convocation</h2>
+        <p style="margin:8px 0 0;font-size:14px;color:#64748b;">Bonjour <strong style="color:#e2e8f0;">${params.player_name}</strong></p>
+      </div>
+      <!-- Status -->
+      <div style="padding:18px 24px;background:${statusBg};border:1px solid ${statusColor}40;border-radius:14px;text-align:center;margin-bottom:24px;">
+        <span style="font-size:32px;">${statusIcon}</span>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:${statusColor};">${params.status}</p>
+      </div>
+      <!-- Details -->
+      <div style="background:#0f172a;border-radius:14px;padding:20px 24px;border:1px solid #334155;">
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #1e293b;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Match</span><br/>
+              <span style="font-size:15px;font-weight:700;color:#f1f5f9;">${params.match_title}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;${isConvoque ? 'border-bottom:1px solid #1e293b;' : ''}">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Date</span><br/>
+              <span style="font-size:15px;font-weight:700;color:#e2e8f0;">📅 ${params.match_date}</span>
+            </td>
+          </tr>
+          ${isConvoque ? `
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #1e293b;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Poste</span><br/>
+              <span style="font-size:15px;font-weight:700;color:#e2e8f0;">📍 ${params.position}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;">
+              <span style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">Numéro</span><br/>
+              <span style="font-size:15px;font-weight:700;color:#e2e8f0;">🔢 ${params.jersey_number}</span>
+            </td>
+          </tr>
+          ` : ''}
+        </table>
+      </div>
+      <p style="margin:24px 0 0;font-size:13px;color:#475569;text-align:center;">Bonne préparation ! 💪</p>
     </div>
-    <!-- Match Details -->
-    <div style="padding:20px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:20px;">
-      <table cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-          <td style="padding:6px 0;">
-            <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Match</span><br/>
-            <span style="font-size:15px;font-weight:700;color:#1e293b;">${params.match_title}</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;">
-            <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Date</span><br/>
-            <span style="font-size:14px;font-weight:600;color:#1e293b;">📅 ${params.match_date}</span>
-          </td>
-        </tr>
-        ${isConvoque ? `
-        <tr>
-          <td style="padding:6px 0;">
-            <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Poste</span><br/>
-            <span style="font-size:14px;font-weight:600;color:#1e293b;">📍 ${params.position}</span>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;">
-            <span style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Numéro</span><br/>
-            <span style="font-size:14px;font-weight:600;color:#1e293b;">🔢 ${params.jersey_number}</span>
-          </td>
-        </tr>
-        ` : ''}
-      </table>
-    </div>
-    <p style="margin:0;font-size:13px;color:#94a3b8;text-align:center;">Bonne préparation ! 💪</p>
   `);
 }
 
