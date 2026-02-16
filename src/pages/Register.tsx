@@ -13,7 +13,7 @@ const Register = () => {
 
   const [invitation, setInvitation] = useState<any>(null);
   const [status, setStatus] = useState<'loading' | 'valid' | 'expired' | 'used' | 'not_found'>('loading');
-  const [formData, setFormData] = useState({ firstName: '', lastName: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -78,7 +78,13 @@ const Register = () => {
       const tempAuth = getAuth(tempApp);
 
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
-      const userCredential = await createUserWithEmailAndPassword(tempAuth, invitation.email, formData.password);
+      const emailToUse = invitation.email || formData.email.trim();
+      if (!emailToUse) {
+        setError('Veuillez renseigner votre email');
+        setLoading(false);
+        return;
+      }
+      const userCredential = await createUserWithEmailAndPassword(tempAuth, emailToUse, formData.password);
       const user = userCredential.user;
 
       // Create player doc if role is not photographe
@@ -100,9 +106,9 @@ const Register = () => {
       }
 
       // Create user doc
-      const username = invitation.email.split('@')[0];
+      const username = emailToUse.split('@')[0];
       const userData: any = {
-        email: invitation.email,
+        email: emailToUse,
         username,
         role: invitation.role,
         name: fullName,
@@ -213,14 +219,33 @@ const Register = () => {
 
         {/* Form */}
         <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
-          {/* Email display */}
-          <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50 mb-5">
-            <Mail size={16} className="text-primary shrink-0" />
-            <div>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Email</p>
-              <p className="text-sm font-medium text-foreground">{invitation?.email}</p>
+          {/* Email display or input */}
+          {invitation?.email ? (
+            <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50 mb-5">
+              <Mail size={16} className="text-primary shrink-0" />
+              <div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Email</p>
+                <p className="text-sm font-medium text-foreground">{invitation?.email}</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
+              <div className={`relative rounded-xl transition-all duration-300 ${focused === 'email' ? 'ring-2 ring-primary/30 shadow-md shadow-primary/5' : ''}`}>
+                <Mail className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === 'email' ? 'text-primary' : 'text-muted-foreground/50'}`} size={18} />
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onFocus={() => setFocused('email')}
+                  onBlur={() => setFocused(null)}
+                  className="w-full pl-11 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                  placeholder="Votre adresse email"
+                  required
+                />
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* First name */}
