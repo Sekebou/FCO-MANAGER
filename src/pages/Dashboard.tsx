@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
@@ -912,8 +912,33 @@ const Dashboard = () => {
                       </svg>
                     )}
                   </div>
-                  <div className="text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
-                    {currentUser?.role === 'admin+' ? 'Super Admin' : currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : currentUser?.role === 'photographe' ? 'Photographe' : 'Joueur'}
+                  <div className="flex items-center gap-1 text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
+                    {currentUser?.role === 'admin+' ? (
+                      <>
+                        <Shield size={10} className="text-accent" />
+                        <span>Super Admin</span>
+                      </>
+                    ) : currentUser?.role === 'admin' ? (
+                      <>
+                        <Shield size={10} />
+                        <span>Administrateur</span>
+                      </>
+                    ) : currentUser?.role === 'entraineur' ? (
+                      <>
+                        <Dumbbell size={10} />
+                        <span>Entraîneur</span>
+                      </>
+                    ) : currentUser?.role === 'photographe' ? (
+                      <>
+                        <Camera size={10} />
+                        <span>Photographe</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserCircle size={10} />
+                        <span>Joueur</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </button>
