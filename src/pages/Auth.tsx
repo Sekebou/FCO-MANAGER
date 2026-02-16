@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, signInWithEmailAndPassword, doc, getDoc } from '@/lib/firebase';
-import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar } from 'lucide-react';
+import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, Trophy, Camera, BarChart3, Bell } from 'lucide-react';
 import clubLogo from '@/assets/logo.svg';
 
 const Auth = () => {
@@ -101,6 +101,10 @@ const Auth = () => {
               { Icon: Users, text: 'Gestion des présences' },
               { Icon: TrendingUp, text: 'Suivi des performances' },
               { Icon: Calendar, text: 'Calendrier des événements' },
+              { Icon: Trophy, text: 'Suivi du championnat' },
+              { Icon: Camera, text: 'Galerie photos' },
+              { Icon: BarChart3, text: 'Statistiques détaillées' },
+              { Icon: Bell, text: 'Notifications par email' },
             ].map((feat, i) => (
               <div
                 key={feat.text}
