@@ -92,9 +92,9 @@ const Auth = () => {
           </div>
 
           {/* Title - single line */}
-          <h1 className="text-5xl font-extrabold text-white leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
+          <h1 className="text-4xl font-extrabold text-white tracking-wide uppercase leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
             <span className="inline-block animate-[glowText_4s_ease-in-out_infinite]">FCO</span>
-            <span className="text-3xl font-semibold text-white/50 ml-3 tracking-wide uppercase">Manager</span>
+            <span className="ml-3">Manager</span>
           </h1>
 
           {/* Subtitle */}
@@ -148,8 +148,8 @@ const Auth = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-4 border border-primary/20 shadow-lg shadow-primary/10">
               <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground">
-              FCO <span className="text-primary uppercase">Manager</span>
+            <h1 className="text-3xl font-bold text-foreground uppercase tracking-wide">
+              FCO Manager
             </h1>
           </div>
 
