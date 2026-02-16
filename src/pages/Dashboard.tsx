@@ -170,6 +170,7 @@ const Dashboard = () => {
   const [showAdminResetPassword, setShowAdminResetPassword] = useState(false);
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [avatarFocusLicense, setAvatarFocusLicense] = useState(false);
   const [showLicenseReminder, setShowLicenseReminder] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [showInvitePlayer, setShowInvitePlayer] = useState(false);
@@ -1333,10 +1334,11 @@ const Dashboard = () => {
       {showAvatarModal && currentUser && (
         <AvatarModal
           currentUser={currentUser}
-          onClose={() => setShowAvatarModal(false)}
+          onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }}
           onAvatarUpdated={(photoURL) => {
             setCurrentUser({ ...currentUser, photoURL });
           }}
+          focusLicense={avatarFocusLicense}
         />
       )}
       {showLicenseReminder && (
@@ -1359,7 +1361,7 @@ const Dashboard = () => {
                 Plus tard
               </button>
               <button
-                onClick={() => { setShowLicenseReminder(false); setShowAvatarModal(true); }}
+                onClick={() => { setShowLicenseReminder(false); setAvatarFocusLicense(true); setShowAvatarModal(true); }}
                 className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-primary/20"
               >
                 Mettre à jour
