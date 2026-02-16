@@ -63,33 +63,59 @@ const Auth = () => {
         <div className="absolute w-[350px] h-[350px] bg-white/[0.05] rounded-full blur-[80px] bottom-10 right-10 animate-[pulse_6s_ease-in-out_infinite_1s]" />
         <div className="absolute w-[200px] h-[200px] bg-white/[0.04] rounded-full blur-[60px] top-1/2 left-1/4 animate-[pulse_7s_ease-in-out_infinite_2s]" />
 
-        {/* Geometric lines pattern */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: `linear-gradient(45deg, white 1px, transparent 1px), linear-gradient(-45deg, white 1px, transparent 1px)`,
-          backgroundSize: '60px 60px',
+        {/* Floating ring decorations */}
+        <div className="absolute top-16 right-20 w-32 h-32 rounded-full border border-white/[0.08] animate-[floatSlow_12s_ease-in-out_infinite]" />
+        <div className="absolute bottom-24 left-16 w-20 h-20 rounded-full border border-white/[0.06] animate-[floatSlow_10s_ease-in-out_infinite_2s]" />
+        <div className="absolute top-1/2 right-12 w-12 h-12 rounded-full border border-white/[0.05] animate-[floatSlow_8s_ease-in-out_infinite_4s]" />
+
+        {/* Subtle dot grid */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
+          backgroundSize: '32px 32px',
         }} />
 
         <div className="relative z-10 px-16 max-w-lg">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl mb-8 border border-white/20 animate-[fadeSlideUp_0.8s_ease-out_both]">
+          {/* Animated icon */}
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl mb-8 border border-white/20 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/15 transition-all duration-500">
             <span className="text-5xl">⚽</span>
           </div>
-          <h1 className="text-5xl font-bold text-white leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
-            FCO
-            <span className="block text-white/70">Manager</span>
+
+          {/* Title with shimmer highlight */}
+          <h1 className="text-5xl font-extrabold text-white leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
+            <span className="inline-block animate-[glowText_4s_ease-in-out_infinite]">FCO</span>
+            <span className="block text-3xl font-semibold text-white/50 mt-1 tracking-wide">Manager</span>
           </h1>
-          <p className="text-white/40 text-lg leading-relaxed animate-[fadeSlideUp_0.8s_ease-out_0.2s_both]">
+
+          {/* Subtitle with typing feel */}
+          <p className="text-white/35 text-lg leading-relaxed animate-[fadeSlideUp_0.8s_ease-out_0.2s_both]">
             Gérez votre équipe, suivez les présences et les performances de vos joueurs en un seul endroit.
           </p>
           
-          {/* Feature pills */}
-          <div className="mt-10 space-y-3">
-            {['Gestion des présences', 'Suivi des performances', 'Calendrier des événements'].map((feat, i) => (
-              <div key={feat} className="flex items-center gap-3 text-white/50 animate-[fadeSlideUp_0.6s_ease-out_both]" style={{ animationDelay: `${0.4 + i * 0.1}s` }}>
-                <div className="w-1.5 h-1.5 bg-white/60 rounded-full" />
-                <span className="text-sm font-medium">{feat}</span>
+          {/* Separator line */}
+          <div className="mt-8 mb-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[fadeSlideUp_0.8s_ease-out_0.3s_both]" />
+
+          {/* Feature pills - modern cards */}
+          <div className="space-y-3">
+            {[
+              { icon: '📋', text: 'Gestion des présences' },
+              { icon: '📊', text: 'Suivi des performances' },
+              { icon: '📅', text: 'Calendrier des événements' },
+            ].map((feat, i) => (
+              <div
+                key={feat.text}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] backdrop-blur-sm hover:bg-white/[0.1] hover:border-white/[0.15] transition-all duration-300 cursor-default animate-[fadeSlideUp_0.6s_ease-out_both]"
+                style={{ animationDelay: `${0.4 + i * 0.12}s` }}
+              >
+                <span className="text-lg">{feat.icon}</span>
+                <span className="text-sm font-medium text-white/60">{feat.text}</span>
               </div>
             ))}
           </div>
+
+          {/* Bottom decorative text */}
+          <p className="mt-10 text-[11px] uppercase tracking-[0.2em] text-white/20 font-semibold animate-[fadeSlideUp_0.6s_ease-out_0.8s_both]">
+            Football Club Organisation
+          </p>
         </div>
       </div>
 
