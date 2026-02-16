@@ -99,6 +99,7 @@ export interface Member {
   photoURL?: string | null;
   createdAt: string;
   username?: string;
+  licenseExpiry?: string;
 }
 
 export interface Card {

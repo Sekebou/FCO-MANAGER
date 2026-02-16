@@ -111,7 +111,8 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {visibleMembers.map(member => {
             const player = member.playerId ? players.find(p => p.id === member.playerId) : null;
-            const license = player?.licenseExpiry ? getLicenseStatus(player.licenseExpiry) : null;
+            const licenseDate = member.licenseExpiry || player?.licenseExpiry;
+            const license = licenseDate ? getLicenseStatus(licenseDate) : null;
             const playerCards = player ? getPlayerCards(player.id) : [];
             const config = roleConfig[member.role] || roleConfig.joueur;
             const RoleIcon = config.icon;
