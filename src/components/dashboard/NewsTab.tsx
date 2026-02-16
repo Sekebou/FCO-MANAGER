@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { NewsItem, NewsComment, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Bell, Plus, Trash2, Heart, MessageCircle, Send, X } from 'lucide-react';
+import RoleBadge from '@/components/ui/role-badge';
 
 interface Props {
   news: NewsItem[];
@@ -84,6 +85,10 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                     <h3 className="font-bold text-lg text-foreground">{item.title}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs font-medium text-accent">{item.author}</span>
+                      {(() => {
+                        const authorMember = members.find(m => m.id === item.authorId);
+                        return authorMember ? <RoleBadge role={authorMember.role} /> : null;
+                      })()}
                       <span className="text-xs text-muted-foreground">•</span>
                       <span className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
@@ -133,7 +138,13 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                           <CommentAvatar authorUid={comment.authorUid} authorName={comment.authorName} members={members} />
                           <div className="flex-1 min-w-0">
                             <div className="bg-secondary rounded-xl px-3 py-2">
-                              <span className="text-xs font-semibold text-foreground">{comment.authorName}</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-semibold text-foreground">{comment.authorName}</span>
+                                {(() => {
+                                  const commentMember = members.find(m => m.id === comment.authorUid);
+                                  return commentMember ? <RoleBadge role={commentMember.role} /> : null;
+                                })()}
+                              </div>
                               <p className="text-sm text-foreground/80 mt-0.5">{comment.content}</p>
                             </div>
                             <div className="flex items-center gap-2 mt-1 px-1">
