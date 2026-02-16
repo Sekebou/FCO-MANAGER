@@ -27,7 +27,7 @@ interface Props {
   canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
   onUpdateConvocations: (eventId: string, convocations: Record<string, Convocation>) => void;
-  onSendConvocationEmails: (eventId: string) => void;
+  
 }
 
 const CONVOCATION_STATUSES = [
@@ -35,7 +35,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationEmails }: Props) => {
+const PresencesTab = ({ events, players, members, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations }: Props) => {
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
@@ -382,13 +382,6 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                           className="flex-1 py-2.5 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm flex items-center justify-center gap-2 shadow-sm"
                         >
                           <Check size={15} /> Publier
-                        </button>
-                        <button
-                          onClick={() => { publishConvocations(event.id); setTimeout(() => onSendConvocationEmails(event.id), 500); }}
-                          className="py-2.5 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all text-sm flex items-center gap-2 shadow-sm"
-                          title="Publier et notifier par email"
-                        >
-                          <Send size={13} />
                         </button>
                       </div>
                     </div>
