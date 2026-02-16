@@ -23,13 +23,6 @@ import AdminResetPasswordForm from '@/components/modals/AdminResetPasswordForm';
 import AvatarModal from '@/components/modals/AvatarModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 
-export const TEAMS = [
-  { id: 'A', label: 'Équipe A', division: 'D1' },
-  { id: 'B', label: 'Équipe B', division: 'D4' },
-  { id: 'C', label: 'Équipe C', division: 'D6' },
-] as const;
-
-export type TeamId = typeof TEAMS[number]['id'];
 
 export interface Player {
   id: string;
@@ -39,7 +32,6 @@ export interface Player {
   goals?: number;
   assists?: number;
   licenseExpiry?: string;
-  team?: string;
 }
 
 export interface Convocation {
@@ -103,7 +95,6 @@ export interface Member {
   photoURL?: string | null;
   createdAt: string;
   username?: string;
-  team?: string;
 }
 
 export interface Card {
@@ -158,25 +149,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<string>(() => {
-    if (!currentUser) return '';
-    if (currentUser.role === 'admin') return localStorage.getItem('fco-selected-team') || '';
-    return currentUser.team || '';
-  });
-
-  const handleTeamChange = (team: string) => {
-    setSelectedTeam(team);
-    localStorage.setItem('fco-selected-team', team);
-  };
-
-  // Filtered data for team-scoped tabs
-  const filteredPlayers = selectedTeam ? players.filter(p => p.team === selectedTeam) : players;
-  const filteredChampionships = selectedTeam
-    ? championships.filter(c => (c as any).team === selectedTeam)
-    : championships;
-  const filteredChampMatches = selectedTeam
-    ? champMatches.filter(m => filteredChampionships.some(c => c.id === m.championshipId))
-    : champMatches;
 
   // Modals
   const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -318,10 +290,9 @@ const Dashboard = () => {
   const addPlayer = async (playerData: any) => {
     if (!canManage()) return;
 
-    // Coaches can only create joueur accounts with their own team
+    // Coaches can only create joueur accounts
     if (currentUser?.role === 'entraineur') {
       playerData.role = 'joueur';
-      playerData.team = currentUser.team || '';
     }
 
     try {
@@ -419,7 +390,6 @@ const Dashboard = () => {
       const sendEmail = eventData.sendNotification;
       delete eventData.sendNotification;
       
-      // For match events, attach the coach's team
       const eventToSave: any = {
         ...eventData,
         presences: {},
@@ -427,19 +397,12 @@ const Dashboard = () => {
         createdByName: currentUser?.name || '',
         createdAt: new Date().toISOString(),
       };
-      if (eventData.type === 'match' && currentUser?.team) {
-        eventToSave.team = currentUser.team;
-      }
       
       await addDoc(collection(db, 'events'), eventToSave);
 
       // Envoyer les notifications par email via EmailJS
       if (sendEmail) {
-        // For match events, only notify players of the same team
-        let targetMembers = members.filter(m => m.role === 'joueur');
-        if (eventData.type === 'match' && currentUser?.team) {
-          targetMembers = targetMembers.filter(m => m.team === currentUser.team);
-        }
+        const targetMembers = members.filter(m => m.role === 'joueur');
         const memberEmails = targetMembers.map(m => m.email);
         const typeLabel = eventData.type === 'match' ? 'Match' : eventData.type === 'training' ? 'Entraînement' : 'Événement';
         const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -617,7 +580,7 @@ const Dashboard = () => {
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
   // Championship CRUD
-  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; team?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
+  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
     if (!canManage()) return;
     try {
       const { matches: importedMatches, standings: importedStandings, teamLogos: importedLogos, ...champData } = data;
@@ -913,10 +876,6 @@ const Dashboard = () => {
                   <div className="text-sm font-semibold text-primary-foreground leading-tight">{currentUser?.name}</div>
                   <div className="text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
                     {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : currentUser?.role === 'photographe' ? 'Photographe' : 'Joueur'}
-                    {currentUser?.team && (() => {
-                      const teamInfo = TEAMS.find(t => t.id === currentUser.team);
-                      return teamInfo ? ` · ${teamInfo.label} (${teamInfo.division})` : '';
-                    })()}
                   </div>
                 </div>
               </button>
@@ -956,23 +915,6 @@ const Dashboard = () => {
                 );
               })}
             </div>
-            {/* Team selector - visible on stats/championnat tabs */}
-            {(activeTab === 'stats' || activeTab === 'championnat') && (
-              <div className="flex items-center gap-2 py-2 pl-4 border-l border-border">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:block">Équipe</span>
-                <select
-                  value={selectedTeam}
-                  onChange={(e) => handleTeamChange(e.target.value)}
-                  disabled={currentUser?.role !== 'admin'}
-                  className="bg-secondary border border-border rounded-lg px-3 py-1.5 text-sm font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {currentUser?.role === 'admin' && <option value="">Toutes les équipes</option>}
-                  {TEAMS.map(t => (
-                    <option key={t.id} value={t.id}>{t.label} ({t.division})</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
         </div>
       </nav>
@@ -1010,7 +952,7 @@ const Dashboard = () => {
                   const member = members.find(m => m.playerId === playerId);
                   if (!member?.email || !player) continue;
                   const statusLabel = conv.status === 'titulaire' ? 'Convoqué (Titulaire)' : conv.status === 'remplacant' ? 'Convoqué (Remplaçant)' : conv.status === 'repos' ? 'En repos' : 'Non convoqué';
-                  const teamLabel = event.team ? (TEAMS.find(t => t.id === event.team)?.label || '') : '';
+                  const teamLabel = '';
                   try {
                     await emailjs.send('service_7wmhc61', 'template_p3ig9nv', {
                       to_email: member.email,
@@ -1033,8 +975,7 @@ const Dashboard = () => {
           )}
           {activeTab === 'stats' && (
             <StatsTab
-              players={filteredPlayers}
-              allPlayers={players}
+              players={players}
               events={events}
               cards={cards}
               attendanceRecords={attendanceRecords}
@@ -1050,10 +991,9 @@ const Dashboard = () => {
           )}
           {activeTab === 'championnat' && (
             <ChampionnatTab
-              championships={filteredChampionships}
-              matches={filteredChampMatches}
+              championships={championships}
+              matches={champMatches}
               currentUserRole={currentUser?.role}
-              currentUserTeam={currentUser?.team}
               canManage={canManage}
               canUpdateChampionnat={canUpdateChampionnat}
               onAddChampionship={addChampionship}
@@ -1120,20 +1060,6 @@ const Dashboard = () => {
                      toast.error('Erreur: ' + err.message);
                    }
                    throw err;
-                 }
-               }}
-               onChangeTeam={async (memberId, newTeam) => {
-                 if (currentUser?.role !== 'admin') return;
-                 try {
-                   await updateDoc(doc(db, 'users', memberId), { team: newTeam || null });
-                   // Also update the player document if exists
-                   const member = members.find(m => m.id === memberId);
-                   if (member?.playerId) {
-                     await updateDoc(doc(db, 'players', member.playerId), { team: newTeam || null });
-                   }
-                   toast.success('Équipe mise à jour');
-                 } catch (err: any) {
-                   toast.error('Erreur: ' + err.message);
                  }
                }}
             />
