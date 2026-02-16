@@ -907,35 +907,13 @@ const Dashboard = () => {
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-semibold text-primary-foreground leading-tight">{currentUser?.name}</span>
                     {currentUser?.role === 'admin+' && (
-                      <svg className="w-4 h-4 text-accent shrink-0 drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor" />
+                      <svg className="w-4 h-4 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {currentUser?.role === 'admin+' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent text-[9px] font-bold uppercase tracking-wider">
-                        <Shield size={9} />
-                        Super Admin
-                      </span>
-                    ) : currentUser?.role === 'admin' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-primary-foreground/70 text-[9px] font-bold uppercase tracking-wider">
-                        <Shield size={9} />
-                        Admin
-                      </span>
-                    ) : currentUser?.role === 'entraineur' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-primary-foreground/70 text-[9px] font-bold uppercase tracking-wider">
-                        🏟️ Entraîneur
-                      </span>
-                    ) : currentUser?.role === 'photographe' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-primary-foreground/70 text-[9px] font-bold uppercase tracking-wider">
-                        📸 Photographe
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-primary-foreground/70 text-[9px] font-bold uppercase tracking-wider">
-                        ⚽ Joueur
-                      </span>
-                    )}
+                  <div className="text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
+                    {currentUser?.role === 'admin+' ? 'Super Admin' : currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : currentUser?.role === 'photographe' ? 'Photographe' : 'Joueur'}
                   </div>
                 </div>
               </button>
