@@ -1155,7 +1155,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground border-b border-border">
               <div className="flex items-center gap-2">
                 <MessageCircle size={18} />
-                <span className="font-semibold text-sm">Discussion</span>
+                <span className="font-semibold text-sm">Discussion globale du club</span>
               </div>
               <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/10 transition-colors">
                 <X size={18} />
