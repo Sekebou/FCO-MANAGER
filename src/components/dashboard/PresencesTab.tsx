@@ -267,8 +267,8 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canMan
                     </div>
                   )}
 
-                  {/* Pitch view for published convocations */}
-                  {event.convocationsPublished && event.convocations && !isConvocationMode && (
+                  {/* Pitch view for published convocations - only visible after the match */}
+                  {event.convocationsPublished && event.convocations && !isConvocationMode && new Date(event.date) < new Date() && (
                     <PitchView convocations={event.convocations} players={players} />
                   )}
 
