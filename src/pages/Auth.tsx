@@ -92,9 +92,9 @@ const Auth = () => {
           </div>
 
           {/* Title - single line */}
-          <h1 className="text-4xl font-extrabold text-white tracking-wide uppercase leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
-            <span className="inline-block animate-[glowText_4s_ease-in-out_infinite]">FCO</span>
-            <span className="ml-3">Manager</span>
+          <h1 className="text-4xl font-extrabold tracking-wide uppercase leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
+            <span className="inline-block text-white animate-[glowText_4s_ease-in-out_infinite]">FCO</span>
+            <span className="ml-3 inline-block text-white animate-[glowText_4s_ease-in-out_infinite_2s]">Manager</span>
           </h1>
 
           {/* Subtitle */}
