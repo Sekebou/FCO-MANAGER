@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import emailjs from '@emailjs/browser';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
@@ -904,9 +904,41 @@ const Dashboard = () => {
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary" />
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-sm font-semibold text-primary-foreground leading-tight">{currentUser?.name}</div>
-                  <div className="text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
-                    {currentUser?.role === 'admin' ? 'Administrateur' : currentUser?.role === 'entraineur' ? 'Entraîneur' : currentUser?.role === 'photographe' ? 'Photographe' : 'Joueur'}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-primary-foreground leading-tight">{currentUser?.name}</span>
+                    {currentUser?.role === 'admin+' && (
+                      <svg className="w-4 h-4 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
+                    {currentUser?.role === 'admin+' ? (
+                      <>
+                        <Shield size={10} className="text-accent" />
+                        <span>Super Admin</span>
+                      </>
+                    ) : currentUser?.role === 'admin' ? (
+                      <>
+                        <Shield size={10} />
+                        <span>Administrateur</span>
+                      </>
+                    ) : currentUser?.role === 'entraineur' ? (
+                      <>
+                        <Dumbbell size={10} />
+                        <span>Entraîneur</span>
+                      </>
+                    ) : currentUser?.role === 'photographe' ? (
+                      <>
+                        <Camera size={10} />
+                        <span>Photographe</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserCircle size={10} />
+                        <span>Joueur</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </button>
