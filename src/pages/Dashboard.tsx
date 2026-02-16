@@ -321,8 +321,8 @@ const Dashboard = () => {
         userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
       }
 
-      // For photographe/dirigeant, don't create a player document
-      const isNonPlayer = playerData.role === 'photographe' || playerData.role === 'dirigeant';
+      // For photographe, don't create a player document (dirigeant gets one for attendance)
+      const isNonPlayer = playerData.role === 'photographe';
       let playerRefId: string | undefined;
 
       if (!isNonPlayer) {
