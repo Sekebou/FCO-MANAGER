@@ -76,9 +76,9 @@ const Auth = () => {
         }} />
 
         <div className="relative z-10 px-16 max-w-lg">
-          {/* Animated icon */}
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl mb-8 border border-white/20 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/15 transition-all duration-500">
-            <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
+          {/* Club logo - large and prominent */}
+          <div className="inline-flex items-center justify-center w-28 h-28 bg-white/15 backdrop-blur-md rounded-3xl mb-8 border border-white/25 shadow-xl shadow-black/10 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/20 transition-all duration-500">
+            <img src={clubLogo} alt="FCO Logo" className="w-20 h-20 object-contain drop-shadow-lg" />
           </div>
 
           {/* Title with shimmer highlight */}
@@ -129,8 +129,8 @@ const Auth = () => {
         <div className="w-full max-w-[420px] relative z-10">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-10 animate-[fadeSlideUp_0.6s_ease-out_both]">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4 border border-primary/20">
-              <img src={clubLogo} alt="FCO Logo" className="w-10 h-10 object-contain" />
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-4 border border-primary/20 shadow-lg shadow-primary/10">
+              <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
             </div>
             <h1 className="text-3xl font-bold text-foreground">
               FCO <span className="text-primary">Manager</span>
