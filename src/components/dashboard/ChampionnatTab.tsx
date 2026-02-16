@@ -34,7 +34,7 @@ interface Props {
   currentUserRole?: string;
   canManage: () => boolean | undefined;
   canUpdateChampionnat: () => boolean | undefined;
-  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string> }) => void;
+  onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string>; team?: string }) => void;
   onDeleteChampionship: (id: string) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
@@ -55,6 +55,8 @@ const ChampionnatTab: React.FC<Props> = ({
   onDeleteMatch,
   onRefreshFromFFF,
 }) => {
+  const TEAM_OPTIONS = ['A', 'B', 'C'] as const;
+  const [selectedTeam, setSelectedTeam] = useState<string>('A');
   const [showAddChamp, setShowAddChamp] = useState(false);
   const [showAddMatch, setShowAddMatch] = useState<string | null>(null);
   const [expandedChamp, setExpandedChamp] = useState<string | null>(championships[0]?.id || null);
@@ -62,6 +64,7 @@ const ChampionnatTab: React.FC<Props> = ({
   // Add championship form state
   const [champName, setChampName] = useState('');
   const [champSeason, setChampSeason] = useState('2024-2025');
+  const [champTeam, setChampTeam] = useState<string>('A');
   const isAdmin = currentUserRole === 'admin';
   const [teamsInput, setTeamsInput] = useState('');
   const [fffUrl, setFffUrl] = useState('');
@@ -84,6 +87,9 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Refresh result modal
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
+
+  const filteredChampionships = championships.filter(c => (c.team || 'A') === selectedTeam);
+  const teamHasChampionship = (team: string) => championships.some(c => (c.team || 'A') === team);
 
   const getChampMatches = (champId: string) => matches.filter(m => m.championshipId === champId);
 
@@ -166,8 +172,9 @@ const ChampionnatTab: React.FC<Props> = ({
     if (!champName.trim()) return;
     const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
     if (teams.length < 2) { toast.warning('Ajoutez au moins 2 équipes'); return; }
-    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined });
-    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setShowAddChamp(false);
+    if (teamHasChampionship(champTeam)) { toast.error(`L'équipe ${champTeam} a déjà un championnat`); return; }
+    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined, team: champTeam });
+    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setChampTeam('A'); setShowAddChamp(false);
   };
 
   const handleImportFFF = async () => {
@@ -220,12 +227,14 @@ const ChampionnatTab: React.FC<Props> = ({
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+  const filteredChampIds = new Set(filteredChampionships.map(c => c.id));
+
   const upcomingMatches = matches
-    .filter(m => !m.played && m.date >= todayStr)
+    .filter(m => !m.played && m.date >= todayStr && filteredChampIds.has(m.championshipId))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const recentResults = matches
-    .filter(m => m.played)
+    .filter(m => m.played && filteredChampIds.has(m.championshipId))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 5);
 
@@ -239,14 +248,31 @@ const ChampionnatTab: React.FC<Props> = ({
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground">Championnats</h2>
-            <p className="text-sm text-muted-foreground">{championships.length} championnat(s)</p>
+            <p className="text-sm text-muted-foreground">{filteredChampionships.length} championnat(s) — Équipe {selectedTeam}</p>
           </div>
         </div>
-        {canManage() && (
-          <button onClick={() => setShowAddChamp(true)} className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm">
+        {canManage() && !teamHasChampionship(selectedTeam) && (
+          <button onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm">
             <Plus size={18} /> Nouveau
           </button>
         )}
+      </div>
+
+      {/* Team selector */}
+      <div className="flex items-center gap-2">
+        {TEAM_OPTIONS.map(team => (
+          <button
+            key={team}
+            onClick={() => setSelectedTeam(team)}
+            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              selectedTeam === team
+                ? 'bg-accent text-accent-foreground shadow-sm'
+                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Équipe {team}
+          </button>
+        ))}
       </div>
 
       {/* Quick overview: upcoming + recent */}
@@ -365,7 +391,7 @@ const ChampionnatTab: React.FC<Props> = ({
       </div>
 
       {/* Championships list */}
-      {championships.map(champ => {
+      {filteredChampionships.map(champ => {
         const standings = getStandings(champ.id);
         const champMatches = getChampMatches(champ.id).sort((a, b) => a.journee - b.journee || new Date(a.date).getTime() - new Date(b.date).getTime());
         const isExpanded = expandedChamp === champ.id;
@@ -566,11 +592,11 @@ const ChampionnatTab: React.FC<Props> = ({
         );
       })}
 
-      {championships.length === 0 && (
+      {filteredChampionships.length === 0 && (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
           <Trophy size={48} className="mx-auto text-muted-foreground/30 mb-4" />
-          <p className="text-lg font-medium text-muted-foreground">Aucun championnat</p>
-          {canManage() && <p className="text-sm text-muted-foreground mt-1">Créez votre premier championnat</p>}
+          <p className="text-lg font-medium text-muted-foreground">Aucun championnat pour l'équipe {selectedTeam}</p>
+          {canManage() && !teamHasChampionship(selectedTeam) && <p className="text-sm text-muted-foreground mt-1">Créez le championnat de l'équipe {selectedTeam}</p>}
         </div>
       )}
 
@@ -593,6 +619,29 @@ const ChampionnatTab: React.FC<Props> = ({
 
             {/* Body */}
             <div className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
+                <div className="flex gap-2">
+                  {TEAM_OPTIONS.map(team => (
+                    <button
+                      key={team}
+                      type="button"
+                      onClick={() => setChampTeam(team)}
+                      disabled={teamHasChampionship(team)}
+                      className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                        champTeam === team
+                          ? 'bg-accent text-accent-foreground shadow-sm'
+                          : teamHasChampionship(team)
+                            ? 'bg-secondary/50 text-muted-foreground/40 cursor-not-allowed line-through'
+                            : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+                      }`}
+                    >
+                      Équipe {team}
+                      {teamHasChampionship(team) && ' ✓'}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
                 <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District D1" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
