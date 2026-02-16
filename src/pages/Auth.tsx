@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, signInWithEmailAndPassword, doc, getDoc } from '@/lib/firebase';
-import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, Trophy, Camera, BarChart3, Bell } from 'lucide-react';
+import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar } from 'lucide-react';
 import clubLogo from '@/assets/logo.svg';
 
 const Auth = () => {
@@ -75,36 +75,32 @@ const Auth = () => {
           backgroundSize: '32px 32px',
         }} />
 
-        <div className="relative z-10 px-16 max-w-lg">
+        <div className="relative z-10 px-16 max-w-lg flex flex-col items-center text-center">
           {/* Club logo - large and prominent */}
           <div className="inline-flex items-center justify-center w-28 h-28 bg-white/15 backdrop-blur-md rounded-3xl mb-8 border border-white/25 shadow-xl shadow-black/10 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/20 transition-all duration-500">
             <img src={clubLogo} alt="FCO Logo" className="w-20 h-20 object-contain drop-shadow-lg" />
           </div>
 
-          {/* Title with shimmer highlight */}
+          {/* Title - single line */}
           <h1 className="text-5xl font-extrabold text-white leading-tight mb-4 animate-[fadeSlideUp_0.8s_ease-out_0.1s_both]">
             <span className="inline-block animate-[glowText_4s_ease-in-out_infinite]">FCO</span>
-            <span className="block text-3xl font-semibold text-white/50 mt-1 tracking-wide">Manager</span>
+            <span className="text-3xl font-semibold text-white/50 ml-3 tracking-wide">Manager</span>
           </h1>
 
-          {/* Subtitle with typing feel */}
+          {/* Subtitle */}
           <p className="text-white/35 text-lg leading-relaxed animate-[fadeSlideUp_0.8s_ease-out_0.2s_both]">
             Gérez votre équipe, suivez les présences et les performances de vos joueurs en un seul endroit.
           </p>
           
           {/* Separator line */}
-          <div className="mt-8 mb-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[fadeSlideUp_0.8s_ease-out_0.3s_both]" />
+          <div className="mt-8 mb-8 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[fadeSlideUp_0.8s_ease-out_0.3s_both]" />
 
-          {/* Feature pills - modern cards */}
-          <div className="space-y-3">
+          {/* Feature pills - 3 features + "et bien plus" */}
+          <div className="space-y-3 w-full">
             {[
               { Icon: Users, text: 'Gestion des présences' },
               { Icon: TrendingUp, text: 'Suivi des performances' },
               { Icon: Calendar, text: 'Calendrier des événements' },
-              { Icon: Trophy, text: 'Suivi du championnat' },
-              { Icon: Camera, text: 'Galerie photos' },
-              { Icon: BarChart3, text: 'Statistiques détaillées' },
-              { Icon: Bell, text: 'Notifications par email' },
             ].map((feat, i) => (
               <div
                 key={feat.text}
@@ -115,6 +111,9 @@ const Auth = () => {
                 <span className="text-sm font-medium text-white/60">{feat.text}</span>
               </div>
             ))}
+            <p className="text-xs text-white/30 font-medium pt-1 animate-[fadeSlideUp_0.6s_ease-out_both]" style={{ animationDelay: '0.76s' }}>
+              … et bien d'autres fonctionnalités
+            </p>
           </div>
 
           {/* Bottom decorative text */}
