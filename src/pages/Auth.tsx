@@ -87,8 +87,8 @@ const Auth = () => {
 
         <div className="relative z-10 px-16 max-w-lg flex flex-col items-center text-center">
           {/* Club logo - large and prominent */}
-          <div className="inline-flex items-center justify-center w-28 h-28 bg-white/15 backdrop-blur-md rounded-3xl mb-8 border border-white/25 shadow-xl shadow-black/10 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/20 transition-all duration-500">
-            <img src={clubLogo} alt="FCO Logo" className="w-20 h-20 object-contain drop-shadow-lg" />
+          <div className="inline-flex items-center justify-center w-36 h-36 bg-white/15 backdrop-blur-md rounded-3xl mb-8 border border-white/25 shadow-xl shadow-black/10 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/20 transition-all duration-500">
+            <img src={clubLogo} alt="FCO Logo" className="w-28 h-28 object-contain drop-shadow-lg" />
           </div>
 
           {/* Title - single line */}
