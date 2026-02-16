@@ -1030,32 +1030,7 @@ const Dashboard = () => {
                   toast.error('Erreur: ' + err.message);
                 }
               }}
-              onSendConvocationEmails={async (eventId) => {
-                const event = events.find(e => e.id === eventId);
-                if (!event?.convocations) return;
-                const dateFormatted = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                let sent = 0;
-                for (const [playerId, conv] of Object.entries(event.convocations)) {
-                  const player = players.find(p => p.id === playerId);
-                  const member = members.find(m => m.playerId === playerId);
-                  if (!member?.email || !player) continue;
-                  const statusLabel = conv.status === 'convoque' ? 'Convoqué' : 'Non convoqué';
-                  const teamLabel = '';
-                    try {
-                      await sendNotificationEmail({
-                        to_email: member.email,
-                        event_title: `${event.title} — ${statusLabel}`,
-                        event_type_label: statusLabel,
-                        type_icon: '🏟️',
-                        event_date: dateFormatted,
-                      });
-                    sent++;
-                  } catch (emailErr) {
-                    console.error('Erreur envoi convocation à', member.email, emailErr);
-                  }
-                }
-                toast.success(`${sent} joueur${sent > 1 ? 's' : ''} notifié${sent > 1 ? 's' : ''} par email`);
-              }}
+              
             />
           )}
           {activeTab === 'stats' && (
