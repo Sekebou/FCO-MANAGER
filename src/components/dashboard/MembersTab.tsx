@@ -37,7 +37,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   };
 
   const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Admin+' };
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Administrateur' };
     return labels[role] || role;
   };
 
@@ -50,13 +50,12 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     return { status: 'active', text: 'Active', days };
   };
 
-  const superAdmins = members.filter(m => m.role === 'admin+');
-  const admins = members.filter(m => m.role === 'admin');
+  const admins = members.filter(m => m.role === 'admin' || m.role === 'admin+');
   const coaches = members.filter(m => m.role === 'entraineur');
   const playerMembers = members.filter(m => m.role === 'joueur');
 
   const roleConfig: Record<string, any> = {
-    'admin+': { icon: Shield, color: 'destructive', label: 'Admin+', gradient: 'from-red-500/20 to-rose-500/20' },
+    'admin+': { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     admin: { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     entraineur: { icon: Dumbbell, color: 'accent', label: 'Entraîneur', gradient: 'from-emerald-500/20 to-teal-500/20' },
     photographe: { icon: Camera, color: 'accent', label: 'Photographe', gradient: 'from-purple-500/20 to-pink-500/20' },
@@ -73,12 +72,6 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             <button onClick={onAddPlayer} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
               <Plus size={18} /> Ajouter un joueur
             </button>
-          )}
-          {superAdmins.length > 0 && (
-            <div className="flex items-center gap-2 bg-destructive/10 text-destructive px-3 py-2 rounded-xl">
-              <Shield size={14} />
-              <span className="text-xs font-bold">{superAdmins.length}</span>
-            </div>
           )}
           <div className="flex items-center gap-2 bg-warning/10 text-warning px-3 py-2 rounded-xl">
             <Shield size={14} />
