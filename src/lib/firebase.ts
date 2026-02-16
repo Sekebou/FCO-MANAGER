@@ -26,7 +26,10 @@ import {
   setDoc,
   getDoc,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  serverTimestamp,
+  Timestamp,
+  limit as firestoreLimit
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -79,5 +82,8 @@ export {
   getDoc,
   arrayUnion,
   arrayRemove,
+  serverTimestamp,
+  Timestamp,
+  firestoreLimit,
   type User
 };
