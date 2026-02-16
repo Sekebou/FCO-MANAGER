@@ -4,16 +4,19 @@ import { X, CalendarDays, Type, Bell } from 'lucide-react';
 interface Props {
   onSubmit: (data: any) => void;
   onClose: () => void;
+  isDirigeant?: boolean;
 }
 
-const AddEventForm = ({ onSubmit, onClose }: Props) => {
-  const [formData, setFormData] = useState({ title: '', date: '', type: 'match', sendNotification: true });
+const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
+  const [formData, setFormData] = useState({ title: '', date: '', type: isDirigeant ? 'training' : 'match', sendNotification: true });
 
-  const typeOptions = [
+  const allTypeOptions = [
     { value: 'match', label: '⚽ Match', color: 'bg-accent/10 border-accent/30 text-accent' },
     { value: 'training', label: '🏃 Entraînement', color: 'bg-purple-500/10 border-purple-500/30 text-purple-600' },
     { value: 'other', label: '📌 Autre', color: 'bg-muted border-border text-muted-foreground' },
   ];
+
+  const typeOptions = isDirigeant ? allTypeOptions.filter(o => o.value !== 'match') : allTypeOptions;
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={onClose}>

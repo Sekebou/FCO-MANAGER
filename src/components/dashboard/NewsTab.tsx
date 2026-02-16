@@ -9,6 +9,7 @@ interface Props {
   members: Member[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
+  canCreateNews: () => boolean | null;
   deleteNews: (id: string) => void;
   toggleLike: (newsId: string) => void;
   addComment: (newsId: string, content: string) => void;
@@ -38,7 +39,7 @@ const CommentAvatar: React.FC<{ authorUid: string; authorName: string; members: 
   );
 };
 
-const NewsTab = ({ news, comments, members, currentUser, canManage, deleteNews, toggleLike, addComment, deleteComment, onAddNews }: Props) => {
+const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNews, deleteNews, toggleLike, addComment, deleteComment, onAddNews }: Props) => {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
 
@@ -55,7 +56,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, deleteNews, 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-foreground">Actualités</h2>
-        {canManage() && (
+        {canCreateNews() && (
           <button onClick={onAddNews} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
             <Plus size={18} /> Nouvelle actualité
           </button>
@@ -87,7 +88,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, deleteNews, 
                       <span className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                     </div>
                   </div>
-                  {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || (currentUser?.role === 'entraineur' && item.authorId === currentUser?.uid)) && (
+                  {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || ((currentUser?.role === 'entraineur' || currentUser?.role === 'dirigeant') && item.authorId === currentUser?.uid)) && (
                     <button onClick={() => deleteNews(item.id)} className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all">
                       <Trash2 size={15} className="text-destructive" />
                     </button>

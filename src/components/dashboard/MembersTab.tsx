@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2 } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase } from 'lucide-react';
 
 interface Props {
   members: Member[];
@@ -37,7 +37,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   };
 
   const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', admin: 'Administrateur', 'admin+': 'Administrateur' };
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', dirigeant: 'Dirigeant', admin: 'Administrateur', 'admin+': 'Administrateur' };
     return labels[role] || role;
   };
 
@@ -53,12 +53,14 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   const visibleMembers = members.filter(m => m.role !== 'admin+');
   const admins = visibleMembers.filter(m => m.role === 'admin');
   const coaches = visibleMembers.filter(m => m.role === 'entraineur');
+  const dirigeants = visibleMembers.filter(m => m.role === 'dirigeant');
   const playerMembers = visibleMembers.filter(m => m.role === 'joueur');
 
   const roleConfig: Record<string, any> = {
     'admin+': { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     admin: { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     entraineur: { icon: Dumbbell, color: 'accent', label: 'Entraîneur', gradient: 'from-emerald-500/20 to-teal-500/20' },
+    dirigeant: { icon: Briefcase, color: 'accent', label: 'Dirigeant', gradient: 'from-sky-500/20 to-blue-500/20' },
     photographe: { icon: Camera, color: 'accent', label: 'Photographe', gradient: 'from-purple-500/20 to-pink-500/20' },
     joueur: { icon: UserCircle, color: 'primary', label: 'Joueur', gradient: 'from-blue-500/20 to-indigo-500/20' },
   };
@@ -81,6 +83,10 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
           <div className="flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-xl">
             <Dumbbell size={14} />
             <span className="text-xs font-bold">{coaches.length}</span>
+          </div>
+          <div className="flex items-center gap-2 bg-sky-500/10 text-sky-600 px-3 py-2 rounded-xl">
+            <Briefcase size={14} />
+            <span className="text-xs font-bold">{dirigeants.length}</span>
           </div>
           <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl">
             <Users size={14} />
@@ -135,7 +141,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                       <Mail size={12} className="text-accent shrink-0" />
                       <span className="truncate">{member.email}</span>
                     </div>
-                    {player && member.role !== 'photographe' && (
+                    {player && member.role !== 'photographe' && member.role !== 'dirigeant' && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Target size={12} className="text-accent shrink-0" />
                         <span>Poste : <span className="font-medium text-foreground">{player.position}</span></span>
@@ -148,7 +154,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                   </div>
 
                   {/* Stats bar - hidden for photographe */}
-                  {player && member.role !== 'photographe' && (
+                  {player && member.role !== 'photographe' && member.role !== 'dirigeant' && (
                     <div className="grid grid-cols-3 gap-2 mb-4">
                       <div className="bg-accent/5 rounded-xl p-2.5 text-center">
                         <Activity size={14} className="text-accent mx-auto mb-1" />
@@ -169,7 +175,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                   )}
 
                   {/* License badge - hidden for photographe */}
-                  {license && member.role !== 'photographe' && (
+                  {license && member.role !== 'photographe' && member.role !== 'dirigeant' && (
                     <div className={`relative flex items-center gap-3 p-3 rounded-xl text-xs font-semibold mb-3 overflow-hidden ${
                       license.status === 'active' ? 'bg-accent/10 text-accent border border-accent/20' :
                       license.status === 'expiring' ? 'bg-warning/10 text-warning border border-warning/20' :
@@ -191,7 +197,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                   )}
 
                   {/* Cards - hidden for photographe */}
-                  {playerCards.length > 0 && member.role !== 'photographe' && (
+                  {playerCards.length > 0 && member.role !== 'photographe' && member.role !== 'dirigeant' && (
                     <div className="space-y-2 mb-3">
                       {playerCards.map(card => (
                         <div key={card.id} className={`p-2.5 rounded-xl border text-xs ${
@@ -271,6 +277,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                             >
                               <option value="joueur">Joueur</option>
                               <option value="entraineur">Entraîneur</option>
+                              <option value="dirigeant">Dirigeant</option>
                               <option value="photographe">Photographe</option>
                               <option value="admin">Administrateur</option>
                               {isSuperAdmin && <option value="admin+">Admin+</option>}
