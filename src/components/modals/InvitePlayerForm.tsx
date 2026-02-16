@@ -40,7 +40,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             </div>
             <div>
               <h3 className="text-lg font-bold text-foreground">Inviter par email</h3>
-              <p className="text-xs text-muted-foreground">L'utilisateur procède lui-même à la création de son compte.</p>
+              <p className="text-xs text-muted-foreground whitespace-nowrap">L'utilisateur créera son compte lui-même</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
