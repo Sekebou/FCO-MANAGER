@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db, signInWithEmailAndPassword, doc, getDoc } from '@/lib/firebase';
-import { Lock, Mail, Loader2, Shield, ChevronRight } from 'lucide-react';
+import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar } from 'lucide-react';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -97,16 +97,16 @@ const Auth = () => {
           {/* Feature pills - modern cards */}
           <div className="space-y-3">
             {[
-              { icon: '📋', text: 'Gestion des présences' },
-              { icon: '📊', text: 'Suivi des performances' },
-              { icon: '📅', text: 'Calendrier des événements' },
+              { Icon: Users, text: 'Gestion des présences' },
+              { Icon: TrendingUp, text: 'Suivi des performances' },
+              { Icon: Calendar, text: 'Calendrier des événements' },
             ].map((feat, i) => (
               <div
                 key={feat.text}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] backdrop-blur-sm hover:bg-white/[0.1] hover:border-white/[0.15] transition-all duration-300 cursor-default animate-[fadeSlideUp_0.6s_ease-out_both]"
                 style={{ animationDelay: `${0.4 + i * 0.12}s` }}
               >
-                <span className="text-lg">{feat.icon}</span>
+                <feat.Icon size={18} className="text-white/50 shrink-0" />
                 <span className="text-sm font-medium text-white/60">{feat.text}</span>
               </div>
             ))}
