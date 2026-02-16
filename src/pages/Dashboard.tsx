@@ -171,6 +171,11 @@ const Dashboard = () => {
     return currentUser && currentUser.role === 'joueur' && currentUser.playerId === playerId;
   };
 
+  // Filter out players linked to admin+ accounts (ghost mode)
+  const adminPlusPlayerIds = members.filter(m => m.role === 'admin+' && m.playerId).map(m => m.playerId);
+  const visiblePlayers = players.filter(p => !adminPlusPlayerIds.includes(p.id));
+  const visibleMembers = members.filter(m => m.role !== 'admin+');
+
   useEffect(() => {
     if (!currentUser) {
       navigate('/auth');
@@ -951,8 +956,8 @@ const Dashboard = () => {
           {activeTab === 'presences' && (
             <PresencesTab
               events={events}
-              players={players}
-              members={members}
+              players={visiblePlayers}
+              members={visibleMembers}
               currentUser={currentUser}
               canManage={canManage}
               canManageOwnPresence={canManageOwnPresence}
@@ -1001,11 +1006,11 @@ const Dashboard = () => {
           )}
           {activeTab === 'stats' && (
             <StatsTab
-              players={players}
+              players={visiblePlayers}
               events={events}
               cards={cards}
               attendanceRecords={attendanceRecords}
-              members={members}
+              members={visibleMembers}
               currentUser={currentUser}
               canManage={canManage}
               updatePlayerStats={updatePlayerStats}
@@ -1059,8 +1064,8 @@ const Dashboard = () => {
           )}
           {activeTab === 'members' && (
             <MembersTab
-              members={members}
-              players={players}
+              members={visibleMembers}
+              players={visiblePlayers}
               cards={cards}
               currentUser={currentUser}
               canManage={canManage}
@@ -1116,7 +1121,7 @@ const Dashboard = () => {
       {showAddPlayer && <AddPlayerForm onSubmit={addPlayer} onClose={() => setShowAddPlayer(false)} currentUser={currentUser} />}
       {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} />}
       {showAddNews && <AddNewsForm onSubmit={addNews} onClose={() => setShowAddNews(false)} />}
-      {showAddCard && <AddCardForm players={players} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
+      {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
       {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
       {showAdminResetPassword && selectedMemberForReset && (
         <AdminResetPasswordForm member={selectedMemberForReset} onClose={() => { setShowAdminResetPassword(false); setSelectedMemberForReset(null); }} />
