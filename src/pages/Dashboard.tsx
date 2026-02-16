@@ -1099,7 +1099,7 @@ const Dashboard = () => {
               onAddNews={() => setShowAddNews(true)}
             />
           )}
-          {activeTab === 'calendar' && <CalendarTab events={events} currentUser={currentUser} />}
+          {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && (
             <GalleryTab
               albums={albums}

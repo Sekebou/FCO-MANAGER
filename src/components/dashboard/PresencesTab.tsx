@@ -3,6 +3,7 @@ import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
 import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil } from 'lucide-react';
+import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
   uid: string;
@@ -120,7 +121,13 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                   <p className="text-muted-foreground text-sm mt-0.5">
                     {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     {event.createdByName && (
-                      <span className="text-muted-foreground/60"> · par {event.createdByName}</span>
+                      <span className="text-muted-foreground/60 inline-flex items-center gap-1.5">
+                        {' '}· par {event.createdByName}
+                        {(() => {
+                          const creator = members.find(m => m.id === event.createdBy);
+                          return creator ? <RoleBadge role={creator.role} /> : null;
+                        })()}
+                      </span>
                     )}
                   </p>
                   <div className="flex gap-2 mt-3">

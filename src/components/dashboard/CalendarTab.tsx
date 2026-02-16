@@ -1,5 +1,6 @@
 import React from 'react';
-import type { Event } from '@/pages/Dashboard';
+import type { Event, Member } from '@/pages/Dashboard';
+import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
   uid: string;
@@ -9,10 +10,11 @@ interface AppUser {
 
 interface Props {
   events: Event[];
+  members: Member[];
   currentUser?: AppUser | null;
 }
 
-const CalendarTab = ({ events, currentUser }: Props) => {
+const CalendarTab = ({ events, members, currentUser }: Props) => {
   const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const past = sorted.filter(e => new Date(e.date) < new Date());
   const future = sorted.filter(e => new Date(e.date) >= new Date());
@@ -33,8 +35,14 @@ const CalendarTab = ({ events, currentUser }: Props) => {
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              {event.createdByName && (
-                <span className="text-muted-foreground/60"> · par {event.createdByName}</span>
+            {event.createdByName && (
+                <span className="text-muted-foreground/60 inline-flex items-center gap-1.5">
+                  {' '}· par {event.createdByName}
+                  {(() => {
+                    const creator = members.find(m => m.id === event.createdBy);
+                    return creator ? <RoleBadge role={creator.role} /> : null;
+                  })()}
+                </span>
               )}
             </p>
           </div>
