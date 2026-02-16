@@ -287,7 +287,7 @@ const Dashboard = () => {
 
   // License reminder check — show popup if user has no license set
   useEffect(() => {
-    if (!currentUser || currentUser.role === 'photographe' || currentUser.role === 'admin+') return;
+    if (!currentUser || ['photographe', 'admin', 'admin+'].includes(currentUser.role)) return;
     const checkLicense = async () => {
       try {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
