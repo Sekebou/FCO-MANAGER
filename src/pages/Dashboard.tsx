@@ -1019,7 +1019,7 @@ const Dashboard = () => {
       <nav className="bg-card border-b border-border sticky top-16 lg:top-20 z-40">
         <div className="mx-auto">
           {/* Mobile + Tablet: hamburger button */}
-          <div className="md:hidden flex items-center px-3 py-2.5">
+          <div className="lg:hidden flex items-center px-3 py-2.5">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex items-center gap-3 text-base font-semibold text-foreground py-1"
@@ -1039,7 +1039,7 @@ const Dashboard = () => {
           </div>
           {/* Mobile: dropdown menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-border bg-card animate-fade-in pb-1">
+            <div className="lg:hidden border-t border-border bg-card animate-fade-in pb-1">
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 return (
@@ -1060,7 +1060,7 @@ const Dashboard = () => {
             </div>
           )}
           {/* Desktop: horizontal tabs */}
-          <div className="hidden md:flex overflow-x-auto scrollbar-hide">
+          <div className="hidden lg:flex overflow-x-auto scrollbar-hide">
             {tabs.map(tab => {
               const Icon = tab.icon;
               return (
