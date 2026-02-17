@@ -927,39 +927,34 @@ const Dashboard = () => {
     <div className="min-h-screen bg-secondary/50">
       {/* Header */}
       <header className="bg-primary border-b border-primary/80 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-primary-foreground">
-                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15">
-                  <img src={clubLogo} alt="FCO Logo" className="w-8 h-8 object-contain drop-shadow-md" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md border border-white/15">
+                  <img src={clubLogo} alt="FCO Logo" className="w-6 h-6 sm:w-8 sm:h-8 object-contain drop-shadow-md" />
                 </div>
-                <div>
-                  <h1 className="text-lg font-bold text-primary-foreground leading-tight">FCO Manager</h1>
-                </div>
+                <h1 className="text-sm sm:text-lg font-bold text-primary-foreground leading-tight">FCO Manager</h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {/* Profile group */}
               <button
                 onClick={() => setShowAvatarModal(true)}
-                className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition-all group"
+                className="flex items-center gap-2 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-xl hover:bg-white/10 transition-all group"
               >
                 <div className="relative">
-                  <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden ring-2 ring-white/20 group-hover:ring-accent transition-all">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden ring-2 ring-white/20 group-hover:ring-accent transition-all">
                     {currentUser?.photoURL ? (
                       <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-xs font-bold text-primary-foreground">
+                      <span className="text-[10px] sm:text-xs font-bold text-primary-foreground">
                         {currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                       </span>
                     )}
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-primary" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-success rounded-full border-2 border-primary" />
                 </div>
                 <div className="hidden sm:block text-left">
                   <div className="flex items-center gap-1.5">
@@ -1007,46 +1002,47 @@ const Dashboard = () => {
               </button>
 
               {/* Actions */}
-              <button onClick={() => setShowChangePassword(true)} className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all" title="Changer mot de passe">
-                <Lock size={16} />
+              <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all" title="Changer mot de passe">
+                <Lock size={14} className="sm:hidden" />
+                <Lock size={16} className="hidden sm:block" />
               </button>
-              <button onClick={handleLogout} className="w-8 h-8 rounded-lg hover:bg-destructive/20 flex items-center justify-center text-primary-foreground/50 hover:text-destructive transition-all" title="Déconnexion">
-                <LogOut size={16} />
+              <button onClick={handleLogout} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-destructive/20 flex items-center justify-center text-primary-foreground/50 hover:text-destructive transition-all" title="Déconnexion">
+                <LogOut size={14} className="sm:hidden" />
+                <LogOut size={16} className="hidden sm:block" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <nav className="bg-card border-b border-border sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between">
-            <div className={`${mobileMenuOpen ? 'flex flex-col' : 'hidden'} md:flex md:flex-row overflow-x-auto flex-1`}>
-              {tabs.map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => { handleTabChange(tab.id); setMobileMenuOpen(false); }}
-                    className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${
-                      activeTab === tab.id
-                        ? 'border-accent text-accent'
-                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
+      {/* Navigation Tabs — always visible horizontal scroll on mobile */}
+      <nav className="bg-card border-b border-border sticky top-14 sm:top-16 z-40">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3.5 border-b-2 transition-all whitespace-nowrap text-xs sm:text-sm font-medium shrink-0 ${
+                    activeTab === tab.id
+                      ? 'border-accent text-accent'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  }`}
+                >
+                  <Icon size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="hidden xs:inline sm:inline">{tab.label}</span>
+                  <span className="xs:hidden">{tab.label.length > 6 ? tab.label.slice(0, 4) + '.' : tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </nav>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto p-4 sm:p-6">
+      <main className="max-w-7xl mx-auto px-3 py-4 sm:p-6">
         <div key={activeTab} className="animate-fade-in">
           {activeTab === 'presences' && (
             <PresencesTab
@@ -1189,9 +1185,9 @@ const Dashboard = () => {
       </main>
 
       {/* Floating Chat Bubble */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-3">
         {chatOpen && (
-          <div className="w-[360px] h-[520px] max-h-[80vh] max-w-[calc(100vw-2rem)] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
+          <div className="w-[calc(100vw-2rem)] sm:w-[360px] h-[70vh] sm:h-[520px] max-h-[80vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground border-b border-border">
               <div className="flex items-center gap-2">
                 <MessageCircle size={18} />
@@ -1208,20 +1204,21 @@ const Dashboard = () => {
         )}
         <button
           onClick={() => setChatOpen(prev => !prev)}
-          className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 ${
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 ${
             chatOpen ? 'bg-muted text-muted-foreground' : 'bg-accent text-accent-foreground'
           }`}
           title="Discussion"
         >
-          {chatOpen ? <X size={24} /> : <MessageCircle size={24} />}
+          {chatOpen ? <X size={20} className="sm:w-6 sm:h-6" /> : <MessageCircle size={20} className="sm:w-6 sm:h-6" />}
         </button>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card mt-8 p-4 text-center">
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-          <span>Connecté au serveur — Données synchronisées en temps réel</span>
+      <footer className="border-t border-border bg-card mt-8 px-3 py-3 sm:p-4 text-center">
+        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
+          <div className="w-2 h-2 bg-success rounded-full animate-pulse shrink-0" />
+          <span className="hidden sm:inline">Connecté au serveur — Données synchronisées en temps réel</span>
+          <span className="sm:hidden">Connecté · Synchro en temps réel</span>
         </div>
       </footer>
 
