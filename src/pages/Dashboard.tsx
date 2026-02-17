@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, MoreHorizontal
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.svg';
 import { toast } from 'sonner';
@@ -159,18 +159,14 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
 
-  // Lock body scroll when mobile menu is open
+  // Close mobile more menu when tab changes
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [mobileMenuOpen]);
+    setMobileMoreOpen(false);
+  }, [activeTab]);
 
   // Check for first-login welcome flag
   useEffect(() => {
@@ -1041,52 +1037,11 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Navigation — hamburger on mobile, horizontal tabs on desktop */}
-      <nav className="bg-card border-b border-border sticky top-[calc(4rem+env(safe-area-inset-top))] lg:top-[calc(5rem+env(safe-area-inset-top))] z-40">
+      {/* Navigation — bottom bar on mobile, horizontal tabs on desktop */}
+      {/* Desktop: horizontal tabs */}
+      <nav className="bg-card border-b border-border sticky top-[calc(4rem+env(safe-area-inset-top))] lg:top-[calc(5rem+env(safe-area-inset-top))] z-40 hidden lg:block">
         <div className="mx-auto">
-          {/* Mobile + Tablet: hamburger button */}
-          <div className="lg:hidden flex items-center px-3 py-2.5">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex items-center gap-3 text-base font-semibold text-foreground py-1"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              {(() => {
-                const current = tabs.find(t => t.id === activeTab);
-                const Icon = current?.icon || Users;
-                return (
-                  <span className="flex items-center gap-2.5">
-                    <Icon size={20} className="text-accent" />
-                    {current?.label}
-                  </span>
-                );
-              })()}
-            </button>
-          </div>
-          {/* Mobile: dropdown menu */}
-          {mobileMenuOpen && (
-            <div className="lg:hidden border-t border-border bg-card animate-fade-in pb-1">
-              {tabs.map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => { handleTabChange(tab.id); setMobileMenuOpen(false); }}
-                    className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-all ${
-                      activeTab === tab.id
-                        ? 'bg-accent/10 text-accent'
-                        : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
-                    }`}
-                  >
-                    <Icon size={18} />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {/* Desktop: horizontal tabs */}
-          <div className="hidden lg:flex overflow-x-auto scrollbar-hide">
+          <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map(tab => {
               const Icon = tab.icon;
               return (
@@ -1108,8 +1063,73 @@ const Dashboard = () => {
         </div>
       </nav>
 
+      {/* Mobile: bottom tab bar */}
+      {(() => {
+        const mainTabs = tabs.slice(0, 4);
+        const moreTabs = tabs.slice(4);
+        const isMoreActive = moreTabs.some(t => t.id === activeTab);
+        return (
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-[env(safe-area-inset-bottom)]">
+            {/* More menu popover */}
+            {mobileMoreOpen && (
+              <div className="absolute bottom-full left-0 right-0 bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.1)] animate-fade-in">
+                {moreTabs.map(tab => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => { handleTabChange(tab.id); setMobileMoreOpen(false); }}
+                      className={`flex items-center gap-3 w-full px-5 py-3.5 text-sm font-medium transition-all ${
+                        activeTab === tab.id
+                          ? 'bg-accent/10 text-accent'
+                          : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                      }`}
+                    >
+                      <Icon size={18} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex items-stretch justify-around px-1">
+              {mainTabs.map(tab => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { handleTabChange(tab.id); setMobileMoreOpen(false); }}
+                    className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-0 flex-1 transition-all ${
+                      isActive ? 'text-accent' : 'text-muted-foreground'
+                    }`}
+                  >
+                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                    <span className={`text-[10px] leading-tight truncate w-full text-center ${isActive ? 'font-bold' : 'font-medium'}`}>
+                      {tab.label}
+                    </span>
+                  </button>
+                );
+              })}
+              {/* More button */}
+              <button
+                onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
+                className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-0 flex-1 transition-all ${
+                  isMoreActive || mobileMoreOpen ? 'text-accent' : 'text-muted-foreground'
+                }`}
+              >
+                <MoreHorizontal size={20} strokeWidth={isMoreActive || mobileMoreOpen ? 2.5 : 2} />
+                <span className={`text-[10px] leading-tight truncate w-full text-center ${isMoreActive || mobileMoreOpen ? 'font-bold' : 'font-medium'}`}>
+                  {isMoreActive ? moreTabs.find(t => t.id === activeTab)?.label || 'Plus' : 'Plus'}
+                </span>
+              </button>
+            </div>
+          </nav>
+        );
+      })()}
+
       {/* Content */}
-      <main className="mx-auto px-3 py-4 sm:p-6 lg:px-10">
+      <main className="mx-auto px-3 py-4 sm:p-6 lg:px-10 pb-20 lg:pb-6">
         <div key={activeTab} className="animate-fade-in">
           {activeTab === 'presences' && (
             <PresencesTab
