@@ -17,6 +17,7 @@ import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
 import ChatBubble from '@/components/dashboard/ChatBubble';
+import NotificationBell from '@/components/dashboard/NotificationBell';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
 import AddNewsForm from '@/components/modals/AddNewsForm';
@@ -1014,6 +1015,8 @@ const Dashboard = () => {
                 </div>
               </button>
 
+              {/* Notifications */}
+              <NotificationBell />
               {/* Actions */}
               <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all" title="Changer mot de passe">
                 <Lock size={14} className="sm:hidden" />
