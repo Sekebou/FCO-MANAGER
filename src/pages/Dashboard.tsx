@@ -1022,15 +1022,15 @@ const Dashboard = () => {
           <div className="sm:hidden flex items-center px-3 py-2.5">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex items-center gap-2.5 text-sm font-semibold text-foreground"
+              className="flex items-center gap-3 text-base font-semibold text-foreground py-1"
             >
-              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               {(() => {
                 const current = tabs.find(t => t.id === activeTab);
                 const Icon = current?.icon || Users;
                 return (
-                  <span className="flex items-center gap-2">
-                    <Icon size={16} className="text-accent" />
+                  <span className="flex items-center gap-2.5">
+                    <Icon size={20} className="text-accent" />
                     {current?.label}
                   </span>
                 );
