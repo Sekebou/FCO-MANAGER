@@ -67,6 +67,8 @@ const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').to
 
 const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOpen }) => {
   const [view, setView] = useState<ChatView>('tabs');
+  const [prevView, setPrevView] = useState<ChatView>('tabs');
+  const [animating, setAnimating] = useState(false);
   const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
@@ -82,6 +84,17 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Animated view change
+  const changeView = (newView: ChatView) => {
+    if (newView === view) return;
+    setAnimating(true);
+    setPrevView(view);
+    setTimeout(() => {
+      setView(newView);
+      setTimeout(() => setAnimating(false), 20);
+    }, 150);
+  };
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
   const visibleMembers = members.filter(m => m.role !== 'admin+' || m.id === currentUser?.uid);
@@ -205,14 +218,16 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   const deleteConversation = async (convoId: string) => {
     setDeletingConvo(true);
     // Reset state BEFORE async deletion to prevent white screen
+    const convoIdCopy = convoId;
     setActiveConversation(null);
     setPrivateMessages([]);
     setShowDeleteConvo(false);
     setView('conversations');
+    setAnimating(false);
     try {
-      const snap = await getDocs(collection(db, 'private_conversations', convoId, 'messages'));
-      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'private_conversations', convoId, 'messages', d.id))));
-      await deleteDoc(doc(db, 'private_conversations', convoId));
+      const snap = await getDocs(collection(db, 'private_conversations', convoIdCopy, 'messages'));
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'private_conversations', convoIdCopy, 'messages', d.id))));
+      await deleteDoc(doc(db, 'private_conversations', convoIdCopy));
       toast.success('Conversation supprimée');
     } catch { toast.error('Erreur de suppression'); }
     finally { setDeletingConvo(false); }
@@ -224,7 +239,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
     if (isGroup && !groupName.trim()) { toast.error('Donne un nom au groupe'); return; }
     if (!isGroup) {
       const existing = conversations.find(c => c.type === 'private' && c.participants.length === 2 && c.participants.includes(selectedMembers[0]));
-      if (existing) { setActiveConversation(existing); setView('private-chat'); setSelectedMembers([]); setGroupName(''); setSearchMember(''); return; }
+      if (existing) { setActiveConversation(existing); changeView('private-chat'); setSelectedMembers([]); setGroupName(''); setSearchMember(''); return; }
     }
     const all = [currentUser.uid, ...selectedMembers];
     const names: Record<string, string> = { [currentUser.uid]: currentUser.name };
@@ -243,7 +258,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
         lastMessage: null, lastMessageAt: serverTimestamp(), createdBy: currentUser.uid, unreadCount: unread,
       });
       setActiveConversation({ id: ref.id, participants: all, participantNames: names, participantPhotos: photos, participantRoles: roles, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount: unread });
-      setView('private-chat'); setSelectedMembers([]); setGroupName(''); setSearchMember('');
+      changeView('private-chat'); setSelectedMembers([]); setGroupName(''); setSearchMember('');
     } catch { toast.error('Erreur lors de la création'); }
   };
 
@@ -401,6 +416,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-3">
       <div className="w-[calc(100vw-2rem)] sm:w-[380px] h-[75vh] sm:h-[540px] max-h-[85vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
+        <div className={`flex flex-col flex-1 min-h-0 transition-all duration-200 ${animating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
 
         {/* === TABS VIEW === */}
         {view === 'tabs' && (
@@ -410,7 +426,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
               <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/15"><X size={18} /></button>
             </div>
             <div className="flex-1 flex flex-col">
-              <button onClick={() => setView('global')}
+              <button onClick={() => changeView('global')}
                 className="flex items-center gap-3 px-4 py-4 hover:bg-primary/5 transition-all border-b border-border text-left">
                 <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center text-accent-foreground shadow-md">
                   <Globe size={20} />
@@ -425,7 +441,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
               </button>
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
                 <span className="text-xs font-bold text-foreground/60 uppercase tracking-wider">Messages privés</span>
-                <button onClick={() => setView('new-convo')}
+                <button onClick={() => changeView('new-convo')}
                   className="p-1.5 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-all">
                   <Plus size={14} />
                 </button>
@@ -435,7 +451,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
                   <div className="flex flex-col items-center justify-center py-10 gap-2">
                     <Lock size={20} className="text-primary/25" />
                     <p className="text-xs text-foreground/40">Pas de conversation privée</p>
-                    <button onClick={() => setView('new-convo')} className="text-xs text-accent font-semibold hover:underline">Démarrer une conversation</button>
+                    <button onClick={() => changeView('new-convo')} className="text-xs text-accent font-semibold hover:underline">Démarrer une conversation</button>
                   </div>
                 ) : (
                   conversations.map(convo => {
@@ -445,7 +461,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
                     const unread = convo.unreadCount?.[currentUser?.uid || ''] || 0;
                     return (
                       <button key={convo.id}
-                        onClick={() => { setActiveConversation(convo); setView('private-chat'); }}
+                        onClick={() => { setActiveConversation(convo); changeView('private-chat'); }}
                         className={`flex items-center gap-3 w-full px-4 py-3 text-left transition-all border-b border-border/50 ${unread > 0 ? 'bg-accent/5 hover:bg-accent/10' : 'hover:bg-primary/5'}`}>
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden shadow-sm ${
                           convo.type === 'group' ? 'bg-accent' : (ROLE_COLORS[role || ''] || 'bg-primary/50')
@@ -475,7 +491,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
         {view === 'global' && (
           <>
             <div className="flex items-center gap-2 px-3 py-2.5 bg-primary text-primary-foreground shrink-0">
-              <button onClick={() => setView('tabs')} className="p-1.5 rounded-lg hover:bg-white/15"><ArrowLeft size={18} /></button>
+              <button onClick={() => changeView('tabs')} className="p-1.5 rounded-lg hover:bg-white/15"><ArrowLeft size={18} /></button>
               <Globe size={16} />
               <span className="font-bold text-sm flex-1">Discussion globale</span>
               <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/15"><X size={16} /></button>
@@ -489,7 +505,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
         {view === 'new-convo' && (
           <>
             <div className="flex items-center gap-2 px-3 py-2.5 bg-primary text-primary-foreground shrink-0">
-              <button onClick={() => { setView('tabs'); setSelectedMembers([]); setGroupName(''); setSearchMember(''); }} className="p-1.5 rounded-lg hover:bg-white/15"><ArrowLeft size={18} /></button>
+              <button onClick={() => { changeView('tabs'); setSelectedMembers([]); setGroupName(''); setSearchMember(''); }} className="p-1.5 rounded-lg hover:bg-white/15"><ArrowLeft size={18} /></button>
               <span className="font-bold text-sm flex-1">Nouvelle conversation</span>
               <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/15"><X size={16} /></button>
             </div>
@@ -551,7 +567,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
         {view === 'private-chat' && activeConversation && (
           <>
             <div className="flex items-center gap-2 px-3 py-2.5 bg-primary text-primary-foreground shrink-0">
-              <button onClick={() => { setView('tabs'); setActiveConversation(null); }} className="p-1.5 rounded-lg hover:bg-white/15"><ArrowLeft size={18} /></button>
+              <button onClick={() => { changeView('tabs'); setActiveConversation(null); }} className="p-1.5 rounded-lg hover:bg-white/15"><ArrowLeft size={18} /></button>
               {(() => {
                 const photo = getConvoPhoto(activeConversation);
                 const role = getConvoRole(activeConversation);
@@ -599,6 +615,20 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
           </>
         )}
 
+        {/* Fallback: if view is private-chat but no activeConversation, show tabs */}
+        {view === 'private-chat' && !activeConversation && (
+          <>
+            <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground">
+              <span className="font-bold text-sm">💬 Discussion</span>
+              <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/15"><X size={18} /></button>
+            </div>
+            <div className="flex-1 flex items-center justify-center">
+              <button onClick={() => changeView('tabs')} className="text-sm text-accent font-semibold hover:underline">← Retour aux discussions</button>
+            </div>
+          </>
+        )}
+
+        </div>{/* end transition wrapper */}
       </div>
 
       {/* Close button */}
