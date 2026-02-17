@@ -204,11 +204,15 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
 
   const deleteConversation = async (convoId: string) => {
     setDeletingConvo(true);
+    // Reset state BEFORE async deletion to prevent white screen
+    setActiveConversation(null);
+    setPrivateMessages([]);
+    setShowDeleteConvo(false);
+    setView('conversations');
     try {
       const snap = await getDocs(collection(db, 'private_conversations', convoId, 'messages'));
       await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'private_conversations', convoId, 'messages', d.id))));
       await deleteDoc(doc(db, 'private_conversations', convoId));
-      setActiveConversation(null); setView('conversations'); setShowDeleteConvo(false);
       toast.success('Conversation supprimée');
     } catch { toast.error('Erreur de suppression'); }
     finally { setDeletingConvo(false); }
