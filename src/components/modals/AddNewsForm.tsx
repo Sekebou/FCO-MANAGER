@@ -18,7 +18,7 @@ const AddNewsForm = ({ onSubmit, onClose }: Props) => {
             <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
               <Megaphone size={20} className="text-accent" />
             </div>
-            <h3 className="text-lg font-bold text-foreground">Nouvelle actualité</h3>
+            <h3 className="text-lg font-bold text-foreground">Nouvelle publication</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
             <X size={16} className="text-muted-foreground" />
@@ -29,11 +29,11 @@ const AddNewsForm = ({ onSubmit, onClose }: Props) => {
         <div className="p-5 space-y-4">
           <div className="relative">
             <FileText size={16} className="absolute left-3.5 top-3.5 text-muted-foreground" />
-            <input type="text" placeholder="Titre de l'actualité" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+            <input type="text" placeholder="Titre de la publication" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
           </div>
 
           <textarea
-            placeholder="Contenu de l'actualité..."
+            placeholder="Contenu de la publication..."
             className="w-full p-4 bg-secondary border border-border rounded-xl h-32 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm resize-none transition-all"
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}

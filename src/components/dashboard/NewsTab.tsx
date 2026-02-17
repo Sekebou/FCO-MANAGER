@@ -56,10 +56,10 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-between items-center gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Actualités</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Au cœur du club</h2>
         {canCreateNews() && (
           <button onClick={onAddNews} className="bg-accent text-accent-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 hover:bg-accent/90 transition-all text-xs sm:text-sm font-medium">
-            <Plus size={16} /> <span className="hidden sm:inline">Nouvelle actualité</span><span className="sm:hidden">Actu</span>
+            <Plus size={16} /> <span className="hidden sm:inline">Nouvelle publication</span><span className="sm:hidden">Publier</span>
           </button>
         )}
       </div>
@@ -67,7 +67,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
       {news.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
           <Bell className="mx-auto mb-3 text-muted-foreground" size={48} />
-          <p className="text-muted-foreground font-medium">Aucune actualité</p>
+          <p className="text-muted-foreground font-medium">Aucune publication</p>
         </div>
       ) : (
         news.map(item => {
