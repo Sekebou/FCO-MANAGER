@@ -42,8 +42,14 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           </div>
 
           <div className="relative">
-            <CalendarDays size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="date" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
+            <CalendarDays size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground z-10" />
+            <input
+              type="date"
+              className="w-full pl-10 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-base transition-all appearance-none [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:p-1 [&::-webkit-calendar-picker-indicator]:rounded-lg"
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              style={{ fontSize: '16px' }}
+            />
           </div>
 
           {/* Type selector */}
