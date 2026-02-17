@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Event, Member } from '@/pages/Dashboard';
 import RoleBadge from '@/components/ui/role-badge';
+import { Swords, Dumbbell, CalendarDays } from 'lucide-react';
 
 interface AppUser {
   uid: string;
@@ -46,11 +47,12 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
               )}
             </p>
           </div>
-          <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium shrink-0 ${
+          <span className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium shrink-0 ${
             event.type === 'match' ? 'bg-accent/10 text-accent' :
             event.type === 'training' ? 'bg-purple-100 text-purple-700' :
             'bg-muted text-muted-foreground'
           }`}>
+            {event.type === 'match' ? <Swords className="w-3 h-3" /> : event.type === 'training' ? <Dumbbell className="w-3 h-3" /> : <CalendarDays className="w-3 h-3" />}
             {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
           </span>
         </div>
