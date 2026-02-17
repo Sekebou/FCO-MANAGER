@@ -138,12 +138,11 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab');
-    return tabFromUrl || localStorage.getItem('fco-active-tab') || 'presences';
+    return tabFromUrl || 'presences';
   });
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    localStorage.setItem('fco-active-tab', tab);
   };
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
