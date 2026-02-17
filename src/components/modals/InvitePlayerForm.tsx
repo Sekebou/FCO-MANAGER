@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar, Share2 } from 'lucide-react';
+import NativeDatePicker from '@/components/ui/native-date-picker';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface Props {
@@ -147,15 +148,11 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Licence FFF <span className="text-muted-foreground/50 normal-case">(optionnel)</span>
               </label>
-              <div className="relative">
-                <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="date"
-                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 text-sm transition-all"
-                  value={formData.licenseExpiry}
-                  onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
-                />
-              </div>
+              <NativeDatePicker
+                value={formData.licenseExpiry}
+                onChange={(date) => setFormData({ ...formData, licenseExpiry: date })}
+                placeholder="Date d'expiration licence"
+              />
             </div>
           )}
 
