@@ -36,18 +36,18 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-card rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-border shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+        <div className="flex items-center justify-between p-5 border-b border-border gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
               <Send size={20} className="text-primary" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h3 className="text-lg font-bold text-foreground">Inviter un membre</h3>
-              <p className="text-xs text-muted-foreground whitespace-nowrap">La création du compte est réalisée par l'utilisateur.</p>
+              <p className="text-xs text-muted-foreground truncate">La création du compte est réalisée par l'utilisateur.</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
-            <X size={16} className="text-muted-foreground" />
+          <button onClick={onClose} className="w-9 h-9 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors shrink-0">
+            <X size={18} className="text-muted-foreground" />
           </button>
         </div>
 
