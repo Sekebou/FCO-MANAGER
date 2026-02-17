@@ -926,7 +926,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-secondary/50">
       {/* Header */}
-      <header className="bg-primary border-b border-primary/80 sticky top-0 z-50">
+      <header className="bg-primary border-b border-primary/80 sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
           <div className="flex justify-between items-center h-16 lg:h-20">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -1019,7 +1019,7 @@ const Dashboard = () => {
       </header>
 
       {/* Navigation — hamburger on mobile, horizontal tabs on desktop */}
-      <nav className="bg-card border-b border-border sticky top-16 lg:top-20 z-40">
+      <nav className="bg-card border-b border-border sticky top-[calc(4rem+env(safe-area-inset-top))] lg:top-[calc(5rem+env(safe-area-inset-top))] z-40">
         <div className="mx-auto">
           {/* Mobile + Tablet: hamburger button */}
           <div className="lg:hidden flex items-center px-3 py-2.5">
