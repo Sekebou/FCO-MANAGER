@@ -90,8 +90,8 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                   <Trophy size={18} className="text-accent-foreground sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-lg font-bold text-foreground">Classement présences</h3>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Du plus assidu au moins assidu</p>
+                  <h3 className="text-sm sm:text-lg font-bold text-foreground">Taux de présence à l'entraînement</h3>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Moyenne annuelle · Pour réinitialiser les stats, contactez un admin</p>
                 </div>
               </div>
               <div className="text-right hidden sm:block">
