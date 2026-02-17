@@ -166,8 +166,8 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                     <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-2xl bg-gradient-to-t ${podiumGradients[podiumIdx]} border border-b-0 flex flex-col items-center justify-start pt-3 relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                       <span className="text-2xl font-black text-white/90 relative z-10">{podiumRanks[podiumIdx]}</span>
-                      <span className="text-[9px] text-white/70 font-medium relative z-10 mt-1">
-                        {item.attendance!.present}/{item.attendance!.total}
+                      <span className="text-[9px] text-white/70 font-medium relative z-10 mt-1 text-center leading-tight">
+                        {item.attendance!.present}/{item.attendance!.total} entraîn.
                       </span>
                     </div>
                   </div>
@@ -189,7 +189,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs sm:text-sm font-semibold text-foreground truncate">{item.player.name}</div>
-                    <div className="text-[9px] sm:text-[10px] text-muted-foreground">{item.attendance!.present}/{item.attendance!.total}</div>
+                    <div className="text-[9px] sm:text-[10px] text-muted-foreground">{item.attendance!.present}/{item.attendance!.total} entraînements</div>
                   </div>
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-16 sm:w-28 h-2 sm:h-2.5 bg-border rounded-full overflow-hidden">
