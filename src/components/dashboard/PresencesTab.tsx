@@ -130,15 +130,15 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                       </span>
                     )}
                   </p>
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2.5 sm:mt-3">
-                     <span className="flex items-center gap-1 bg-accent/10 text-accent px-2 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                       <Check size={11} /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2.5 sm:mt-3 [&]:has-[span:last-child:nth-child(3)]:flex-wrap">
+                     <span className="flex items-center gap-1 bg-accent/10 text-accent px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">
+                       <Check size={10} className="sm:w-3 sm:h-3" /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
                      </span>
-                     <span className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                       <X size={11} /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
+                     <span className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">
+                       <X size={10} className="sm:w-3 sm:h-3" /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
                      </span>
-                     <span className="flex items-center gap-1 bg-warning/10 text-warning px-2 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                       <Clock size={11} /> {unknownCount} En attente
+                     <span className="flex items-center gap-1 bg-warning/10 text-warning px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">
+                       <Clock size={10} className="sm:w-3 sm:h-3" /> {unknownCount} En attente
                      </span>
                    </div>
                 </div>
