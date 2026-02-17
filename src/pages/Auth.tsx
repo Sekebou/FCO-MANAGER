@@ -49,12 +49,9 @@ const Auth = () => {
       );
 
       const displayName = userData.name || userData.username || "joueur";
-      // Show welcome message only on first login, then mark as seen
+      // Flag first login to show welcome modal on Dashboard
       if (!userData.welcomeSeen) {
-        toast.success(`Bienvenue ${displayName} 👋`, {
-          description: "Bienvenue sur FCO Manager — l'application pensée et conçue exclusivement pour le club d'Oisemont. On est ravis de vous compter parmi nous !",
-          duration: 8000,
-        });
+        sessionStorage.setItem('showWelcome', displayName);
         await updateDoc(doc(db, "users", user.uid), { welcomeSeen: true });
       }
 

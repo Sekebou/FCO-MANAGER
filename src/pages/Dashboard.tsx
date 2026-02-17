@@ -159,6 +159,16 @@ const Dashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [welcomeName, setWelcomeName] = useState<string | null>(null);
+
+  // Check for first-login welcome flag
+  useEffect(() => {
+    const name = sessionStorage.getItem('showWelcome');
+    if (name) {
+      setWelcomeName(name);
+      sessionStorage.removeItem('showWelcome');
+    }
+  }, []);
 
   // Modals
   const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -1516,6 +1526,32 @@ const Dashboard = () => {
                 Parfait !
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Welcome modal - first login only */}
+      {welcomeName && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
+          <div className="bg-card border border-border rounded-3xl shadow-2xl max-w-md w-full p-8 sm:p-10 text-center animate-[fadeSlideUp_0.5s_ease-out_both]">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-6 border border-primary/20">
+              <img src={clubLogo} alt="FCO" className="w-14 h-14 object-contain" />
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-2">
+              Bienvenue {welcomeName} 👋
+            </h2>
+            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mt-3">
+              Bienvenue sur <span className="font-bold text-primary">FCO Manager</span> — l'application pensée et conçue exclusivement pour le club d'Oisemont.
+            </p>
+            <p className="text-muted-foreground/70 text-xs sm:text-sm mt-2">
+              On est ravis de vous compter parmi nous ! 💙⚽
+            </p>
+            <button
+              onClick={() => setWelcomeName(null)}
+              className="mt-8 w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 shadow-lg shadow-primary/20"
+            >
+              C'est parti !
+            </button>
           </div>
         </div>
       )}
