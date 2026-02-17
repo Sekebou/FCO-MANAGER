@@ -36,7 +36,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
             <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
               {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
             {event.createdByName && (
-                <span className="text-muted-foreground/60 inline-flex items-center gap-1.5">
+                <span className="text-muted-foreground/60 inline-flex items-center gap-1.5 ml-1.5">
                   {event.createdByName}
                   {(() => {
                     const creator = members.find(m => m.id === event.createdBy);
