@@ -377,7 +377,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
                     {msg.imageUrl && <img src={msg.imageUrl} alt="" className="max-w-full rounded-lg mb-1 max-h-48 object-contain cursor-pointer" onClick={() => window.open(msg.imageUrl, '_blank')} />}
                     {msg.text && <span>{msg.text}</span>}
                   </div>
-                  {!own && (
+                  {!own && (currentUser?.role === 'admin' || currentUser?.role === 'admin+') && (
                     <button onClick={() => deleteMessage(msg.id, isGlobal)}
                       className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-muted-foreground hover:text-destructive transition-all">
                       <Trash2 size={11} />
