@@ -1,13 +1,55 @@
 import React from 'react';
-import { Shield, Dumbbell, Camera, UserCircle, Briefcase } from 'lucide-react';
+import { Shield, Dumbbell, Camera, UserCircle, Briefcase, Crown } from 'lucide-react';
 
-const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; className: string }> = {
-  'admin+': { label: 'Super Admin', icon: Shield, className: 'bg-amber-500/15 text-amber-600 border-amber-500/20' },
-  admin: { label: 'Admin', icon: Shield, className: 'bg-blue-500/15 text-blue-600 border-blue-500/20' },
-  entraineur: { label: 'Entraîneur', icon: Dumbbell, className: 'bg-purple-500/15 text-purple-600 border-purple-500/20' },
-  dirigeant: { label: 'Dirigeant', icon: Briefcase, className: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/20' },
-  photographe: { label: 'Photographe', icon: Camera, className: 'bg-pink-500/15 text-pink-600 border-pink-500/20' },
-  joueur: { label: 'Joueur', icon: UserCircle, className: 'bg-muted text-muted-foreground border-border' },
+const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; bg: string; text: string; border: string; glow: string }> = {
+  'admin+': {
+    label: 'Super Admin',
+    icon: Crown,
+    bg: 'bg-gradient-to-r from-amber-500/20 to-orange-500/20',
+    text: 'text-amber-500',
+    border: 'border-amber-500/40',
+    glow: 'shadow-[0_0_8px_rgba(245,158,11,0.25)]',
+  },
+  admin: {
+    label: 'Administrateur',
+    icon: Shield,
+    bg: 'bg-gradient-to-r from-blue-500/20 to-indigo-500/20',
+    text: 'text-blue-500',
+    border: 'border-blue-500/40',
+    glow: 'shadow-[0_0_8px_rgba(59,130,246,0.2)]',
+  },
+  entraineur: {
+    label: 'Entraîneur',
+    icon: Dumbbell,
+    bg: 'bg-gradient-to-r from-purple-500/20 to-violet-500/20',
+    text: 'text-purple-500',
+    border: 'border-purple-500/40',
+    glow: 'shadow-[0_0_8px_rgba(168,85,247,0.2)]',
+  },
+  dirigeant: {
+    label: 'Dirigeant',
+    icon: Briefcase,
+    bg: 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20',
+    text: 'text-emerald-500',
+    border: 'border-emerald-500/40',
+    glow: 'shadow-[0_0_8px_rgba(16,185,129,0.2)]',
+  },
+  photographe: {
+    label: 'Photographe',
+    icon: Camera,
+    bg: 'bg-gradient-to-r from-pink-500/20 to-rose-500/20',
+    text: 'text-pink-500',
+    border: 'border-pink-500/40',
+    glow: 'shadow-[0_0_8px_rgba(236,72,153,0.2)]',
+  },
+  joueur: {
+    label: 'Joueur',
+    icon: UserCircle,
+    bg: 'bg-gradient-to-r from-slate-500/15 to-gray-500/15',
+    text: 'text-muted-foreground',
+    border: 'border-border',
+    glow: '',
+  },
 };
 
 interface RoleBadgeProps {
@@ -22,10 +64,10 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'sm' }) => {
   const Icon = config.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border font-semibold ${config.className} ${
-      size === 'sm' ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-[10px]'
+    <span className={`inline-flex items-center gap-1.5 rounded-full border font-bold tracking-wide uppercase ${config.bg} ${config.text} ${config.border} ${config.glow} ${
+      size === 'sm' ? 'px-2.5 py-1 text-[9px]' : 'px-3 py-1 text-[10px]'
     }`}>
-      <Icon size={size === 'sm' ? 10 : 12} />
+      <Icon size={size === 'sm' ? 11 : 13} strokeWidth={2.5} />
       {config.label}
     </span>
   );
