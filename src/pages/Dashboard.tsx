@@ -956,7 +956,7 @@ const Dashboard = () => {
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-success rounded-full border-2 border-primary" />
                 </div>
-                <div className="text-left">
+                <div className="hidden min-[414px]:block text-left">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs sm:text-sm font-semibold text-primary-foreground leading-tight">
                       <span className="sm:hidden">{currentUser?.name?.split(' ')[0]}</span>
