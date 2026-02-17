@@ -13,7 +13,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
   const allTypeOptions = [
     { value: 'match', label: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
-    { value: 'training', label: 'Entraînement', icon: <Dumbbell className="w-3.5 h-3.5" />, color: 'bg-purple-500/10 border-purple-500/30 text-purple-600' },
+    { value: 'training', label: 'Entraîn.', icon: <Dumbbell className="w-3.5 h-3.5" />, color: 'bg-purple-500/10 border-purple-500/30 text-purple-600' },
     { value: 'other', label: 'Autre', icon: <CalendarDays className="w-3.5 h-3.5" />, color: 'bg-muted border-border text-muted-foreground' },
   ];
 
