@@ -217,12 +217,12 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
 
   const deleteConversation = async (convoId: string) => {
     setDeletingConvo(true);
-    // Reset state BEFORE async deletion to prevent white screen
     const convoIdCopy = convoId;
+    // Reset ALL state BEFORE deletion
     setActiveConversation(null);
     setPrivateMessages([]);
     setShowDeleteConvo(false);
-    setView('conversations');
+    setView('tabs');
     setAnimating(false);
     try {
       const snap = await getDocs(collection(db, 'private_conversations', convoIdCopy, 'messages'));
