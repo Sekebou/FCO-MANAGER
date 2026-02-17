@@ -312,19 +312,19 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                         const isConvoked = draft.status === 'convoque';
                         const presence = event.presences?.[player.id];
                         return (
-                          <div key={player.id} className="p-3 bg-secondary/30 rounded-xl space-y-2.5 border border-transparent hover:border-border/50 transition-all">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="font-medium text-sm text-foreground truncate">{player.name}</span>
-                                {presence && (
-                                  <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${presence === 'present' ? 'bg-accent' : 'bg-destructive'}`} title={presence === 'present' ? 'Présent' : 'Absent'} />
-                                )}
-                              </div>
-                              <div className="flex gap-0.5 shrink-0">
-                                {CONVOCATION_STATUSES.map(s => {
-                                  const Icon = s.icon;
-                                  const isActive = draft.status === s.value;
-                                  return (
+                           <div key={player.id} className="p-3 bg-secondary/30 rounded-xl space-y-2.5 border border-transparent hover:border-border/50 transition-all">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                               <div className="flex items-center gap-2 min-w-0">
+                                 <span className="font-medium text-sm text-foreground">{player.name}</span>
+                                 {presence && (
+                                   <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${presence === 'present' ? 'bg-accent' : 'bg-destructive'}`} title={presence === 'present' ? 'Présent' : 'Absent'} />
+                                 )}
+                               </div>
+                               <div className="flex gap-1 shrink-0">
+                                 {CONVOCATION_STATUSES.map(s => {
+                                   const Icon = s.icon;
+                                   const isActive = draft.status === s.value;
+                                   return (
                                     <button
                                       key={s.value}
                                       onClick={() => updateDraft(player.id, { status: s.value as Convocation['status'] })}
@@ -334,13 +334,12 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                       title={s.label}
                                     >
                                       <Icon size={14} className="sm:w-3 sm:h-3" />
-                                      <span className="sm:hidden">{s.shortLabel}</span>
-                                      <span className="hidden sm:inline">{s.shortLabel}</span>
+                                      {s.shortLabel}
                                     </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                                   );
+                                 })}
+                               </div>
+                             </div>
                             {isConvoked && (
                               <div className="flex gap-2 animate-fade-in pl-0.5">
                                 <div className="flex-1 relative">
