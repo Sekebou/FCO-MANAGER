@@ -927,7 +927,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-secondary/50">
       {/* Header */}
       <header className="bg-primary border-b border-primary/80 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -1017,7 +1017,7 @@ const Dashboard = () => {
 
       {/* Navigation — hamburger on mobile, horizontal tabs on desktop */}
       <nav className="bg-card border-b border-border sticky top-14 sm:top-16 z-40">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           {/* Mobile: hamburger button */}
           <div className="sm:hidden flex items-center px-3 py-2.5">
             <button
@@ -1083,7 +1083,7 @@ const Dashboard = () => {
       </nav>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-3 py-4 sm:p-6">
+      <main className="max-w-[1600px] mx-auto px-3 py-4 sm:p-6">
         <div key={activeTab} className="animate-fade-in">
           {activeTab === 'presences' && (
             <PresencesTab
