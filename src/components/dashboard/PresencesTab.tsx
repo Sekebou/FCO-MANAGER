@@ -130,17 +130,17 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                       </span>
                     )}
                   </p>
-                  <div className="flex gap-1.5 sm:gap-2 mt-2 sm:mt-3 flex-wrap">
-                    <span className="flex items-center gap-1 sm:gap-1.5 bg-accent/10 text-accent px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold">
-                      <Check size={11} className="sm:w-[13px] sm:h-[13px]" /> {presentCount}
-                    </span>
-                    <span className="flex items-center gap-1 sm:gap-1.5 bg-destructive/10 text-destructive px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold">
-                      <X size={11} className="sm:w-[13px] sm:h-[13px]" /> {absentCount}
-                    </span>
-                    <span className="flex items-center gap-1 sm:gap-1.5 bg-warning/10 text-warning px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold">
-                      <Clock size={11} className="sm:w-[13px] sm:h-[13px]" /> {unknownCount}
-                    </span>
-                  </div>
+                  <div className="flex gap-2 mt-2.5 sm:mt-3">
+                     <span className="flex items-center gap-1.5 bg-accent/10 text-accent px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold">
+                       <Check size={12} /> {presentCount}
+                     </span>
+                     <span className="flex items-center gap-1.5 bg-destructive/10 text-destructive px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold">
+                       <X size={12} /> {absentCount}
+                     </span>
+                     <span className="flex items-center gap-1.5 bg-warning/10 text-warning px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold">
+                       <Clock size={12} /> {unknownCount}
+                     </span>
+                   </div>
                 </div>
                 <div className="flex gap-1.5 sm:gap-2 items-start shrink-0">
                   <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
@@ -186,31 +186,31 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                         {canManageOwnPresence(player.id) ? (
                           <div className="flex gap-1.5 shrink-0">
                             <button
-                              onClick={() => togglePresence(event.id, player.id, 'present')}
-                              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-1.5 text-xs font-medium transition-all ${
-                                status === 'present' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
-                              }`}
-                            >
-                              <Check size={12} className="sm:w-[14px] sm:h-[14px]" /> <span className="hidden sm:inline">Présent</span><span className="sm:hidden">P</span>
-                            </button>
-                            <button
-                              onClick={() => togglePresence(event.id, player.id, 'absent')}
-                              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-1.5 text-xs font-medium transition-all ${
-                                status === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
-                              }`}
-                            >
-                              <X size={12} className="sm:w-[14px] sm:h-[14px]" /> <span className="hidden sm:inline">Absent</span><span className="sm:hidden">A</span>
-                            </button>
-                          </div>
-                        ) : (
-                          <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 shrink-0 ${
-                            status === 'present' ? 'bg-success/10 text-success' :
-                            status === 'absent' ? 'bg-destructive/10 text-destructive' :
-                            'bg-warning/10 text-warning'
-                          }`}>
-                            {status === 'present' ? <><Check size={11} /> <span className="hidden sm:inline">Présent</span><span className="sm:hidden">P</span></> : status === 'absent' ? <><X size={11} /> <span className="hidden sm:inline">Absent</span><span className="sm:hidden">A</span></> : <><Clock size={11} /> <span className="hidden sm:inline">En attente</span><span className="sm:hidden">?</span></>}
-                          </span>
-                        )}
+                               onClick={() => togglePresence(event.id, player.id, 'present')}
+                               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all ${
+                                 status === 'present' ? 'bg-accent text-accent-foreground shadow-sm ring-1 ring-accent/30' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
+                               }`}
+                             >
+                               <Check size={13} /> <span className="hidden sm:inline">Présent</span><span className="sm:hidden">Prés.</span>
+                             </button>
+                             <button
+                               onClick={() => togglePresence(event.id, player.id, 'absent')}
+                               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all ${
+                                 status === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm ring-1 ring-destructive/30' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
+                               }`}
+                             >
+                               <X size={13} /> <span className="hidden sm:inline">Absent</span><span className="sm:hidden">Abs.</span>
+                             </button>
+                           </div>
+                         ) : (
+                           <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0 ${
+                             status === 'present' ? 'bg-accent/10 text-accent' :
+                             status === 'absent' ? 'bg-destructive/10 text-destructive' :
+                             'bg-warning/10 text-warning'
+                           }`}>
+                             {status === 'present' ? <><Check size={12} /> Prés.</> : status === 'absent' ? <><X size={12} /> Abs.</> : <><Clock size={12} /> Attente</>}
+                           </span>
+                         )}
                       </div>
                     );
                   })
