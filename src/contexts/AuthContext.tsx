@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { auth, db, onAuthStateChanged, signOut, doc, getDoc, type User } from '@/lib/firebase';
+import { auth, db, onAuthStateChanged, signOut, doc, getDoc, onSnapshot, type User } from '@/lib/firebase';
 
 export interface AppUser {
   uid: string;
@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let unsubscribeSnapshot: (() => void) | null = null;
 
     const fetchUserProfile = async (user: User) => {
       try {
@@ -66,6 +67,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!isMounted) return;
       setFirebaseUser(user);
+
+      // Clean up previous snapshot listener
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+
       if (user) {
         const stored = sessionStorage.getItem('currentUser');
         if (stored) {
@@ -73,9 +81,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         // Always refresh profile from Firestore to keep role up-to-date
         await fetchUserProfile(user);
+
+        // Listen for session token changes to enforce single-session
+        unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+          if (!isMounted || !snapshot.exists()) return;
+          const data = snapshot.data();
+          const localToken = sessionStorage.getItem('sessionToken');
+          // If there's a session token in Firestore and it doesn't match ours, force logout
+          if (localToken && data.sessionToken && data.sessionToken !== localToken) {
+            console.log('Session invalidée : connexion depuis un autre appareil');
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('sessionToken');
+            signOut(auth);
+          }
+        });
       } else {
         setCurrentUser(null);
         sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('sessionToken');
       }
       if (isMounted) setLoading(false);
     });
@@ -83,6 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       isMounted = false;
       unsubscribe();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
     };
   }, []);
 

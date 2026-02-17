@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, doc, getDoc } from "@/lib/firebase";
+import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, doc, getDoc, updateDoc } from "@/lib/firebase";
 import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft } from "lucide-react";
 import clubLogo from "@/assets/logo.svg";
 import { toast } from "sonner";
@@ -24,6 +24,11 @@ const Auth = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
       const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      // Generate unique session token and write to Firestore
+      const sessionToken = crypto.randomUUID();
+      await updateDoc(doc(db, "users", user.uid), { sessionToken });
+      sessionStorage.setItem('sessionToken', sessionToken);
 
       if (!userDoc.exists()) {
         throw new Error("Profil utilisateur introuvable. Contactez l'administrateur.");
