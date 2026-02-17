@@ -51,7 +51,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
             event.type === 'training' ? 'bg-purple-100 text-purple-700' :
             'bg-muted text-muted-foreground'
           }`}>
-            {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraîn.' : 'Autre'}
+            {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
           </span>
         </div>
       </div>
