@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, MessageSquare
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.svg';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
 import ChatTab from '@/components/dashboard/ChatTab';
+import MessagesTab from '@/components/dashboard/MessagesTab';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
 import AddNewsForm from '@/components/modals/AddNewsForm';
@@ -128,6 +129,7 @@ const tabs = [
   { id: 'news', label: 'Actualités', icon: Bell },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
+  { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'members', label: 'Membres', icon: Users },
 ];
 
@@ -1169,6 +1171,9 @@ const Dashboard = () => {
             />
           )}
           {/* Chat removed from tabs, now a floating bubble */}
+          {activeTab === 'messages' && (
+            <MessagesTab currentUser={currentUser} members={members} />
+          )}
           {activeTab === 'members' && (
             <MembersTab
               members={visibleMembers}
