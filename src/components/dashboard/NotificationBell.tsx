@@ -138,7 +138,7 @@ const NotificationBell = () => {
 
       {/* Panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 max-h-[70vh] bg-card border border-border rounded-2xl shadow-2xl z-[100] overflow-hidden animate-fade-in">
+        <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 max-h-[80vh] sm:max-h-[70vh] bg-card border border-border rounded-2xl shadow-2xl z-[100] overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
             <div className="flex items-center gap-2">
@@ -211,8 +211,8 @@ const NotificationBell = () => {
                 <div key={a.id} className="px-4 py-3 hover:bg-muted/20 transition-all group">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-foreground truncate">{a.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap line-clamp-3">{a.message}</p>
+                      <h4 className="text-sm font-semibold text-foreground">{a.title}</h4>
+                      <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap break-words">{a.message}</p>
                       <span className="text-[10px] text-muted-foreground/60 mt-1.5 block">
                         {a.authorName} · {formatDate(a.createdAt)}
                       </span>
