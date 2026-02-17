@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil, Repeat, CircleDot } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -146,6 +146,15 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                    </div>
                 </div>
                 <div className="flex gap-1.5 sm:gap-2 items-start shrink-0">
+                  {event.recurrence === 'recurring' ? (
+                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-primary/10 text-primary inline-flex items-center gap-1">
+                      <Repeat size={10} className="sm:w-3 sm:h-3" /> Récurrent
+                    </span>
+                  ) : (
+                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-muted text-muted-foreground inline-flex items-center gap-1">
+                      <CircleDot size={10} className="sm:w-3 sm:h-3" /> Ponctuel
+                    </span>
+                  )}
                   <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
                     event.type === 'match' ? 'bg-accent/10 text-accent' :
                     event.type === 'training' ? 'bg-purple-100 text-purple-700' :

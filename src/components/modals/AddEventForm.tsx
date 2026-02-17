@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
-  const [formData, setFormData] = useState({ title: '', date: '', type: isDirigeant ? 'training' : 'match', sendNotification: true });
+  const [formData, setFormData] = useState({ title: '', date: '', type: isDirigeant ? 'training' : 'match', recurrence: 'ponctuel' as 'recurring' | 'ponctuel', sendNotification: true });
 
   const allTypeOptions = [
     { value: 'match', label: 'Match', shortLabel: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
@@ -64,6 +64,34 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Recurrence selector */}
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Récurrence</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, recurrence: 'ponctuel' })}
+                className={`py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-semibold border-2 transition-all whitespace-nowrap ${
+                  formData.recurrence === 'ponctuel' ? 'bg-muted border-border text-foreground scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                }`}
+              >
+                <span className="inline-flex items-center gap-1"><CircleDot className="w-3.5 h-3.5" /> Ponctuel</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, recurrence: 'recurring' })}
+                className={`py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-semibold border-2 transition-all whitespace-nowrap ${
+                  formData.recurrence === 'recurring' ? 'bg-primary/10 border-primary/30 text-primary scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                }`}
+              >
+                <span className="inline-flex items-center gap-1"><Repeat className="w-3.5 h-3.5" /> Récurrent</span>
+              </button>
+            </div>
+            {formData.recurrence === 'recurring' && (
+              <p className="text-[11px] text-muted-foreground mt-1.5">Se répète chaque semaine automatiquement</p>
+            )}
           </div>
 
           {/* Notification */}
