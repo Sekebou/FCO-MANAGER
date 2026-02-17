@@ -162,6 +162,16 @@ const Dashboard = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
   // Check for first-login welcome flag
   useEffect(() => {
     const name = sessionStorage.getItem('showWelcome');
