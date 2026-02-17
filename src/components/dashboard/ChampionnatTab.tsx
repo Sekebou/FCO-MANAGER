@@ -239,38 +239,38 @@ const ChampionnatTab: React.FC<Props> = ({
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-            <Trophy className="text-accent" size={22} />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <Trophy className="text-accent" size={18} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Championnats</h2>
-            <p className="text-sm text-muted-foreground">{filteredChampionships.length} championnat(s) — Équipe {selectedTeam}</p>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Championnats</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">{filteredChampionships.length} champ. — Éq. {selectedTeam}</p>
           </div>
         </div>
         {canManage() && !teamHasChampionship(selectedTeam) && (
-          <button onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm">
-            <Plus size={18} /> Nouveau
+          <button onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} className="flex items-center gap-1.5 sm:gap-2 bg-accent text-accent-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm text-xs sm:text-sm">
+            <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
           </button>
         )}
       </div>
 
       {/* Team selector */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {TEAM_OPTIONS.map(team => (
           <button
             key={team}
             onClick={() => setSelectedTeam(team)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
               selectedTeam === team
                 ? 'bg-accent text-accent-foreground shadow-sm'
                 : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
             }`}
           >
-            Équipe {team}
+            Éq. {team}
           </button>
         ))}
       </div>

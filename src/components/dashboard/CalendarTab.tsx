@@ -22,22 +22,22 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
   const EventCard = ({ event, isPast }: { event: Event; isPast?: boolean }) => {
     const teamLabel = null;
     return (
-      <div className={`border-l-4 p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-accent/5'} ${!isPast ? 'shadow-sm' : ''}`}>
-        <div className="flex justify-between items-start">
-          <div>
+      <div className={`border-l-4 p-3 sm:p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-accent/5'} ${!isPast ? 'shadow-sm' : ''}`}>
+        <div className="flex justify-between items-start gap-2">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h4 className={`font-semibold ${isPast ? 'text-muted-foreground' : 'text-foreground'}`}>{event.title}</h4>
+              <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} truncate`}>{event.title}</h4>
               {teamLabel && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider shrink-0">
                   {teamLabel}
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
             {event.createdByName && (
                 <span className="text-muted-foreground/60 inline-flex items-center gap-1.5">
-                  {' '}· par {event.createdByName}
+                  {' '}· {event.createdByName}
                   {(() => {
                     const creator = members.find(m => m.id === event.createdBy);
                     return creator ? <RoleBadge role={creator.role} /> : null;
@@ -46,12 +46,12 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
               )}
             </p>
           </div>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+          <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium shrink-0 ${
             event.type === 'match' ? 'bg-accent/10 text-accent' :
             event.type === 'training' ? 'bg-purple-100 text-purple-700' :
             'bg-muted text-muted-foreground'
           }`}>
-            {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
+            {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraîn.' : 'Autre'}
           </span>
         </div>
       </div>
@@ -59,8 +59,8 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
   };
 
   return (
-    <div className="space-y-8">
-      <h2 className="text-2xl font-bold text-foreground">Calendrier</h2>
+    <div className="space-y-6 sm:space-y-8">
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground">Calendrier</h2>
 
       <div>
         <h3 className="text-lg font-semibold mb-3 text-accent">Événements à venir</h3>

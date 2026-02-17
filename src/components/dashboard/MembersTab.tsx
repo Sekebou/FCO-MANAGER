@@ -68,36 +68,36 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header with stats */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-foreground">Membres du club</h2>
-        <div className="flex gap-2 items-center flex-wrap">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Membres du club</h2>
           {canManage() && (
-            <div className="flex gap-2">
-              <button onClick={onInvitePlayer} className="bg-primary/10 text-primary px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/20 transition-all text-sm font-medium border border-primary/20">
-                <Send size={16} /> Inviter
-              </button>
-            </div>
+            <button onClick={onInvitePlayer} className="bg-primary/10 text-primary px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 hover:bg-primary/20 transition-all text-xs sm:text-sm font-medium border border-primary/20">
+              <Send size={14} className="sm:w-4 sm:h-4" /> Inviter
+            </button>
           )}
-          <div className="flex items-center gap-2 bg-warning/10 text-warning px-3 py-2 rounded-xl">
-            <Shield size={14} />
-            <span className="text-xs font-bold">{admins.length}</span>
+        </div>
+        <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap">
+          <div className="flex items-center gap-1.5 bg-warning/10 text-warning px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl">
+            <Shield size={12} className="sm:w-[14px] sm:h-[14px]" />
+            <span className="text-[10px] sm:text-xs font-bold">{admins.length}</span>
           </div>
-          <div className="flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-xl">
-            <Dumbbell size={14} />
-            <span className="text-xs font-bold">{coaches.length}</span>
+          <div className="flex items-center gap-1.5 bg-accent/10 text-accent px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl">
+            <Dumbbell size={12} className="sm:w-[14px] sm:h-[14px]" />
+            <span className="text-[10px] sm:text-xs font-bold">{coaches.length}</span>
           </div>
-          <div className="flex items-center gap-2 bg-sky-500/10 text-sky-600 px-3 py-2 rounded-xl">
-            <Briefcase size={14} />
-            <span className="text-xs font-bold">{dirigeants.length}</span>
+          <div className="flex items-center gap-1.5 bg-sky-500/10 text-sky-600 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl">
+            <Briefcase size={12} className="sm:w-[14px] sm:h-[14px]" />
+            <span className="text-[10px] sm:text-xs font-bold">{dirigeants.length}</span>
           </div>
-          <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl">
-            <Users size={14} />
-            <span className="text-xs font-bold">{playerMembers.length}</span>
+          <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl">
+            <Users size={12} className="sm:w-[14px] sm:h-[14px]" />
+            <span className="text-[10px] sm:text-xs font-bold">{playerMembers.length}</span>
           </div>
-          <div className="flex items-center gap-2 bg-secondary text-foreground px-3 py-2 rounded-xl">
-            <span className="text-xs font-bold">Total : {visibleMembers.length}</span>
+          <div className="flex items-center gap-1.5 bg-secondary text-foreground px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl">
+            <span className="text-[10px] sm:text-xs font-bold">{visibleMembers.length}</span>
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
           <p className="text-muted-foreground font-medium">Aucun membre</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {visibleMembers.map(member => {
             const player = member.playerId ? players.find(p => p.id === member.playerId) : null;
             const licenseDate = member.licenseExpiry || player?.licenseExpiry;
@@ -120,21 +120,21 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             return (
               <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in flex flex-col">
                 {/* Colored header band */}
-                <div className={`h-2 bg-gradient-to-r ${config.gradient}`} />
+                <div className={`h-1.5 sm:h-2 bg-gradient-to-r ${config.gradient}`} />
 
-                <div className="p-5 flex flex-col flex-1">
+                <div className="p-3 sm:p-5 flex flex-col flex-1">
                   {/* Top: Avatar + Name + Role */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg overflow-hidden shrink-0 bg-gradient-to-br ${config.gradient} shadow-sm`}>
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-lg overflow-hidden shrink-0 bg-gradient-to-br ${config.gradient} shadow-sm`}>
                       {member.photoURL ? (
                         <img src={member.photoURL} alt={member.name} className="w-full h-full object-cover" />
                       ) : (
-                        <RoleIcon size={22} className={`text-${config.color}`} />
+                        <RoleIcon size={18} className={`text-${config.color} sm:w-[22px] sm:h-[22px]`} />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-foreground truncate">{member.name}</h3>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-${config.color}/10 text-${config.color}`}>
+                      <h3 className="font-bold text-sm sm:text-base text-foreground truncate">{member.name}</h3>
+                      <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider bg-${config.color}/10 text-${config.color}`}>
                         {config.label}
                       </span>
                     </div>

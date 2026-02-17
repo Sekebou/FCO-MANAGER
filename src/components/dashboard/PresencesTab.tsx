@@ -77,13 +77,13 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-3">
-        <h2 className="text-2xl font-bold text-foreground">Gestion des présences</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex justify-between items-center flex-wrap gap-2 sm:gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Gestion des présences</h2>
         <div className="flex gap-2">
           {canCreateEvent() && (
-            <button onClick={onAddEvent} className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-primary/90 transition-all text-sm font-medium">
-              <Plus size={18} /> Événement
+            <button onClick={onAddEvent} className="bg-primary text-primary-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 hover:bg-primary/90 transition-all text-xs sm:text-sm font-medium">
+              <Plus size={16} /> <span className="hidden sm:inline">Événement</span><span className="sm:hidden">Ajout</span>
             </button>
           )}
         </div>
@@ -107,19 +107,19 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
           const teamLabel = null;
 
           return (
-            <div key={event.id} className="bg-card border border-border rounded-2xl p-5 shadow-sm animate-fade-in">
-              <div className="flex justify-between items-start mb-4">
-                <div>
+            <div key={event.id} className="bg-card border border-border rounded-2xl p-3 sm:p-5 shadow-sm animate-fade-in">
+              <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-lg text-foreground">{event.title}</h3>
+                    <h3 className="font-semibold text-base sm:text-lg text-foreground truncate">{event.title}</h3>
                     {teamLabel && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider shrink-0">
                         {teamLabel}
                       </span>
                     )}
                   </div>
-                  <p className="text-muted-foreground text-sm mt-0.5">
-                    {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+                    {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
                     {event.createdByName && (
                       <span className="text-muted-foreground/60 inline-flex items-center gap-1.5">
                         {' '}· par {event.createdByName}
@@ -130,29 +130,29 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                       </span>
                     )}
                   </p>
-                  <div className="flex gap-2 mt-3">
-                    <span className="flex items-center gap-1.5 bg-accent/10 text-accent px-3 py-1.5 rounded-full text-xs font-semibold">
-                      <Check size={13} /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
+                  <div className="flex gap-1.5 sm:gap-2 mt-2 sm:mt-3 flex-wrap">
+                    <span className="flex items-center gap-1 sm:gap-1.5 bg-accent/10 text-accent px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold">
+                      <Check size={11} className="sm:w-[13px] sm:h-[13px]" /> {presentCount}
                     </span>
-                    <span className="flex items-center gap-1.5 bg-destructive/10 text-destructive px-3 py-1.5 rounded-full text-xs font-semibold">
-                      <X size={13} /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
+                    <span className="flex items-center gap-1 sm:gap-1.5 bg-destructive/10 text-destructive px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold">
+                      <X size={11} className="sm:w-[13px] sm:h-[13px]" /> {absentCount}
                     </span>
-                    <span className="flex items-center gap-1.5 bg-warning/10 text-warning px-3 py-1.5 rounded-full text-xs font-semibold">
-                      <Clock size={13} /> {unknownCount} En attente
+                    <span className="flex items-center gap-1 sm:gap-1.5 bg-warning/10 text-warning px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold">
+                      <Clock size={11} className="sm:w-[13px] sm:h-[13px]" /> {unknownCount}
                     </span>
                   </div>
                 </div>
-                <div className="flex gap-2 items-start">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                <div className="flex gap-1.5 sm:gap-2 items-start shrink-0">
+                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
                     event.type === 'match' ? 'bg-accent/10 text-accent' :
                     event.type === 'training' ? 'bg-purple-100 text-purple-700' :
                     'bg-muted text-muted-foreground'
                   }`}>
-                    {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
+                    {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraîn.' : 'Autre'}
                   </span>
                   {canDeleteEvent(event) && (
-                    <button onClick={() => deleteEvent(event.id)} className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg transition-all">
-                      <Trash2 size={16} />
+                    <button onClick={() => deleteEvent(event.id)} className="text-destructive hover:bg-destructive/10 p-1 sm:p-1.5 rounded-lg transition-all">
+                      <Trash2 size={14} className="sm:w-4 sm:h-4" />
                     </button>
                   )}
                 </div>
@@ -166,49 +166,49 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                   eventPlayers.map(player => {
                     const status = presences[player.id];
                     return (
-                      <div key={player.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-xl">
-                        <div className="flex items-center gap-2.5">
+                      <div key={player.id} className="flex items-center justify-between p-2 sm:p-3 bg-secondary/50 rounded-xl gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           {(() => {
                             const member = members.find(m => m.playerId === player.id);
                             const photoURL = member?.photoURL;
                             const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                             if (photoURL) {
-                              return <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+                              return <img src={photoURL} alt={player.name} className="w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
                             }
                             return (
-                              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
-                                <span className="text-primary-foreground text-[10px] font-bold">{initials}</span>
+                              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+                                <span className="text-primary-foreground text-[9px] sm:text-[10px] font-bold">{initials}</span>
                               </div>
                             );
                           })()}
-                          <span className="font-medium text-sm text-foreground">{player.name}</span>
+                          <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
                         </div>
                         {canManageOwnPresence(player.id) ? (
-                          <div className="flex gap-2">
+                          <div className="flex gap-1.5 shrink-0">
                             <button
                               onClick={() => togglePresence(event.id, player.id, 'present')}
-                              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all ${
+                              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-1.5 text-xs font-medium transition-all ${
                                 status === 'present' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
                               }`}
                             >
-                              <Check size={14} /> Présent
+                              <Check size={12} className="sm:w-[14px] sm:h-[14px]" /> <span className="hidden sm:inline">Présent</span><span className="sm:hidden">P</span>
                             </button>
                             <button
                               onClick={() => togglePresence(event.id, player.id, 'absent')}
-                              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all ${
+                              className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg flex items-center gap-1 sm:gap-1.5 text-xs font-medium transition-all ${
                                 status === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
                               }`}
                             >
-                              <X size={14} /> Absent
+                              <X size={12} className="sm:w-[14px] sm:h-[14px]" /> <span className="hidden sm:inline">Absent</span><span className="sm:hidden">A</span>
                             </button>
                           </div>
                         ) : (
-                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 ${
+                          <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 shrink-0 ${
                             status === 'present' ? 'bg-success/10 text-success' :
                             status === 'absent' ? 'bg-destructive/10 text-destructive' :
                             'bg-warning/10 text-warning'
                           }`}>
-                            {status === 'present' ? <><Check size={12} /> Présent</> : status === 'absent' ? <><X size={12} /> Absent</> : <><Clock size={12} /> En attente</>}
+                            {status === 'present' ? <><Check size={11} /> <span className="hidden sm:inline">Présent</span><span className="sm:hidden">P</span></> : status === 'absent' ? <><X size={11} /> <span className="hidden sm:inline">Absent</span><span className="sm:hidden">A</span></> : <><Clock size={11} /> <span className="hidden sm:inline">En attente</span><span className="sm:hidden">?</span></>}
                           </span>
                         )}
                       </div>

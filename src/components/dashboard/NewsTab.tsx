@@ -54,12 +54,12 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-foreground">Actualités</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex justify-between items-center gap-2">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Actualités</h2>
         {canCreateNews() && (
-          <button onClick={onAddNews} className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium">
-            <Plus size={18} /> Nouvelle actualité
+          <button onClick={onAddNews} className="bg-accent text-accent-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 hover:bg-accent/90 transition-all text-xs sm:text-sm font-medium">
+            <Plus size={16} /> <span className="hidden sm:inline">Nouvelle actualité</span><span className="sm:hidden">Actu</span>
           </button>
         )}
       </div>

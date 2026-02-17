@@ -74,24 +74,24 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
     .sort((a, b) => (b.attendance?.rate || 0) - (a.attendance?.rate || 0));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-foreground">Statistiques</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Statistiques</h2>
       </div>
 
       {/* Attendance section - admin only */}
       {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || currentUser?.role === 'entraineur') && attendanceStats.length > 0 && (
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-5 border-b border-border">
+          <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-3 sm:p-5 border-b border-border">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 bg-accent rounded-xl flex items-center justify-center shadow-sm">
-                  <Trophy size={20} className="text-accent-foreground" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 bg-accent rounded-xl flex items-center justify-center shadow-sm">
+                  <Trophy size={18} className="text-accent-foreground sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Classement présences aux entraînements</h3>
-                  <p className="text-xs text-muted-foreground">Du plus assidu au moins assidu</p>
+                  <h3 className="text-sm sm:text-lg font-bold text-foreground">Classement présences</h3>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Du plus assidu au moins assidu</p>
                 </div>
               </div>
               <div className="text-right hidden sm:block">
@@ -105,7 +105,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
 
           {/* Podium top 3 */}
           {attendanceStats.length >= 3 && (
-            <div className="flex items-end justify-center gap-4 p-6 pb-2 bg-gradient-to-b from-accent/5 to-transparent">
+            <div className="flex items-end justify-center gap-2 sm:gap-4 p-4 sm:p-6 pb-2 bg-gradient-to-b from-accent/5 to-transparent">
               {[1, 0, 2].map((podiumIdx) => {
                 const item = attendanceStats[podiumIdx];
                 if (!item) return null;
@@ -128,7 +128,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                 const PodiumIcon = podiumIcons[podiumIdx];
 
                 return (
-                  <div key={item.player.id} className="flex flex-col items-center flex-1 max-w-[140px]">
+                  <div key={item.player.id} className="flex flex-col items-center flex-1 max-w-[100px] sm:max-w-[140px]">
                     {/* Avatar + Icon */}
                     <div className={`relative mb-3 ${isFirst ? 'scale-110' : ''} transition-transform`}>
                       <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} p-[2px] shadow-lg ${podiumGlows[podiumIdx]}`}>
@@ -177,25 +177,25 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
           )}
 
           {/* Full ranking list */}
-          <div className="p-5 space-y-2">
+          <div className="p-3 sm:p-5 space-y-1.5 sm:space-y-2">
             {attendanceStats.map((item, index) => {
               const rate = item.attendance!.rate;
               const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
               const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
               return (
-                <div key={item.player.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl hover:bg-secondary transition-all">
-                  <div className={`w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center text-xs font-bold text-white shadow-sm`}>
+                <div key={item.player.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-secondary/50 rounded-xl hover:bg-secondary transition-all">
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${colorClass} flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shadow-sm shrink-0`}>
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">{item.player.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{item.attendance!.present} présences sur {item.attendance!.total}</div>
+                    <div className="text-xs sm:text-sm font-semibold text-foreground truncate">{item.player.name}</div>
+                    <div className="text-[9px] sm:text-[10px] text-muted-foreground">{item.attendance!.present}/{item.attendance!.total}</div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-28 h-2.5 bg-border rounded-full overflow-hidden">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-16 sm:w-28 h-2 sm:h-2.5 bg-border rounded-full overflow-hidden">
                       <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
                     </div>
-                    <span className={`text-sm font-bold w-12 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
+                    <span className={`text-xs sm:text-sm font-bold w-10 sm:w-12 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
                   </div>
                 </div>
               );
@@ -220,21 +220,20 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
             return (
               <div key={player.id} className="bg-card border border-border rounded-2xl overflow-hidden animate-fade-in">
                 {/* Player header */}
-                <div className="flex items-center justify-between p-5 pb-4">
-                  <div className="flex items-center gap-3">
-                    <PlayerAvatar player={player} members={members} size={44} className="rounded-xl" />
+                <div className="flex items-center justify-between p-3 sm:p-5 pb-3 sm:pb-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <PlayerAvatar player={player} members={members} size={36} className="rounded-xl sm:w-[44px] sm:h-[44px]" />
                      <div>
-                      <h3 className="font-bold text-foreground">{player.name}</h3>
+                      <h3 className="font-bold text-sm sm:text-base text-foreground">{player.name}</h3>
                       <div className="flex items-center gap-2">
-                         <span className="text-xs font-medium text-muted-foreground px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
+                         <span className="text-[10px] sm:text-xs font-medium text-muted-foreground px-1.5 sm:px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
                        </div>
                     </div>
                   </div>
-                
                 </div>
 
                 {/* Stats grid */}
-                <div className="grid grid-cols-4 gap-px bg-border mx-5 rounded-xl overflow-hidden mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border mx-3 sm:mx-5 rounded-xl overflow-hidden mb-3 sm:mb-4">
                   {[
                     { icon: Activity, label: 'Matchs', value: matches, field: 'matches', color: 'text-accent' },
                     { icon: Target, label: 'Buts', value: goals, field: 'goals', color: 'text-success' },
