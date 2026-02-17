@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
 import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, MessageSquare
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.svg';
 import { toast } from 'sonner';
@@ -16,8 +16,7 @@ import CalendarTab from '@/components/dashboard/CalendarTab';
 import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
-import ChatTab from '@/components/dashboard/ChatTab';
-import MessagesTab from '@/components/dashboard/MessagesTab';
+import ChatBubble from '@/components/dashboard/ChatBubble';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
 import AddNewsForm from '@/components/modals/AddNewsForm';
@@ -129,7 +128,6 @@ const tabs = [
   { id: 'news', label: 'Actualités', icon: Bell },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
-  { id: 'messages', label: 'Messages', icon: MessageSquare },
   { id: 'members', label: 'Membres', icon: Users },
 ];
 
@@ -1171,9 +1169,6 @@ const Dashboard = () => {
             />
           )}
           {/* Chat removed from tabs, now a floating bubble */}
-          {activeTab === 'messages' && (
-            <MessagesTab currentUser={currentUser} members={members} />
-          )}
           {activeTab === 'members' && (
             <MembersTab
               members={visibleMembers}
@@ -1231,33 +1226,7 @@ const Dashboard = () => {
       </main>
 
       {/* Floating Chat Bubble */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-3">
-        {chatOpen && (
-          <div className="w-[calc(100vw-2rem)] sm:w-[360px] h-[70vh] sm:h-[520px] max-h-[80vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground border-b border-border">
-              <div className="flex items-center gap-2">
-                <MessageCircle size={18} />
-                <span className="font-semibold text-sm">Discussion globale du club</span>
-              </div>
-              <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/10 transition-colors">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <ChatTab currentUser={currentUser} />
-            </div>
-          </div>
-        )}
-        <button
-          onClick={() => setChatOpen(prev => !prev)}
-          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 ${
-            chatOpen ? 'bg-muted text-muted-foreground' : 'bg-accent text-accent-foreground'
-          }`}
-          title="Discussion"
-        >
-          {chatOpen ? <X size={20} className="sm:w-6 sm:h-6" /> : <MessageCircle size={20} className="sm:w-6 sm:h-6" />}
-        </button>
-      </div>
+      <ChatBubble currentUser={currentUser} members={members} chatOpen={chatOpen} setChatOpen={setChatOpen} />
 
       {/* Footer */}
       <footer className="border-t border-border bg-card mt-8 px-3 py-3 sm:p-4 text-center">
