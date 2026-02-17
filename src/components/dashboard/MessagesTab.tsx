@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Send, MessageCircle, Plus, ArrowLeft, Users as UsersIcon, Search,
-  Trash2, Image as ImageIcon, X, UserPlus
+  Trash2, Image as ImageIcon, X, MoreVertical
 } from 'lucide-react';
 import {
   db, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp,
-  where, doc, updateDoc, deleteDoc, getDocs, getDoc, setDoc, Timestamp
+  where, doc, updateDoc, deleteDoc, getDocs
 } from '@/lib/firebase';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
@@ -83,6 +83,9 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [groupName, setGroupName] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [showDeleteConvoConfirm, setShowDeleteConvoConfirm] = useState(false);
+  const [deletingConvo, setDeletingConvo] = useState(false);
+  const [showConvoMenu, setShowConvoMenu] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,7 +177,6 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
         senderPhoto: currentUser.photoURL || null,
         createdAt: serverTimestamp(),
       });
-      // Update last message and unread counts
       const unreadUpdates: Record<string, number> = {};
       activeConversation.participants.forEach(pid => {
         if (pid !== currentUser.uid) {
@@ -238,6 +240,39 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
     }
   };
 
+  // Delete a single message
+  const handleDeleteMessage = async (msgId: string) => {
+    if (!activeConversation) return;
+    try {
+      await deleteDoc(doc(db, 'private_conversations', activeConversation.id, 'messages', msgId));
+      toast.success('Message supprimé');
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      toast.error('Impossible de supprimer ce message');
+    }
+  };
+
+  // Delete entire conversation
+  const handleDeleteConversation = async (convoId: string) => {
+    setDeletingConvo(true);
+    try {
+      // Delete all messages in subcollection
+      const msgSnap = await getDocs(collection(db, 'private_conversations', convoId, 'messages'));
+      const deletions = msgSnap.docs.map(d => deleteDoc(doc(db, 'private_conversations', convoId, 'messages', d.id)));
+      await Promise.all(deletions);
+      // Delete conversation
+      await deleteDoc(doc(db, 'private_conversations', convoId));
+      setActiveConversation(null);
+      setShowDeleteConvoConfirm(false);
+      toast.success('Conversation supprimée');
+    } catch (err) {
+      console.error('Error deleting conversation:', err);
+      toast.error('Impossible de supprimer cette conversation');
+    } finally {
+      setDeletingConvo(false);
+    }
+  };
+
   const createConversation = async () => {
     if (!currentUser || selectedMembers.length === 0) return;
     const isGroup = selectedMembers.length > 1;
@@ -246,7 +281,6 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
       return;
     }
 
-    // For 1-to-1, check if conversation already exists
     if (!isGroup) {
       const existing = conversations.find(c =>
         c.type === 'private' &&
@@ -330,7 +364,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
     const isYesterday = date.toDateString() === yesterday.toDateString();
     const time = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     if (isToday) return time;
-    if (isYesterday) return `Hier`;
+    if (isYesterday) return 'Hier';
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
   };
 
@@ -388,10 +422,10 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
   // New conversation modal
   if (showNewConvo) {
     return (
-      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+      <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-primary/5">
           <button onClick={() => { setShowNewConvo(false); setSelectedMembers([]); setGroupName(''); setSearchMember(''); }}
-            className="p-2 rounded-xl hover:bg-secondary transition-all">
+            className="p-2 rounded-xl hover:bg-primary/10 transition-all text-foreground">
             <ArrowLeft size={20} />
           </button>
           <h2 className="text-base font-bold text-foreground">Nouvelle conversation</h2>
@@ -406,7 +440,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
               value={searchMember}
               onChange={e => setSearchMember(e.target.value)}
               placeholder="Rechercher un membre..."
-              className="w-full pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 text-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 text-sm"
             />
           </div>
 
@@ -417,7 +451,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
                 const member = members.find(m => m.id === mid);
                 return (
                   <span key={mid}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent rounded-full text-xs font-medium">
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent/15 text-accent rounded-full text-xs font-semibold">
                     {member?.name}
                     <button onClick={() => toggleMemberSelection(mid)}
                       className="hover:text-destructive transition-colors">
@@ -436,7 +470,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
               value={groupName}
               onChange={e => setGroupName(e.target.value)}
               placeholder="Nom du groupe..."
-              className="w-full px-4 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 text-sm"
+              className="w-full px-4 py-2.5 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 text-sm"
             />
           )}
 
@@ -449,7 +483,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
                 className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all text-left ${
                   selectedMembers.includes(member.id)
                     ? 'bg-accent/10 ring-1 ring-accent/30'
-                    : 'hover:bg-secondary'
+                    : 'hover:bg-primary/5'
                 }`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden ${ROLE_COLORS[member.role] || 'bg-muted-foreground'}`}>
@@ -492,11 +526,11 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
   // Active conversation: message view
   if (activeConversation) {
     return (
-      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
+      <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 200px)' }}>
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary text-primary-foreground shrink-0">
           <button onClick={() => setActiveConversation(null)}
-            className="p-2 rounded-xl hover:bg-secondary transition-all">
+            className="p-2 rounded-xl hover:bg-white/15 transition-all">
             <ArrowLeft size={20} />
           </button>
           {(() => {
@@ -505,8 +539,8 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
             const name = getConversationName(activeConversation);
             return (
               <>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden ${
-                  activeConversation.type === 'group' ? 'bg-accent' : (ROLE_COLORS[role || ''] || 'bg-muted-foreground')
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden ring-2 ring-white/20 ${
+                  activeConversation.type === 'group' ? 'bg-white/20' : (ROLE_COLORS[role || ''] || 'bg-white/20')
                 }`}>
                   {activeConversation.type === 'group' ? (
                     <UsersIcon size={18} />
@@ -517,9 +551,9 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground truncate">{name}</p>
+                  <p className="text-sm font-bold truncate">{name}</p>
                   {activeConversation.type === 'group' && (
-                    <p className="text-[11px] text-muted-foreground truncate">
+                    <p className="text-[11px] opacity-80 truncate">
                       {activeConversation.participants.length} membres
                     </p>
                   )}
@@ -527,16 +561,57 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
               </>
             );
           })()}
+          {/* Delete conversation button */}
+          <button
+            onClick={() => setShowDeleteConvoConfirm(true)}
+            className="p-2 rounded-xl hover:bg-white/15 transition-all"
+            title="Supprimer la conversation"
+          >
+            <Trash2 size={18} />
+          </button>
         </div>
 
+        {/* Delete conversation confirmation */}
+        {showDeleteConvoConfirm && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" style={{ borderRadius: 'inherit' }}>
+            <div className="bg-card border border-border rounded-2xl p-6 mx-4 max-w-sm w-full shadow-xl">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <Trash2 size={20} className="text-destructive" />
+                </div>
+                <h3 className="text-base font-bold text-foreground">Supprimer la conversation ?</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-5">
+                Tous les messages seront définitivement supprimés pour tous les participants. Cette action est irréversible.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteConvoConfirm(false)}
+                  disabled={deletingConvo}
+                  className="flex-1 px-4 py-2.5 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => handleDeleteConversation(activeConversation.id)}
+                  disabled={deletingConvo}
+                  className="flex-1 px-4 py-2.5 bg-destructive text-destructive-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm disabled:opacity-50"
+                >
+                  {deletingConvo ? 'Suppression...' : 'Supprimer'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5 bg-background/50" style={{ scrollbarWidth: 'thin' }}>
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3 py-12">
-              <div className="w-16 h-16 rounded-2xl bg-secondary/80 flex items-center justify-center">
-                <MessageCircle size={28} className="opacity-40" />
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <MessageCircle size={28} className="text-primary/40" />
               </div>
-              <p className="text-sm">Aucun message. Commencez la conversation ! 💬</p>
+              <p className="text-sm font-medium text-foreground/60">Aucun message. Commencez la conversation ! 💬</p>
             </div>
           )}
 
@@ -550,7 +625,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
                 {showDateSep && (
                   <div className="flex items-center gap-3 py-3">
                     <div className="flex-1 h-px bg-border" />
-                    <span className="text-[11px] font-medium text-muted-foreground bg-card px-3 py-1 rounded-full border border-border shadow-sm">
+                    <span className="text-[11px] font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
                       {formatDateSeparator(msg.createdAt)}
                     </span>
                     <div className="flex-1 h-px bg-border" />
@@ -559,7 +634,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
 
                 <div className={`group flex items-end gap-2.5 ${own ? 'flex-row-reverse' : ''} ${consecutive ? 'mt-0.5' : 'mt-4'}`}>
                   {!own && !consecutive ? (
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 overflow-hidden ${ROLE_COLORS[msg.senderRole] || 'bg-muted-foreground'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 overflow-hidden shadow-sm ${ROLE_COLORS[msg.senderRole] || 'bg-muted-foreground'}`}>
                       {msg.senderPhoto ? (
                         <img src={msg.senderPhoto} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -576,21 +651,41 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
                         {msg.senderName}
                       </span>
                     )}
-                    <div
-                      className={`px-4 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
-                        own
-                          ? 'bg-gradient-to-br from-accent to-accent/90 text-accent-foreground rounded-2xl rounded-br-lg'
-                          : 'bg-secondary text-foreground rounded-2xl rounded-bl-lg border border-border/50'
-                      }`}
-                    >
-                      {msg.imageUrl && (
-                        <img src={msg.imageUrl} alt="Image" className="max-w-full rounded-xl mb-1 max-h-64 object-contain cursor-pointer"
-                          onClick={() => window.open(msg.imageUrl, '_blank')} />
+                    <div className="flex items-center gap-1.5">
+                      {own && (
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       )}
-                      {msg.text && <span>{msg.text}</span>}
+                      <div
+                        className={`px-4 py-2.5 text-sm leading-relaxed break-words shadow-sm ${
+                          own
+                            ? 'bg-gradient-to-br from-accent to-accent/90 text-accent-foreground rounded-2xl rounded-br-lg'
+                            : 'bg-card text-foreground rounded-2xl rounded-bl-lg border border-border'
+                        }`}
+                      >
+                        {msg.imageUrl && (
+                          <img src={msg.imageUrl} alt="Image" className="max-w-full rounded-xl mb-1 max-h-64 object-contain cursor-pointer"
+                            onClick={() => window.open(msg.imageUrl, '_blank')} />
+                        )}
+                        {msg.text && <span>{msg.text}</span>}
+                      </div>
+                      {!own && (
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                     {!consecutive && (
-                      <span className={`text-[10px] text-muted-foreground/70 mt-1 ${own ? 'mr-1' : 'ml-1'}`}>
+                      <span className={`text-[10px] text-foreground/40 mt-1 ${own ? 'mr-1' : 'ml-1'}`}>
                         {formatMessageTime(msg.createdAt)}
                       </span>
                     )}
@@ -603,7 +698,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
         </div>
 
         {/* Input */}
-        <div className="border-t border-border px-4 py-3 bg-card/80 backdrop-blur-sm shrink-0">
+        <div className="border-t border-border px-4 py-3 bg-card shrink-0">
           <div className="flex items-center gap-2">
             <input
               type="file"
@@ -614,7 +709,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
             />
             <button onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="p-2.5 rounded-xl text-muted-foreground hover:bg-secondary hover:text-foreground transition-all disabled:opacity-40">
+              className="p-2.5 rounded-xl text-foreground/50 hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-40">
               <ImageIcon size={18} />
             </button>
             <input
@@ -624,7 +719,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
               onChange={e => setNewMessage(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
               placeholder="Écrivez un message..."
-              className="flex-1 px-4 py-2.5 bg-secondary border border-border rounded-2xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 text-sm transition-all"
+              className="flex-1 px-4 py-2.5 bg-background border border-border rounded-2xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 text-sm transition-all"
               style={{ fontSize: '16px' }}
               maxLength={1000}
             />
@@ -637,7 +732,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
             </button>
           </div>
           {uploading && (
-            <p className="text-xs text-muted-foreground mt-2 text-center animate-pulse">Envoi de l'image...</p>
+            <p className="text-xs text-accent mt-2 text-center animate-pulse font-medium">Envoi de l'image...</p>
           )}
         </div>
       </div>
@@ -659,13 +754,13 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
       </div>
 
       {conversations.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-secondary/80 flex items-center justify-center">
-            <MessageCircle size={36} className="opacity-40" />
+        <div className="flex flex-col items-center justify-center py-16 gap-4">
+          <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center">
+            <MessageCircle size={36} className="text-primary/40" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium">Aucune conversation</p>
-            <p className="text-xs mt-1 opacity-70">Démarrez une conversation privée ou créez un groupe 💬</p>
+            <p className="text-sm font-semibold text-foreground">Aucune conversation</p>
+            <p className="text-xs mt-1 text-muted-foreground">Démarrez une conversation privée ou créez un groupe 💬</p>
           </div>
         </div>
       ) : (
@@ -677,15 +772,17 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
             const unread = getUnreadCount(convo);
 
             return (
-              <button
+              <div
                 key={convo.id}
-                onClick={() => setActiveConversation(convo)}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all text-left hover:bg-secondary/70 ${
-                  unread > 0 ? 'bg-accent/5' : ''
+                className={`relative flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-all text-left cursor-pointer border ${
+                  unread > 0
+                    ? 'bg-accent/5 border-accent/20 hover:bg-accent/10'
+                    : 'bg-card border-border hover:bg-primary/5'
                 }`}
+                onClick={() => setActiveConversation(convo)}
               >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden ${
-                  convo.type === 'group' ? 'bg-accent' : (ROLE_COLORS[role || ''] || 'bg-muted-foreground')
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden shadow-md ${
+                  convo.type === 'group' ? 'bg-accent' : (ROLE_COLORS[role || ''] || 'bg-primary/60')
                 }`}>
                   {convo.type === 'group' ? (
                     <UsersIcon size={20} />
@@ -700,24 +797,33 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
                     <p className={`text-sm truncate ${unread > 0 ? 'font-bold text-foreground' : 'font-semibold text-foreground'}`}>
                       {name}
                     </p>
-                    {convo.lastMessageAt && (
-                      <span className="text-[11px] text-muted-foreground shrink-0">
-                        {formatTime(convo.lastMessageAt)}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {convo.lastMessageAt && (
+                        <span className={`text-[11px] ${unread > 0 ? 'text-accent font-semibold' : 'text-foreground/40'}`}>
+                          {formatTime(convo.lastMessageAt)}
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteConversation(convo.id); }}
+                        className="p-1 rounded-lg opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between gap-2 mt-0.5">
-                    <p className={`text-xs truncate ${unread > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    <p className={`text-xs truncate ${unread > 0 ? 'text-foreground font-medium' : 'text-foreground/50'}`}>
                       {convo.lastMessage || 'Pas encore de message'}
                     </p>
                     {unread > 0 && (
-                      <span className="bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[20px] text-center">
+                      <span className="bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 min-w-[20px] text-center shadow-sm">
                         {unread}
                       </span>
                     )}
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
