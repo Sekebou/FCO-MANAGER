@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Player } from '@/pages/Dashboard';
 import { X, AlertCircle, Calendar, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import NativeDatePicker from '@/components/ui/native-date-picker';
 
 interface Props {
   players: Player[];
@@ -86,14 +87,19 @@ const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) =>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Date</label>
-              <div className="relative">
-                <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input type="date" className="w-full pl-10 pr-3 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
-              </div>
+              <NativeDatePicker
+                value={formData.date}
+                onChange={(date) => setFormData({ ...formData, date })}
+                placeholder="Date du carton"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Suspendu jusqu'au</label>
-              <input type="date" className="w-full px-3 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 text-sm transition-all" value={formData.suspendedUntil} onChange={(e) => setFormData({ ...formData, suspendedUntil: e.target.value })} />
+              <NativeDatePicker
+                value={formData.suspendedUntil}
+                onChange={(date) => setFormData({ ...formData, suspendedUntil: date })}
+                placeholder="Date de fin de suspension"
+              />
             </div>
           </div>
         </div>

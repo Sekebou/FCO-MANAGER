@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users } from 'lucide-react';
+import NativeDatePicker from '@/components/ui/native-date-picker';
 import { scrapeFFFTeams, type ScrapedMatch, type ScrapedStanding } from '@/lib/api/scrape-fff';
 import { toast } from 'sonner';
 
@@ -752,7 +753,11 @@ const ChampionnatTab: React.FC<Props> = ({
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Date du match</label>
                   <p className="text-[11px] text-muted-foreground/70 mb-2">Quand le match est prévu</p>
-                  <input type="date" value={matchDate} onChange={e => setMatchDate(e.target.value)} className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+                  <NativeDatePicker
+                    value={matchDate}
+                    onChange={setMatchDate}
+                    placeholder="Date du match"
+                  />
                 </div>
               </div>
 
