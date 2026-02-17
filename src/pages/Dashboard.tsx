@@ -1015,25 +1015,66 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Navigation Tabs — always visible horizontal scroll on mobile */}
+      {/* Navigation — hamburger on mobile, horizontal tabs on desktop */}
       <nav className="bg-card border-b border-border sticky top-14 sm:top-16 z-40">
         <div className="max-w-7xl mx-auto">
-          <div className="flex overflow-x-auto scrollbar-hide">
+          {/* Mobile: hamburger button */}
+          <div className="sm:hidden flex items-center px-3 py-2.5">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex items-center gap-2.5 text-sm font-semibold text-foreground"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              {(() => {
+                const current = tabs.find(t => t.id === activeTab);
+                const Icon = current?.icon || Users;
+                return (
+                  <span className="flex items-center gap-2">
+                    <Icon size={16} className="text-accent" />
+                    {current?.label}
+                  </span>
+                );
+              })()}
+            </button>
+          </div>
+          {/* Mobile: dropdown menu */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden border-t border-border bg-card animate-fade-in pb-1">
+              {tabs.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { handleTabChange(tab.id); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-accent/10 text-accent'
+                        : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {/* Desktop: horizontal tabs */}
+          <div className="hidden sm:flex overflow-x-auto scrollbar-hide">
             {tabs.map(tab => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3.5 border-b-2 transition-all whitespace-nowrap text-xs sm:text-sm font-medium shrink-0 ${
+                  className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium shrink-0 ${
                     activeTab === tab.id
                       ? 'border-accent text-accent'
                       : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                   }`}
                 >
-                  <Icon size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  <span className="hidden xs:inline sm:inline">{tab.label}</span>
-                  <span className="xs:hidden">{tab.label.length > 6 ? tab.label.slice(0, 4) + '.' : tab.label}</span>
+                  <Icon size={18} />
+                  {tab.label}
                 </button>
               );
             })}
