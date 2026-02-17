@@ -928,13 +928,13 @@ const Dashboard = () => {
       {/* Header */}
       <header className="bg-primary border-b border-primary/80 sticky top-0 z-50">
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
-          <div className="flex justify-between items-center h-16 sm:h-16">
+          <div className="flex justify-between items-center h-16 lg:h-20">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-3 sm:gap-3">
-                <div className="w-11 h-11 sm:w-10 sm:h-10 bg-white/20 rounded-xl sm:rounded-xl flex items-center justify-center shadow-md border border-white/15">
-                  <img src={clubLogo} alt="FCO Logo" className="w-8 h-8 sm:w-8 sm:h-8 object-contain drop-shadow-md" />
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15">
+                  <img src={clubLogo} alt="FCO Logo" className="w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 object-contain drop-shadow-md" />
                 </div>
-                <h1 className="text-base sm:text-lg font-bold text-primary-foreground leading-tight">FCO Manager</h1>
+                <h1 className="text-base sm:text-lg lg:text-xl font-bold text-primary-foreground leading-tight">FCO Manager</h1>
               </div>
             </div>
 
