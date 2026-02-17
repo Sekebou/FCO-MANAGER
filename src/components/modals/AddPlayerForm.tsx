@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield } from 'lucide-react';
 import type { AppUser } from '@/contexts/AuthContext';
+import NativeDatePicker from '@/components/ui/native-date-picker';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -80,10 +81,11 @@ const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
                   </select>
                 </div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Expiration de licence <span className="text-muted-foreground/50 normal-case">(optionnel)</span></label>
-                <div className="relative">
-                  <Calendar size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="date" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.licenseExpiry} onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })} />
-                </div>
+                <NativeDatePicker
+                  value={formData.licenseExpiry}
+                  onChange={(date) => setFormData({ ...formData, licenseExpiry: date })}
+                  placeholder="Date d'expiration"
+                />
                 <p className="text-[11px] text-muted-foreground mt-1">📋 Date de fin de validité de la licence FFF du joueur (optionnel)</p>
               </>
             )}

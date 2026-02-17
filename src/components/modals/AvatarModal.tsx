@@ -3,6 +3,7 @@ import { db, doc, updateDoc, getDoc } from '@/lib/firebase';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import NativeDatePicker from '@/components/ui/native-date-picker';
 
 interface Props {
   currentUser: AppUser;
@@ -235,13 +236,11 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                      type="date"
-                      className="w-full pl-9 pr-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 text-sm transition-all"
+                  <div className="flex-1">
+                    <NativeDatePicker
                       value={licenseExpiry}
-                      onChange={(e) => setLicenseExpiry(e.target.value)}
+                      onChange={setLicenseExpiry}
+                      placeholder="Date d'expiration"
                     />
                   </div>
                   <button
