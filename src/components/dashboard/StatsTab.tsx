@@ -1,7 +1,8 @@
 import React from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap } from 'lucide-react';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface Props {
   players: Player[];
@@ -90,8 +91,20 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                   <Trophy size={18} className="text-accent-foreground sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-lg font-bold text-foreground">Taux de présence à l'entraînement</h3>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Moyenne annuelle · Pour réinitialiser les stats, contactez un admin</p>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm sm:text-lg font-bold text-foreground">Taux de présence</h3>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <HelpCircle size={14} className="sm:w-4 sm:h-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="text-xs sm:text-sm max-w-[240px]" side="top">
+                        <p className="font-semibold mb-1">Moyenne annuelle</p>
+                        <p className="text-muted-foreground">Taux de présence aux entraînements. Pour réinitialiser les stats, contactez un admin.</p>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
               </div>
               <div className="text-right hidden sm:block">
