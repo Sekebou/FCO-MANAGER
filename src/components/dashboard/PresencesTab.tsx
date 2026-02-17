@@ -132,15 +132,15 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                   </p>
                   <div className="mt-2.5 sm:mt-3">
                      {/* Try horizontal first, fallback to vertical via container width */}
-                     <div className="flex flex-nowrap gap-1.5 sm:gap-2">
-                       <span className="flex items-center gap-1 bg-accent/10 text-accent px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">
-                         <Check size={10} className="shrink-0" /> {presentCount} Prés.
+                     <div className="flex flex-nowrap gap-1 sm:gap-2">
+                       <span className="flex items-center gap-0.5 sm:gap-1 bg-accent/10 text-accent px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-semibold whitespace-nowrap">
+                         <Check size={9} className="shrink-0 sm:w-3 sm:h-3" /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
                        </span>
-                       <span className="flex items-center gap-1 bg-destructive/10 text-destructive px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">
-                         <X size={10} className="shrink-0" /> {absentCount} Abs.
+                       <span className="flex items-center gap-0.5 sm:gap-1 bg-destructive/10 text-destructive px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-semibold whitespace-nowrap">
+                         <X size={9} className="shrink-0 sm:w-3 sm:h-3" /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
                        </span>
-                       <span className="flex items-center gap-1 bg-warning/10 text-warning px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold whitespace-nowrap">
-                         <Clock size={10} className="shrink-0" /> {unknownCount} Att.
+                       <span className="flex items-center gap-0.5 sm:gap-1 bg-warning/10 text-warning px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-semibold whitespace-nowrap">
+                         <Clock size={9} className="shrink-0 sm:w-3 sm:h-3" /> {unknownCount} En attente
                        </span>
                      </div>
                    </div>
