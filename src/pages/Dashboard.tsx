@@ -1016,7 +1016,7 @@ const Dashboard = () => {
       </header>
 
       {/* Navigation — hamburger on mobile, horizontal tabs on desktop */}
-      <nav className="bg-card border-b border-border sticky top-14 sm:top-16 z-40">
+      <nav className="bg-card border-b border-border sticky top-16 lg:top-20 z-40">
         <div className="mx-auto">
           {/* Mobile: hamburger button */}
           <div className="sm:hidden flex items-center px-3 py-2.5">
