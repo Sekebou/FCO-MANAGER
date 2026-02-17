@@ -971,7 +971,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/50">
+    <div className="min-h-screen bg-secondary/30 flex flex-col">
       {/* Header — auto-hides on scroll down on mobile */}
       <header
         className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${
@@ -1143,7 +1143,7 @@ const Dashboard = () => {
       </nav>
 
       {/* Content */}
-      <main className="mx-auto px-3 py-4 sm:p-6 lg:px-10">
+      <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
         <div key={activeTab} className="animate-fade-in">
           {activeTab === 'presences' && (
             <PresencesTab
@@ -1289,7 +1289,7 @@ const Dashboard = () => {
       <ChatBubble currentUser={currentUser} members={members} chatOpen={chatOpen} setChatOpen={setChatOpen} />
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card mt-8 px-3 py-3 sm:p-4 text-center">
+      <footer className="border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
         <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
           <div className="w-2 h-2 bg-success rounded-full animate-pulse shrink-0" />
           <span className="hidden sm:inline">Connecté au serveur — Données synchronisées en temps réel</span>
