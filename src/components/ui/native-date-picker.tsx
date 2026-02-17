@@ -8,6 +8,7 @@ interface NativeDatePickerProps {
   placeholder?: string;
   className?: string;
   icon?: React.ReactNode;
+  min?: string;
 }
 
 const NativeDatePicker = ({
@@ -16,6 +17,7 @@ const NativeDatePicker = ({
   placeholder = 'Sélectionner une date',
   className,
   icon,
+  min,
 }: NativeDatePickerProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -72,6 +74,7 @@ const NativeDatePicker = ({
         ref={inputRef}
         type="date"
         value={value}
+        min={min}
         onChange={(e) => onChange(e.target.value)}
         className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
         style={{ fontSize: '16px' }}
