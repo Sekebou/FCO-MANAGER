@@ -134,13 +134,13 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                      {/* Try horizontal first, fallback to vertical via container width */}
                      <div className="flex flex-nowrap gap-1.5 sm:gap-2">
                        <span className="flex items-center gap-1 bg-accent/10 text-accent px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                         <Check size={12} className="shrink-0 hidden sm:block" /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
+                         <Check size={11} className="shrink-0" /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
                        </span>
                        <span className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                         <X size={12} className="shrink-0 hidden sm:block" /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
+                         <X size={11} className="shrink-0" /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
                        </span>
                        <span className="flex items-center gap-1 bg-warning/10 text-warning px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                         <Clock size={12} className="shrink-0 hidden sm:block" /> {unknownCount} En attente
+                         <Clock size={11} className="shrink-0" /> {unknownCount} En attente
                        </span>
                      </div>
                    </div>
