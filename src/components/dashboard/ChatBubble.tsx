@@ -84,6 +84,8 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastSeenGlobalRef = useRef<number>(Date.now());
+  const [unreadGlobal, setUnreadGlobal] = useState(0);
 
   // Animated view change
   const changeView = (newView: ChatView) => {
@@ -103,10 +105,28 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   useEffect(() => {
     const q = query(collection(db, 'chat_messages'), orderBy('createdAt', 'asc'), firestoreLimit(200));
     const unsub = onSnapshot(q, (snap) => {
-      setGlobalMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)));
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage));
+      setGlobalMessages(msgs);
+      // Count unread global messages when chat is closed or not on global view
+      if (!chatOpen || view !== 'global') {
+        const newMsgs = msgs.filter(m => {
+          const msgTime = m.createdAt?.toDate?.()?.getTime() || 0;
+          const senderId = m.senderId || m.userId;
+          return msgTime > lastSeenGlobalRef.current && senderId !== currentUser?.uid;
+        });
+        setUnreadGlobal(prev => prev + newMsgs.length > 0 ? newMsgs.length : prev);
+      }
     }, (err) => console.warn('Global chat error:', err));
     return () => unsub();
   }, []);
+
+  // Reset unread global when viewing global chat
+  useEffect(() => {
+    if (chatOpen && view === 'global') {
+      setUnreadGlobal(0);
+      lastSeenGlobalRef.current = Date.now();
+    }
+  }, [chatOpen, view]);
 
   // Conversations listener
   useEffect(() => {
@@ -136,7 +156,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   // Auto-scroll
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [globalMessages, privateMessages, view]);
 
-  const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount?.[currentUser?.uid || ''] || 0), 0);
+  const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount?.[currentUser?.uid || ''] || 0), 0) + unreadGlobal;
 
   const getConvoName = (c: Conversation) => {
     if (c.type === 'group') return c.name || 'Groupe';
@@ -406,7 +426,9 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
           className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center bg-accent text-accent-foreground transition-all hover:scale-105 relative">
           <MessageCircle size={20} className="sm:w-6 sm:h-6" />
           {totalUnread > 0 && (
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">{totalUnread}</span>
+            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center animate-scale-in shadow-md">
+              {totalUnread > 99 ? '99+' : totalUnread}
+            </span>
           )}
         </button>
       </div>
