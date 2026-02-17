@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db, doc, getDoc, updateDoc, collection, addDoc, setDoc } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { getFirestore, doc as fsDoc, setDoc as fsSetDoc, addDoc as fsAddDoc, collection as fsCollection, updateDoc as fsUpdateDoc } from 'firebase/firestore';
 import { initializeApp, getApps } from 'firebase/app';
 import { Lock, Mail, User, Loader2, Shield, ChevronRight, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import clubLogo from '@/assets/logo.svg';
@@ -76,6 +77,7 @@ const Register = () => {
       // Create a temporary app to avoid signing out any current session
       const tempApp = initializeApp(config, 'register-temp');
       const tempAuth = getAuth(tempApp);
+      const tempDb = getFirestore(tempApp);
 
       const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`;
       const emailToUse = invitation.email || formData.email.trim();
@@ -87,12 +89,12 @@ const Register = () => {
       const userCredential = await createUserWithEmailAndPassword(tempAuth, emailToUse, formData.password);
       const user = userCredential.user;
 
-      // Create player doc if role is not photographe
+      // Create player doc if role is not photographe — use tempDb so auth context matches
       const isNonPlayer = invitation.role === 'photographe';
       let playerRefId: string | undefined;
 
       if (!isNonPlayer) {
-        const playerRef = await addDoc(collection(db, 'players'), {
+        const playerRef = await fsAddDoc(fsCollection(tempDb, 'players'), {
           name: fullName,
           position: invitation.position || 'Attaquant',
           matches: 0,
@@ -105,7 +107,7 @@ const Register = () => {
         playerRefId = playerRef.id;
       }
 
-      // Create user doc
+      // Create user doc — use tempDb
       const username = emailToUse.split('@')[0];
       const userData: any = {
         email: emailToUse,
@@ -116,10 +118,10 @@ const Register = () => {
         createdAt: new Date().toISOString(),
       };
       if (playerRefId) userData.playerId = playerRefId;
-      await setDoc(doc(db, 'users', user.uid), userData);
+      await fsSetDoc(fsDoc(tempDb, 'users', user.uid), userData);
 
-      // Mark invitation as used
-      await updateDoc(doc(db, 'invitations', token!), { status: 'used', usedAt: new Date().toISOString(), usedBy: user.uid });
+      // Mark invitation as used — use main db (read was done with main db, no auth needed or use tempDb)
+      await fsUpdateDoc(fsDoc(tempDb, 'invitations', token!), { status: 'used', usedAt: new Date().toISOString(), usedBy: user.uid });
 
       // Sign out from temp app
       await tempAuth.signOut();
