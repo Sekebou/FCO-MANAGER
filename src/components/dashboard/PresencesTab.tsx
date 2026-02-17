@@ -328,13 +328,14 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                     <button
                                       key={s.value}
                                       onClick={() => updateDraft(player.id, { status: s.value as Convocation['status'] })}
-                                      className={`relative px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                                      className={`relative px-3 sm:px-2.5 py-2 sm:py-1.5 rounded-lg text-xs sm:text-[11px] font-semibold transition-all flex items-center gap-1.5 sm:gap-1 ${
                                         isActive ? s.activeClass : 'bg-card border border-border/60 text-muted-foreground/70 hover:bg-secondary hover:text-foreground'
                                       }`}
                                       title={s.label}
                                     >
-                                      <Icon size={14} />
-                                      {s.shortLabel}
+                                      <Icon size={14} className="sm:w-3 sm:h-3" />
+                                      <span className="sm:hidden">{s.shortLabel}</span>
+                                      <span className="hidden sm:inline">{s.shortLabel}</span>
                                     </button>
                                   );
                                 })}
