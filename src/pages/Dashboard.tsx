@@ -1532,23 +1532,46 @@ const Dashboard = () => {
 
       {/* Welcome modal - first login only */}
       {welcomeName && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
-          <div className="bg-card border border-border rounded-3xl shadow-2xl max-w-md w-full p-8 sm:p-10 text-center animate-[fadeSlideUp_0.5s_ease-out_both]">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-6 border border-primary/20">
-              <img src={clubLogo} alt="FCO" className="w-14 h-14 object-contain" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in p-4">
+          <div className="relative max-w-sm w-full animate-[fadeSlideUp_0.6s_ease-out_both] overflow-hidden rounded-[2rem] bg-gradient-to-b from-card to-card/95 border border-border/50 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)]">
+            {/* Decorative glow */}
+            <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-60 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-primary/10 rounded-full blur-[60px] pointer-events-none" />
+
+            <div className="relative z-10 px-8 pt-10 pb-8 text-center">
+              {/* Logo with animated ring */}
+              <div className="relative inline-flex items-center justify-center mb-7">
+                <div className="absolute w-24 h-24 rounded-full border border-primary/20 animate-[pulse_3s_ease-in-out_infinite]" />
+                <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center backdrop-blur-sm shadow-lg shadow-primary/10">
+                  <img src={clubLogo} alt="FCO" className="w-13 h-13 object-contain drop-shadow-md" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary/60 mb-3">FCO Manager</p>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight">
+                Bienvenue{' '}
+                <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  {welcomeName.split(' ')[0]?.charAt(0).toUpperCase() + (welcomeName.split(' ')[0]?.slice(1).toLowerCase() || '')}
+                </span>
+              </h2>
+
+              {/* Separator */}
+              <div className="mt-5 mb-5 mx-auto w-12 h-0.5 rounded-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+              {/* Description */}
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-[260px] mx-auto">
+                L'application pensée et conçue exclusivement pour le club d'Oisemont.
+              </p>
+
+              {/* CTA */}
+              <button
+                onClick={() => setWelcomeName(null)}
+                className="mt-8 w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
+              >
+                C'est parti →
+              </button>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-2 tracking-tight">
-              Bienvenue <span className="text-primary">{welcomeName.split(' ')[0]?.charAt(0).toUpperCase() + (welcomeName.split(' ')[0]?.slice(1).toLowerCase() || '')}</span>
-            </h2>
-            <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mt-3">
-              Bienvenue sur <span className="font-bold text-primary">FCO Manager</span> — l'application pensée et conçue exclusivement pour le club d'Oisemont.
-            </p>
-            <button
-              onClick={() => setWelcomeName(null)}
-              className="mt-8 w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 shadow-lg shadow-primary/20"
-            >
-              C'est parti !
-            </button>
           </div>
         </div>
       )}
