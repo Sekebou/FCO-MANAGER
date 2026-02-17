@@ -3,6 +3,7 @@ import {
   Send, MessageCircle, Plus, ArrowLeft, Users as UsersIcon, Search,
   Trash2, Image as ImageIcon, X, Globe, Lock, UserPlus
 } from 'lucide-react';
+import clubLogo from '@/assets/logo.svg';
 import {
   db, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp,
   where, doc, updateDoc, deleteDoc, getDocs, firestoreLimit
@@ -450,8 +451,8 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
             <div className="flex-1 flex flex-col">
               <button onClick={() => changeView('global')}
                 className="flex items-center gap-3 px-4 py-4 hover:bg-primary/5 transition-all border-b border-border text-left">
-                <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center text-accent-foreground shadow-md">
-                  <Globe size={20} />
+                <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden">
+                  <img src={clubLogo} alt="Logo du club" className="w-8 h-8 object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-foreground">Discussion globale</p>
@@ -514,7 +515,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
           <>
             <div className="flex items-center gap-2 px-3 py-2.5 bg-primary text-primary-foreground shrink-0">
               <button onClick={() => changeView('tabs')} className="p-1.5 rounded-lg hover:bg-white/15"><ArrowLeft size={18} /></button>
-              <Globe size={16} />
+              <img src={clubLogo} alt="Logo" className="w-6 h-6 object-contain rounded-full bg-white p-0.5" />
               <span className="font-bold text-sm flex-1">Discussion globale</span>
               <button onClick={() => setChatOpen(false)} className="p-1 rounded-lg hover:bg-white/15"><X size={16} /></button>
             </div>
