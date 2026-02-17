@@ -1561,7 +1561,7 @@ const Dashboard = () => {
 
               {/* Description */}
               <p className="text-muted-foreground text-sm leading-relaxed max-w-[260px] mx-auto">
-                L'application pensée et conçue exclusivement pour le club d'Oisemont.
+                L'application pensée et conçue exclusivement pour le club de Oisemont.
               </p>
 
               {/* CTA */}
