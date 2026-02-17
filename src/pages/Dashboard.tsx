@@ -64,6 +64,7 @@ export interface Event {
   date: string;
   type: string;
   team?: string;
+  recurrence?: 'recurring' | 'ponctuel';
   presences?: Record<string, string>;
   convocations?: Record<string, Convocation>;
   convocationsPublished?: boolean;
@@ -332,7 +333,57 @@ const Dashboard = () => {
     return () => unsubs.forEach(u => u());
   }, [currentUser, navigate]);
 
-  // License reminder check — show popup if user has no license set
+  // Auto-generate next occurrence for recurring events
+  const recurringProcessed = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!currentUser || events.length === 0) return;
+    
+    const processRecurring = async () => {
+      const now = new Date();
+      const recurringEvents = events.filter(e => e.recurrence === 'recurring');
+      
+      for (const event of recurringEvents) {
+        const eventDate = new Date(event.date);
+        if (eventDate >= now) continue;
+        if (recurringProcessed.current.has(event.id)) continue;
+        
+        const nextDate = new Date(eventDate);
+        nextDate.setDate(nextDate.getDate() + 7);
+        const nextDateStr = nextDate.toISOString().split('T')[0];
+        
+        const alreadyExists = events.some(e => 
+          e.title === event.title && 
+          e.recurrence === 'recurring' &&
+          e.date.startsWith(nextDateStr)
+        );
+        
+        if (!alreadyExists) {
+          try {
+            const timeStr = event.date.includes('T') ? event.date.split('T')[1] : '';
+            const newDate = timeStr ? `${nextDateStr}T${timeStr}` : nextDateStr;
+            
+            await addDoc(collection(db, 'events'), {
+              title: event.title,
+              date: newDate,
+              type: event.type,
+              recurrence: 'recurring',
+              presences: {},
+              createdBy: event.createdBy || '',
+              createdByName: event.createdByName || '',
+              createdAt: new Date().toISOString(),
+            });
+          } catch (err) {
+            console.error('Error creating recurring event:', err);
+          }
+        }
+        recurringProcessed.current.add(event.id);
+      }
+    };
+    
+    processRecurring();
+  }, [events, currentUser]);
+
+
   useEffect(() => {
     if (!currentUser || ['photographe', 'admin', 'admin+'].includes(currentUser.role)) return;
     const checkLicense = async () => {

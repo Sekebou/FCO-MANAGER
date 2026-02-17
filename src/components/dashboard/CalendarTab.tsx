@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Event, Member } from '@/pages/Dashboard';
 import RoleBadge from '@/components/ui/role-badge';
-import { Swords, Dumbbell, CalendarDays } from 'lucide-react';
+import { Swords, Dumbbell, CalendarDays, Repeat, CircleDot } from 'lucide-react';
 
 interface AppUser {
   uid: string;
@@ -47,14 +47,25 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
               )}
             </p>
           </div>
-          <span className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium shrink-0 ${
-            event.type === 'match' ? 'bg-accent/10 text-accent' :
-            event.type === 'training' ? 'bg-purple-100 text-purple-700' :
-            'bg-muted text-muted-foreground'
-          }`}>
-            {event.type === 'match' ? <Swords className="w-3 h-3" /> : event.type === 'training' ? <Dumbbell className="w-3 h-3" /> : <CalendarDays className="w-3 h-3" />}
-            {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
-          </span>
+          <div className="flex gap-1.5 items-center shrink-0">
+            {event.recurrence === 'recurring' ? (
+              <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary">
+                <Repeat className="w-3 h-3" /> Récurrent
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted text-muted-foreground">
+                <CircleDot className="w-3 h-3" /> Ponctuel
+              </span>
+            )}
+            <span className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium shrink-0 ${
+              event.type === 'match' ? 'bg-accent/10 text-accent' :
+              event.type === 'training' ? 'bg-purple-100 text-purple-700' :
+              'bg-muted text-muted-foreground'
+            }`}>
+              {event.type === 'match' ? <Swords className="w-3 h-3" /> : event.type === 'training' ? <Dumbbell className="w-3 h-3" /> : <CalendarDays className="w-3 h-3" />}
+              {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
+            </span>
+          </div>
         </div>
       </div>
     );
