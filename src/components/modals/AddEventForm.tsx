@@ -12,9 +12,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
   const [formData, setFormData] = useState({ title: '', date: '', type: isDirigeant ? 'training' : 'match', sendNotification: true });
 
   const allTypeOptions = [
-    { value: 'match', label: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
-    { value: 'training', label: 'Entraîn.', icon: <Dumbbell className="w-3.5 h-3.5" />, color: 'bg-purple-500/10 border-purple-500/30 text-purple-600' },
-    { value: 'other', label: 'Autre', icon: <CalendarDays className="w-3.5 h-3.5" />, color: 'bg-muted border-border text-muted-foreground' },
+    { value: 'match', label: 'Match', shortLabel: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
+    { value: 'training', label: 'Entraînement', shortLabel: 'Entraîn.', icon: <Dumbbell className="w-3.5 h-3.5" />, color: 'bg-purple-500/10 border-purple-500/30 text-purple-600' },
+    { value: 'other', label: 'Autre', shortLabel: 'Autre', icon: <CalendarDays className="w-3.5 h-3.5" />, color: 'bg-muted border-border text-muted-foreground' },
   ];
 
   const typeOptions = isDirigeant ? allTypeOptions.filter(o => o.value === 'training') : allTypeOptions;
@@ -56,11 +56,11 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                   key={opt.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, type: opt.value })}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-semibold border-2 transition-all ${
+                  className={`py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-semibold border-2 transition-all whitespace-nowrap ${
                     formData.type === opt.value ? opt.color + ' scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1.5">{opt.icon} {opt.label}</span>
+                  <span className="inline-flex items-center gap-1">{opt.icon} <span className="hidden min-[380px]:inline">{opt.label}</span><span className="min-[380px]:hidden">{opt.shortLabel}</span></span>
                 </button>
               ))}
             </div>
