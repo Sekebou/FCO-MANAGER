@@ -125,7 +125,7 @@ const tabs = [
   { id: 'presences', label: 'Présences', icon: Users },
   { id: 'stats', label: 'Statistiques', icon: TrendingUp },
   { id: 'championnat', label: 'Championnat', icon: Trophy },
-  { id: 'news', label: 'Actualités', icon: Bell },
+  { id: 'news', label: 'Au cœur du club', icon: Bell },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: Users },
@@ -577,7 +577,7 @@ const Dashboard = () => {
 
   const deleteNews = async (newsId: string) => {
     setConfirmModal({
-      title: 'Supprimer cette actualité ?',
+      title: 'Supprimer cette publication ?',
       message: 'Cette action est irréversible.',
       onConfirm: async () => {
         try {
