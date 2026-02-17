@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { auth, db, onAuthStateChanged, signOut, doc, getDoc, onSnapshot, type User } from '@/lib/firebase';
+import { toast } from 'sonner';
 
 export interface AppUser {
   uid: string;
@@ -89,7 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const localToken = sessionStorage.getItem('sessionToken');
           // If there's a session token in Firestore and it doesn't match ours, force logout
           if (localToken && data.sessionToken && data.sessionToken !== localToken) {
-            console.log('Session invalidée : connexion depuis un autre appareil');
+            toast.error('Session déconnectée', {
+              description: 'Votre compte est déjà connecté depuis un autre appareil. Vous avez été déconnecté.',
+              duration: 8000,
+            });
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('sessionToken');
             signOut(auth);
