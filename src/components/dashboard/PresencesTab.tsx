@@ -132,13 +132,13 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                   </p>
                   <div className="flex gap-2 mt-2.5 sm:mt-3">
                      <span className="flex items-center gap-1.5 bg-accent/10 text-accent px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold">
-                       <Check size={12} /> {presentCount}
+                       <Check size={12} /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
                      </span>
                      <span className="flex items-center gap-1.5 bg-destructive/10 text-destructive px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold">
-                       <X size={12} /> {absentCount}
+                       <X size={12} /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
                      </span>
                      <span className="flex items-center gap-1.5 bg-warning/10 text-warning px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold">
-                       <Clock size={12} /> {unknownCount}
+                       <Clock size={12} /> {unknownCount} Attente
                      </span>
                    </div>
                 </div>
