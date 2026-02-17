@@ -1538,13 +1538,10 @@ const Dashboard = () => {
               <img src={clubLogo} alt="FCO" className="w-14 h-14 object-contain" />
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground mb-2 tracking-tight">
-              Bienvenue <span className="text-primary">{welcomeName.split(' ')[0]?.charAt(0).toUpperCase() + (welcomeName.split(' ')[0]?.slice(1).toLowerCase() || '')}</span> 🏟️
+              Bienvenue <span className="text-primary">{welcomeName.split(' ')[0]?.charAt(0).toUpperCase() + (welcomeName.split(' ')[0]?.slice(1).toLowerCase() || '')}</span>
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base leading-relaxed mt-3">
               Bienvenue sur <span className="font-bold text-primary">FCO Manager</span> — l'application pensée et conçue exclusivement pour le club d'Oisemont.
-            </p>
-            <p className="text-muted-foreground/70 text-xs sm:text-sm mt-2">
-              On est ravis de vous compter parmi nous ! 💙⚽
             </p>
             <button
               onClick={() => setWelcomeName(null)}
