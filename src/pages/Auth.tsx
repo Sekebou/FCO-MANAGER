@@ -48,7 +48,14 @@ const Auth = () => {
         }),
       );
 
+      const displayName = userData.name || userData.username || "joueur";
+      toast.success(`Bienvenue ${displayName} 👋`, {
+        description: "Ravi de vous revoir sur FCO Manager — l'application conçue exclusivement pour le club d'Oisemont.",
+        duration: 6000,
+      });
+
       navigate("/");
+
     } catch (err: any) {
       let message = "Erreur de connexion";
       if (
