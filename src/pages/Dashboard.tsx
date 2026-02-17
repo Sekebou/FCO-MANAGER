@@ -942,7 +942,7 @@ const Dashboard = () => {
               {/* Profile group */}
               <button
                 onClick={() => setShowAvatarModal(true)}
-                className="flex items-center gap-2 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-xl hover:bg-white/10 transition-all group"
+                className="flex items-center gap-2.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl hover:bg-white/10 transition-all group"
               >
                 <div className="relative">
                   <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden ring-2 ring-white/20 group-hover:ring-accent transition-all">
