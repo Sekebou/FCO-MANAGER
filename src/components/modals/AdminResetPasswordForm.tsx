@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { auth, sendPasswordResetEmail } from '@/lib/firebase';
+import { isIOSCapacitor, restSendPasswordReset } from '@/lib/firestore-rest';
 import type { Member } from '@/pages/Dashboard';
 import { Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -16,7 +17,11 @@ const AdminResetPasswordForm = ({ member, onClose }: Props) => {
   const handleSend = async () => {
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, member.email);
+      if (isIOSCapacitor) {
+        await restSendPasswordReset(member.email);
+      } else {
+        await sendPasswordResetEmail(auth, member.email);
+      }
       setSuccess(true);
       setTimeout(onClose, 3000);
     } catch (err: any) {

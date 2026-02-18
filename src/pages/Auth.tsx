@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, doc, getDoc, updateDoc } from "@/lib/firebase";
+import { setIdToken, isIOSCapacitor, restSendPasswordReset } from "@/lib/firestore-rest";
 import { signInWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft } from "lucide-react";
 import clubLogo from "@/assets/logo.svg";
@@ -114,6 +115,8 @@ const Auth = () => {
         );
         console.log('[AUTH-iOS] sessionToken written via REST');
         localStorage.setItem('sessionToken', sessionToken);
+        // Store idToken for REST API calls
+        setIdToken(idToken, parseInt(data.expiresIn || '3600'));
 
         localStorage.setItem(
           "currentUser",
@@ -248,7 +251,11 @@ const Auth = () => {
     setError("");
     setResetLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      if (isIOSCapacitor) {
+        await restSendPasswordReset(email.trim());
+      } else {
+        await sendPasswordResetEmail(auth, email.trim());
+      }
       toast.success("Email envoyé ! Vérifiez aussi vos spams / courriers indésirables.", { duration: 6000 });
       setForgotMode(false);
     } catch (err: any) {
