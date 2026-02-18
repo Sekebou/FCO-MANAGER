@@ -72,7 +72,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // This prevents a false "null" user event on app restart (Android/Capacitor)
     let unsubscribe: (() => void) | null = null;
     
-    authReady.then(() => {
+    // authReady has a built-in 3s timeout, but add a safety net here too
+    const startAuth = () => {
       if (!isMounted) return;
       
       unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -124,10 +125,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         if (isMounted) setLoading(false);
       });
+    };
+
+    authReady.then(startAuth).catch(() => {
+      console.warn('Auth persistence failed, starting anyway');
+      startAuth();
     });
+
+    // Ultimate fallback: if still loading after 6s, force loading=false
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn('Auth safety timeout: forcing loading=false');
+        setLoading(false);
+      }
+    }, 6000);
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
       if (unsubscribe) unsubscribe();
       if (unsubscribeSnapshot) unsubscribeSnapshot();
     };
