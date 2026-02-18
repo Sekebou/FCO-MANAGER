@@ -1,6 +1,9 @@
 import { initializeApp, getApps, deleteApp } from 'firebase/app';
 import { 
-  getAuth, 
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  indexedDBLocalPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -44,6 +47,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Force local persistence for Capacitor/Android compatibility
+setPersistence(auth, indexedDBLocalPersistence).catch(() => {
+  // Fallback to localStorage-based persistence if indexedDB is not available
+  setPersistence(auth, browserLocalPersistence);
+});
+
 export const db = getFirestore(app);
 
 // Secondary app for creating users without switching the current session
