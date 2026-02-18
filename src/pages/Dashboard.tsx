@@ -604,7 +604,7 @@ const Dashboard = () => {
       try {
         // Fetch FCM tokens from Supabase
         const { data: tokenRows } = await supabase.from('fcm_tokens').select('token');
-        const fcmTokens = (tokenRows || []).map((r: any) => r.token).filter(Boolean);
+        const fcmTokens = [...new Set((tokenRows || []).map((r: any) => r.token).filter(Boolean))];
         
         if (fcmTokens.length > 0) {
           const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
