@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, doc, getDoc, updateDoc } from "@/lib/firebase";
+import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, doc, getDoc, updateDoc } from "@/lib/firebase";
 import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft } from "lucide-react";
 import clubLogo from "@/assets/logo.svg";
 import { toast } from "sonner";
@@ -30,7 +30,49 @@ const Auth = () => {
       ]).catch(() => console.warn('[AUTH-iOS] Auth persistence setup timed out, continuing anyway'));
 
       console.log('[AUTH-iOS] Step 2: calling signInWithEmailAndPassword...');
-      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      
+      // On iOS Capacitor, signInWithEmailAndPassword may never resolve even though
+      // the network request succeeds. Race it with onAuthStateChanged to catch the user.
+      const userCredential = await new Promise<any>((resolve, reject) => {
+        let settled = false;
+        
+        // Listen for auth state change — fires when Firebase internally authenticates
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          if (user && !settled) {
+            settled = true;
+            unsubscribe();
+            console.log('[AUTH-iOS] Step 2b: got user from onAuthStateChanged, uid=', user.uid);
+            resolve({ user });
+          }
+        });
+        
+        // Also try the normal promise path
+        signInWithEmailAndPassword(auth, email.trim(), password)
+          .then((cred) => {
+            if (!settled) {
+              settled = true;
+              unsubscribe();
+              console.log('[AUTH-iOS] Step 2a: signIn promise resolved');
+              resolve(cred);
+            }
+          })
+          .catch((err) => {
+            if (!settled) {
+              settled = true;
+              unsubscribe();
+              reject(err);
+            }
+          });
+        
+        // Ultimate timeout — if nothing fires after 15s, reject
+        setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            unsubscribe();
+            reject(new Error('Connexion expirée. Vérifiez votre connexion internet.'));
+          }
+        }, 15000);
+      });
       console.log('[AUTH-iOS] Step 3: signIn OK, uid=', userCredential.user.uid);
       
       const user = userCredential.user;
