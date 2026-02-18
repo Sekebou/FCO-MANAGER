@@ -34,18 +34,18 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
                 </span>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-0">
-              <span>{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+            <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 space-y-0.5">
+              <span className="block">{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
               {event.createdByName && (
-                <span className="text-muted-foreground/60 inline-flex items-center gap-1 sm:ml-1.5">
-                  <span className="hidden sm:inline">—</span> {event.createdByName}
+                <span className="flex items-center gap-1 text-muted-foreground/60 text-[11px]">
+                  {event.createdByName}
                   {(() => {
                     const creator = members.find(m => m.id === event.createdBy);
-                    return creator ? <RoleBadge role={creator.role} /> : null;
+                    return creator ? <RoleBadge role={creator.role} compact /> : null;
                   })()}
                 </span>
               )}
-            </p>
+            </div>
           </div>
           <div className="flex gap-1.5 items-center shrink-0">
             {event.recurrence === 'recurring' ? (
