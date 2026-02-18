@@ -119,9 +119,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           });
         } else {
-          setCurrentUser(null);
-          localStorage.removeItem('currentUser');
-          localStorage.removeItem('sessionToken');
+          // On iOS Capacitor, we use REST API for auth so the SDK never knows
+          // about the user. Don't wipe localStorage if we have a valid session.
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          const isCapacitorEnv = !!(window as any).Capacitor;
+          const hasLocalSession = !!localStorage.getItem('currentUser') && !!localStorage.getItem('sessionToken');
+          
+          if (isIOS && isCapacitorEnv && hasLocalSession) {
+            // Keep the REST-based session alive — don't clear it
+            console.log('[AuthContext] iOS Capacitor: keeping REST session despite null firebaseUser');
+          } else {
+            setCurrentUser(null);
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('sessionToken');
+          }
         }
         if (isMounted) setLoading(false);
       });
