@@ -305,38 +305,54 @@ const Dashboard = () => {
       console.log('[Dashboard-iOS] Using REST polling mode');
       let cancelled = false;
 
-      const fetchAll = async () => {
+      // Hot data: presences, news (likes), comments, players (stats) — every 2s
+      const fetchHot = async () => {
         try {
-          const [
-            playersData, eventsData, newsData, membersData, cardsData,
-            attendanceData, commentsData, champsData, matchesData,
-            albumsData, photosData
-          ] = await Promise.all([
-            restGetCollection('players'),
-            restGetCollection('events', { orderBy: 'date', direction: 'DESCENDING' }),
+          const [attendanceData, newsData, commentsData, playersData] = await Promise.all([
+            restGetCollection('attendance_records'),
             restGetCollection('news', { orderBy: 'date', direction: 'DESCENDING' }),
+            restGetCollection('news_comments', { orderBy: 'createdAt', direction: 'ASCENDING' }),
+            restGetCollection('players'),
+          ]);
+          if (cancelled) return;
+          setAttendanceRecords(attendanceData as AttendanceRecord[]);
+          setNews(newsData as NewsItem[]);
+          setNewsComments(commentsData as NewsComment[]);
+          setPlayers(playersData as Player[]);
+        } catch (err: any) {
+          console.error('[Dashboard-iOS] REST hot fetch error:', err);
+        }
+      };
+
+      // Cold data: events, members, cards, championships, albums, photos — every 8s
+      const fetchCold = async () => {
+        try {
+          const [eventsData, membersData, cardsData, champsData, matchesData, albumsData, photosData] = await Promise.all([
+            restGetCollection('events', { orderBy: 'date', direction: 'DESCENDING' }),
             restGetCollection('users', { orderBy: 'createdAt', direction: 'DESCENDING' }),
             restGetCollection('cards', { orderBy: 'date', direction: 'DESCENDING' }),
-            restGetCollection('attendance_records'),
-            restGetCollection('news_comments', { orderBy: 'createdAt', direction: 'ASCENDING' }),
             restGetCollection('championships'),
             restGetCollection('championship_matches'),
             restGetCollection('albums', { orderBy: 'createdAt', direction: 'DESCENDING' }),
             restGetCollection('gallery_photos'),
           ]);
-
           if (cancelled) return;
-          setPlayers(playersData as Player[]);
           setEvents(eventsData as Event[]);
-          setNews(newsData as NewsItem[]);
           setMembers(membersData as Member[]);
           setCards(cardsData as Card[]);
-          setAttendanceRecords(attendanceData as AttendanceRecord[]);
-          setNewsComments(commentsData as NewsComment[]);
           setChampionships(champsData as Championship[]);
           setChampMatches(matchesData as Match[]);
           setAlbums(albumsData as Album[]);
           setGalleryPhotos(photosData as Photo[]);
+        } catch (err: any) {
+          console.error('[Dashboard-iOS] REST cold fetch error:', err);
+        }
+      };
+
+      // Full fetch for initial load and after mutations
+      const fetchAll = async () => {
+        try {
+          await Promise.all([fetchHot(), fetchCold()]);
           setLoading(false);
         } catch (err: any) {
           console.error('[Dashboard-iOS] REST fetch error:', err);
@@ -351,8 +367,9 @@ const Dashboard = () => {
       iosRefetchRef.current = fetchAll;
 
       fetchAll();
-      const pollInterval = setInterval(fetchAll, 5000);
-      return () => { cancelled = true; clearInterval(pollInterval); iosRefetchRef.current = null; };
+      const hotInterval = setInterval(fetchHot, 2000);
+      const coldInterval = setInterval(fetchCold, 8000);
+      return () => { cancelled = true; clearInterval(hotInterval); clearInterval(coldInterval); iosRefetchRef.current = null; };
     }
 
     // ----- Standard SDK mode (Android / Web) -----
@@ -1537,8 +1554,8 @@ const Dashboard = () => {
       <footer className="border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
         <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
           <div className="w-2 h-2 bg-success rounded-full animate-pulse shrink-0" />
-          <span className="hidden sm:inline">{isIOSCapacitor ? 'Connecté via REST — Rafraîchissement auto toutes les 10s' : 'Connecté au serveur — Données synchronisées en temps réel'}</span>
-          <span className="sm:hidden">{isIOSCapacitor ? 'Connecté · REST' : 'Connecté · Synchro en temps réel'}</span>
+          <span className="hidden sm:inline">{isIOSCapacitor ? 'Connecté via REST — Synchro auto' : 'Connecté au serveur — Données synchronisées en temps réel'}</span>
+           <span className="sm:hidden">{isIOSCapacitor ? 'Connecté · Synchro auto' : 'Connecté · Synchro en temps réel'}</span>
         </div>
       </footer>
 
