@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, doc, getDoc, updateDoc } from "@/lib/firebase";
+import { signInWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft } from "lucide-react";
 import clubLogo from "@/assets/logo.svg";
 import { toast } from "sonner";
@@ -21,8 +22,87 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isCapacitor = !!(window as any).Capacitor;
+
+      if (isIOS && isCapacitor) {
+        // iOS Capacitor: Firebase SDK signIn hangs forever. Use REST API directly.
+        console.log('[AUTH-iOS] Using REST API bypass for iOS Capacitor');
+        const apiKey = 'AIzaSyAExtesWZPAEbQbGm5Rp17ek1PuWx_uceQ';
+        const res = await fetch(
+          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: email.trim(),
+              password,
+              returnSecureToken: true,
+            }),
+          }
+        );
+        const data = await res.json();
+        console.log('[AUTH-iOS] REST response status:', res.status);
+        
+        if (!res.ok) {
+          // Map Firebase REST errors to user-friendly messages
+          const errMsg = data?.error?.message || '';
+          if (errMsg.includes('EMAIL_NOT_FOUND') || errMsg.includes('INVALID_PASSWORD') || errMsg.includes('INVALID_LOGIN_CREDENTIALS')) {
+            throw { code: 'auth/invalid-credential' };
+          } else if (errMsg.includes('TOO_MANY_ATTEMPTS')) {
+            throw { code: 'auth/too-many-requests' };
+          } else if (errMsg.includes('INVALID_EMAIL')) {
+            throw { code: 'auth/invalid-email' };
+          }
+          throw new Error(errMsg || 'Erreur de connexion');
+        }
+
+        const uid = data.localId;
+        const userEmail = data.email;
+        console.log('[AUTH-iOS] REST auth OK, uid=', uid);
+
+        // Fetch user profile from Firestore using the SDK (reads work fine)
+        const userDoc = await getDoc(doc(db, "users", uid));
+        console.log('[AUTH-iOS] getDoc OK, exists=', userDoc.exists());
+
+        if (!userDoc.exists()) {
+          throw new Error("Profil utilisateur introuvable. Contactez l'administrateur.");
+        }
+
+        const userData = userDoc.data();
+
+        // Generate session token
+        const sessionToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        await updateDoc(doc(db, "users", uid), { sessionToken });
+        console.log('[AUTH-iOS] sessionToken written');
+        localStorage.setItem('sessionToken', sessionToken);
+
+        localStorage.setItem(
+          "currentUser",
+          JSON.stringify({
+            uid,
+            email: userEmail,
+            role: userData.role,
+            name: userData.name,
+            username: userData.username || "",
+            playerId: userData.playerId || null,
+            photoURL: userData.photoURL || null,
+          }),
+        );
+
+        const displayName = userData.name || userData.username || "joueur";
+        if (!userData.welcomeSeen) {
+          sessionStorage.setItem('showWelcome', displayName);
+          await updateDoc(doc(db, "users", uid), { welcomeSeen: true });
+        }
+
+        navigate("/");
+        return; // Skip the normal SDK flow below
+      }
+
+      // Non-iOS path: use normal SDK
       console.log('[AUTH-iOS] Step 1: waiting authReady...');
-      // Wait for Firebase persistence to be ready before signing in (critical for iOS)
       const { authReady } = await import('@/lib/firebase');
       await Promise.race([
         authReady,
@@ -30,49 +110,7 @@ const Auth = () => {
       ]).catch(() => console.warn('[AUTH-iOS] Auth persistence setup timed out, continuing anyway'));
 
       console.log('[AUTH-iOS] Step 2: calling signInWithEmailAndPassword...');
-      
-      // On iOS Capacitor, signInWithEmailAndPassword may never resolve even though
-      // the network request succeeds. Race it with onAuthStateChanged to catch the user.
-      const userCredential = await new Promise<any>((resolve, reject) => {
-        let settled = false;
-        
-        // Listen for auth state change — fires when Firebase internally authenticates
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          if (user && !settled) {
-            settled = true;
-            unsubscribe();
-            console.log('[AUTH-iOS] Step 2b: got user from onAuthStateChanged, uid=', user.uid);
-            resolve({ user });
-          }
-        });
-        
-        // Also try the normal promise path
-        signInWithEmailAndPassword(auth, email.trim(), password)
-          .then((cred) => {
-            if (!settled) {
-              settled = true;
-              unsubscribe();
-              console.log('[AUTH-iOS] Step 2a: signIn promise resolved');
-              resolve(cred);
-            }
-          })
-          .catch((err) => {
-            if (!settled) {
-              settled = true;
-              unsubscribe();
-              reject(err);
-            }
-          });
-        
-        // Ultimate timeout — if nothing fires after 15s, reject
-        setTimeout(() => {
-          if (!settled) {
-            settled = true;
-            unsubscribe();
-            reject(new Error('Connexion expirée. Vérifiez votre connexion internet.'));
-          }
-        }, 15000);
-      });
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       console.log('[AUTH-iOS] Step 3: signIn OK, uid=', userCredential.user.uid);
       
       const user = userCredential.user;
