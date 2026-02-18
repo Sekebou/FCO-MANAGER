@@ -129,6 +129,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (isIOS && isCapacitorEnv && hasLocalSession) {
             // Keep the REST-based session alive — don't clear it
             console.log('[AuthContext] iOS Capacitor: keeping REST session despite null firebaseUser');
+            // Try to re-authenticate the SDK so Firestore listeners work
+            const storedEmail = localStorage.getItem('iosAuthEmail');
+            const storedPass = localStorage.getItem('iosAuthPass');
+            if (storedEmail && storedPass) {
+              console.log('[AuthContext] iOS: re-authenticating SDK with stored credentials...');
+              import('firebase/auth').then(({ signInWithEmailAndPassword: sdkSignIn }) => {
+                Promise.race([
+                  sdkSignIn(auth, storedEmail, atob(storedPass)),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('SDK re-auth timeout')), 5000)),
+                ]).then((cred: any) => {
+                  console.log('[AuthContext] iOS: SDK re-auth succeeded, listeners should work now');
+                  if (isMounted) setFirebaseUser(cred.user);
+                }).catch((err: any) => {
+                  console.warn('[AuthContext] iOS: SDK re-auth failed:', err.message);
+                });
+              });
+            }
           } else {
             setCurrentUser(null);
             localStorage.removeItem('currentUser');
@@ -164,6 +181,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
     localStorage.removeItem('currentUser');
     localStorage.removeItem('sessionToken');
+    localStorage.removeItem('firebaseRefreshToken');
+    localStorage.removeItem('iosAuthEmail');
+    localStorage.removeItem('iosAuthPass');
     setCurrentUser(null);
   };
 
