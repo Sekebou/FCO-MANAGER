@@ -597,8 +597,10 @@ const Dashboard = () => {
       const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
       const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
       const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-      const pushTitle = `${typeIcons[eventData.type] || '📅'} ${typeLabels[eventData.type] || 'Événement'} : ${eventData.title}`;
-      const pushBody = `📅 ${dateFormatted}${eventData.type === 'other' && eventData.reason ? ` — ${eventData.reason}` : ''}`;
+      const timeFormatted = eventData.time ? ` à ${eventData.time}` : '';
+      const locationInfo = eventData.location ? `\n📍 ${eventData.location}` : '';
+      const pushTitle = `${typeIcons[eventData.type] || '📅'} Nouveau ${(typeLabels[eventData.type] || 'événement').toLowerCase()} disponible !`;
+      const pushBody = `${eventData.title}\n📅 ${dateFormatted}${timeFormatted}${locationInfo}\n\nN'oublie pas de répondre présent ou absent afin d'aider au mieux l'organisation du club ! 💪`;
 
       // Envoyer notification push native
       try {
