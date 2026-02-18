@@ -5,7 +5,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const USE_REMOTE_SERVER = false;
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.f724ebf3745f46d69ffcd9e0270da6cb',
+  appId: 'com.sekebou.fcomanager',
   appName: 'blue-pitch-dash',
   webDir: 'dist',
   ...(USE_REMOTE_SERVER
