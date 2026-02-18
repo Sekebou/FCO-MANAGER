@@ -11,7 +11,7 @@ interface Tab {
 const allTabs: Tab[] = [
   { id: 'presences', label: 'Présences', icon: Users },
   { id: 'stats', label: 'Stats', icon: TrendingUp },
-  { id: 'championnat', label: 'Classmt', icon: Trophy },
+  { id: 'championnat', label: 'Championnat', icon: Trophy },
   { id: 'news', label: 'Actus', icon: Bell },
   { id: 'calendar', label: 'Agenda', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
@@ -77,7 +77,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
 
         <div 
           ref={containerRef} 
-          className="flex items-stretch justify-around px-0.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
+          className="flex items-stretch justify-around px-0.5 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
         >
           {allTabs.map((tab) => {
             const Icon = tab.icon;
@@ -89,7 +89,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 data-tab={tab.id}
                 onClick={() => handleTap(tab.id)}
                 className={cn(
-                  'relative flex flex-col items-center justify-center py-1 flex-1 min-w-0',
+                  'relative flex flex-col items-center justify-center py-1.5 flex-1 min-w-0',
                   'outline-none select-none',
                   '-webkit-tap-highlight-color: transparent',
                 )}
@@ -100,13 +100,13 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   className={cn(
                     'relative flex items-center justify-center rounded-2xl transition-all',
                     isActive 
-                      ? 'w-[52px] h-8 bg-accent/[0.12]' 
-                      : 'w-8 h-8',
+                      ? 'w-14 h-9 bg-accent/[0.12]' 
+                      : 'w-9 h-9',
                     mounted ? 'duration-[350ms] ease-[cubic-bezier(0.25,1,0.5,1)]' : 'duration-0'
                   )}
                 >
                   <Icon
-                    size={isActive ? 19 : 20}
+                    size={isActive ? 20 : 21}
                     strokeWidth={isActive ? 2.4 : 1.6}
                     className={cn(
                       'transition-all',
@@ -121,7 +121,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 {/* Label */}
                 <span
                   className={cn(
-                    'text-[10px] leading-none mt-0.5 tracking-tight transition-all truncate max-w-full px-0.5',
+                    'text-[10px] leading-none mt-1 tracking-tight transition-all truncate max-w-full px-0.5',
                     mounted ? 'duration-[250ms]' : 'duration-0',
                     isActive
                       ? 'font-bold text-accent'
