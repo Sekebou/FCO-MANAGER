@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Lock, Mail, User, Loader2, Shield, ChevronRight, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-import clubLogo from '@/assets/logo.svg';
+import clubLogo from '@/assets/logo.png';
 
 const Register = () => {
   const navigate = useNavigate();

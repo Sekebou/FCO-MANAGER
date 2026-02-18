@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft } from "lucide-react";
-import clubLogo from "@/assets/logo.svg";
+import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
 
 const Auth = () => {
