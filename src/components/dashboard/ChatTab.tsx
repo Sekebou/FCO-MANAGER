@@ -58,7 +58,7 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
     const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
 
     if (isIOSNative) {
-      const interval = setInterval(fetchMessages, 2000);
+      const interval = setInterval(fetchMessages, 1000);
       return () => { clearInterval(interval); };
     }
 

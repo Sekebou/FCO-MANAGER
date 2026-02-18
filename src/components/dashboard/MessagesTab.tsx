@@ -97,7 +97,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
     const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
 
     if (isIOSNative) {
-      const interval = setInterval(fetchConvos, 2000);
+      const interval = setInterval(fetchConvos, 1000);
       return () => { clearInterval(interval); };
     }
 
@@ -122,7 +122,7 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
     const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
 
     if (isIOSNative) {
-      const interval = setInterval(fetchMsgs, 2000);
+      const interval = setInterval(fetchMsgs, 1000);
       return () => { clearInterval(interval); };
     }
 
