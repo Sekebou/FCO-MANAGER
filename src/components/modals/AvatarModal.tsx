@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2 } from 'lucide-react';
+import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
@@ -10,9 +10,10 @@ interface Props {
   onClose: () => void;
   onAvatarUpdated: (photoURL: string | null) => void;
   focusLicense?: boolean;
+  onStartTutorial?: () => void;
 }
 
-const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false }: Props) => {
+const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial }: Props) => {
   const licenseRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(currentUser.photoURL || null);
@@ -198,8 +199,17 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
             </div>
           </div>
         )}
+        {/* Replay tutorial */}
+        <div className="px-5 pb-5">
+          <button
+            onClick={() => { onClose(); onStartTutorial?.(); }}
+            className="w-full bg-secondary text-foreground py-2.5 rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm flex items-center justify-center gap-2"
+          >
+            <BookOpen size={16} /> Revoir le tutoriel
+          </button>
+        </div>
 
-        {(isNonPlayer || !currentUser.playerId) && <div className="pb-5" />}
+        {(isNonPlayer || !currentUser.playerId) && <div className="pb-2" />}
       </div>
     </div>
   );
