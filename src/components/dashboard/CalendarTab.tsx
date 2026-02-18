@@ -34,11 +34,11 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
                 </span>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-            {event.createdByName && (
-                <span className="text-muted-foreground/60 inline-flex items-center gap-1.5 ml-1.5">
-                  {event.createdByName}
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-0">
+              <span>{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+              {event.createdByName && (
+                <span className="text-muted-foreground/60 inline-flex items-center gap-1 sm:ml-1.5">
+                  <span className="hidden sm:inline">—</span> {event.createdByName}
                   {(() => {
                     const creator = members.find(m => m.id === event.createdBy);
                     return creator ? <RoleBadge role={creator.role} /> : null;
