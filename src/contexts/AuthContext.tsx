@@ -36,6 +36,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Grace period flag: skip session-token check right after auth state changes
+  // to avoid race condition with Auth.tsx writing the new token
+  const loginGraceRef = React.useRef(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -90,9 +93,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Always refresh profile from Firestore to keep role up-to-date
           await fetchUserProfile(user);
 
+          // Start a grace period: ignore session token changes for 5s
+          // so Auth.tsx has time to write the new token to Firestore + localStorage
+          loginGraceRef.current = true;
+          setTimeout(() => { loginGraceRef.current = false; }, 5000);
+
           // Listen for session token changes to enforce single-session
           unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
             if (!isMounted || !snapshot.exists()) return;
+            // Skip check during login grace period
+            if (loginGraceRef.current) return;
             const data = snapshot.data();
             const localToken = localStorage.getItem('sessionToken');
             if (localToken && data.sessionToken && data.sessionToken !== localToken) {
