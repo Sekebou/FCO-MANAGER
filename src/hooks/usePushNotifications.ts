@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { db, doc, setDoc } from '@/lib/firebase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
  * Hook to register for push notifications on native platforms.
- * Stores the FCM token in Firestore under the user's document.
+ * Stores the FCM token in Supabase fcm_tokens table.
  */
 export function usePushNotifications(userId: string | undefined) {
   const registered = useRef(false);
@@ -33,13 +33,21 @@ export function usePushNotifications(userId: string | undefined) {
         // Listen for token
         PushNotifications.addListener('registration', async (token) => {
           console.log('FCM Token:', token.value);
-          // Store the token in Firestore
-          await setDoc(doc(db, 'fcm_tokens', userId), {
-            token: token.value,
-            updatedAt: new Date().toISOString(),
-            platform: Capacitor.getPlatform(),
-          }, { merge: true });
-          registered.current = true;
+          // Store the token in Supabase
+          const { error } = await supabase
+            .from('fcm_tokens')
+            .upsert({
+              user_id: userId,
+              token: token.value,
+              platform: Capacitor.getPlatform(),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'user_id' });
+          
+          if (error) {
+            console.error('Error storing FCM token:', error);
+          } else {
+            registered.current = true;
+          }
         });
 
         PushNotifications.addListener('registrationError', (error) => {
@@ -56,7 +64,6 @@ export function usePushNotifications(userId: string | undefined) {
         // Handle notification tap (app was in background)
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
           console.log('Push notification action:', action);
-          // Could navigate to specific tab based on action data
         });
 
       } catch (err) {
