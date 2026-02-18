@@ -367,8 +367,8 @@ const Dashboard = () => {
       iosRefetchRef.current = fetchAll;
 
       fetchAll();
-      const hotInterval = setInterval(fetchHot, 2000);
-      const coldInterval = setInterval(fetchCold, 8000);
+      const hotInterval = setInterval(fetchHot, 1000);
+      const coldInterval = setInterval(fetchCold, 5000);
       return () => { cancelled = true; clearInterval(hotInterval); clearInterval(coldInterval); iosRefetchRef.current = null; };
     }
 
