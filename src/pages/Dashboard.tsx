@@ -1007,7 +1007,15 @@ const Dashboard = () => {
               if (data.mode === 'email' && data.email) {
                 try {
                   await supabase.functions.invoke('send-email', {
-                    body: { to: data.email, subject: `Invitation à rejoindre FCO Manager`, html: `<p>${currentUser?.name || 'Un administrateur'} vous invite à rejoindre FCO Manager.<br><a href="${link}">Cliquer ici pour s'inscrire</a></p>` },
+                    body: {
+                      type: 'invitation',
+                      to: data.email,
+                      params: {
+                        invite_link: link,
+                        role_label: data.role || 'Joueur',
+                        inviter_name: currentUser?.name || 'Un administrateur',
+                      },
+                    },
                   });
                   toast.success('Invitation envoyée par email !');
                 } catch { toast.warning("Email non envoyé, mais le lien a été généré"); }
