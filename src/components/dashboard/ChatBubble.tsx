@@ -8,6 +8,10 @@ import {
   db, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp,
   where, doc, updateDoc, deleteDoc, getDocs, firestoreLimit
 } from '@/lib/firebase';
+import {
+  isIOSCapacitor, restGetCollection, restAddDoc, restUpdateDoc,
+  restDeleteDoc, restGetDoc
+} from '@/lib/firestore-rest';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Member } from '@/pages/Dashboard';
@@ -66,6 +70,15 @@ const ROLE_LABELS: Record<string, string> = {
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+// Helper to make timestamps work in both SDK and REST mode
+const getTimestamp = (ts: any): Date | null => {
+  if (!ts) return null;
+  if (ts.toDate) return ts.toDate();
+  if (typeof ts === 'string') return new Date(ts);
+  if (ts instanceof Date) return ts;
+  return null;
+};
+
 const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOpen }) => {
   const [view, setView] = useState<ChatView>('tabs');
   const [prevView, setPrevView] = useState<ChatView>('tabs');
@@ -102,16 +115,28 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
   const visibleMembers = members.filter(m => m.role !== 'admin+' || m.id === currentUser?.uid);
 
-  // Global chat listener
+  // Global chat listener / polling
   useEffect(() => {
+    if (isIOSCapacitor) {
+      let cancelled = false;
+      const fetchGlobal = async () => {
+        try {
+          const msgs = await restGetCollection('chat_messages', { orderBy: 'createdAt', direction: 'ASCENDING' });
+          if (!cancelled) setGlobalMessages(msgs as ChatMessage[]);
+        } catch (err) { console.warn('Global chat REST error:', err); }
+      };
+      fetchGlobal();
+      const interval = setInterval(fetchGlobal, 5000);
+      return () => { cancelled = true; clearInterval(interval); };
+    }
+
     const q = query(collection(db, 'chat_messages'), orderBy('createdAt', 'asc'), firestoreLimit(200));
     const unsub = onSnapshot(q, (snap) => {
       const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage));
       setGlobalMessages(msgs);
-      // Count unread global messages when chat is closed or not on global view
       if (!chatOpen || view !== 'global') {
         const newMsgs = msgs.filter(m => {
-          const msgTime = m.createdAt?.toDate?.()?.getTime() || 0;
+          const msgTime = getTimestamp(m.createdAt)?.getTime() || 0;
           const senderId = m.senderId || m.userId;
           return msgTime > lastSeenGlobalRef.current && senderId !== currentUser?.uid;
         });
@@ -129,21 +154,64 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
     }
   }, [chatOpen, view]);
 
-  // Conversations listener
+  // Conversations listener / polling
   useEffect(() => {
     if (!currentUser) return;
+
+    if (isIOSCapacitor) {
+      let cancelled = false;
+      const fetchConvos = async () => {
+        try {
+          // REST API doesn't support array-contains well, so fetch all and filter
+          const all = await restGetCollection('private_conversations');
+          const convos = (all as Conversation[])
+            .filter(c => c.participants?.includes(currentUser.uid))
+            .sort((a, b) => {
+              const aTime = getTimestamp(a.lastMessageAt)?.getTime() || 0;
+              const bTime = getTimestamp(b.lastMessageAt)?.getTime() || 0;
+              return bTime - aTime;
+            });
+          if (!cancelled) setConversations(convos);
+        } catch (err) { console.warn('Conversations REST error:', err); }
+      };
+      fetchConvos();
+      const interval = setInterval(fetchConvos, 5000);
+      return () => { cancelled = true; clearInterval(interval); };
+    }
+
     const q = query(collection(db, 'private_conversations'), where('participants', 'array-contains', currentUser.uid));
     const unsub = onSnapshot(q, (snap) => {
       const convos = snap.docs.map(d => ({ id: d.id, ...d.data() } as Conversation));
-      convos.sort((a, b) => (b.lastMessageAt?.toDate?.()?.getTime() || 0) - (a.lastMessageAt?.toDate?.()?.getTime() || 0));
+      convos.sort((a, b) => (getTimestamp(b.lastMessageAt)?.getTime() || 0) - (getTimestamp(a.lastMessageAt)?.getTime() || 0));
       setConversations(convos);
     }, (err) => console.warn('Conversations error:', err));
     return () => unsub();
   }, [currentUser]);
 
-  // Private messages listener
+  // Private messages listener / polling
   useEffect(() => {
     if (!activeConversation) { setPrivateMessages([]); return; }
+
+    if (isIOSCapacitor) {
+      let cancelled = false;
+      const fetchMsgs = async () => {
+        try {
+          const msgs = await restGetCollection(
+            `private_conversations/${activeConversation.id}/messages`,
+            { orderBy: 'createdAt', direction: 'ASCENDING' }
+          );
+          if (!cancelled) setPrivateMessages(msgs as ChatMessage[]);
+        } catch (err) { console.warn('Private msgs REST error:', err); }
+      };
+      fetchMsgs();
+      // Reset unread
+      if (currentUser) {
+        restUpdateDoc('private_conversations', activeConversation.id, { [`unreadCount.${currentUser.uid}`]: 0 }).catch(() => {});
+      }
+      const interval = setInterval(fetchMsgs, 3000);
+      return () => { cancelled = true; clearInterval(interval); };
+    }
+
     const q = query(collection(db, 'private_conversations', activeConversation.id, 'messages'), orderBy('createdAt', 'asc'));
     const unsub = onSnapshot(q, (snap) => {
       setPrivateMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage)));
@@ -180,10 +248,17 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
     if (!newMessage.trim() || !currentUser || sending) return;
     const text = newMessage.trim(); setNewMessage(''); setSending(true);
     try {
-      await addDoc(collection(db, 'chat_messages'), {
-        text, userId: currentUser.uid, userName: currentUser.name,
-        userRole: currentUser.role, userPhoto: currentUser.photoURL || null, createdAt: serverTimestamp(),
-      });
+      if (isIOSCapacitor) {
+        await restAddDoc('chat_messages', {
+          text, userId: currentUser.uid, userName: currentUser.name,
+          userRole: currentUser.role, userPhoto: currentUser.photoURL || null, createdAt: new Date().toISOString(),
+        });
+      } else {
+        await addDoc(collection(db, 'chat_messages'), {
+          text, userId: currentUser.uid, userName: currentUser.name,
+          userRole: currentUser.role, userPhoto: currentUser.photoURL || null, createdAt: serverTimestamp(),
+        });
+      }
       inputRef.current?.focus();
     } catch { setNewMessage(text); } finally { setSending(false); }
   };
@@ -193,15 +268,27 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
     if (!newMessage.trim() || !currentUser || !activeConversation || sending) return;
     const text = newMessage.trim(); setNewMessage(''); setSending(true);
     try {
-      await addDoc(collection(db, 'private_conversations', activeConversation.id, 'messages'), {
-        text, senderId: currentUser.uid, senderName: currentUser.name,
-        senderRole: currentUser.role, senderPhoto: currentUser.photoURL || null, createdAt: serverTimestamp(),
-      });
-      const updates: Record<string, any> = { lastMessage: text.slice(0, 60), lastMessageAt: serverTimestamp() };
-      activeConversation.participants.forEach(pid => {
-        if (pid !== currentUser.uid) updates[`unreadCount.${pid}`] = (activeConversation.unreadCount?.[pid] || 0) + 1;
-      });
-      await updateDoc(doc(db, 'private_conversations', activeConversation.id), updates);
+      if (isIOSCapacitor) {
+        await restAddDoc(`private_conversations/${activeConversation.id}/messages`, {
+          text, senderId: currentUser.uid, senderName: currentUser.name,
+          senderRole: currentUser.role, senderPhoto: currentUser.photoURL || null, createdAt: new Date().toISOString(),
+        });
+        const updates: Record<string, any> = { lastMessage: text.slice(0, 60), lastMessageAt: new Date().toISOString() };
+        activeConversation.participants.forEach(pid => {
+          if (pid !== currentUser.uid) updates[`unreadCount.${pid}`] = (activeConversation.unreadCount?.[pid] || 0) + 1;
+        });
+        await restUpdateDoc('private_conversations', activeConversation.id, updates);
+      } else {
+        await addDoc(collection(db, 'private_conversations', activeConversation.id, 'messages'), {
+          text, senderId: currentUser.uid, senderName: currentUser.name,
+          senderRole: currentUser.role, senderPhoto: currentUser.photoURL || null, createdAt: serverTimestamp(),
+        });
+        const updates: Record<string, any> = { lastMessage: text.slice(0, 60), lastMessageAt: serverTimestamp() };
+        activeConversation.participants.forEach(pid => {
+          if (pid !== currentUser.uid) updates[`unreadCount.${pid}`] = (activeConversation.unreadCount?.[pid] || 0) + 1;
+        });
+        await updateDoc(doc(db, 'private_conversations', activeConversation.id), updates);
+      }
       inputRef.current?.focus();
     } catch { setNewMessage(text); } finally { setSending(false); }
   };
@@ -216,39 +303,61 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
       const { data, error } = await supabase.storage.from('photos').upload(fileName, file);
       if (error) throw error;
       const { data: urlData } = supabase.storage.from('photos').getPublicUrl(data.path);
-      await addDoc(collection(db, 'private_conversations', activeConversation.id, 'messages'), {
-        text: '', imageUrl: urlData.publicUrl, senderId: currentUser.uid, senderName: currentUser.name,
-        senderRole: currentUser.role, senderPhoto: currentUser.photoURL || null, createdAt: serverTimestamp(),
-      });
-      const updates: Record<string, any> = { lastMessage: '📷 Photo', lastMessageAt: serverTimestamp() };
-      activeConversation.participants.forEach(pid => {
-        if (pid !== currentUser.uid) updates[`unreadCount.${pid}`] = (activeConversation.unreadCount?.[pid] || 0) + 1;
-      });
-      await updateDoc(doc(db, 'private_conversations', activeConversation.id), updates);
+      if (isIOSCapacitor) {
+        await restAddDoc(`private_conversations/${activeConversation.id}/messages`, {
+          text: '', imageUrl: urlData.publicUrl, senderId: currentUser.uid, senderName: currentUser.name,
+          senderRole: currentUser.role, senderPhoto: currentUser.photoURL || null, createdAt: new Date().toISOString(),
+        });
+        const updates: Record<string, any> = { lastMessage: '📷 Photo', lastMessageAt: new Date().toISOString() };
+        activeConversation.participants.forEach(pid => {
+          if (pid !== currentUser.uid) updates[`unreadCount.${pid}`] = (activeConversation.unreadCount?.[pid] || 0) + 1;
+        });
+        await restUpdateDoc('private_conversations', activeConversation.id, updates);
+      } else {
+        await addDoc(collection(db, 'private_conversations', activeConversation.id, 'messages'), {
+          text: '', imageUrl: urlData.publicUrl, senderId: currentUser.uid, senderName: currentUser.name,
+          senderRole: currentUser.role, senderPhoto: currentUser.photoURL || null, createdAt: serverTimestamp(),
+        });
+        const updates: Record<string, any> = { lastMessage: '📷 Photo', lastMessageAt: serverTimestamp() };
+        activeConversation.participants.forEach(pid => {
+          if (pid !== currentUser.uid) updates[`unreadCount.${pid}`] = (activeConversation.unreadCount?.[pid] || 0) + 1;
+        });
+        await updateDoc(doc(db, 'private_conversations', activeConversation.id), updates);
+      }
     } catch { toast.error("Erreur lors de l'envoi"); }
     finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
 
   const deleteMessage = async (msgId: string, isGlobal: boolean) => {
     try {
-      if (isGlobal) await deleteDoc(doc(db, 'chat_messages', msgId));
-      else if (activeConversation) await deleteDoc(doc(db, 'private_conversations', activeConversation.id, 'messages', msgId));
+      if (isIOSCapacitor) {
+        if (isGlobal) await restDeleteDoc('chat_messages', msgId);
+        else if (activeConversation) await restDeleteDoc(`private_conversations/${activeConversation.id}/messages`, msgId);
+      } else {
+        if (isGlobal) await deleteDoc(doc(db, 'chat_messages', msgId));
+        else if (activeConversation) await deleteDoc(doc(db, 'private_conversations', activeConversation.id, 'messages', msgId));
+      }
     } catch { toast.error('Impossible de supprimer'); }
   };
 
   const deleteConversation = async (convoId: string) => {
     setDeletingConvo(true);
     const convoIdCopy = convoId;
-    // Reset ALL state BEFORE deletion
     setActiveConversation(null);
     setPrivateMessages([]);
     setShowDeleteConvo(false);
     setView('tabs');
     setAnimating(false);
     try {
-      const snap = await getDocs(collection(db, 'private_conversations', convoIdCopy, 'messages'));
-      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'private_conversations', convoIdCopy, 'messages', d.id))));
-      await deleteDoc(doc(db, 'private_conversations', convoIdCopy));
+      if (isIOSCapacitor) {
+        const msgs = await restGetCollection(`private_conversations/${convoIdCopy}/messages`);
+        await Promise.all(msgs.map((m: any) => restDeleteDoc(`private_conversations/${convoIdCopy}/messages`, m.id)));
+        await restDeleteDoc('private_conversations', convoIdCopy);
+      } else {
+        const snap = await getDocs(collection(db, 'private_conversations', convoIdCopy, 'messages'));
+        await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'private_conversations', convoIdCopy, 'messages', d.id))));
+        await deleteDoc(doc(db, 'private_conversations', convoIdCopy));
+      }
       toast.success('Conversation supprimée');
     } catch { toast.error('Erreur de suppression'); }
     finally { setDeletingConvo(false); }
@@ -273,12 +382,19 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
       unread[mid] = 0;
     });
     try {
-      const ref = await addDoc(collection(db, 'private_conversations'), {
+      const convoData = {
         participants: all, participantNames: names, participantPhotos: photos, participantRoles: roles,
         type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : null,
-        lastMessage: null, lastMessageAt: serverTimestamp(), createdBy: currentUser.uid, unreadCount: unread,
-      });
-      setActiveConversation({ id: ref.id, participants: all, participantNames: names, participantPhotos: photos, participantRoles: roles, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount: unread });
+        lastMessage: null, lastMessageAt: isIOSCapacitor ? new Date().toISOString() : serverTimestamp(), createdBy: currentUser.uid, unreadCount: unread,
+      };
+      let newId: string;
+      if (isIOSCapacitor) {
+        newId = await restAddDoc('private_conversations', convoData as any);
+      } else {
+        const ref = await addDoc(collection(db, 'private_conversations'), convoData);
+        newId = ref.id;
+      }
+      setActiveConversation({ id: newId, participants: all, participantNames: names, participantPhotos: photos, participantRoles: roles, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount: unread });
       changeView('private-chat'); setSelectedMembers([]); setGroupName(''); setSearchMember('');
     } catch { toast.error('Erreur lors de la création'); }
   };
@@ -286,8 +402,9 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   const toggleMember = (id: string) => setSelectedMembers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   const formatTime = (ts: any) => {
-    if (!ts?.toDate) return '';
-    const d = ts.toDate(), now = new Date();
+    const d = getTimestamp(ts);
+    if (!d) return '';
+    const now = new Date();
     const time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     if (d.toDateString() === now.toDateString()) return time;
     const y = new Date(now); y.setDate(y.getDate() - 1);
@@ -296,8 +413,9 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   };
 
   const formatMsgTime = (ts: any) => {
-    if (!ts?.toDate) return '';
-    return ts.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const d = getTimestamp(ts);
+    if (!d) return '';
+    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
 
   const isConsec = (msgs: ChatMessage[], idx: number) => {
@@ -305,19 +423,22 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
     const prev = msgs[idx - 1], curr = msgs[idx];
     const pId = prev.senderId || prev.userId, cId = curr.senderId || curr.userId;
     if (pId !== cId) return false;
-    if (!prev.createdAt?.toDate || !curr.createdAt?.toDate) return false;
-    return curr.createdAt.toDate().getTime() - prev.createdAt.toDate().getTime() < 120000;
+    const prevTime = getTimestamp(prev.createdAt), currTime = getTimestamp(curr.createdAt);
+    if (!prevTime || !currTime) return false;
+    return currTime.getTime() - prevTime.getTime() < 120000;
   };
 
   const isDiffDay = (msgs: ChatMessage[], idx: number) => {
     if (idx === 0) return true;
-    if (!msgs[idx - 1].createdAt?.toDate || !msgs[idx].createdAt?.toDate) return false;
-    return msgs[idx - 1].createdAt.toDate().toDateString() !== msgs[idx].createdAt.toDate().toDateString();
+    const prevTime = getTimestamp(msgs[idx - 1].createdAt), currTime = getTimestamp(msgs[idx].createdAt);
+    if (!prevTime || !currTime) return false;
+    return prevTime.toDateString() !== currTime.toDateString();
   };
 
   const formatDaySep = (ts: any) => {
-    if (!ts?.toDate) return '';
-    const d = ts.toDate(), now = new Date();
+    const d = getTimestamp(ts);
+    if (!d) return '';
+    const now = new Date();
     if (d.toDateString() === now.toDateString()) return "Aujourd'hui";
     const y = new Date(now); y.setDate(y.getDate() - 1);
     if (d.toDateString() === y.toDateString()) return 'Hier';

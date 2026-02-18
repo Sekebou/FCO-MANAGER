@@ -5,6 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { db, collection, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, where, setDoc, auth as firebaseAuth, sendPasswordResetEmail, arrayUnion, arrayRemove, createUserWithoutSignIn, EmailAuthProvider, reauthenticateWithCredential } from '@/lib/firebase';
+import {
+  isIOSCapacitor,
+  restGetCollection, restGetDoc, restAddDoc, restUpdateDoc, restDeleteDoc,
+  restSetDoc, restQueryWhere, restArrayUnion, restArrayRemove,
+  restCreateUser, restVerifyPassword
+} from '@/lib/firestore-rest';
 import { 
   Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle
 } from 'lucide-react';
@@ -135,6 +141,37 @@ const tabs = [
   { id: 'members', label: 'Membres', icon: Users },
 ];
 
+// ---- Platform-aware wrappers ----
+// These delegate to REST on iOS Capacitor, SDK on everything else
+const _add = async (col: string, data: any): Promise<string> => {
+  if (isIOSCapacitor) return restAddDoc(col, data);
+  const ref = await addDoc(collection(db, col), data);
+  return ref.id;
+};
+const _update = async (col: string, id: string, data: any) => {
+  if (isIOSCapacitor) return restUpdateDoc(col, id, data);
+  return updateDoc(doc(db, col, id), data);
+};
+const _delete = async (col: string, id: string) => {
+  if (isIOSCapacitor) return restDeleteDoc(col, id);
+  return deleteDoc(doc(db, col, id));
+};
+const _set = async (col: string, id: string, data: any) => {
+  if (isIOSCapacitor) return restSetDoc(col, id, data);
+  return setDoc(doc(db, col, id), data);
+};
+const _get = async (col: string, id: string): Promise<any | null> => {
+  if (isIOSCapacitor) return restGetDoc(col, id);
+  const snap = await getDoc(doc(db, col, id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+const _queryWhere = async (col: string, field: string, value: any): Promise<any[]> => {
+  if (isIOSCapacitor) return restQueryWhere(col, field, 'EQUAL', value);
+  const q = query(collection(db, col), where(field, '==', value));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+};
+
 const Dashboard = () => {
   const { currentUser, logout, setCurrentUser } = useAuth();
   const navigate = useNavigate();
@@ -248,14 +285,67 @@ const Dashboard = () => {
   const visiblePlayersForStats = players.filter(p => !adminPlusPlayerIds.includes(p.id) && !dirigeantPlayerIds.includes(p.id));
   const visibleMembers = members.filter(m => m.role !== 'admin+');
 
+  // ===== DATA LOADING =====
   useEffect(() => {
     if (!currentUser) {
       navigate('/auth');
       return;
     }
 
-    const unsubs: (() => void)[] = [];
+    // ----- iOS REST polling mode -----
+    if (isIOSCapacitor) {
+      console.log('[Dashboard-iOS] Using REST polling mode');
+      let cancelled = false;
 
+      const fetchAll = async () => {
+        try {
+          const [
+            playersData, eventsData, newsData, membersData, cardsData,
+            attendanceData, commentsData, champsData, matchesData,
+            albumsData, photosData
+          ] = await Promise.all([
+            restGetCollection('players'),
+            restGetCollection('events', { orderBy: 'date', direction: 'DESCENDING' }),
+            restGetCollection('news', { orderBy: 'date', direction: 'DESCENDING' }),
+            restGetCollection('users', { orderBy: 'createdAt', direction: 'DESCENDING' }),
+            restGetCollection('cards', { orderBy: 'date', direction: 'DESCENDING' }),
+            restGetCollection('attendance_records'),
+            restGetCollection('news_comments', { orderBy: 'createdAt', direction: 'ASCENDING' }),
+            restGetCollection('championships'),
+            restGetCollection('championship_matches'),
+            restGetCollection('albums', { orderBy: 'createdAt', direction: 'DESCENDING' }),
+            restGetCollection('gallery_photos'),
+          ]);
+
+          if (cancelled) return;
+          setPlayers(playersData as Player[]);
+          setEvents(eventsData as Event[]);
+          setNews(newsData as NewsItem[]);
+          setMembers(membersData as Member[]);
+          setCards(cardsData as Card[]);
+          setAttendanceRecords(attendanceData as AttendanceRecord[]);
+          setNewsComments(commentsData as NewsComment[]);
+          setChampionships(champsData as Championship[]);
+          setChampMatches(matchesData as Match[]);
+          setAlbums(albumsData as Album[]);
+          setGalleryPhotos(photosData as Photo[]);
+          setLoading(false);
+        } catch (err: any) {
+          console.error('[Dashboard-iOS] REST fetch error:', err);
+          if (!cancelled) {
+            setError(err.message);
+            setLoading(false);
+          }
+        }
+      };
+
+      fetchAll();
+      const pollInterval = setInterval(fetchAll, 10000);
+      return () => { cancelled = true; clearInterval(pollInterval); };
+    }
+
+    // ----- Standard SDK mode (Android / Web) -----
+    const unsubs: (() => void)[] = [];
     try {
       unsubs.push(onSnapshot(collection(db, 'players'), (snapshot) => {
         const data: Player[] = [];
@@ -367,7 +457,7 @@ const Dashboard = () => {
             const timeStr = event.date.includes('T') ? event.date.split('T')[1] : '';
             const newDate = timeStr ? `${nextDateStr}T${timeStr}` : nextDateStr;
             
-            await addDoc(collection(db, 'events'), {
+            await _add('events', {
               title: event.title,
               date: newDate,
               type: event.type,
@@ -393,16 +483,15 @@ const Dashboard = () => {
     if (!currentUser || ['photographe', 'admin', 'admin+'].includes(currentUser.role)) return;
     const checkLicense = async () => {
       try {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const userData = userDoc.exists() ? userDoc.data() : null;
+        const userData = await _get('users', currentUser.uid);
         const userLicense = userData?.licenseExpiry;
         
         // Also check player doc
         let playerLicense: string | null = null;
         if (currentUser.playerId) {
           try {
-            const playerDoc = await getDoc(doc(db, 'players', currentUser.playerId));
-            playerLicense = playerDoc.exists() ? playerDoc.data()?.licenseExpiry || null : null;
+            const playerData = await _get('players', currentUser.playerId);
+            playerLicense = playerData?.licenseExpiry || null;
           } catch {}
         }
         
@@ -431,13 +520,12 @@ const Dashboard = () => {
     try {
       const event = events.find(e => e.id === eventId);
       const currentPresences = { ...(event?.presences || {}) };
-      // If already this status, remove it (deselect)
       if (currentPresences[playerId] === status) {
         delete currentPresences[playerId];
       } else {
         currentPresences[playerId] = status;
       }
-      await updateDoc(doc(db, 'events', eventId), { presences: currentPresences });
+      await _update('events', eventId, { presences: currentPresences });
     } catch (err: any) {
       toast.error('Erreur: ' + err.message);
     }
@@ -462,9 +550,18 @@ const Dashboard = () => {
 
     try {
       // Create auth account FIRST — if it fails, no player is created
-      let userCredential: any = null;
+      let createdUid: string | null = null;
+      let createdEmail: string | null = null;
       if (playerData.createAccount && playerData.email && playerData.password) {
-        userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
+        if (isIOSCapacitor) {
+          const result = await restCreateUser(playerData.email, playerData.password);
+          createdUid = result.uid;
+          createdEmail = result.email;
+        } else {
+          const userCredential = await createUserWithoutSignIn(playerData.email, playerData.password);
+          createdUid = userCredential.user.uid;
+          createdEmail = userCredential.user.email;
+        }
       }
 
       // For photographe, don't create a player document (dirigeant gets one for attendance)
@@ -472,7 +569,7 @@ const Dashboard = () => {
       let playerRefId: string | undefined;
 
       if (!isNonPlayer) {
-        const playerRef = await addDoc(collection(db, 'players'), {
+        playerRefId = await _add('players', {
           name: playerData.name,
           position: playerData.position || 'Non défini',
           matches: 0,
@@ -482,11 +579,9 @@ const Dashboard = () => {
           team: playerData.team || null,
           createdAt: new Date().toISOString(),
         });
-        playerRefId = playerRef.id;
       }
 
-      if (userCredential) {
-        const user = userCredential.user;
+      if (createdUid) {
         const username = playerData.email.split('@')[0];
         const userData: any = {
           email: playerData.email,
@@ -497,7 +592,7 @@ const Dashboard = () => {
           createdAt: new Date().toISOString(),
         };
         if (playerRefId) userData.playerId = playerRefId;
-        await setDoc(doc(db, 'users', user.uid), userData);
+        await _set('users', createdUid, userData);
         setPlayerCreatedResult({ name: playerData.name, email: playerData.email, password: playerData.password, withAccount: true });
       } else {
         setPlayerCreatedResult({ name: playerData.name, withAccount: false });
@@ -517,12 +612,10 @@ const Dashboard = () => {
       message: 'Cette action est irréversible. Le joueur et son compte associé seront supprimés.',
       onConfirm: async () => {
         try {
-          await deleteDoc(doc(db, 'players', playerId));
-          const usersRef = collection(db, 'users');
-          const q = query(usersRef, where('playerId', '==', playerId));
-          const snapshot = await getDocs(q);
-          if (!snapshot.empty) {
-            await deleteDoc(doc(db, 'users', snapshot.docs[0].id));
+          await _delete('players', playerId);
+          const usersWithPlayer = await _queryWhere('users', 'playerId', playerId);
+          if (usersWithPlayer.length > 0) {
+            await _delete('users', usersWithPlayer[0].id);
           }
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
@@ -556,9 +649,9 @@ const Dashboard = () => {
       onConfirm: async () => {
         try {
           if (playerId) {
-            await deleteDoc(doc(db, 'players', playerId));
+            await _delete('players', playerId);
           }
-          await deleteDoc(doc(db, 'users', memberId));
+          await _delete('users', memberId);
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -592,7 +685,7 @@ const Dashboard = () => {
         createdAt: new Date().toISOString(),
       };
       
-      await addDoc(collection(db, 'events'), eventToSave);
+      await _add('events', eventToSave);
 
       const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
       const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
@@ -672,7 +765,7 @@ const Dashboard = () => {
           if (event && event.presences) {
             for (const [playerId, status] of Object.entries(event.presences)) {
               if (status === 'present' || status === 'absent') {
-                await addDoc(collection(db, 'attendance_records'), {
+                await _add('attendance_records', {
                   playerId,
                   eventId,
                   eventType: event.type,
@@ -683,7 +776,7 @@ const Dashboard = () => {
               }
             }
           }
-          await deleteDoc(doc(db, 'events', eventId));
+          await _delete('events', eventId);
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -694,7 +787,7 @@ const Dashboard = () => {
   const addNews = async (newsData: any) => {
     if (!canCreateNews()) return;
     try {
-      await addDoc(collection(db, 'news'), {
+      await _add('news', {
         ...newsData,
         author: currentUser?.name || '',
         authorId: currentUser?.uid || '',
@@ -713,7 +806,7 @@ const Dashboard = () => {
       message: 'Cette action est irréversible.',
       onConfirm: async () => {
         try {
-          await deleteDoc(doc(db, 'news', newsId));
+          await _delete('news', newsId);
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -724,14 +817,21 @@ const Dashboard = () => {
   const toggleLike = async (newsId: string) => {
     if (!currentUser) return;
     try {
-      const newsRef = doc(db, 'news', newsId);
       const newsItem = news.find(n => n.id === newsId);
       if (!newsItem) return;
       const likes = newsItem.likes || [];
       const isLiked = likes.includes(currentUser.uid);
-      await updateDoc(newsRef, {
-        likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
-      });
+      if (isIOSCapacitor) {
+        if (isLiked) {
+          await restArrayRemove('news', newsId, 'likes', currentUser.uid);
+        } else {
+          await restArrayUnion('news', newsId, 'likes', currentUser.uid);
+        }
+      } else {
+        await updateDoc(doc(db, 'news', newsId), {
+          likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+        });
+      }
     } catch (err: any) {
       console.error('Error toggling like:', err);
     }
@@ -740,7 +840,7 @@ const Dashboard = () => {
   const addComment = async (newsId: string, content: string) => {
     if (!currentUser || !content.trim()) return;
     try {
-      await addDoc(collection(db, 'news_comments'), {
+      await _add('news_comments', {
         newsId,
         authorName: currentUser.name,
         authorUid: currentUser.uid,
@@ -754,7 +854,7 @@ const Dashboard = () => {
 
   const deleteComment = async (commentId: string) => {
     try {
-      await deleteDoc(doc(db, 'news_comments', commentId));
+      await _delete('news_comments', commentId);
     } catch (err: any) {
       console.error('Error deleting comment:', err);
     }
@@ -763,7 +863,7 @@ const Dashboard = () => {
   const addCard = async (cardData: any) => {
     if (!canManage()) return;
     try {
-      await addDoc(collection(db, 'cards'), {
+      await _add('cards', {
         ...cardData,
         createdAt: new Date().toISOString(),
       });
@@ -781,7 +881,7 @@ const Dashboard = () => {
       message: 'Cette action est irréversible.',
       onConfirm: async () => {
         try {
-          await deleteDoc(doc(db, 'cards', cardId));
+          await _delete('cards', cardId);
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -792,7 +892,7 @@ const Dashboard = () => {
   const updatePlayerStats = async (playerId: string, field: string, value: string) => {
     if (!canManage()) return;
     try {
-      await updateDoc(doc(db, 'players', playerId), { [field]: parseInt(value) || 0 });
+      await _update('players', playerId, { [field]: parseInt(value) || 0 });
     } catch (err: any) {
       console.error('Error updating stats:', err);
     }
@@ -805,12 +905,12 @@ const Dashboard = () => {
     if (!canManage()) return;
     try {
       const { matches: importedMatches, standings: importedStandings, teamLogos: importedLogos, ...champData } = data;
-      const champRef = await addDoc(collection(db, 'championships'), { ...champData, fffStandings: importedStandings || [], teamLogos: importedLogos || {}, createdAt: new Date().toISOString() });
+      const champId = await _add('championships', { ...champData, fffStandings: importedStandings || [], teamLogos: importedLogos || {}, createdAt: new Date().toISOString() });
       
       if (importedMatches && importedMatches.length > 0) {
         for (const m of importedMatches) {
-          await addDoc(collection(db, 'championship_matches'), {
-            championshipId: champRef.id,
+          await _add('championship_matches', {
+            championshipId: champId,
             homeTeam: m.homeTeam,
             awayTeam: m.awayTeam,
             homeScore: m.homeScore,
@@ -844,7 +944,7 @@ const Dashboard = () => {
         updateData.teamLogos = result.teamLogos;
       }
       if (Object.keys(updateData).length > 0) {
-        await updateDoc(doc(db, 'championships', championshipId), updateData);
+        await _update('championships', championshipId, updateData);
       }
 
       const existingMatches = champMatches.filter(m => m.championshipId === championshipId);
@@ -860,7 +960,7 @@ const Dashboard = () => {
 
         if (existing) {
           if (scraped.played && !existing.played && scraped.homeScore !== null && scraped.awayScore !== null) {
-            await updateDoc(doc(db, 'championship_matches', existing.id), {
+            await _update('championship_matches', existing.id, {
               homeScore: scraped.homeScore,
               awayScore: scraped.awayScore,
               played: true,
@@ -868,7 +968,7 @@ const Dashboard = () => {
             updated++;
           }
         } else {
-          await addDoc(collection(db, 'championship_matches'), {
+          await _add('championship_matches', {
             championshipId,
             homeTeam: scraped.homeTeam,
             awayTeam: scraped.awayTeam,
@@ -895,10 +995,9 @@ const Dashboard = () => {
       message: 'Tous les matchs associés seront également supprimés.',
       onConfirm: async () => {
         try {
-          await deleteDoc(doc(db, 'championships', id));
-          const q = query(collection(db, 'championship_matches'), where('championshipId', '==', id));
-          const snapshot = await getDocs(q);
-          for (const d of snapshot.docs) { await deleteDoc(doc(db, 'championship_matches', d.id)); }
+          await _delete('championships', id);
+          const matchesForChamp = await _queryWhere('championship_matches', 'championshipId', id);
+          for (const m of matchesForChamp) { await _delete('championship_matches', m.id); }
         } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
@@ -907,53 +1006,46 @@ const Dashboard = () => {
   const addChampMatch = async (data: Omit<Match, 'id'>) => {
     if (!canManage()) return;
     try {
-      await addDoc(collection(db, 'championship_matches'), { ...data, createdAt: new Date().toISOString() });
+      await _add('championship_matches', { ...data, createdAt: new Date().toISOString() });
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
   const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
     if (!canUpdateChampionnat()) return;
     try {
-      await updateDoc(doc(db, 'championship_matches', matchId), { homeScore, awayScore, played: true });
-    } catch (err: any) {
-      if (err.code === 'permission-denied' || err.message?.includes('Missing or insufficient permissions')) {
-        toast.error('Permissions insuffisantes pour modifier les scores. Vérifiez les règles Firestore pour le rôle "' + (currentUser?.role || 'inconnu') + '".');
-      } else {
-        toast.error('Erreur: ' + err.message);
-      }
-    }
+      await _update('championship_matches', matchId, { homeScore, awayScore, played: true });
+    } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
-  const deleteChampMatch = async (id: string) => {
+  const deleteChampMatch = async (matchId: string) => {
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce match ?',
       message: 'Cette action est irréversible.',
       onConfirm: async () => {
-        try { await deleteDoc(doc(db, 'championship_matches', id)); }
-        catch (err: any) { toast.error('Erreur: ' + err.message); }
+        try {
+          await _delete('championship_matches', matchId);
+        } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
   };
 
-  // Gallery CRUD
+  // Gallery
   const createAlbum = async (data: { name: string; description?: string }) => {
     if (!canManagePhotos()) return;
-    await addDoc(collection(db, 'albums'), {
-      ...data,
-      createdBy: currentUser!.uid,
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      await _add('albums', { name: data.name, description: data.description || '', createdAt: new Date().toISOString(), createdBy: currentUser!.uid });
+      toast.success(`Album "${data.name}" créé`);
+    } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
-  const deleteAlbum = (albumId: string) => {
+  const deleteAlbum = async (albumId: string) => {
     if (!canManagePhotos()) return;
     setConfirmModal({
       title: 'Supprimer cet album ?',
       message: 'Toutes les photos de cet album seront supprimées.',
       onConfirm: async () => {
         try {
-          // Delete all photos in album
           const albumPhotos = galleryPhotos.filter(p => p.albumId === albumId);
           for (const photo of albumPhotos) {
             try {
@@ -963,13 +1055,11 @@ const Dashboard = () => {
                 body: JSON.stringify({ path: photo.storagePath }),
               });
             } catch {}
-            await deleteDoc(doc(db, 'gallery_photos', photo.id));
+            await _delete('gallery_photos', photo.id);
           }
-          await deleteDoc(doc(db, 'albums', albumId));
+          await _delete('albums', albumId);
           toast.success('Album supprimé');
-        } catch (err: any) {
-          toast.error('Erreur: ' + err.message);
-        }
+        } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
   };
@@ -980,23 +1070,16 @@ const Dashboard = () => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('albumId', albumId);
-
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-photos`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: formData,
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Upload failed');
-      }
-
-      const { url, path } = await res.json();
-      await addDoc(collection(db, 'gallery_photos'), {
+      const { publicUrl, storagePath } = await res.json();
+      await _add('gallery_photos', {
         albumId,
-        url,
-        storagePath: path,
+        url: publicUrl,
+        storagePath,
         title: file.name.replace(/\.[^/.]+$/, ''),
         uploadedAt: new Date().toISOString(),
         uploadedBy: currentUser!.uid,
@@ -1017,7 +1100,7 @@ const Dashboard = () => {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
             body: JSON.stringify({ path: photo.storagePath }),
           });
-          await deleteDoc(doc(db, 'gallery_photos', photo.id));
+          await _delete('gallery_photos', photo.id);
           toast.success('Photo supprimée');
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
@@ -1032,7 +1115,7 @@ const Dashboard = () => {
         <div className="text-center">
           <div className="loading-spinner w-10 h-10 mx-auto mb-4" />
           <p className="text-lg font-medium text-foreground">Chargement...</p>
-          <p className="text-sm text-muted-foreground mt-1">Connexion à Firebase</p>
+          <p className="text-sm text-muted-foreground mt-1">{isIOSCapacitor ? 'Connexion via REST...' : 'Connexion à Firebase'}</p>
         </div>
       </div>
     );
@@ -1245,7 +1328,7 @@ const Dashboard = () => {
               onAddEvent={() => setShowAddEvent(true)}
               onUpdateConvocations={async (eventId, convocations) => {
                 try {
-                  await updateDoc(doc(db, 'events', eventId), { convocations, convocationsPublished: true });
+                  await _update('events', eventId, { convocations, convocationsPublished: true });
                   toast.success('Convocations publiées !');
                 } catch (err: any) {
                   toast.error('Erreur: ' + err.message);
@@ -1341,12 +1424,20 @@ const Dashboard = () => {
                       throw new Error('forbidden');
                     }
                     // Re-authenticate before changing role
-                    const user = firebaseAuth.currentUser;
-                    if (!user || !user.email) throw new Error('Non authentifié');
-                    const credential = EmailAuthProvider.credential(user.email, password);
-                    await reauthenticateWithCredential(user, credential);
+                    if (isIOSCapacitor) {
+                      // On iOS, use REST to verify password
+                      const storedEmail = localStorage.getItem('iosAuthEmail');
+                      if (!storedEmail) throw new Error('Non authentifié');
+                      const valid = await restVerifyPassword(storedEmail, password);
+                      if (!valid) throw { code: 'auth/wrong-password' };
+                    } else {
+                      const user = firebaseAuth.currentUser;
+                      if (!user || !user.email) throw new Error('Non authentifié');
+                      const credential = EmailAuthProvider.credential(user.email, password);
+                      await reauthenticateWithCredential(user, credential);
+                    }
                     
-                    await updateDoc(doc(db, 'users', memberId), { role: newRole });
+                    await _update('users', memberId, { role: newRole });
                     toast.success('Rôle mis à jour avec succès');
                   } catch (err: any) {
                     if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
@@ -1359,7 +1450,7 @@ const Dashboard = () => {
                 }}
                 onChangePosition={async (playerId, newPosition) => {
                   try {
-                    await updateDoc(doc(db, 'players', playerId), { position: newPosition });
+                    await _update('players', playerId, { position: newPosition });
                     toast.success('Poste mis à jour');
                   } catch (err: any) {
                     toast.error('Erreur: ' + err.message);
@@ -1377,8 +1468,8 @@ const Dashboard = () => {
       <footer className="border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
         <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
           <div className="w-2 h-2 bg-success rounded-full animate-pulse shrink-0" />
-          <span className="hidden sm:inline">Connecté au serveur — Données synchronisées en temps réel</span>
-          <span className="sm:hidden">Connecté · Synchro en temps réel</span>
+          <span className="hidden sm:inline">{isIOSCapacitor ? 'Connecté via REST — Rafraîchissement auto toutes les 10s' : 'Connecté au serveur — Données synchronisées en temps réel'}</span>
+          <span className="sm:hidden">{isIOSCapacitor ? 'Connecté · REST' : 'Connecté · Synchro en temps réel'}</span>
         </div>
       </footer>
 
@@ -1402,7 +1493,7 @@ const Dashboard = () => {
               const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
               // Store invitation in Firestore
-              await setDoc(doc(db, 'invitations', token), {
+              await _set('invitations', token, {
                 email: data.email || null,
                 role: data.role,
                 position: data.position || null,
@@ -1684,24 +1775,18 @@ const Dashboard = () => {
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight">
                 Bienvenue{' '}
                 <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                  {welcomeName.split(' ')[0]?.charAt(0).toUpperCase() + (welcomeName.split(' ')[0]?.slice(1).toLowerCase() || '')}
+                  {welcomeName}
                 </span>
               </h2>
-
-              {/* Separator */}
-              <div className="mt-5 mb-5 mx-auto w-12 h-0.5 rounded-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-
-              {/* Description */}
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-[260px] mx-auto">
-                L'application pensée et conçue exclusivement pour le club de Oisemont.
+              <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                Ton espace est prêt !
               </p>
 
-              {/* CTA */}
               <button
                 onClick={() => setWelcomeName(null)}
-                className="mt-8 w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-200 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30"
+                className="mt-8 w-full py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary/30"
               >
-                C'est parti →
+                C'est parti ! 🚀
               </button>
             </div>
           </div>

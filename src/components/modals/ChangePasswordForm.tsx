@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { auth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from '@/lib/firebase';
+import { isIOSCapacitor, restVerifyPassword, restChangePassword } from '@/lib/firestore-rest';
 import { Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -20,15 +21,26 @@ const ChangePasswordForm = ({ onClose }: Props) => {
 
     setLoading(true);
     try {
-      const user = auth.currentUser;
-      if (!user || !user.email) throw new Error('Non authentifié');
-      const credential = EmailAuthProvider.credential(user.email, formData.currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, formData.newPassword);
+      if (isIOSCapacitor) {
+        // On iOS, use REST to verify current password then change it
+        const storedEmail = localStorage.getItem('iosAuthEmail');
+        if (!storedEmail) throw new Error('Non authentifié');
+        const valid = await restVerifyPassword(storedEmail, formData.currentPassword);
+        if (!valid) throw { code: 'auth/wrong-password' };
+        await restChangePassword(formData.newPassword);
+        // Update stored credentials
+        localStorage.setItem('iosAuthPass', btoa(formData.newPassword));
+      } else {
+        const user = auth.currentUser;
+        if (!user || !user.email) throw new Error('Non authentifié');
+        const credential = EmailAuthProvider.credential(user.email, formData.currentPassword);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, formData.newPassword);
+      }
       toast.success('Mot de passe modifié avec succès !');
       onClose();
     } catch (err: any) {
-      if (err.code === 'auth/wrong-password') setError('Mot de passe actuel incorrect');
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Mot de passe actuel incorrect');
       else if (err.code === 'auth/weak-password') setError('Mot de passe trop faible');
       else setError(err.message);
     } finally {
