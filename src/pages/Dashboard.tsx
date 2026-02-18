@@ -908,7 +908,7 @@ const Dashboard = () => {
           {activeTab === 'presences' && (
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)}
               onUpdateConvocations={async (eventId, convocations) => {
-                try { await supabase.from('events').update({ convocations, convocations_published: true }).eq('id', eventId); toast.success('Convocations publiées !'); } catch (err: any) { toast.error('Erreur: ' + err.message); }
+                try { await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId); toast.success('Convocations publiées !'); } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }} />
           )}
           {activeTab === 'stats' && <StatsTab players={visiblePlayersForStats} events={events} cards={cards} attendanceRecords={attendanceRecords} members={visibleMembers} currentUser={currentUser} canManage={canManage} updatePlayerStats={updatePlayerStats} deletePlayer={deletePlayer} getPlayerCards={getPlayerCards} deleteCard={deleteCard} onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }} />}
