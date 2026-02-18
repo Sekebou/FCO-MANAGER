@@ -25,11 +25,18 @@ const NotificationBell = () => {
   const isSuperAdmin = currentUser?.role === 'admin+';
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchAnnouncements = async () => {
       const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
       if (data) setAnnouncements(data.map(r => ({ id: r.id, title: r.title, content: r.content, createdAt: r.created_at, createdBy: r.created_by })));
     };
-    fetch();
+    fetchAnnouncements();
+
+    const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
+
+    if (isIOSNative) {
+      const interval = setInterval(fetchAnnouncements, 8000);
+      return () => { clearInterval(interval); };
+    }
 
     const channel = supabase.channel('announcements-bell')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'announcements' }, () => {
