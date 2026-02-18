@@ -286,7 +286,54 @@ const Dashboard = () => {
 
     fetchAll();
 
-    // Realtime subscriptions
+    // Detect iOS Capacitor (Realtime WebSocket doesn't work reliably on iOS native)
+    const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
+
+    if (isIOSNative) {
+      // === iOS REST polling fallback: hot (2s) + cold (8s) ===
+      const fetchHot = async () => {
+        try {
+          const [{ data: attData }, { data: newsData }, { data: commData }, { data: playersData }] = await Promise.all([
+            supabase.from('attendance_records').select('*'),
+            supabase.from('news').select('*').order('date', { ascending: false }),
+            supabase.from('news_comments').select('*').order('created_at', { ascending: true }),
+            supabase.from('players').select('*'),
+          ]);
+          if (attData) setAttendanceRecords(attData.map(mapAttendance));
+          if (newsData) setNews(newsData.map(mapNews));
+          if (commData) setNewsComments(commData.map(mapComment));
+          if (playersData) setPlayers(playersData.map(mapPlayer));
+        } catch (err) { console.warn('iOS hot poll error:', err); }
+      };
+
+      const fetchCold = async () => {
+        try {
+          const [{ data: evData }, { data: memData }, { data: cardsData }, { data: champsData }, { data: matchData }, { data: albData }, { data: photData }] = await Promise.all([
+            supabase.from('events').select('*').order('date', { ascending: false }),
+            supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+            supabase.from('cards').select('*').order('date', { ascending: false }),
+            supabase.from('championships').select('*'),
+            supabase.from('championship_matches').select('*'),
+            supabase.from('albums').select('*').order('created_at', { ascending: false }),
+            supabase.from('gallery_photos').select('*'),
+          ]);
+          if (evData) setEvents(evData.map(mapEvent));
+          if (memData) setMembers(memData.map(mapMember));
+          if (cardsData) setCards(cardsData.map(mapCard));
+          if (champsData) setChampionships(champsData.map(mapChamp));
+          if (matchData) setChampMatches(matchData.map(mapMatch));
+          if (albData) setAlbums(albData.map(mapAlbum));
+          if (photData) setGalleryPhotos(photData.map(mapPhoto));
+        } catch (err) { console.warn('iOS cold poll error:', err); }
+      };
+
+      const hotInterval = setInterval(fetchHot, 2000);
+      const coldInterval = setInterval(fetchCold, 8000);
+
+      return () => { clearInterval(hotInterval); clearInterval(coldInterval); };
+    }
+
+    // === Web/Android: Supabase Realtime subscriptions ===
     const channel = supabase.channel('dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
         supabase.from('players').select('*').then(({ data }) => data && setPlayers(data.map(mapPlayer)));
@@ -948,8 +995,8 @@ const Dashboard = () => {
       <footer className="border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
         <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
           <div className="w-2 h-2 bg-success rounded-full animate-pulse shrink-0" />
-          <span className="hidden sm:inline">Connecté au serveur — Données synchronisées en temps réel</span>
-          <span className="sm:hidden">Connecté · Synchro en temps réel</span>
+          <span className="hidden sm:inline">Connecté au serveur — Synchro auto</span>
+          <span className="sm:hidden">Connecté · Synchro auto</span>
         </div>
       </footer>
 
