@@ -118,18 +118,18 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                       </span>
                     )}
                   </div>
-                  <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
-                    {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                  <div className="text-muted-foreground text-xs sm:text-sm mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-0">
+                    <span>{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
                     {event.createdByName && (
-                      <span className="text-muted-foreground/60 inline-flex items-center gap-1.5 ml-1.5">
-                        par {event.createdByName}
+                      <span className="text-muted-foreground/60 inline-flex items-center gap-1 sm:ml-1.5">
+                        <span className="hidden sm:inline">—</span> par {event.createdByName}
                         {(() => {
                           const creator = members.find(m => m.id === event.createdBy);
                           return creator ? <RoleBadge role={creator.role} /> : null;
                         })()}
                       </span>
                     )}
-                  </p>
+                  </div>
                   <div className="mt-2.5 sm:mt-3">
                      {/* Try horizontal first, fallback to vertical via container width */}
                      <div className="flex flex-nowrap gap-1.5 sm:gap-2">
