@@ -4,7 +4,7 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface Props {
-  onSubmit: (data: { email?: string; role: string; licenseExpiry?: string; position?: string; mode: 'email' | 'link' }) => void;
+  onSubmit: (data: { email?: string; role: string; licenseExpiry?: string; position?: string; mode: 'email' | 'link' | 'collective' }) => void;
   onClose: () => void;
   currentUser: AppUser | null;
 }
@@ -13,7 +13,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
   const isSuperAdmin = currentUser?.role === 'admin+';
 
-  const [mode, setMode] = useState<'email' | 'link'>('email');
+  const [mode, setMode] = useState<'email' | 'link' | 'collective'>('email');
   const [formData, setFormData] = useState({
     email: '',
     role: 'joueur',
@@ -54,24 +54,33 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
         {/* Body */}
         <div className="p-5 space-y-4">
           {/* Mode toggle */}
-          <div className="flex gap-2 p-1 bg-secondary rounded-xl">
+          <div className="flex gap-1 p-1 bg-secondary rounded-xl">
             <button
               onClick={() => setMode('email')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'email' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Mail size={15} />
-              Par email
+              <Mail size={14} />
+              Email
             </button>
             <button
               onClick={() => setMode('link')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'link' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Share2 size={15} />
-              Par lien
+              <Share2 size={14} />
+              Lien unique
+            </button>
+            <button
+              onClick={() => setMode('collective')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                mode === 'collective' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Link2 size={14} />
+              Collectif
             </button>
           </div>
 
@@ -162,8 +171,10 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               <Link2 size={14} className="text-primary shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {mode === 'email'
-                  ? <>Un lien d'inscription sera envoyé par email. La personne pourra créer son compte en renseignant son nom, prénom et mot de passe. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
-                  : <>Un lien unique sera généré pour <span className="font-semibold text-foreground">un seul compte</span>. Partagez-le directement à la personne concernée. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  ? <>Un lien d'inscription sera envoyé par email. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  : mode === 'link'
+                  ? <>Un lien unique sera généré pour <span className="font-semibold text-foreground">un seul compte</span>. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  : <>Un lien <span className="font-semibold text-foreground">réutilisable</span> sera généré. N'importe qui peut créer un compte avec le rôle sélectionné. Le lien expire dans <span className="font-semibold text-foreground">7 jours</span>.</>
                 }
               </p>
             </div>
@@ -182,8 +193,10 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
           >
             {mode === 'email' ? (
               <><Send size={16} /> Envoyer</>
-            ) : (
+            ) : mode === 'link' ? (
               <><Share2 size={16} /> Générer le lien</>
+            ) : (
+              <><Link2 size={16} /> Générer le lien collectif</>
             )}
           </button>
         </div>
