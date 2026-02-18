@@ -31,7 +31,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
-    const stored = sessionStorage.getItem('currentUser');
+    const stored = localStorage.getItem('currentUser');
     return stored ? JSON.parse(stored) : null;
   });
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             photoURL: userData.photoURL || null,
             team: userData.team || undefined,
           };
-          sessionStorage.setItem('currentUser', JSON.stringify(appUser));
+          localStorage.setItem('currentUser', JSON.stringify(appUser));
           setCurrentUser(appUser);
         }
       } catch (err) {
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (user) {
-        const stored = sessionStorage.getItem('currentUser');
+        const stored = localStorage.getItem('currentUser');
         if (stored) {
           setCurrentUser(JSON.parse(stored));
         }
@@ -87,22 +87,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
           if (!isMounted || !snapshot.exists()) return;
           const data = snapshot.data();
-          const localToken = sessionStorage.getItem('sessionToken');
+          const localToken = localStorage.getItem('sessionToken');
           // If there's a session token in Firestore and it doesn't match ours, force logout
+          // But only if we actually have a local token (skip on fresh app restart)
           if (localToken && data.sessionToken && data.sessionToken !== localToken) {
             toast.error('Session déconnectée', {
               description: 'Votre compte est déjà connecté depuis un autre appareil. Vous avez été déconnecté.',
               duration: 8000,
             });
-            sessionStorage.removeItem('currentUser');
-            sessionStorage.removeItem('sessionToken');
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('sessionToken');
             signOut(auth);
+          } else if (!localToken && data.sessionToken) {
+            // App was restarted — adopt the existing session token instead of logging out
+            localStorage.setItem('sessionToken', data.sessionToken);
           }
         });
       } else {
         setCurrentUser(null);
-        sessionStorage.removeItem('currentUser');
-        sessionStorage.removeItem('sessionToken');
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('sessionToken');
       }
       if (isMounted) setLoading(false);
     });
@@ -116,7 +120,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await signOut(auth);
-    sessionStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('sessionToken');
     setCurrentUser(null);
   };
 
