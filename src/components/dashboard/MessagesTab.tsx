@@ -93,6 +93,14 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
       }
     };
     fetchConvos();
+
+    const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
+
+    if (isIOSNative) {
+      const interval = setInterval(fetchConvos, 2000);
+      return () => { clearInterval(interval); };
+    }
+
     const channel = supabase.channel('messages-tab-convos')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, fetchConvos)
       .subscribe();
@@ -110,6 +118,14 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
       const uc = { ...(activeConversation.unreadCount || {}), [currentUser.uid]: 0 };
       supabase.from('conversations').update({ unread_count: uc }).eq('id', activeConversation.id).then(() => {});
     }
+
+    const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
+
+    if (isIOSNative) {
+      const interval = setInterval(fetchMsgs, 2000);
+      return () => { clearInterval(interval); };
+    }
+
     const channel = supabase.channel(`messages-tab-msgs-${activeConversation.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_messages', filter: `conversation_id=eq.${activeConversation.id}` }, fetchMsgs)
       .subscribe();
