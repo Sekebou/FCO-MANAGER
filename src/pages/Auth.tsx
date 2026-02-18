@@ -344,7 +344,7 @@ const Auth = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                  className="group w-full bg-red-600 text-white py-3.5 rounded-xl font-semibold hover:bg-red-700 hover:shadow-xl active:scale-[0.98] transition-all duration-300 shadow-lg shadow-red-600/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                 >
                   {loading ? (
                     <Loader2 className="animate-spin" size={20} />
