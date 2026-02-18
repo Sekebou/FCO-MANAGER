@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { auth, db, onAuthStateChanged, signOut, doc, getDoc, onSnapshot, type User } from '@/lib/firebase';
+import { auth, authReady, db, onAuthStateChanged, signOut, doc, getDoc, onSnapshot, type User } from '@/lib/firebase';
 import { toast } from 'sonner';
 
 export interface AppUser {
@@ -65,55 +65,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Use cached data for instant display, then always refresh from Firestore
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // Wait for Firebase persistence to be ready before listening to auth state
+    // This prevents a false "null" user event on app restart (Android/Capacitor)
+    let unsubscribe: (() => void) | null = null;
+    
+    authReady.then(() => {
       if (!isMounted) return;
-      setFirebaseUser(user);
+      
+      unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (!isMounted) return;
+        setFirebaseUser(user);
 
-      // Clean up previous snapshot listener
-      if (unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-        unsubscribeSnapshot = null;
-      }
-
-      if (user) {
-        const stored = localStorage.getItem('currentUser');
-        if (stored) {
-          setCurrentUser(JSON.parse(stored));
+        // Clean up previous snapshot listener
+        if (unsubscribeSnapshot) {
+          unsubscribeSnapshot();
+          unsubscribeSnapshot = null;
         }
-        // Always refresh profile from Firestore to keep role up-to-date
-        await fetchUserProfile(user);
 
-        // Listen for session token changes to enforce single-session
-        unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
-          if (!isMounted || !snapshot.exists()) return;
-          const data = snapshot.data();
-          const localToken = localStorage.getItem('sessionToken');
-          // If there's a session token in Firestore and it doesn't match ours, force logout
-          // But only if we actually have a local token (skip on fresh app restart)
-          if (localToken && data.sessionToken && data.sessionToken !== localToken) {
-            toast.error('Session déconnectée', {
-              description: 'Votre compte est déjà connecté depuis un autre appareil. Vous avez été déconnecté.',
-              duration: 8000,
-            });
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('sessionToken');
-            signOut(auth);
-          } else if (!localToken && data.sessionToken) {
-            // App was restarted — adopt the existing session token instead of logging out
-            localStorage.setItem('sessionToken', data.sessionToken);
+        if (user) {
+          const stored = localStorage.getItem('currentUser');
+          if (stored) {
+            setCurrentUser(JSON.parse(stored));
           }
-        });
-      } else {
-        setCurrentUser(null);
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('sessionToken');
-      }
-      if (isMounted) setLoading(false);
+          // Always refresh profile from Firestore to keep role up-to-date
+          await fetchUserProfile(user);
+
+          // Listen for session token changes to enforce single-session
+          unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+            if (!isMounted || !snapshot.exists()) return;
+            const data = snapshot.data();
+            const localToken = localStorage.getItem('sessionToken');
+            if (localToken && data.sessionToken && data.sessionToken !== localToken) {
+              toast.error('Session déconnectée', {
+                description: 'Votre compte est déjà connecté depuis un autre appareil. Vous avez été déconnecté.',
+                duration: 8000,
+              });
+              localStorage.removeItem('currentUser');
+              localStorage.removeItem('sessionToken');
+              signOut(auth);
+            } else if (!localToken && data.sessionToken) {
+              localStorage.setItem('sessionToken', data.sessionToken);
+            }
+          });
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('sessionToken');
+        }
+        if (isMounted) setLoading(false);
+      });
     });
 
     return () => {
       isMounted = false;
-      unsubscribe();
+      if (unsubscribe) unsubscribe();
       if (unsubscribeSnapshot) unsubscribeSnapshot();
     };
   }, []);

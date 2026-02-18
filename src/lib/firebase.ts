@@ -49,9 +49,10 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Force local persistence for Capacitor/Android compatibility
-setPersistence(auth, indexedDBLocalPersistence).catch(() => {
+// Export a promise so AuthContext can wait for persistence to be ready
+export const authReady = setPersistence(auth, indexedDBLocalPersistence).catch(() => {
   // Fallback to localStorage-based persistence if indexedDB is not available
-  setPersistence(auth, browserLocalPersistence);
+  return setPersistence(auth, browserLocalPersistence);
 });
 
 export const db = getFirestore(app);
