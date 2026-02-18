@@ -65,6 +65,11 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
               {event.type === 'match' ? <Swords className="w-3 h-3" /> : event.type === 'training' ? <Dumbbell className="w-3 h-3" /> : <CalendarDays className="w-3 h-3" />}
               {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
             </span>
+            {event.type === 'other' && event.reason && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-secondary text-foreground max-w-[120px] truncate" title={event.reason}>
+                {event.reason}
+              </span>
+            )}
           </div>
         </div>
       </div>

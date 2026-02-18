@@ -162,6 +162,11 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                   }`}>
                     {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
                   </span>
+                  {event.type === 'other' && event.reason && (
+                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-secondary text-foreground max-w-[140px] truncate" title={event.reason}>
+                      {event.reason}
+                    </span>
+                  )}
                   {canDeleteEvent(event) && (
                     <button onClick={() => deleteEvent(event.id)} className="text-destructive hover:bg-destructive/10 p-1 sm:p-1.5 rounded-lg transition-all">
                       <Trash2 size={14} className="sm:w-4 sm:h-4" />
