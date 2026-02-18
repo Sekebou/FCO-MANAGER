@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getWebOrigin } from '@/lib/getWebOrigin';
 import { sendInvitationEmail, sendEventEmail } from '@/lib/emailjs';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -1125,24 +1126,87 @@ const Dashboard = () => {
       )}
 
       {/* Welcome modal */}
-      {welcomeName && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in p-4">
-          <div className="relative max-w-sm w-full animate-[fadeSlideUp_0.6s_ease-out_both] overflow-hidden rounded-[2rem] bg-gradient-to-b from-card to-card/95 border border-border/50 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)]">
-            <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-60 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-primary/10 rounded-full blur-[60px] pointer-events-none" />
-            <div className="relative z-10 px-8 pt-10 pb-8 text-center">
-              <div className="relative inline-flex items-center justify-center mb-7">
-                <div className="absolute w-24 h-24 rounded-full border border-primary/20 animate-[pulse_3s_ease-in-out_infinite]" />
-                <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center backdrop-blur-sm shadow-lg shadow-primary/10"><img src={clubLogo} alt="FCO" className="w-13 h-13 object-contain drop-shadow-md" /></div>
+      <AnimatePresence>
+        {welcomeName && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: 40 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 260, delay: 0.1 }}
+              className="relative max-w-sm w-full overflow-hidden rounded-[2rem] bg-gradient-to-b from-card to-card/95 border border-border/50 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)]"
+            >
+              <motion.div
+                animate={{ opacity: [0.15, 0.3, 0.15], scale: [1, 1.1, 1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-60 bg-primary/25 rounded-full blur-[80px] pointer-events-none"
+              />
+              <motion.div
+                animate={{ opacity: [0.1, 0.2, 0.1], scale: [1, 1.15, 1] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-primary/15 rounded-full blur-[60px] pointer-events-none"
+              />
+              <div className="relative z-10 px-8 pt-10 pb-8 text-center">
+                <div className="relative inline-flex items-center justify-center mb-7">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute w-28 h-28 rounded-full border border-primary/15"
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                    className="absolute w-24 h-24 rounded-full border border-primary/20"
+                  />
+                  <motion.div
+                    initial={{ scale: 0, rotate: -20 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.3 }}
+                    className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center backdrop-blur-sm shadow-lg shadow-primary/10"
+                  >
+                    <img src={clubLogo} alt="FCO" className="w-13 h-13 object-contain drop-shadow-md" />
+                  </motion.div>
+                </div>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                  className="text-xs font-bold uppercase tracking-[0.25em] text-primary/60 mb-3"
+                >FCO Manager</motion.p>
+                <motion.h2
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                  className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight"
+                >
+                  Bienvenue{' '}
+                  <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{welcomeName}</span>
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7, duration: 0.5 }}
+                  className="text-sm text-muted-foreground mt-3 leading-relaxed"
+                >Ton espace est prêt !</motion.p>
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.9, duration: 0.5 }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { setWelcomeName(null); setTutorialMandatory(true); setShowTutorial(true); }}
+                  className="mt-8 w-full py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary/30"
+                >C'est parti ! 🚀</motion.button>
               </div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary/60 mb-3">FCO Manager</p>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight">Bienvenue{' '}<span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{welcomeName}</span></h2>
-              <p className="text-sm text-muted-foreground mt-3 leading-relaxed">Ton espace est prêt !</p>
-              <button onClick={() => { setWelcomeName(null); setTutorialMandatory(true); setShowTutorial(true); }} className="mt-8 w-full py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary/30">C'est parti ! 🚀</button>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Onboarding tutorial */}
       {showTutorial && currentUser && (
