@@ -340,7 +340,7 @@ const Dashboard = () => {
       };
 
       fetchAll();
-      const pollInterval = setInterval(fetchAll, 10000);
+      const pollInterval = setInterval(fetchAll, 5000);
       return () => { cancelled = true; clearInterval(pollInterval); };
     }
 
