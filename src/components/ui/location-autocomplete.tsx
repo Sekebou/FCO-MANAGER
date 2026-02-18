@@ -34,6 +34,13 @@ const LocationAutocomplete = ({ value, onChange, onValidSelection, placeholder =
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  const formatAddress = (displayName: string): string => {
+    // Keep full address with street number, street, postal code, city
+    const parts = displayName.split(', ');
+    // Try to keep: number + street, city, department, region (up to 5 parts for detail)
+    return parts.slice(0, 5).join(', ');
+  };
+
   const search = useCallback(async (q: string) => {
     if (q.length < 3) {
       setResults([]);
@@ -41,7 +48,6 @@ const LocationAutocomplete = ({ value, onChange, onValidSelection, placeholder =
     }
     setIsLoading(true);
     try {
-      // Search with addressdetails for better results
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=6&countrycodes=fr&accept-language=fr&addressdetails=1`,
         { headers: { 'User-Agent': 'BluePitchDash/1.0' } }
@@ -52,15 +58,14 @@ const LocationAutocomplete = ({ value, onChange, onValidSelection, placeholder =
       const combined: { label: string; id: string }[] = [];
 
       for (const item of data) {
-        const parts = item.display_name.split(', ');
-        const short = parts.slice(0, 4).join(', ');
-        if (!seen.has(short)) {
-          seen.add(short);
-          combined.push({ label: short, id: `nom-${item.place_id}` });
+        const label = formatAddress(item.display_name);
+        if (!seen.has(label)) {
+          seen.add(label);
+          combined.push({ label, id: `nom-${item.place_id}` });
         }
       }
 
-      // If query looks like "Stade/Terrain X", also search for the city to generate a suggestion
+      // If query looks like "Stade/Terrain X", also search for the city
       const locationMatch = q.match(/^(?:stade|terrain|gymnase|salle|complexe)\s+(?:de\s+|d'|du\s+|des\s+|municipal\s+)?(.+)/i);
       if (locationMatch && combined.length < 3) {
         const cityName = locationMatch[1].trim();
@@ -72,7 +77,6 @@ const LocationAutocomplete = ({ value, onChange, onValidSelection, placeholder =
           const cityData: NominatimResult[] = await cityRes.json();
           for (const item of cityData) {
             const cityParts = item.display_name.split(', ');
-            // Use the user's original text + city context
             const fullLabel = `${q}, ${cityParts.slice(0, 3).join(', ')}`;
             if (!seen.has(fullLabel)) {
               seen.add(fullLabel);
@@ -94,7 +98,6 @@ const LocationAutocomplete = ({ value, onChange, onValidSelection, placeholder =
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
-    // If user modifies text after selecting, invalidate
     if (val !== selectedLabel) {
       setSelectedLabel('');
       onValidSelection(false);
@@ -161,7 +164,7 @@ const LocationAutocomplete = ({ value, onChange, onValidSelection, placeholder =
         </div>
       )}
       {!isSelected && query.length >= 3 && !isLoading && results.length === 0 && !showDropdown && (
-        <p className="text-[11px] text-destructive mt-1">Aucun résultat. Essaie avec le nom de la ville.</p>
+        <p className="text-[11px] text-destructive mt-1">Aucun résultat. Essaie avec le nom de la ville ou la rue.</p>
       )}
     </div>
   );

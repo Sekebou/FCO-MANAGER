@@ -30,7 +30,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
   const typeOptions = isDirigeant ? allTypeOptions.filter(o => o.value === 'training') : allTypeOptions;
 
-  const isFormValid = formData.title && formData.date && formData.time && locationValid;
+  // Location is required only for match
+  const needsLocation = formData.type === 'match';
+  const isFormValid = formData.title && formData.date && formData.time && (!needsLocation || locationValid);
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -72,18 +74,6 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             />
           </div>
 
-          {/* Location autocomplete - required */}
-          <div>
-            <LocationAutocomplete
-              value={formData.location}
-              onChange={(location) => setFormData({ ...formData, location })}
-              onValidSelection={setLocationValid}
-            />
-            {!locationValid && (
-              <p className="text-[11px] text-muted-foreground mt-1">📍 Sélectionne une adresse dans les suggestions</p>
-            )}
-          </div>
-
           {/* Type selector */}
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
@@ -92,7 +82,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, type: opt.value, ...(opt.value === 'match' ? { recurrence: 'ponctuel' } : {}) })}
+                  onClick={() => setFormData({ ...formData, type: opt.value, ...(opt.value === 'match' ? { recurrence: 'ponctuel' } : {}), ...(opt.value !== 'match' ? { location: '' } : {}) })}
                   className={`py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-semibold border-2 transition-all whitespace-nowrap ${
                     formData.type === opt.value ? opt.color + ' scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
                   }`}
@@ -102,6 +92,20 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
               ))}
             </div>
           </div>
+
+          {/* Location autocomplete - only for match */}
+          {formData.type === 'match' && (
+            <div className="animate-fade-in">
+              <LocationAutocomplete
+                value={formData.location}
+                onChange={(location) => setFormData({ ...formData, location })}
+                onValidSelection={setLocationValid}
+              />
+              {!locationValid && (
+                <p className="text-[11px] text-muted-foreground mt-1">📍 Sélectionne une adresse dans les suggestions</p>
+              )}
+            </div>
+          )}
 
           {/* Recurrence selector - hidden for match (always ponctuel) */}
           {formData.type !== 'match' && (
