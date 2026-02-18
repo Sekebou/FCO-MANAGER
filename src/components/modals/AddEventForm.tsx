@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Clock } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
+import LocationAutocomplete from '@/components/ui/location-autocomplete';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -9,7 +10,16 @@ interface Props {
 }
 
 const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
-  const [formData, setFormData] = useState({ title: '', date: '', type: isDirigeant ? 'training' : 'match', recurrence: 'ponctuel' as 'recurring' | 'ponctuel', sendNotification: true, reason: '' });
+  const [formData, setFormData] = useState({
+    title: '',
+    date: '',
+    type: isDirigeant ? 'training' : 'match',
+    recurrence: 'ponctuel' as 'recurring' | 'ponctuel',
+    sendNotification: true,
+    reason: '',
+    time: '',
+    location: '',
+  });
 
   const allTypeOptions = [
     { value: 'match', label: 'Match', shortLabel: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
@@ -36,7 +46,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
           <div className="relative">
             <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
@@ -46,6 +56,24 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             value={formData.date}
             onChange={(date) => setFormData({ ...formData, date })}
             min={new Date().toISOString().split('T')[0]}
+          />
+
+          {/* Time picker */}
+          <div className="relative">
+            <Clock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="time"
+              placeholder="Heure"
+              className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all"
+              value={formData.time}
+              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+            />
+          </div>
+
+          {/* Location autocomplete */}
+          <LocationAutocomplete
+            value={formData.location}
+            onChange={(location) => setFormData({ ...formData, location })}
           />
 
           {/* Type selector */}
