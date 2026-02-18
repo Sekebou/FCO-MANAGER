@@ -981,11 +981,10 @@ const Dashboard = () => {
       <ChatBubble currentUser={currentUser} members={members} chatOpen={chatOpen} setChatOpen={setChatOpen} />
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
 
-      <footer className="border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
+      <footer className="hidden lg:block border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
         <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
           <div className="w-2 h-2 bg-success rounded-full animate-pulse shrink-0" />
-          <span className="hidden sm:inline">Connecté au serveur — Synchro auto</span>
-          <span className="sm:hidden">Connecté · Synchro auto</span>
+          <span>Connecté au serveur — Synchro auto</span>
         </div>
       </footer>
 
