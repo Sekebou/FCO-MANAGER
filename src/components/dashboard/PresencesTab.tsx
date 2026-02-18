@@ -108,70 +108,63 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
 
           return (
             <div key={event.id} className="bg-card border border-border rounded-2xl p-3 sm:p-5 shadow-sm animate-fade-in">
-              <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-base sm:text-lg text-foreground truncate">{event.title}</h3>
-                    {teamLabel && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider shrink-0">
-                        {teamLabel}
+              {/* Header: title + badges */}
+              <div className="mb-3 sm:mb-4">
+                <div className="flex justify-between items-start gap-2">
+                  <h3 className="font-semibold text-base sm:text-lg text-foreground truncate min-w-0 flex-1">{event.title}</h3>
+                  <div className="flex gap-1 items-center shrink-0 flex-wrap justify-end">
+                    {event.recurrence === 'recurring' ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary inline-flex items-center gap-1">
+                        <Repeat size={10} /> Récurrent
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground inline-flex items-center gap-1">
+                        <CircleDot size={10} /> Ponctuel
                       </span>
                     )}
-                  </div>
-                  <div className="text-muted-foreground text-xs sm:text-sm mt-0.5 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-0">
-                    <span>{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                    {event.createdByName && (
-                      <span className="text-muted-foreground/60 inline-flex items-center gap-1 sm:ml-1.5">
-                        <span className="hidden sm:inline">—</span> par {event.createdByName}
-                        {(() => {
-                          const creator = members.find(m => m.id === event.createdBy);
-                          return creator ? <RoleBadge role={creator.role} /> : null;
-                        })()}
-                      </span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      event.type === 'match' ? 'bg-accent/10 text-accent' :
+                      event.type === 'training' ? 'bg-purple-100 text-purple-700' :
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
+                    </span>
+                    {canDeleteEvent(event) && (
+                      <button onClick={() => deleteEvent(event.id)} className="text-destructive hover:bg-destructive/10 p-1 rounded-lg transition-all">
+                        <Trash2 size={14} />
+                      </button>
                     )}
                   </div>
-                  <div className="mt-2.5 sm:mt-3">
-                     {/* Try horizontal first, fallback to vertical via container width */}
-                     <div className="flex flex-nowrap gap-1.5 sm:gap-2">
-                       <span className="flex items-center gap-1 bg-accent/10 text-accent px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                         <Check size={11} className="shrink-0" /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
-                       </span>
-                       <span className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                         <X size={11} className="shrink-0" /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
-                       </span>
-                       <span className="flex items-center gap-1 bg-warning/10 text-warning px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold whitespace-nowrap">
-                         <Clock size={11} className="shrink-0" /> {unknownCount} En attente
-                       </span>
-                     </div>
-                   </div>
                 </div>
-                <div className="flex gap-1.5 sm:gap-2 items-start shrink-0">
-                  {event.recurrence === 'recurring' ? (
-                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-primary/10 text-primary inline-flex items-center gap-1">
-                      <Repeat size={10} className="sm:w-3 sm:h-3" /> Récurrent
+                {/* Date + creator on separate lines */}
+                <p className="text-muted-foreground text-xs sm:text-sm mt-1">
+                  {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                </p>
+                {event.createdByName && (
+                  <p className="flex items-center gap-1.5 text-muted-foreground/60 text-[11px] mt-0.5">
+                    par {event.createdByName}
+                    {(() => {
+                      const creator = members.find(m => m.id === event.createdBy);
+                      return creator ? <RoleBadge role={creator.role} compact /> : null;
+                    })()}
+                  </p>
+                )}
+                {event.type === 'other' && event.reason && (
+                  <p className="text-[11px] text-foreground/70 mt-1 bg-secondary inline-block px-2 py-0.5 rounded-full">{event.reason}</p>
+                )}
+                {/* Presence counters */}
+                <div className="mt-2.5">
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="flex items-center gap-1 bg-accent/10 text-accent px-2 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap">
+                      <Check size={11} className="shrink-0" /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
                     </span>
-                  ) : (
-                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-muted text-muted-foreground inline-flex items-center gap-1">
-                      <CircleDot size={10} className="sm:w-3 sm:h-3" /> Ponctuel
+                    <span className="flex items-center gap-1 bg-destructive/10 text-destructive px-2 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap">
+                      <X size={11} className="shrink-0" /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
                     </span>
-                  )}
-                  <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold ${
-                    event.type === 'match' ? 'bg-accent/10 text-accent' :
-                    event.type === 'training' ? 'bg-purple-100 text-purple-700' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
-                  </span>
-                  {event.type === 'other' && event.reason && (
-                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-secondary text-foreground max-w-[140px] truncate" title={event.reason}>
-                      {event.reason}
+                    <span className="flex items-center gap-1 bg-warning/10 text-warning px-2 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap">
+                      <Clock size={11} className="shrink-0" /> {unknownCount} En attente
                     </span>
-                  )}
-                  {canDeleteEvent(event) && (
-                    <button onClick={() => deleteEvent(event.id)} className="text-destructive hover:bg-destructive/10 p-1 sm:p-1.5 rounded-lg transition-all">
-                      <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                    </button>
-                  )}
+                  </div>
                 </div>
               </div>
 

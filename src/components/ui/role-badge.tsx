@@ -55,20 +55,21 @@ const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; bg: 
 interface RoleBadgeProps {
   role?: string;
   size?: 'sm' | 'md';
+  compact?: boolean;
 }
 
-const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'sm' }) => {
+const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'sm', compact = false }) => {
   if (!role) return null;
   const config = ROLE_CONFIG[role];
   if (!config) return null;
   const Icon = config.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border font-bold tracking-wide uppercase ${config.bg} ${config.text} ${config.border} ${config.glow} ${
-      size === 'sm' ? 'px-2.5 py-1 text-[9px]' : 'px-3 py-1 text-[10px]'
-    }`}>
-      <Icon size={size === 'sm' ? 11 : 13} strokeWidth={2.5} />
-      {config.label}
+    <span className={`inline-flex items-center gap-1 rounded-full border font-bold tracking-wide uppercase ${config.bg} ${config.text} ${config.border} ${config.glow} ${
+      compact ? 'px-1.5 py-0.5 text-[8px]' : size === 'sm' ? 'px-2.5 py-1 text-[9px]' : 'px-3 py-1 text-[10px]'
+    }`} title={config.label}>
+      <Icon size={compact ? 10 : size === 'sm' ? 11 : 13} strokeWidth={2.5} />
+      {!compact && config.label}
     </span>
   );
 };
