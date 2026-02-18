@@ -21,22 +21,28 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      console.log('[AUTH-iOS] Step 1: waiting authReady...');
       // Wait for Firebase persistence to be ready before signing in (critical for iOS)
       const { authReady } = await import('@/lib/firebase');
       await Promise.race([
         authReady,
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout persistence')), 5000))
-      ]).catch(() => console.warn('Auth persistence setup timed out, continuing anyway'));
+      ]).catch(() => console.warn('[AUTH-iOS] Auth persistence setup timed out, continuing anyway'));
 
+      console.log('[AUTH-iOS] Step 2: calling signInWithEmailAndPassword...');
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      console.log('[AUTH-iOS] Step 3: signIn OK, uid=', userCredential.user.uid);
+      
       const user = userCredential.user;
       const userDoc = await getDoc(doc(db, "users", user.uid));
+      console.log('[AUTH-iOS] Step 4: getDoc OK, exists=', userDoc.exists());
 
       // Generate unique session token and write to Firestore (fallback for iOS WebView)
       const sessionToken = typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       await updateDoc(doc(db, "users", user.uid), { sessionToken });
+      console.log('[AUTH-iOS] Step 5: sessionToken written');
       localStorage.setItem('sessionToken', sessionToken);
 
       if (!userDoc.exists()) {
@@ -353,7 +359,7 @@ const Auth = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group w-full bg-red-600 text-white py-3.5 rounded-xl font-semibold hover:bg-red-700 hover:shadow-xl hover:shadow-red-500/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-red-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                  className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                 >
                   {loading ? (
                     <Loader2 className="animate-spin" size={20} />
