@@ -285,6 +285,14 @@ const Dashboard = () => {
   const visiblePlayersForStats = players.filter(p => !adminPlusPlayerIds.includes(p.id) && !dirigeantPlayerIds.includes(p.id));
   const visibleMembers = members.filter(m => m.role !== 'admin+');
 
+  // ===== iOS instant refresh after mutations =====
+  const iosRefetchRef = useRef<(() => Promise<void>) | null>(null);
+  const refetchNow = useCallback(async () => {
+    if (isIOSCapacitor && iosRefetchRef.current) {
+      await iosRefetchRef.current();
+    }
+  }, []);
+
   // ===== DATA LOADING =====
   useEffect(() => {
     if (!currentUser) {
@@ -339,9 +347,12 @@ const Dashboard = () => {
         }
       };
 
+      // Store ref so mutations can trigger immediate refresh
+      iosRefetchRef.current = fetchAll;
+
       fetchAll();
-      const pollInterval = setInterval(fetchAll, 5000);
-      return () => { cancelled = true; clearInterval(pollInterval); };
+      const pollInterval = setInterval(fetchAll, 8000);
+      return () => { cancelled = true; clearInterval(pollInterval); iosRefetchRef.current = null; };
     }
 
     // ----- Standard SDK mode (Android / Web) -----
@@ -526,6 +537,7 @@ const Dashboard = () => {
         currentPresences[playerId] = status;
       }
       await _update('events', eventId, { presences: currentPresences });
+      await refetchNow();
     } catch (err: any) {
       toast.error('Erreur: ' + err.message);
     }
@@ -598,6 +610,7 @@ const Dashboard = () => {
         setPlayerCreatedResult({ name: playerData.name, withAccount: false });
       }
       setShowAddPlayer(false);
+      await refetchNow();
     } catch (err: any) {
       let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = 'Ce nom d\'utilisateur existe déjà.';
@@ -617,6 +630,7 @@ const Dashboard = () => {
           if (usersWithPlayer.length > 0) {
             await _delete('users', usersWithPlayer[0].id);
           }
+          await refetchNow();
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -652,6 +666,7 @@ const Dashboard = () => {
             await _delete('players', playerId);
           }
           await _delete('users', memberId);
+          await refetchNow();
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -686,6 +701,7 @@ const Dashboard = () => {
       };
       
       await _add('events', eventToSave);
+      await refetchNow();
 
       const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
       const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
@@ -777,6 +793,7 @@ const Dashboard = () => {
             }
           }
           await _delete('events', eventId);
+          await refetchNow();
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -795,6 +812,7 @@ const Dashboard = () => {
         createdAt: new Date().toISOString(),
       });
       setShowAddNews(false);
+      await refetchNow();
     } catch (err: any) {
       toast.error('Erreur: ' + err.message);
     }
@@ -807,6 +825,7 @@ const Dashboard = () => {
       onConfirm: async () => {
         try {
           await _delete('news', newsId);
+          await refetchNow();
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -832,6 +851,7 @@ const Dashboard = () => {
           likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
         });
       }
+      await refetchNow();
     } catch (err: any) {
       console.error('Error toggling like:', err);
     }
@@ -855,6 +875,7 @@ const Dashboard = () => {
   const deleteComment = async (commentId: string) => {
     try {
       await _delete('news_comments', commentId);
+      await refetchNow();
     } catch (err: any) {
       console.error('Error deleting comment:', err);
     }
@@ -869,6 +890,7 @@ const Dashboard = () => {
       });
       setShowAddCard(false);
       setSelectedPlayerForCard(null);
+      await refetchNow();
     } catch (err: any) {
       toast.error('Erreur: ' + err.message);
     }
@@ -882,6 +904,7 @@ const Dashboard = () => {
       onConfirm: async () => {
         try {
           await _delete('cards', cardId);
+          await refetchNow();
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -893,6 +916,7 @@ const Dashboard = () => {
     if (!canManage()) return;
     try {
       await _update('players', playerId, { [field]: parseInt(value) || 0 });
+      await refetchNow();
     } catch (err: any) {
       console.error('Error updating stats:', err);
     }
@@ -923,6 +947,7 @@ const Dashboard = () => {
         }
       }
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
+    await refetchNow();
   };
 
   const canUpdateChampionnat = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'admin+' || currentUser.role === 'entraineur' || currentUser.role === 'joueur');
@@ -984,6 +1009,7 @@ const Dashboard = () => {
       }
 
       const standingsCount = result.standings?.length || 0;
+      await refetchNow();
       return { success: true, updated, added, standingsCount };
     } catch (err: any) { return { success: false, updated: 0, added: 0, standingsCount: 0, error: err.message }; }
   };
@@ -998,6 +1024,7 @@ const Dashboard = () => {
           await _delete('championships', id);
           const matchesForChamp = await _queryWhere('championship_matches', 'championshipId', id);
           for (const m of matchesForChamp) { await _delete('championship_matches', m.id); }
+          await refetchNow();
         } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
@@ -1007,6 +1034,7 @@ const Dashboard = () => {
     if (!canManage()) return;
     try {
       await _add('championship_matches', { ...data, createdAt: new Date().toISOString() });
+      await refetchNow();
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
@@ -1014,6 +1042,7 @@ const Dashboard = () => {
     if (!canUpdateChampionnat()) return;
     try {
       await _update('championship_matches', matchId, { homeScore, awayScore, played: true });
+      await refetchNow();
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
@@ -1025,6 +1054,7 @@ const Dashboard = () => {
       onConfirm: async () => {
         try {
           await _delete('championship_matches', matchId);
+          await refetchNow();
         } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
@@ -1036,6 +1066,7 @@ const Dashboard = () => {
     try {
       await _add('albums', { name: data.name, description: data.description || '', createdAt: new Date().toISOString(), createdBy: currentUser!.uid });
       toast.success(`Album "${data.name}" créé`);
+      await refetchNow();
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
@@ -1059,6 +1090,7 @@ const Dashboard = () => {
           }
           await _delete('albums', albumId);
           toast.success('Album supprimé');
+          await refetchNow();
         } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
@@ -1086,6 +1118,7 @@ const Dashboard = () => {
         uploaderName: currentUser!.name,
       });
     }
+    await refetchNow();
   };
 
   const deletePhoto = (photo: { id: string; storagePath: string }) => {
@@ -1102,6 +1135,7 @@ const Dashboard = () => {
           });
           await _delete('gallery_photos', photo.id);
           toast.success('Photo supprimée');
+          await refetchNow();
         } catch (err: any) {
           toast.error('Erreur: ' + err.message);
         }
@@ -1329,6 +1363,7 @@ const Dashboard = () => {
               onUpdateConvocations={async (eventId, convocations) => {
                 try {
                   await _update('events', eventId, { convocations, convocationsPublished: true });
+                  await refetchNow();
                   toast.success('Convocations publiées !');
                 } catch (err: any) {
                   toast.error('Erreur: ' + err.message);
