@@ -4,6 +4,7 @@ import {
   setPersistence,
   browserLocalPersistence,
   indexedDBLocalPersistence,
+  inMemoryPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -48,18 +49,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Detect iOS Capacitor WebView where indexedDB persistence hangs
+// Detect iOS Capacitor WebView where persistence hangs (both indexedDB AND browserLocal)
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isCapacitor = !!(window as any).Capacitor;
 
-// On iOS Capacitor, go straight to browserLocalPersistence (indexedDB hangs)
-// On Android/other, try indexedDB first with browserLocal fallback
+// On iOS Capacitor, use inMemoryPersistence — the app already handles session
+// restoration via localStorage manually in AuthContext, so Firebase persistence
+// is not needed. This prevents the SDK from hanging on internal storage calls.
+// On Android/other, try indexedDB first with browserLocal fallback.
 const persistencePromise = (isIOS && isCapacitor)
-  ? setPersistence(auth, browserLocalPersistence)
-  : setPersistence(auth, indexedDBLocalPersistence).catch(() => {
-      return setPersistence(auth, browserLocalPersistence);
-    });
+  ? setPersistence(auth, inMemoryPersistence)
+  : (isCapacitor
+    ? setPersistence(auth, browserLocalPersistence).catch(() => setPersistence(auth, inMemoryPersistence))
+    : setPersistence(auth, indexedDBLocalPersistence).catch(() => setPersistence(auth, browserLocalPersistence))
+  );
 
 export const authReady = Promise.race([
   persistencePromise,
