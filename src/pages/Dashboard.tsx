@@ -16,6 +16,7 @@ import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
 import ChatBubble from '@/components/dashboard/ChatBubble';
+import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
@@ -872,7 +873,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex flex-col">
+    <div className="min-h-screen bg-secondary/30 flex flex-col pb-24 lg:pb-0">
       {/* Header */}
       <header className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${headerVisible ? 'top-0 translate-y-0' : 'top-0 -translate-y-full'}`}>
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
@@ -923,25 +924,10 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className={`bg-card border-b border-border sticky z-40 transition-all duration-300 ease-in-out lg:top-[calc(5rem+env(safe-area-inset-top))] ${headerVisible ? 'top-[calc(4rem+env(safe-area-inset-top))]' : 'top-0'}`}>
+      {/* Navigation — desktop only (mobile uses bottom tab bar) */}
+      <nav className={`hidden lg:block bg-card border-b border-border sticky z-40 transition-all duration-300 ease-in-out lg:top-[calc(5rem+env(safe-area-inset-top))]`}>
         <div className="mx-auto">
-          <div className="lg:hidden flex items-center px-3 py-2.5">
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="flex items-center gap-3 text-base font-semibold text-foreground py-1">
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              {(() => { const current = tabs.find(t => t.id === activeTab); const Icon = current?.icon || Users; return <span className="flex items-center gap-2.5"><Icon size={20} className="text-accent" />{current?.label}</span>; })()}
-            </button>
-          </div>
-          {mobileMenuOpen && (
-            <div className="lg:hidden border-t border-border bg-card animate-fade-in pb-1">
-              {tabs.map(tab => { const Icon = tab.icon; return (
-                <button key={tab.id} onClick={() => { handleTabChange(tab.id); setMobileMenuOpen(false); }} className={`flex items-center gap-3 w-full px-4 py-3 text-sm font-medium transition-all ${activeTab === tab.id ? 'bg-accent/10 text-accent' : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'}`}>
-                  <Icon size={18} />{tab.label}
-                </button>
-              ); })}
-            </div>
-          )}
-          <div className="hidden lg:flex overflow-x-auto scrollbar-hide">
+          <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map(tab => { const Icon = tab.icon; return (
               <button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium shrink-0 ${activeTab === tab.id ? 'border-accent text-accent' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'}`}>
                 <Icon size={18} />{tab.label}
@@ -993,6 +979,7 @@ const Dashboard = () => {
       </main>
 
       <ChatBubble currentUser={currentUser} members={members} chatOpen={chatOpen} setChatOpen={setChatOpen} />
+      <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
 
       <footer className="border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
         <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
