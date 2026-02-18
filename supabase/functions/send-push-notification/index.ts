@@ -1,12 +1,66 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { initializeApp, cert, getApps } from "npm:firebase-admin@12.1.0/app";
-import { getMessaging } from "npm:firebase-admin@12.1.0/messaging";
-import { getFirestore } from "npm:firebase-admin@12.1.0/firestore";
+import { encode as base64url } from "https://deno.land/std@0.168.0/encoding/base64url.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Generate a JWT for Google OAuth2 using the service account
+async function getAccessToken(serviceAccount: any): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const payload = {
+    iss: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const encodedHeader = base64url(new TextEncoder().encode(JSON.stringify(header)));
+  const encodedPayload = base64url(new TextEncoder().encode(JSON.stringify(payload)));
+  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
+
+  // Import the private key
+  const pemContent = serviceAccount.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/\n/g, '');
+  
+  const binaryKey = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryKey,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    cryptoKey,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  const encodedSignature = base64url(new Uint8Array(signature));
+  const jwt = `${unsignedToken}.${encodedSignature}`;
+
+  // Exchange JWT for access token
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+
+  const tokenData = await tokenRes.json();
+  if (!tokenRes.ok) {
+    throw new Error(`OAuth token error: ${JSON.stringify(tokenData)}`);
+  }
+
+  return tokenData.access_token;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,7 +68,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, body, data } = await req.json();
+    const { title, body, data, tokens } = await req.json();
 
     if (!title || !body) {
       return new Response(JSON.stringify({ error: 'title and body are required' }), {
@@ -23,7 +77,12 @@ serve(async (req) => {
       });
     }
 
-    // Initialize Firebase Admin if not already done
+    if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
+      return new Response(JSON.stringify({ success: true, sent: 0, message: 'No tokens provided' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
     if (!serviceAccountJson) {
       return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT secret not configured' }), {
@@ -35,75 +94,55 @@ serve(async (req) => {
     let serviceAccount;
     try {
       serviceAccount = JSON.parse(serviceAccountJson);
-    } catch (e) {
-      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', serviceAccountJson.substring(0, 20), e);
-      return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT is not valid JSON. Please re-enter the secret.' }), {
+    } catch {
+      return new Response(JSON.stringify({ error: 'FIREBASE_SERVICE_ACCOUNT is not valid JSON' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (getApps().length === 0) {
-      initializeApp({
-        credential: cert(serviceAccount),
-      });
-    }
+    const accessToken = await getAccessToken(serviceAccount);
+    const projectId = serviceAccount.project_id;
+    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
-    const firestore = getFirestore();
-    const messaging = getMessaging();
+    let successCount = 0;
+    let failureCount = 0;
 
-    // Get all FCM tokens from Firestore
-    const tokensSnapshot = await firestore.collection('fcm_tokens').get();
-    const tokens: string[] = [];
-    tokensSnapshot.forEach((doc: any) => {
-      const tokenData = doc.data();
-      if (tokenData.token) {
-        tokens.push(tokenData.token);
-      }
-    });
+    // Send to each token individually via FCM HTTP v1 API
+    for (const token of tokens) {
+      try {
+        const res = await fetch(fcmUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            message: {
+              token,
+              notification: { title, body },
+              data: data || {},
+            },
+          }),
+        });
 
-    if (tokens.length === 0) {
-      return new Response(JSON.stringify({ success: true, sent: 0, message: 'No tokens registered' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Send multicast notification
-    const message = {
-      notification: {
-        title,
-        body,
-      },
-      data: data || {},
-      tokens,
-    };
-
-    const response = await messaging.sendEachForMulticast(message);
-
-    // Clean up invalid tokens
-    const invalidTokens: string[] = [];
-    response.responses.forEach((resp: any, idx: number) => {
-      if (!resp.success && resp.error?.code === 'messaging/registration-token-not-registered') {
-        invalidTokens.push(tokens[idx]);
-      }
-    });
-
-    // Remove invalid tokens from Firestore
-    if (invalidTokens.length > 0) {
-      const batch = firestore.batch();
-      const allDocs = await firestore.collection('fcm_tokens').get();
-      allDocs.forEach((docSnap: any) => {
-        if (invalidTokens.includes(docSnap.data().token)) {
-          batch.delete(docSnap.ref);
+        if (res.ok) {
+          successCount++;
+        } else {
+          const errData = await res.json();
+          console.error(`FCM error for token ${token.substring(0, 10)}...:`, JSON.stringify(errData));
+          failureCount++;
         }
-      });
-      await batch.commit();
+      } catch (err) {
+        console.error(`Failed to send to token:`, err);
+        failureCount++;
+      }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      sent: response.successCount,
-      failed: response.failureCount,
+      sent: successCount,
+      failed: failureCount,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
