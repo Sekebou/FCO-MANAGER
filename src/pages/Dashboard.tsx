@@ -621,8 +621,9 @@ const Dashboard = () => {
 
       // Envoyer les notifications par email (en parallèle pour la rapidité)
       if (sendEmail) {
-        const targetMembers = members.filter(m => m.role === 'joueur');
-        const memberEmails = targetMembers.map(m => m.email);
+        const notifiableRoles = ['admin+', 'admin', 'entraineur', 'dirigeant', 'joueur'];
+        const targetMembers = members.filter(m => notifiableRoles.includes(m.role));
+        const memberEmails = [...new Set(targetMembers.map(m => m.email).filter(Boolean))];
         await Promise.allSettled(
           memberEmails.map(email =>
             sendNotificationEmail({
