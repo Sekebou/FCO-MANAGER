@@ -20,6 +20,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     time: '',
     location: '',
   });
+  const [locationValid, setLocationValid] = useState(false);
 
   const allTypeOptions = [
     { value: 'match', label: 'Match', shortLabel: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
@@ -28,6 +29,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
   ];
 
   const typeOptions = isDirigeant ? allTypeOptions.filter(o => o.value === 'training') : allTypeOptions;
+
+  const isFormValid = formData.title && formData.date && formData.time && locationValid;
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
@@ -63,18 +66,23 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             <Clock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="time"
-              placeholder="Heure"
               className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all"
               value={formData.time}
               onChange={(e) => setFormData({ ...formData, time: e.target.value })}
             />
           </div>
 
-          {/* Location autocomplete */}
-          <LocationAutocomplete
-            value={formData.location}
-            onChange={(location) => setFormData({ ...formData, location })}
-          />
+          {/* Location autocomplete - required */}
+          <div>
+            <LocationAutocomplete
+              value={formData.location}
+              onChange={(location) => setFormData({ ...formData, location })}
+              onValidSelection={setLocationValid}
+            />
+            {!locationValid && (
+              <p className="text-[11px] text-muted-foreground mt-1">📍 Sélectionne une adresse dans les suggestions</p>
+            )}
+          </div>
 
           {/* Type selector */}
           <div>
@@ -163,7 +171,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           </button>
           <button
             onClick={() => onSubmit(formData)}
-            disabled={!formData.title || !formData.date}
+            disabled={!isFormValid}
             className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
           >
             Créer
