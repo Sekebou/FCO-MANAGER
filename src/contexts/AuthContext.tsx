@@ -1,6 +1,61 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { auth, authReady, db, onAuthStateChanged, signOut, doc, getDoc, onSnapshot, type User } from '@/lib/firebase';
+import { auth, authReady, db, onAuthStateChanged, signInWithEmailAndPassword, signOut, doc, getDoc, onSnapshot, type User } from '@/lib/firebase';
 import { toast } from 'sonner';
+
+const FIREBASE_API_KEY = 'AIzaSyAExtesWZPAEbQbGm5Rp17ek1PuWx_uceQ';
+
+/**
+ * On iOS Capacitor, the Firebase SDK uses inMemoryPersistence which loses
+ * auth state on every app restart.  We stored a Firebase refresh token at
+ * login time.  Exchange it here for a fresh ID token and then sign into
+ * the SDK *before* onAuthStateChanged starts, so listeners work normally.
+ */
+const reAuthIOSIfNeeded = async (): Promise<void> => {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isCapacitorEnv = !!(window as any).Capacitor;
+  if (!(isIOS && isCapacitorEnv)) return;
+
+  const refreshToken = localStorage.getItem('firebaseRefreshToken');
+  if (!refreshToken) return;
+
+  console.log('[AuthContext] iOS: exchanging refresh token for fresh session...');
+  try {
+    // Exchange refresh token for a new ID token via Firebase REST
+    const tokenRes = await fetch(
+      `https://securetoken.googleapis.com/v1/token?key=${FIREBASE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`,
+      }
+    );
+    if (!tokenRes.ok) {
+      console.warn('[AuthContext] iOS: refresh token exchange failed', tokenRes.status);
+      localStorage.removeItem('firebaseRefreshToken');
+      return;
+    }
+    const tokenData = await tokenRes.json();
+    // Store updated refresh token
+    if (tokenData.refresh_token) {
+      localStorage.setItem('firebaseRefreshToken', tokenData.refresh_token);
+    }
+
+    // Now try to sign into the SDK using stored credentials
+    const storedEmail = localStorage.getItem('iosAuthEmail');
+    const storedPass = localStorage.getItem('iosAuthPass');
+    if (storedEmail && storedPass) {
+      await Promise.race([
+        signInWithEmailAndPassword(auth, storedEmail, atob(storedPass)),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('SDK sign-in timeout')), 5000)),
+      ]);
+      console.log('[AuthContext] iOS: SDK re-auth succeeded via stored credentials');
+    }
+  } catch (err: any) {
+    console.warn('[AuthContext] iOS: re-auth failed:', err.message);
+    // Session is still usable via localStorage (REST-only mode)
+  }
+};
 
 export interface AppUser {
   uid: string;
@@ -73,9 +128,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let unsubscribe: (() => void) | null = null;
     
     // authReady has a built-in 3s timeout, but add a safety net here too
-    const startAuth = () => {
+    const startAuth = async () => {
       if (!isMounted) return;
-      
+
+      // On iOS Capacitor, try to re-authenticate the SDK BEFORE listening
+      // so onAuthStateChanged fires with a valid user right away.
+      await reAuthIOSIfNeeded();
+
       unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (!isMounted) return;
         setFirebaseUser(user);
@@ -119,33 +178,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           });
         } else {
-          // On iOS Capacitor, we use REST API for auth so the SDK never knows
-          // about the user. Don't wipe localStorage if we have a valid session.
+          // On iOS Capacitor, keep the REST-based session if SDK re-auth failed
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
           const isCapacitorEnv = !!(window as any).Capacitor;
           const hasLocalSession = !!localStorage.getItem('currentUser') && !!localStorage.getItem('sessionToken');
           
           if (isIOS && isCapacitorEnv && hasLocalSession) {
-            // Keep the REST-based session alive — don't clear it
             console.log('[AuthContext] iOS Capacitor: keeping REST session despite null firebaseUser');
-            // Try to re-authenticate the SDK so Firestore listeners work
-            const storedEmail = localStorage.getItem('iosAuthEmail');
-            const storedPass = localStorage.getItem('iosAuthPass');
-            if (storedEmail && storedPass) {
-              console.log('[AuthContext] iOS: re-authenticating SDK with stored credentials...');
-              import('firebase/auth').then(({ signInWithEmailAndPassword: sdkSignIn }) => {
-                Promise.race([
-                  sdkSignIn(auth, storedEmail, atob(storedPass)),
-                  new Promise((_, reject) => setTimeout(() => reject(new Error('SDK re-auth timeout')), 5000)),
-                ]).then((cred: any) => {
-                  console.log('[AuthContext] iOS: SDK re-auth succeeded, listeners should work now');
-                  if (isMounted) setFirebaseUser(cred.user);
-                }).catch((err: any) => {
-                  console.warn('[AuthContext] iOS: SDK re-auth failed:', err.message);
-                });
-              });
-            }
           } else {
             setCurrentUser(null);
             localStorage.removeItem('currentUser');
