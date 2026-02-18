@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getWebOrigin } from "@/lib/getWebOrigin";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -95,7 +96,7 @@ const Auth = () => {
     setResetLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${getWebOrigin()}/auth`,
       });
       if (error) throw error;
       toast.success("Email envoyé ! Vérifiez aussi vos spams / courriers indésirables.", { duration: 6000 });
