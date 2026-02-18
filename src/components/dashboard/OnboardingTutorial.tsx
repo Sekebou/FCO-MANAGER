@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, 
-  ChevronRight, ChevronLeft, X, Sparkles, Hand, ArrowRight, GripHorizontal
+  ChevronRight, ChevronLeft, X, Smartphone, Hand, Rocket,
+  ClipboardCheck, BarChart3, Newspaper, PenLine, CalendarPlus,
+  Images, FolderPlus, UserCog, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -13,118 +15,134 @@ interface TutorialStep {
   tabId?: string;
   highlight?: string;
   roles?: string[];
-  emoji?: string;
+  color: string; // tailwind bg color for the icon container
+  iconColor: string; // tailwind text color for the icon
 }
 
 const allSteps: TutorialStep[] = [
   {
-    icon: Sparkles,
-    title: 'Bienvenue sur FCO Manager !',
+    icon: Zap,
+    title: 'Bienvenue sur FCO Manager',
     description: 'Découvre ton espace en quelques étapes. Ce tutoriel s\'adapte à ton rôle dans le club.',
-    emoji: '👋',
+    color: 'bg-primary/15',
+    iconColor: 'text-primary',
   },
   {
-    icon: GripHorizontal,
+    icon: Smartphone,
     title: 'La barre de navigation',
     description: 'En bas de l\'écran, 7 onglets sont disponibles. Glisse horizontalement pour tous les découvrir !',
     highlight: 'bottom-tab-bar',
-    emoji: '👆',
+    color: 'bg-violet-500/15',
+    iconColor: 'text-violet-500',
   },
   {
-    icon: Users,
+    icon: ClipboardCheck,
     title: 'Présences',
     description: 'Indique ta présence ou absence aux entraînements et matchs d\'un simple tap.',
     tabId: 'presences',
     roles: ['joueur', 'dirigeant'],
-    emoji: '✅',
+    color: 'bg-emerald-500/15',
+    iconColor: 'text-emerald-500',
   },
   {
-    icon: Users,
+    icon: ClipboardCheck,
     title: 'Présences & Convocations',
     description: 'Gère les présences de l\'équipe, publie les convocations et définis les compositions.',
     tabId: 'presences',
     roles: ['entraineur', 'admin', 'admin_plus'],
-    emoji: '📋',
+    color: 'bg-emerald-500/15',
+    iconColor: 'text-emerald-500',
   },
   {
-    icon: TrendingUp,
+    icon: BarChart3,
     title: 'Statistiques',
     description: 'Buts, passes décisives, cartons… Suis les performances de toute l\'équipe.',
     tabId: 'stats',
-    emoji: '📊',
+    color: 'bg-amber-500/15',
+    iconColor: 'text-amber-500',
   },
   {
     icon: Trophy,
     title: 'Championnat',
     description: 'Classement en direct, résultats et calendrier des journées de championnat.',
     tabId: 'championnat',
-    emoji: '🏆',
+    color: 'bg-yellow-500/15',
+    iconColor: 'text-yellow-500',
   },
   {
-    icon: Bell,
+    icon: Newspaper,
     title: 'Au cœur du club',
     description: 'Actualités du club : lis, like et commente les publications.',
     tabId: 'news',
-    emoji: '📰',
+    color: 'bg-sky-500/15',
+    iconColor: 'text-sky-500',
   },
   {
-    icon: Bell,
+    icon: PenLine,
     title: 'Publier des actus',
     description: 'Publie des actualités pour informer et animer la vie du club.',
     tabId: 'news',
     roles: ['entraineur', 'admin', 'admin_plus'],
-    emoji: '✏️',
+    color: 'bg-sky-500/15',
+    iconColor: 'text-sky-500',
   },
   {
     icon: Calendar,
     title: 'Calendrier',
     description: 'Tous les événements à venir : matchs, entraînements et moments forts.',
     tabId: 'calendar',
-    emoji: '📅',
+    color: 'bg-rose-500/15',
+    iconColor: 'text-rose-500',
   },
   {
-    icon: Calendar,
+    icon: CalendarPlus,
     title: 'Créer des événements',
     description: 'Programme matchs et entraînements, notifie automatiquement les joueurs.',
     tabId: 'calendar',
     roles: ['entraineur', 'admin', 'admin_plus', 'dirigeant'],
-    emoji: '➕',
+    color: 'bg-rose-500/15',
+    iconColor: 'text-rose-500',
   },
   {
-    icon: Camera,
+    icon: Images,
     title: 'Galerie photos',
     description: 'Parcours les albums et revois les meilleurs moments du club.',
     tabId: 'gallery',
-    emoji: '📸',
+    color: 'bg-fuchsia-500/15',
+    iconColor: 'text-fuchsia-500',
   },
   {
-    icon: Camera,
+    icon: FolderPlus,
     title: 'Gérer la galerie',
     description: 'Crée des albums et uploade des photos pour alimenter la mémoire du club.',
     tabId: 'gallery',
     roles: ['photographe', 'admin', 'admin_plus'],
-    emoji: '🖼️',
+    color: 'bg-fuchsia-500/15',
+    iconColor: 'text-fuchsia-500',
   },
   {
-    icon: UserCheck,
+    icon: Users,
     title: 'Membres',
     description: 'La liste complète des membres du club avec leurs rôles.',
     tabId: 'members',
-    emoji: '👥',
+    color: 'bg-teal-500/15',
+    iconColor: 'text-teal-500',
   },
   {
-    icon: UserCheck,
+    icon: UserCog,
     title: 'Gérer les membres',
     description: 'Invite de nouveaux membres, modifie les rôles et gère les comptes.',
     tabId: 'members',
     roles: ['admin', 'admin_plus'],
-    emoji: '⚙️',
+    color: 'bg-teal-500/15',
+    iconColor: 'text-teal-500',
   },
   {
-    icon: ArrowRight,
+    icon: Rocket,
     title: 'C\'est parti !',
     description: 'Tu es prêt à utiliser FCO Manager. Tu peux relancer ce tutoriel depuis ton profil.',
-    emoji: '🚀',
+    color: 'bg-primary/15',
+    iconColor: 'text-primary',
   },
 ];
 
@@ -280,29 +298,20 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
                   {currentStep + 1} sur {total}
                 </motion.p>
 
-                {/* Emoji + Icon combo */}
-                <div className="relative inline-flex items-center justify-center mb-5">
+                {/* Icon */}
+                <div className="relative inline-flex items-center justify-center mb-6">
                   <motion.div
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute w-24 h-24 rounded-full bg-accent/8"
+                    animate={{ scale: [1, 1.12, 1], opacity: [0.4, 0.6, 0.4] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    className={cn('absolute w-[5.5rem] h-[5.5rem] rounded-[1.75rem]', step.color)}
                   />
                   <motion.div
-                    animate={{ scale: [1, 1.08, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-                    className="absolute w-20 h-20 rounded-full bg-accent/12"
-                  />
-                  <motion.div
-                    initial={{ scale: 0, rotate: -20 }}
+                    initial={{ scale: 0, rotate: -12 }}
                     animate={{ scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
-                    className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-primary/20 border border-accent/20 flex items-center justify-center backdrop-blur-sm"
+                    transition={{ type: 'spring', damping: 14, stiffness: 220, delay: 0.08 }}
+                    className={cn('relative w-16 h-16 rounded-2xl flex items-center justify-center', step.color)}
                   >
-                    {step.emoji ? (
-                      <span className="text-3xl">{step.emoji}</span>
-                    ) : (
-                      <Icon size={28} className="text-accent" />
-                    )}
+                    <Icon size={30} strokeWidth={1.8} className={step.iconColor} />
                   </motion.div>
                 </div>
 
