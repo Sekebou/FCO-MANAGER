@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Clock } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
+import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
 
 interface Props {
@@ -64,15 +65,10 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           />
 
           {/* Time picker */}
-          <div className="relative">
-            <Clock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="time"
-              className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all"
-              value={formData.time}
-              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-            />
-          </div>
+          <NativeTimePicker
+            value={formData.time}
+            onChange={(time) => setFormData({ ...formData, time })}
+          />
 
           {/* Type selector */}
           <div>

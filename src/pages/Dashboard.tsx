@@ -700,60 +700,72 @@ const Dashboard = () => {
         createdByName: currentUser?.name || '',
         createdAt: new Date().toISOString(),
       };
-      
-      await _add('events', eventToSave);
-      await refetchNow();
 
       const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
-      const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
-      const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-      const timeFormatted = eventData.time ? ` à ${eventData.time}` : '';
-      const locationInfo = eventData.location ? `\n📍 ${eventData.location}` : '';
-      const pushTitle = `${typeIcons[eventData.type] || '📅'} Nouveau ${(typeLabels[eventData.type] || 'événement').toLowerCase()} disponible !`;
-      const pushBody = `${eventData.title}\n📅 ${dateFormatted}${timeFormatted}${locationInfo}\n\nN'oublie pas de répondre présent ou absent afin d'aider au mieux l'organisation du club ! 💪`;
+      const notifiableRoles = ['admin+', 'admin', 'entraineur', 'dirigeant', 'joueur'];
+      const targetMembers = members.filter(m => notifiableRoles.includes(m.role));
+      const memberEmails = [...new Set(targetMembers.map(m => m.email).filter(Boolean))];
 
-      // Envoyer notification push native
-      try {
-        // Fetch FCM tokens from Supabase
-        const { data: tokenRows } = await supabase.from('fcm_tokens').select('token');
-        const fcmTokens = [...new Set((tokenRows || []).map((r: any) => r.token).filter(Boolean))];
-        
-        if (fcmTokens.length > 0) {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-          await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
-            body: JSON.stringify({ title: pushTitle, body: pushBody, data: { tab: 'presences' }, tokens: fcmTokens }),
-          });
-        }
-      } catch (pushErr) {
-        console.error('Erreur envoi push:', pushErr);
-      }
-
-      // Envoyer les notifications par email (en parallèle pour la rapidité)
-      if (sendEmail) {
-        const notifiableRoles = ['admin+', 'admin', 'entraineur', 'dirigeant', 'joueur'];
-        const targetMembers = members.filter(m => notifiableRoles.includes(m.role));
-        const memberEmails = [...new Set(targetMembers.map(m => m.email).filter(Boolean))];
-        await Promise.allSettled(
-          memberEmails.map(email =>
-            sendNotificationEmail({
-              to_email: email,
-              event_title: eventData.title,
-              event_type_label: typeLabels[eventData.type] || 'Événement',
-              type_icon: typeIcons[eventData.type] || '📅',
-              event_date: dateFormatted,
-              response_link: 'https://blue-pitch-dash.lovable.app/?tab=presences',
-            }).catch(emailErr => console.error('Erreur envoi email à', email, emailErr))
-          )
-        );
-        setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: true, notifCount: memberEmails.length });
-      } else {
-        setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: false, notifCount: 0 });
-      }
-
+      // Show confirmation INSTANTLY (optimistic) before API call
       setShowAddEvent(false);
+      setEventCreatedResult({
+        title: eventData.title,
+        date: eventData.date,
+        type: eventData.type,
+        notified: sendEmail,
+        notifCount: sendEmail ? memberEmails.length : 0,
+      });
+
+      // Optimistic: add event to local state immediately
+      const tempId = `temp-${Date.now()}`;
+      setEvents(prev => [{ ...eventToSave, id: tempId }, ...prev]);
+
+      // Fire API + notifications in background (non-blocking)
+      (async () => {
+        try {
+          await _add('events', eventToSave);
+          refetchNow(); // sync real ID
+
+          const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
+          const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          const timeFormatted = eventData.time ? ` à ${eventData.time}` : '';
+          const locationInfo = eventData.location ? `\n📍 ${eventData.location}` : '';
+          const pushTitle = `${typeIcons[eventData.type] || '📅'} Nouveau ${(typeLabels[eventData.type] || 'événement').toLowerCase()} disponible !`;
+          const pushBody = `${eventData.title}\n📅 ${dateFormatted}${timeFormatted}${locationInfo}\n\nN'oublie pas de répondre présent ou absent afin d'aider au mieux l'organisation du club ! 💪`;
+
+          // Push + email notifications in parallel (fire & forget)
+          const { data: tokenRows } = await supabase.from('fcm_tokens').select('token');
+          const fcmTokens = [...new Set((tokenRows || []).map((r: any) => r.token).filter(Boolean))];
+          
+          const tasks: Promise<any>[] = [];
+          if (fcmTokens.length > 0) {
+            tasks.push(
+              fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+                body: JSON.stringify({ title: pushTitle, body: pushBody, data: { tab: 'presences' }, tokens: fcmTokens }),
+              }).catch(e => console.error('Push error:', e))
+            );
+          }
+          if (sendEmail) {
+            tasks.push(...memberEmails.map(email =>
+              sendNotificationEmail({
+                to_email: email,
+                event_title: eventData.title,
+                event_type_label: typeLabels[eventData.type] || 'Événement',
+                type_icon: typeIcons[eventData.type] || '📅',
+                event_date: dateFormatted,
+                response_link: 'https://blue-pitch-dash.lovable.app/?tab=presences',
+              }).catch(e => console.error('Email error:', e))
+            ));
+          }
+          await Promise.allSettled(tasks);
+        } catch (err) {
+          console.error('Background event save error:', err);
+          toast.error('Erreur lors de la sauvegarde');
+          refetchNow(); // revert
+        }
+      })();
     } catch (err: any) {
       toast.error('Erreur: ' + err.message);
     }
