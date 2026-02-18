@@ -31,6 +31,14 @@ export function usePushNotifications(userId: string | undefined) {
         PushNotifications.addListener('registration', async (token) => {
           console.log('FCM Token:', token.value);
           try {
+            // First, delete any existing rows with the same token (from other users)
+            // This prevents duplicate notifications on the same device
+            await supabase
+              .from('fcm_tokens')
+              .delete()
+              .eq('token', token.value);
+
+            // Then upsert for the current user
             const { error } = await supabase
               .from('fcm_tokens')
               .upsert({
