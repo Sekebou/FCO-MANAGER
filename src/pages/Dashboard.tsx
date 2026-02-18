@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getWebOrigin } from '@/lib/getWebOrigin';
+import { sendInvitationEmail, sendEventEmail } from '@/lib/emailjs';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -558,8 +559,11 @@ const Dashboard = () => {
           }
           if (sendEmail) {
             tasks.push(...memberEmails.map(email =>
-              supabase.functions.invoke('send-email', {
-                body: { to: email, subject: pushTitle, html: `<p>${pushBody.replace(/\n/g, '<br>')}</p>` },
+              sendEventEmail({
+                to_email: email,
+                event_title: pushTitle,
+                event_date: eventData.date,
+                event_type: eventData.type,
               }).catch(e => console.error('Email error:', e))
             ));
           }
@@ -1006,16 +1010,11 @@ const Dashboard = () => {
               const link = `${getWebOrigin()}/register?token=${inv.id}`;
               if (data.mode === 'email' && data.email) {
                 try {
-                  await supabase.functions.invoke('send-email', {
-                    body: {
-                      type: 'invitation',
-                      to: data.email,
-                      params: {
-                        invite_link: link,
-                        role_label: data.role || 'Joueur',
-                        inviter_name: currentUser?.name || 'Un administrateur',
-                      },
-                    },
+                  await sendInvitationEmail({
+                    to_email: data.email,
+                    invite_link: link,
+                    role_label: data.role || 'Joueur',
+                    inviter_name: currentUser?.name || 'Un administrateur',
                   });
                   toast.success('Invitation envoyée par email !');
                 } catch { toast.warning("Email non envoyé, mais le lien a été généré"); }
