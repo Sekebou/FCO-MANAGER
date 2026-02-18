@@ -33,7 +33,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
   // Location is required only for match
   const needsLocation = formData.type === 'match';
-  const isFormValid = formData.title && formData.date && formData.time && (!needsLocation || locationValid);
+  const isFormValid = formData.title && formData.date;
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
