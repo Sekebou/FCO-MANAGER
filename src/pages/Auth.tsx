@@ -261,6 +261,24 @@ const Auth = () => {
             )}
           </div>
 
+          {/* Quick test accounts */}
+          <div className="mt-4 space-y-2 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
+            <p className="text-xs text-muted-foreground text-center font-medium">Connexion rapide (test)</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: '🛡️ Super Admin', email: 'admin@fco.test', password: 'Admin123!' },
+                { label: '👔 Admin', email: 'admin2@fco.test', password: 'Admin123!' },
+                { label: '🏃 Entraîneur', email: 'coach@fco.test', password: 'Coach123!' },
+                { label: '⚽ Joueur', email: 'joueur@fco.test', password: 'Joueur123!' },
+              ].map((acc) => (
+                <button key={acc.email} type="button" onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
+                  className="px-3 py-2 text-xs font-medium rounded-xl border border-border bg-secondary hover:bg-secondary/80 text-foreground transition-all">
+                  {acc.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Status */}
           <div className="mt-6 flex justify-center animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-success/20 bg-success/5">
