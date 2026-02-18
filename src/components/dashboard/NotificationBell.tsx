@@ -34,7 +34,7 @@ const NotificationBell = () => {
     const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
 
     if (isIOSNative) {
-      const interval = setInterval(fetchAnnouncements, 8000);
+      const interval = setInterval(fetchAnnouncements, 3000);
       return () => { clearInterval(interval); };
     }
 
