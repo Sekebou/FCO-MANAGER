@@ -76,6 +76,8 @@ const NativeDatePicker = ({
         value={value}
         min={min}
         onChange={(e) => onChange(e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
         style={{ fontSize: '16px' }}
       />
