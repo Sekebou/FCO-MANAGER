@@ -6,7 +6,7 @@ const USE_REMOTE_SERVER = false;
 
 const config: CapacitorConfig = {
   appId: 'com.sekebou.fcomanager',
-  appName: 'blue-pitch-dash',
+  appName: 'FCO-Manager',
   webDir: 'dist',
   ...(USE_REMOTE_SERVER
     ? {
