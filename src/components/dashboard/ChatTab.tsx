@@ -55,6 +55,13 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
     };
     fetchMessages();
 
+    const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
+
+    if (isIOSNative) {
+      const interval = setInterval(fetchMessages, 2000);
+      return () => { clearInterval(interval); };
+    }
+
     const channel = supabase.channel('chat-tab')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => {
         supabase.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(200)
