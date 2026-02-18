@@ -1,18 +1,20 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Users, TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { Users, TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface Tab {
   id: string;
   label: string;
   icon: React.ElementType;
+  featured?: boolean;
 }
 
 const allTabs: Tab[] = [
-  { id: 'presences', label: 'Présences', icon: Users },
-  { id: 'stats', label: 'Statistiques', icon: TrendingUp },
-  { id: 'championnat', label: 'Championnat', icon: Trophy },
+  { id: 'stats', label: 'Stats', icon: TrendingUp },
+  { id: 'championnat', label: 'Classement', icon: Trophy },
   { id: 'news', label: 'Actus', icon: Bell },
+  { id: 'presences', label: 'Présences', icon: ClipboardCheck, featured: true },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: UserCheck },
@@ -53,12 +55,17 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   };
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+    <motion.div
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
+      initial={{ y: 80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 260, delay: 0.2 }}
+    >
       {/* Background */}
       <div
         className="absolute inset-0 border-t border-white/[0.08]"
         style={{
-          background: 'linear-gradient(to top, hsl(var(--card) / 0.95), hsl(var(--card) / 0.88))',
+          background: 'linear-gradient(to top, hsl(var(--card) / 0.97), hsl(var(--card) / 0.90))',
           WebkitBackdropFilter: 'saturate(180%) blur(20px)',
           backdropFilter: 'saturate(180%) blur(20px)',
         }}
@@ -67,12 +74,61 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
       <div className="relative">
         <div
           ref={scrollRef}
-          className="flex items-stretch overflow-x-auto scrollbar-hide px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-0.5"
+          className="flex items-end justify-center overflow-x-auto scrollbar-hide px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-0"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {allTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            const isFeatured = tab.featured;
+
+            if (isFeatured) {
+              return (
+                <button
+                  key={tab.id}
+                  data-tab={tab.id}
+                  onClick={() => handleTap(tab.id)}
+                  className="relative flex flex-col items-center justify-end min-w-[4.5rem] shrink-0 outline-none select-none -mt-3"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  {/* Raised featured button */}
+                  <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    className={cn(
+                      'relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg',
+                      isActive
+                        ? 'bg-accent shadow-accent/30'
+                        : 'bg-primary shadow-primary/20'
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="featured-glow"
+                        className="absolute inset-0 rounded-2xl bg-accent/20 blur-md"
+                        initial={false}
+                        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                      />
+                    )}
+                    <Icon
+                      size={24}
+                      strokeWidth={2.2}
+                      className={cn(
+                        'relative z-10',
+                        isActive ? 'text-accent-foreground' : 'text-primary-foreground'
+                      )}
+                    />
+                  </motion.div>
+                  <span
+                    className={cn(
+                      'text-[10px] leading-none mt-1.5 tracking-tight whitespace-nowrap font-bold',
+                      isActive ? 'text-accent' : 'text-muted-foreground/70'
+                    )}
+                  >
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            }
 
             return (
               <button
@@ -80,44 +136,46 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 data-tab={tab.id}
                 onClick={() => handleTap(tab.id)}
                 className={cn(
-                  'relative flex flex-col items-center justify-center pt-1.5 pb-1 min-w-[4.2rem] shrink-0',
+                  'relative flex flex-col items-center justify-center pt-1.5 pb-1 min-w-[4rem] shrink-0',
                   'outline-none select-none',
                 )}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 {/* Active pill indicator on top */}
-                <div
-                  className={cn(
-                    'absolute top-0 left-1/2 -translate-x-1/2 h-[2.5px] rounded-full bg-accent transition-all',
-                    mounted ? 'duration-[350ms] ease-[cubic-bezier(0.25,1,0.5,1)]' : 'duration-0',
-                    isActive ? 'w-7 opacity-100' : 'w-0 opacity-0'
-                  )}
+                <motion.div
+                  initial={false}
+                  animate={{
+                    width: isActive ? 28 : 0,
+                    opacity: isActive ? 1 : 0,
+                  }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                  className="absolute top-0 left-1/2 -translate-x-1/2 h-[2.5px] rounded-full bg-accent"
                 />
 
                 {/* Icon */}
-                <div
-                  className={cn(
-                    'relative flex items-center justify-center rounded-2xl transition-all',
-                    isActive ? 'w-14 h-8 bg-accent/[0.12]' : 'w-8 h-8',
-                    mounted ? 'duration-[350ms] ease-[cubic-bezier(0.25,1,0.5,1)]' : 'duration-0'
-                  )}
+                <motion.div
+                  initial={false}
+                  animate={{
+                    width: isActive ? 56 : 32,
+                    backgroundColor: isActive ? 'hsl(var(--accent) / 0.12)' : 'transparent',
+                  }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                  className="relative flex items-center justify-center rounded-2xl h-8"
                 >
                   <Icon
                     size={isActive ? 20 : 21}
                     strokeWidth={isActive ? 2.4 : 1.6}
                     className={cn(
-                      'transition-all',
-                      mounted ? 'duration-[250ms]' : 'duration-0',
+                      'transition-colors duration-200',
                       isActive ? 'text-accent' : 'text-muted-foreground/55'
                     )}
                   />
-                </div>
+                </motion.div>
 
-                {/* Label — full text, never truncated */}
+                {/* Label */}
                 <span
                   className={cn(
-                    'text-[10px] leading-none mt-1 tracking-tight whitespace-nowrap transition-all',
-                    mounted ? 'duration-[250ms]' : 'duration-0',
+                    'text-[10px] leading-none mt-1 tracking-tight whitespace-nowrap transition-colors duration-200',
                     isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45'
                   )}
                 >
@@ -128,7 +186,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
           })}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1132,24 +1132,19 @@ const Dashboard = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md p-4 pb-24 sm:pb-4"
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 40 }}
+              initial={{ opacity: 0, scale: 0.85, y: 60 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 260, delay: 0.1 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 280, delay: 0.1 }}
               className="relative max-w-sm w-full overflow-hidden rounded-[2rem] bg-gradient-to-b from-card to-card/95 border border-border/50 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)]"
             >
               <motion.div
                 animate={{ opacity: [0.15, 0.3, 0.15], scale: [1, 1.1, 1] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                 className="absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-60 bg-primary/25 rounded-full blur-[80px] pointer-events-none"
-              />
-              <motion.div
-                animate={{ opacity: [0.1, 0.2, 0.1], scale: [1, 1.15, 1] }}
-                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-40 h-40 bg-primary/15 rounded-full blur-[60px] pointer-events-none"
               />
               <div className="relative z-10 px-8 pt-10 pb-8 text-center">
                 <div className="relative inline-flex items-center justify-center mb-7">
@@ -1177,22 +1172,22 @@ const Dashboard = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4, duration: 0.5 }}
                   className="text-xs font-bold uppercase tracking-[0.25em] text-primary/60 mb-3"
-                >FCO Manager</motion.p>
+                >Bienvenue au club</motion.p>
                 <motion.h2
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
                   className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight"
                 >
-                  Bienvenue{' '}
-                  <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{welcomeName}</span>
+                  Salut{' '}
+                  <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{welcomeName}</span> 👋
                 </motion.h2>
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.5 }}
                   className="text-sm text-muted-foreground mt-3 leading-relaxed"
-                >Ton espace est prêt !</motion.p>
+                >Tout est prêt pour toi. On te fait un tour rapide ?</motion.p>
                 <motion.button
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1201,7 +1196,7 @@ const Dashboard = () => {
                   whileTap={{ scale: 0.97 }}
                   onClick={() => { setWelcomeName(null); setTutorialMandatory(true); setShowTutorial(true); }}
                   className="mt-8 w-full py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary/30"
-                >C'est parti ! 🚀</motion.button>
+                >Découvrir l'app 🚀</motion.button>
               </div>
             </motion.div>
           </motion.div>
