@@ -14,6 +14,392 @@ export type Database = {
   }
   public: {
     Tables: {
+      albums: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      announcements: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      attendance_records: {
+        Row: {
+          event_date: string
+          event_id: string
+          event_type: string
+          id: string
+          player_id: string | null
+          saved_at: string
+          status: string
+        }
+        Insert: {
+          event_date: string
+          event_id: string
+          event_type: string
+          id?: string
+          player_id?: string | null
+          saved_at?: string
+          status: string
+        }
+        Update: {
+          event_date?: string
+          event_id?: string
+          event_type?: string
+          id?: string
+          player_id?: string | null
+          saved_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cards: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          player_id: string
+          reason: string
+          suspended_until: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          player_id: string
+          reason: string
+          suspended_until?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          player_id?: string
+          reason?: string
+          suspended_until?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      championship_matches: {
+        Row: {
+          away_score: number | null
+          away_team: string
+          championship_id: string
+          created_at: string
+          date: string
+          home_score: number | null
+          home_team: string
+          id: string
+          journee: number
+          played: boolean | null
+        }
+        Insert: {
+          away_score?: number | null
+          away_team: string
+          championship_id: string
+          created_at?: string
+          date: string
+          home_score?: number | null
+          home_team: string
+          id?: string
+          journee: number
+          played?: boolean | null
+        }
+        Update: {
+          away_score?: number | null
+          away_team?: string
+          championship_id?: string
+          created_at?: string
+          date?: string
+          home_score?: number | null
+          home_team?: string
+          id?: string
+          journee?: number
+          played?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "championship_matches_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      championships: {
+        Row: {
+          created_at: string
+          fff_standings: Json | null
+          fff_url: string | null
+          id: string
+          name: string
+          season: string
+          team: string | null
+          team_logos: Json | null
+          teams: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          fff_standings?: Json | null
+          fff_url?: string | null
+          id?: string
+          name: string
+          season: string
+          team?: string | null
+          team_logos?: Json | null
+          teams?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          fff_standings?: Json | null
+          fff_url?: string | null
+          id?: string
+          name?: string
+          season?: string
+          team?: string | null
+          team_logos?: Json | null
+          teams?: string[] | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          text: string
+          user_id: string
+          user_name: string
+          user_photo: string | null
+          user_role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          text: string
+          user_id: string
+          user_name: string
+          user_photo?: string | null
+          user_role: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          text?: string
+          user_id?: string
+          user_name?: string
+          user_photo?: string | null
+          user_role?: string
+        }
+        Relationships: []
+      }
+      conversation_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          sender_id: string
+          sender_name: string
+          sender_photo: string | null
+          sender_role: string
+          text: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          sender_id: string
+          sender_name: string
+          sender_photo?: string | null
+          sender_role: string
+          text?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          sender_id?: string
+          sender_name?: string
+          sender_photo?: string | null
+          sender_role?: string
+          text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          last_message: string | null
+          last_message_at: string | null
+          name: string | null
+          participant_names: Json | null
+          participant_photos: Json | null
+          participant_roles: Json | null
+          participants: string[]
+          type: string
+          unread_count: Json | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          name?: string | null
+          participant_names?: Json | null
+          participant_photos?: Json | null
+          participant_roles?: Json | null
+          participants: string[]
+          type?: string
+          unread_count?: Json | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          name?: string | null
+          participant_names?: Json | null
+          participant_photos?: Json | null
+          participant_roles?: Json | null
+          participants?: string[]
+          type?: string
+          unread_count?: Json | null
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          convocations: Json | null
+          convocations_published: boolean | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          date: string
+          id: string
+          location: string | null
+          presences: Json | null
+          reason: string | null
+          recurrence: string | null
+          team: string | null
+          time: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          convocations?: Json | null
+          convocations_published?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          date: string
+          id?: string
+          location?: string | null
+          presences?: Json | null
+          reason?: string | null
+          recurrence?: string | null
+          team?: string | null
+          time?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          convocations?: Json | null
+          convocations_published?: boolean | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          date?: string
+          id?: string
+          location?: string | null
+          presences?: Json | null
+          reason?: string | null
+          recurrence?: string | null
+          team?: string | null
+          time?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       fcm_tokens: {
         Row: {
           id: string
@@ -38,15 +424,287 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_photos: {
+        Row: {
+          album_id: string
+          id: string
+          storage_path: string
+          title: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+          uploader_name: string | null
+          url: string
+        }
+        Insert: {
+          album_id: string
+          id?: string
+          storage_path: string
+          title?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          uploader_name?: string | null
+          url: string
+        }
+        Update: {
+          album_id?: string
+          id?: string
+          storage_path?: string
+          title?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          uploader_name?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_photos_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          created_at: string
+          email: string | null
+          expires_at: string
+          id: string
+          invited_by: string | null
+          license_expiry: string | null
+          position: string | null
+          role: string
+          status: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          license_expiry?: string | null
+          position?: string | null
+          role?: string
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          license_expiry?: string | null
+          position?: string | null
+          role?: string
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      news: {
+        Row: {
+          author: string
+          author_id: string | null
+          content: string
+          created_at: string
+          date: string
+          id: string
+          likes: string[] | null
+          title: string
+        }
+        Insert: {
+          author: string
+          author_id?: string | null
+          content: string
+          created_at?: string
+          date: string
+          id?: string
+          likes?: string[] | null
+          title: string
+        }
+        Update: {
+          author?: string
+          author_id?: string | null
+          content?: string
+          created_at?: string
+          date?: string
+          id?: string
+          likes?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      news_comments: {
+        Row: {
+          author_name: string
+          author_uid: string
+          content: string
+          created_at: string
+          id: string
+          news_id: string
+        }
+        Insert: {
+          author_name: string
+          author_uid: string
+          content: string
+          created_at?: string
+          id?: string
+          news_id: string
+        }
+        Update: {
+          author_name?: string
+          author_uid?: string
+          content?: string
+          created_at?: string
+          id?: string
+          news_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_comments_news_id_fkey"
+            columns: ["news_id"]
+            isOneToOne: false
+            referencedRelation: "news"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          assists: number | null
+          created_at: string
+          goals: number | null
+          id: string
+          license_expiry: string | null
+          matches: number | null
+          name: string
+          position: string | null
+          team: string | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string
+          goals?: number | null
+          id?: string
+          license_expiry?: string | null
+          matches?: number | null
+          name: string
+          position?: string | null
+          team?: string | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string
+          goals?: number | null
+          id?: string
+          license_expiry?: string | null
+          matches?: number | null
+          name?: string
+          position?: string | null
+          team?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          license_expiry: string | null
+          name: string
+          photo_url: string | null
+          player_id: string | null
+          role: string
+          session_token: string | null
+          team: string | null
+          username: string | null
+          welcome_seen: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          license_expiry?: string | null
+          name: string
+          photo_url?: string | null
+          player_id?: string | null
+          role?: string
+          session_token?: string | null
+          team?: string | null
+          username?: string | null
+          welcome_seen?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          license_expiry?: string | null
+          name?: string
+          photo_url?: string | null
+          player_id?: string | null
+          role?: string
+          session_token?: string | null
+          team?: string | null
+          username?: string | null
+          welcome_seen?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profiles_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_manage: { Args: { _user_id: string }; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin_plus"
+        | "admin"
+        | "entraineur"
+        | "joueur"
+        | "photographe"
+        | "dirigeant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -173,6 +831,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "admin_plus",
+        "admin",
+        "entraineur",
+        "joueur",
+        "photographe",
+        "dirigeant",
+      ],
+    },
   },
 } as const
