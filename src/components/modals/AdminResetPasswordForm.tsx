@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getWebOrigin } from '@/lib/getWebOrigin';
 import { supabase } from '@/integrations/supabase/client';
 import type { Member } from '@/pages/Dashboard';
 import { Lock, Loader2 } from 'lucide-react';
@@ -17,7 +18,7 @@ const AdminResetPasswordForm = ({ member, onClose }: Props) => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(member.email, {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${getWebOrigin()}/auth`,
       });
       if (error) throw error;
       setSuccess(true);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { getWebOrigin } from '@/lib/getWebOrigin';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1002,7 +1003,7 @@ const Dashboard = () => {
                 license_expiry: data.licenseExpiry || null, expires_at: expiresAt, invited_by: currentUser?.uid || '',
               }).select('id').single();
               if (error) throw error;
-              const link = `${window.location.origin}/register?token=${inv.id}`;
+              const link = `${getWebOrigin()}/register?token=${inv.id}`;
               if (data.mode === 'email' && data.email) {
                 try {
                   await supabase.functions.invoke('send-email', {
