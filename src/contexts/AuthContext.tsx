@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { auth, authReady, db, onAuthStateChanged, signInWithEmailAndPassword, signOut, doc, getDoc, onSnapshot, type User } from '@/lib/firebase';
+import { isIOSCapacitor, restGetDoc } from '@/lib/firestore-rest';
 import { toast } from 'sonner';
 
 const FIREBASE_API_KEY = 'AIzaSyAExtesWZPAEbQbGm5Rp17ek1PuWx_uceQ';
@@ -94,6 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Grace period flag: skip session-token check right after auth state changes
   // to avoid race condition with Auth.tsx writing the new token
   const loginGraceRef = React.useRef(false);
+  const iosSessionPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -159,24 +161,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setTimeout(() => { loginGraceRef.current = false; }, 5000);
 
           // Listen for session token changes to enforce single-session
-          unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
-            if (!isMounted || !snapshot.exists()) return;
-            // Skip check during login grace period
-            if (loginGraceRef.current) return;
-            const data = snapshot.data();
-            const localToken = localStorage.getItem('sessionToken');
-            if (localToken && data.sessionToken && data.sessionToken !== localToken) {
-              toast.error('Session déconnectée', {
-                description: 'Votre compte est déjà connecté depuis un autre appareil. Vous avez été déconnecté.',
-                duration: 8000,
-              });
-              localStorage.removeItem('currentUser');
-              localStorage.removeItem('sessionToken');
-              signOut(auth);
-            } else if (!localToken && data.sessionToken) {
-              localStorage.setItem('sessionToken', data.sessionToken);
-            }
-          });
+          if (isIOSCapacitor) {
+            // On iOS, SDK listeners don't work reliably. Use REST polling.
+            if (iosSessionPollRef.current) clearInterval(iosSessionPollRef.current);
+            const uid = user.uid;
+            iosSessionPollRef.current = setInterval(async () => {
+              if (!isMounted || loginGraceRef.current) return;
+              try {
+                const userData = await restGetDoc('users', uid);
+                if (!userData) return;
+                const localToken = localStorage.getItem('sessionToken');
+                if (localToken && userData.sessionToken && userData.sessionToken !== localToken) {
+                  toast.error('Session déconnectée', {
+                    description: 'Votre compte est déjà connecté depuis un autre appareil. Vous avez été déconnecté.',
+                    duration: 8000,
+                  });
+                  handleIOSLogout();
+                }
+              } catch (err) {
+                console.warn('[AuthContext] iOS session poll error:', err);
+              }
+            }, 8000);
+          } else {
+            unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (snapshot) => {
+              if (!isMounted || !snapshot.exists()) return;
+              // Skip check during login grace period
+              if (loginGraceRef.current) return;
+              const data = snapshot.data();
+              const localToken = localStorage.getItem('sessionToken');
+              if (localToken && data.sessionToken && data.sessionToken !== localToken) {
+                toast.error('Session déconnectée', {
+                  description: 'Votre compte est déjà connecté depuis un autre appareil. Vous avez été déconnecté.',
+                  duration: 8000,
+                });
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('sessionToken');
+                signOut(auth);
+              } else if (!localToken && data.sessionToken) {
+                localStorage.setItem('sessionToken', data.sessionToken);
+              }
+            });
+          }
         } else {
           // On iOS Capacitor, keep the REST-based session if SDK re-auth failed
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
@@ -214,17 +239,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(safetyTimeout);
       if (unsubscribe) unsubscribe();
       if (unsubscribeSnapshot) unsubscribeSnapshot();
+      if (iosSessionPollRef.current) clearInterval(iosSessionPollRef.current);
     };
   }, []);
 
-  const logout = async () => {
-    await signOut(auth);
+  const handleIOSLogout = () => {
+    if (iosSessionPollRef.current) {
+      clearInterval(iosSessionPollRef.current);
+      iosSessionPollRef.current = null;
+    }
     localStorage.removeItem('currentUser');
     localStorage.removeItem('sessionToken');
     localStorage.removeItem('firebaseRefreshToken');
     localStorage.removeItem('iosAuthEmail');
     localStorage.removeItem('iosAuthPass');
     setCurrentUser(null);
+  };
+
+  const logout = async () => {
+    if (isIOSCapacitor) {
+      // On iOS, signOut(auth) can hang. Just clear local state.
+      handleIOSLogout();
+    } else {
+      await signOut(auth);
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('sessionToken');
+      setCurrentUser(null);
+    }
   };
 
   return (
