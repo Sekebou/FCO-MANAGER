@@ -19,6 +19,7 @@ import ChampionnatTab, { type Championship, type Match } from '@/components/dash
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
 import ChatBubble from '@/components/dashboard/ChatBubble';
 import BottomTabBar from '@/components/dashboard/BottomTabBar';
+import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
@@ -179,6 +180,7 @@ const Dashboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -1055,7 +1057,7 @@ const Dashboard = () => {
       {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
       {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
       {showAdminResetPassword && selectedMemberForReset && <AdminResetPasswordForm member={selectedMemberForReset} onClose={() => { setShowAdminResetPassword(false); setSelectedMemberForReset(null); }} />}
-      {showAvatarModal && currentUser && <AvatarModal currentUser={currentUser} onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }} onAvatarUpdated={(photoURL) => setCurrentUser({ ...currentUser, photoURL })} focusLicense={avatarFocusLicense} />}
+      {showAvatarModal && currentUser && <AvatarModal currentUser={currentUser} onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }} onAvatarUpdated={(photoURL) => setCurrentUser({ ...currentUser, photoURL })} focusLicense={avatarFocusLicense} onStartTutorial={() => setShowTutorial(true)} />}
       {showLicenseReminder && (
         <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setShowLicenseReminder(false)}>
           <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -1135,10 +1137,19 @@ const Dashboard = () => {
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary/60 mb-3">FCO Manager</p>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight">Bienvenue{' '}<span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">{welcomeName}</span></h2>
               <p className="text-sm text-muted-foreground mt-3 leading-relaxed">Ton espace est prêt !</p>
-              <button onClick={() => setWelcomeName(null)} className="mt-8 w-full py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary/30">C'est parti ! 🚀</button>
+              <button onClick={() => { setWelcomeName(null); setShowTutorial(true); }} className="mt-8 w-full py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary/30">C'est parti ! 🚀</button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Onboarding tutorial */}
+      {showTutorial && currentUser && (
+        <OnboardingTutorial
+          userRole={currentUser.role}
+          onComplete={() => setShowTutorial(false)}
+          onTabChange={handleTabChange}
+        />
       )}
     </div>
   );
