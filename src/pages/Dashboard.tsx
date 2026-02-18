@@ -1005,11 +1005,18 @@ const Dashboard = () => {
             try {
               if (currentUser?.role === 'entraineur') data.role = 'joueur';
               if (data.role === 'admin+' && currentUser?.role !== 'admin+') { toast.error("Seul l'Admin+ peut attribuer ce rôle"); return; }
-              const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+              const isCollective = data.mode === 'collective';
+              const expiresAt = new Date(Date.now() + (isCollective ? 7 * 24 : 48) * 60 * 60 * 1000).toISOString();
               const { data: inv, error } = await supabase.from('invitations').insert({
-                email: data.email || null, role: data.role, position: data.position || null,
-                license_expiry: data.licenseExpiry || null, expires_at: expiresAt, invited_by: currentUser?.uid || '',
-              }).select('id').single();
+                email: data.mode === 'email' ? data.email : null,
+                role: data.role,
+                position: data.position || null,
+                license_expiry: data.licenseExpiry || null,
+                expires_at: expiresAt,
+                invited_by: currentUser?.uid || '',
+                max_uses: isCollective ? 9999 : 1,
+                use_count: 0,
+              } as any).select('id').single();
               if (error) throw error;
               const link = `${getWebOrigin()}/register?token=${inv.id}`;
               if (data.mode === 'email' && data.email) {
@@ -1022,7 +1029,9 @@ const Dashboard = () => {
                   });
                   toast.success('Invitation envoyée par email !');
                 } catch { toast.warning("Email non envoyé, mais le lien a été généré"); }
-              } else { toast.success('Lien d\'invitation généré !'); }
+              } else {
+                toast.success(isCollective ? 'Lien collectif généré !' : 'Lien d\'invitation généré !');
+              }
               setShowInvitePlayer(false);
               setInviteResult({ email: data.email || '', link });
             } catch (err: any) { toast.error('Erreur: ' + err.message); }

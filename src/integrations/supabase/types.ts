@@ -473,9 +473,11 @@ export type Database = {
           id: string
           invited_by: string | null
           license_expiry: string | null
+          max_uses: number | null
           position: string | null
           role: string
           status: string
+          use_count: number | null
           used_at: string | null
           used_by: string | null
         }
@@ -486,9 +488,11 @@ export type Database = {
           id?: string
           invited_by?: string | null
           license_expiry?: string | null
+          max_uses?: number | null
           position?: string | null
           role?: string
           status?: string
+          use_count?: number | null
           used_at?: string | null
           used_by?: string | null
         }
@@ -499,9 +503,11 @@ export type Database = {
           id?: string
           invited_by?: string | null
           license_expiry?: string | null
+          max_uses?: number | null
           position?: string | null
           role?: string
           status?: string
+          use_count?: number | null
           used_at?: string | null
           used_by?: string | null
         }

@@ -28,7 +28,11 @@ const Register = () => {
           .single();
 
         if (error || !inv) { setStatus('not_found'); return; }
-        if (inv.status === 'used') { setStatus('used'); return; }
+        const maxUses = (inv as any).max_uses ?? 1;
+        const useCount = (inv as any).use_count ?? 0;
+        const isMultiUse = maxUses > 1;
+        if (!isMultiUse && inv.status === 'used') { setStatus('used'); return; }
+        if (isMultiUse && useCount >= maxUses) { setStatus('used'); return; }
         if (new Date(inv.expires_at) < new Date()) { setStatus('expired'); return; }
         setInvitation(inv);
         setStatus('valid');
@@ -66,7 +70,10 @@ const Register = () => {
       const userId = authData.user?.id;
       if (!userId) throw new Error('Erreur de création de compte');
 
-      // Use register_user RPC to create profile + player + update invitation
+      const maxUses = (invitation as any).max_uses ?? 1;
+      const isMultiUse = maxUses > 1;
+
+      // Use register_user RPC to create profile + player
       const { error: regError } = await supabase.rpc('register_user', {
         p_user_id: userId,
         p_email: emailToUse,
@@ -74,9 +81,17 @@ const Register = () => {
         p_role: invitation.role,
         p_position: invitation.position || 'Attaquant',
         p_license_expiry: invitation.license_expiry || null,
-        p_invitation_id: token,
+        p_invitation_id: isMultiUse ? undefined : token,
       });
       if (regError) throw regError;
+
+      // For multi-use links, increment use_count manually
+      if (isMultiUse) {
+        const currentCount = (invitation as any).use_count ?? 0;
+        await supabase.from('invitations').update({
+          use_count: currentCount + 1,
+        } as any).eq('id', token!);
+      }
 
       // Sign out (user needs to login manually)
       await supabase.auth.signOut();
