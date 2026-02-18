@@ -696,6 +696,18 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      register_user: {
+        Args: {
+          p_email: string
+          p_invitation_id?: string
+          p_license_expiry?: string
+          p_name: string
+          p_position?: string
+          p_role: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { db, doc, updateDoc, getDoc } from '@/lib/firebase';
+import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,26 +23,16 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
 
   const isNonPlayer = currentUser.role === 'photographe';
 
-  // Load license data from user doc
   useEffect(() => {
     const loadLicenseData = async () => {
-      if (isNonPlayer) {
-        setLoadingLicense(false);
-        return;
-      }
+      if (isNonPlayer) { setLoadingLicense(false); return; }
       try {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          // Try user doc first, fallback to player doc
-          if (data.licenseExpiry) {
-            setLicenseExpiry(data.licenseExpiry);
-          } else if (currentUser.playerId) {
-            const playerDoc = await getDoc(doc(db, 'players', currentUser.playerId));
-            if (playerDoc.exists()) {
-              setLicenseExpiry(playerDoc.data().licenseExpiry || '');
-            }
-          }
+        const { data: profile } = await supabase.from('profiles').select('license_expiry').eq('id', currentUser.uid).single();
+        if (profile?.license_expiry) {
+          setLicenseExpiry(profile.license_expiry);
+        } else if (currentUser.playerId) {
+          const { data: player } = await supabase.from('players').select('license_expiry').eq('id', currentUser.playerId).single();
+          if (player?.license_expiry) setLicenseExpiry(player.license_expiry);
         }
       } catch (err) {
         console.error('Error loading license data:', err);
@@ -53,7 +43,6 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
     loadLicenseData();
   }, [currentUser.uid, currentUser.playerId, isNonPlayer]);
 
-  // Scroll to license section when focusLicense is set
   useEffect(() => {
     if (focusLicense && !loadingLicense && licenseRef.current) {
       licenseRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -91,7 +80,7 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
     setUploading(true);
     try {
       const compressed = await compressImage(file);
-      await updateDoc(doc(db, 'users', currentUser.uid), { photoURL: compressed });
+      await supabase.from('profiles').update({ photo_url: compressed }).eq('id', currentUser.uid);
       setPhotoURL(compressed);
       const stored = JSON.parse(localStorage.getItem('currentUser') || '{}');
       stored.photoURL = compressed;
@@ -109,7 +98,7 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
     if (!window.confirm('Supprimer la photo de profil ?')) return;
     setUploading(true);
     try {
-      await updateDoc(doc(db, 'users', currentUser.uid), { photoURL: null });
+      await supabase.from('profiles').update({ photo_url: null }).eq('id', currentUser.uid);
       setPhotoURL(null);
       const stored = JSON.parse(localStorage.getItem('currentUser') || '{}');
       stored.photoURL = null;
@@ -126,15 +115,11 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
   const handleSaveLicense = async () => {
     setSavingLicense(true);
     try {
-      // Save to user's own doc (always writable by the user)
-      await updateDoc(doc(db, 'users', currentUser.uid), { licenseExpiry: licenseExpiry || null });
-      // Also update player doc if possible (admin/coach will have perms)
+      await supabase.from('profiles').update({ license_expiry: licenseExpiry || null }).eq('id', currentUser.uid);
       if (currentUser.playerId) {
         try {
-          await updateDoc(doc(db, 'players', currentUser.playerId), { licenseExpiry: licenseExpiry || null });
-        } catch {
-          // Player doc update may fail for non-staff, that's ok
-        }
+          await supabase.from('players').update({ license_expiry: licenseExpiry || null }).eq('id', currentUser.playerId);
+        } catch {}
       }
       toast.success('Licence mise à jour !');
     } catch (err: any) {
@@ -144,47 +129,29 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
     }
   };
 
-  const initials = currentUser.name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-card rounded-2xl max-w-sm w-full border border-border shadow-xl animate-fade-in overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h3 className="text-lg font-bold text-foreground">Mon profil</h3>
-          <button
-            onClick={onClose}
-            disabled={uploading}
-            className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-all"
-          >
+          <button onClick={onClose} disabled={uploading} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-all">
             <X size={16} className="text-muted-foreground" />
           </button>
         </div>
 
-        {/* Avatar preview */}
         <div className="flex flex-col items-center py-6 px-6">
           <div className="relative group">
             {photoURL ? (
-              <img
-                src={photoURL}
-                alt="Avatar"
-                className="w-28 h-28 rounded-full object-cover border-4 border-border shadow-lg"
-              />
+              <img src={photoURL} alt="Avatar" className="w-28 h-28 rounded-full object-cover border-4 border-border shadow-lg" />
             ) : (
               <div className="w-28 h-28 rounded-full bg-primary/10 flex items-center justify-center border-4 border-border shadow-lg">
                 <span className="text-2xl font-bold text-primary">{initials}</span>
               </div>
             )}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50"
-            >
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg hover:scale-105 transition-transform disabled:opacity-50">
               <Camera size={16} />
             </button>
           </div>
@@ -192,38 +159,20 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
           <p className="text-xs text-muted-foreground capitalize">{currentUser.role === 'admin+' ? 'Administrateur' : currentUser.role}</p>
         </div>
 
-        {/* Photo actions */}
         <div className="px-5 space-y-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-full bg-accent text-accent-foreground py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
-          >
-            {uploading ? (
-              <><Loader2 size={16} className="animate-spin" /> Traitement...</>
-            ) : (
-              <><Upload size={16} /> {photoURL ? 'Changer la photo' : 'Ajouter une photo'}</>
-            )}
+          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileSelect} className="hidden" />
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            className="w-full bg-accent text-accent-foreground py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
+            {uploading ? (<><Loader2 size={16} className="animate-spin" /> Traitement...</>) : (<><Upload size={16} /> {photoURL ? 'Changer la photo' : 'Ajouter une photo'}</>)}
           </button>
           {photoURL && (
-            <button
-              onClick={handleDelete}
-              disabled={uploading}
-              className="w-full bg-destructive/10 text-destructive py-2.5 rounded-xl font-medium hover:bg-destructive/20 transition-all disabled:opacity-50 text-sm flex items-center justify-center gap-2"
-            >
+            <button onClick={handleDelete} disabled={uploading}
+              className="w-full bg-destructive/10 text-destructive py-2.5 rounded-xl font-medium hover:bg-destructive/20 transition-all disabled:opacity-50 text-sm flex items-center justify-center gap-2">
               <Trash2 size={16} /> Supprimer la photo
             </button>
           )}
         </div>
 
-        {/* License section - visible for non-photographe with playerId */}
         {!isNonPlayer && currentUser.playerId && (
           <div ref={licenseRef} className={`px-5 pt-4 pb-5 ${focusLicense ? 'ring-2 ring-primary/30 rounded-xl mx-2 bg-primary/5 transition-all' : ''}`}>
             <div className="border-t border-border pt-4">
@@ -237,17 +186,10 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
               ) : (
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <NativeDatePicker
-                      value={licenseExpiry}
-                      onChange={setLicenseExpiry}
-                      placeholder="Date d'expiration"
-                    />
+                    <NativeDatePicker value={licenseExpiry} onChange={setLicenseExpiry} placeholder="Date d'expiration" />
                   </div>
-                  <button
-                    onClick={handleSaveLicense}
-                    disabled={savingLicense}
-                    className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all disabled:opacity-50 text-sm flex items-center gap-1.5"
-                  >
+                  <button onClick={handleSaveLicense} disabled={savingLicense}
+                    className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all disabled:opacity-50 text-sm flex items-center gap-1.5">
                     {savingLicense ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                     OK
                   </button>
@@ -257,7 +199,6 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
           </div>
         )}
 
-        {/* Bottom padding if no license section */}
         {(isNonPlayer || !currentUser.playerId) && <div className="pb-5" />}
       </div>
     </div>

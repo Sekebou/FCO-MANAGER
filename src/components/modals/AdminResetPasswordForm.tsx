@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { auth, sendPasswordResetEmail } from '@/lib/firebase';
-import { isIOSCapacitor, restSendPasswordReset } from '@/lib/firestore-rest';
+import { supabase } from '@/integrations/supabase/client';
 import type { Member } from '@/pages/Dashboard';
 import { Lock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,11 +16,10 @@ const AdminResetPasswordForm = ({ member, onClose }: Props) => {
   const handleSend = async () => {
     setLoading(true);
     try {
-      if (isIOSCapacitor) {
-        await restSendPasswordReset(member.email);
-      } else {
-        await sendPasswordResetEmail(auth, member.email);
-      }
+      const { error } = await supabase.auth.resetPasswordForEmail(member.email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      if (error) throw error;
       setSuccess(true);
       setTimeout(onClose, 3000);
     } catch (err: any) {
