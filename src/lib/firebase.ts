@@ -50,10 +50,15 @@ export const auth = getAuth(app);
 
 // Force local persistence for Capacitor/Android compatibility
 // Export a promise so AuthContext can wait for persistence to be ready
-export const authReady = setPersistence(auth, indexedDBLocalPersistence).catch(() => {
-  // Fallback to localStorage-based persistence if indexedDB is not available
+// On iOS WebView, indexedDB can hang indefinitely — add a hard timeout
+const persistencePromise = setPersistence(auth, indexedDBLocalPersistence).catch(() => {
   return setPersistence(auth, browserLocalPersistence);
 });
+
+export const authReady = Promise.race([
+  persistencePromise,
+  new Promise<void>((resolve) => setTimeout(resolve, 3000))
+]);
 
 export const db = getFirestore(app);
 
