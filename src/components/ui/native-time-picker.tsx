@@ -24,8 +24,11 @@ const NativeTimePicker = ({
   };
 
   const handleTap = () => {
-    inputRef.current?.showPicker?.();
-    inputRef.current?.focus();
+    if (inputRef.current) {
+      try { inputRef.current.showPicker(); } catch {}
+      inputRef.current.click();
+      inputRef.current.focus();
+    }
   };
 
   return (
