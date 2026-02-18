@@ -137,6 +137,7 @@ const tabs = [
 
 // ---- Supabase helpers: map DB snake_case → app camelCase ----
 const mapPlayer = (r: any): Player => ({ id: r.id, name: r.name, position: r.position || 'Non défini', matches: r.matches ?? 0, goals: r.goals ?? 0, assists: r.assists ?? 0, licenseExpiry: r.license_expiry || undefined });
+const sortPlayersStable = (list: Player[]) => [...list].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location });
 const mapNews = (r: any): NewsItem => ({ id: r.id, title: r.title, content: r.content, author: r.author, authorId: r.author_id, date: r.date, likes: r.likes || [] });
 const mapMember = (r: any): Member => ({ id: r.id, name: r.name, email: r.email, role: r.role, playerId: r.player_id, photoURL: r.photo_url, createdAt: r.created_at, username: r.username, licenseExpiry: r.license_expiry });
@@ -266,7 +267,7 @@ const Dashboard = () => {
           supabase.from('gallery_photos').select('*'),
         ]);
 
-        setPlayers((playersData || []).map(mapPlayer));
+        setPlayers(sortPlayersStable((playersData || []).map(mapPlayer)));
         setEvents((eventsData || []).map(mapEvent));
         setNews((newsData || []).map(mapNews));
         setMembers((membersData || []).map(mapMember));
@@ -302,7 +303,7 @@ const Dashboard = () => {
           if (attData) setAttendanceRecords(attData.map(mapAttendance));
           if (newsData) setNews(newsData.map(mapNews));
           if (commData) setNewsComments(commData.map(mapComment));
-          if (playersData) setPlayers(playersData.map(mapPlayer));
+          if (playersData) setPlayers(sortPlayersStable(playersData.map(mapPlayer)));
         } catch (err) { console.warn('iOS hot poll error:', err); }
       };
 
@@ -336,7 +337,7 @@ const Dashboard = () => {
     // === Web/Android: Supabase Realtime subscriptions ===
     const channel = supabase.channel('dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
-        supabase.from('players').select('*').then(({ data }) => data && setPlayers(data.map(mapPlayer)));
+        supabase.from('players').select('*').then(({ data }) => data && setPlayers(sortPlayersStable(data.map(mapPlayer))));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
         supabase.from('events').select('*').order('date', { ascending: false }).then(({ data }) => data && setEvents(data.map(mapEvent)));
@@ -669,7 +670,8 @@ const Dashboard = () => {
   const updatePlayerStats = async (playerId: string, field: string, value: string) => {
     if (!canManage()) return;
     const numVal = parseInt(value) || 0;
-    setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, [field]: numVal } : p));
+    // Optimistic update (keep stable sort)
+    setPlayers(prev => sortPlayersStable(prev.map(p => p.id === playerId ? { ...p, [field]: numVal } : p)));
     const { error } = await supabase.from('players').update({ [field]: numVal }).eq('id', playerId);
     if (error) console.error('Error updating stats:', error);
   };
