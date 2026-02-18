@@ -91,7 +91,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return stored ? JSON.parse(stored) : null;
   });
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // On iOS with cached user, start with loading=false for instant display
+  const hasCachedUser = !!localStorage.getItem('currentUser');
+  const [loading, setLoading] = useState(isIOSCapacitor ? !hasCachedUser : true);
   // Grace period flag: skip session-token check right after auth state changes
   // to avoid race condition with Auth.tsx writing the new token
   const loginGraceRef = React.useRef(false);
@@ -226,13 +228,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       startAuth();
     });
 
-    // Ultimate fallback: if still loading after 6s, force loading=false
+    // Ultimate fallback: reduced timeout for iOS (2s), standard for others (6s)
+    const timeoutMs = isIOSCapacitor ? 2000 : 6000;
     const safetyTimeout = setTimeout(() => {
       if (isMounted && loading) {
         console.warn('Auth safety timeout: forcing loading=false');
         setLoading(false);
       }
-    }, 6000);
+    }, timeoutMs);
 
     return () => {
       isMounted = false;

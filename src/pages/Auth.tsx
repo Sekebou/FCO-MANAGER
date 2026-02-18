@@ -105,17 +105,17 @@ const Auth = () => {
         };
         console.log('[AUTH-iOS] User profile loaded:', userData.name);
 
-        // Generate session token and write via Firestore REST API
+        // Generate session token and write via Firestore REST API (fire & forget)
         const sessionToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        await fetch(
+        // Don't await — write in background
+        fetch(
           `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=sessionToken`,
           {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ fields: { sessionToken: { stringValue: sessionToken } } }),
           }
-        );
-        console.log('[AUTH-iOS] sessionToken written via REST');
+        ).catch(err => console.warn('[AUTH-iOS] sessionToken write failed:', err));
         localStorage.setItem('sessionToken', sessionToken);
         // Store idToken for REST API calls
         setIdToken(idToken, parseInt(data.expiresIn || '3600'));
@@ -133,19 +133,6 @@ const Auth = () => {
         // Update AuthContext state immediately so Dashboard doesn't redirect back
         setCurrentUser(appUser as any);
 
-        const displayName = userData.name || userData.username || "joueur";
-        if (!userData.welcomeSeen) {
-          sessionStorage.setItem('showWelcome', displayName);
-          await fetch(
-            `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=welcomeSeen`,
-            {
-              method: 'PATCH',
-              headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fields: { welcomeSeen: { booleanValue: true } } }),
-            }
-          );
-        }
-
         // Store refresh token so we can re-auth the SDK on app restart
         if (data.refreshToken) {
           localStorage.setItem('firebaseRefreshToken', data.refreshToken);
@@ -154,21 +141,41 @@ const Auth = () => {
         localStorage.setItem('iosAuthEmail', email.trim());
         localStorage.setItem('iosAuthPass', btoa(password));
 
-        // Now try to also sign in the Firebase SDK so Dashboard listeners work.
-        try {
-          const { authReady: ar } = await import('@/lib/firebase');
-          await Promise.race([ar, new Promise<void>(r => setTimeout(r, 2000))]);
-          const credential = EmailAuthProvider.credential(email.trim(), password);
-          await Promise.race([
-            signInWithCredential(auth, credential),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('SDK timeout')), 4000)),
-          ]);
-          console.log('[AUTH-iOS] SDK sign-in also succeeded — listeners will work');
-        } catch (sdkErr) {
-          console.warn('[AUTH-iOS] SDK sign-in failed/timed out, REST session only:', sdkErr);
+        // Navigate IMMEDIATELY — everything else is fire & forget
+        const displayName = userData.name || userData.username || "joueur";
+        if (!userData.welcomeSeen) {
+          sessionStorage.setItem('showWelcome', displayName);
+        }
+        navigate("/");
+
+        // Background: welcomeSeen flag + SDK sign-in (non-blocking)
+        if (!userData.welcomeSeen) {
+          fetch(
+            `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=welcomeSeen`,
+            {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fields: { welcomeSeen: { booleanValue: true } } }),
+            }
+          ).catch(() => {});
         }
 
-        navigate("/");
+        // Try SDK sign-in in background (non-blocking)
+        (async () => {
+          try {
+            const { authReady: ar } = await import('@/lib/firebase');
+            await Promise.race([ar, new Promise<void>(r => setTimeout(r, 2000))]);
+            const credential = EmailAuthProvider.credential(email.trim(), password);
+            await Promise.race([
+              signInWithCredential(auth, credential),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('SDK timeout')), 4000)),
+            ]);
+            console.log('[AUTH-iOS] SDK sign-in also succeeded — listeners will work');
+          } catch (sdkErr) {
+            console.warn('[AUTH-iOS] SDK sign-in failed/timed out, REST session only:', sdkErr);
+          }
+        })();
+
         return; // Skip the normal SDK flow below
       }
 
