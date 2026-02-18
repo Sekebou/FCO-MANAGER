@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Users, TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +11,7 @@ interface Tab {
 const allTabs: Tab[] = [
   { id: 'presences', label: 'Présences', icon: Users },
   { id: 'stats', label: 'Stats', icon: TrendingUp },
-  { id: 'championnat', label: 'Classement', icon: Trophy },
+  { id: 'championnat', label: 'Classmt', icon: Trophy },
   { id: 'news', label: 'Actus', icon: Bell },
   { id: 'calendar', label: 'Agenda', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
@@ -25,87 +25,118 @@ interface BottomTabBarProps {
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [indicatorX, setIndicatorX] = useState(0);
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
+  const updateIndicator = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
     const activeBtn = container.querySelector(`[data-tab="${activeTab}"]`) as HTMLElement;
     if (activeBtn) {
       const containerRect = container.getBoundingClientRect();
       const btnRect = activeBtn.getBoundingClientRect();
-      setIndicatorStyle({
-        left: btnRect.left - containerRect.left + btnRect.width / 2 - 16,
-        width: 32,
-      });
+      setIndicatorX(btnRect.left - containerRect.left + btnRect.width / 2 - 12);
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    updateIndicator();
+    if (!mounted) setTimeout(() => setMounted(true), 50);
+  }, [activeTab, updateIndicator, mounted]);
+
+  // Haptic-like micro feedback on tap
+  const handleTap = (tabId: string) => {
+    if (tabId === activeTab) return;
+    // Trigger haptic on native
+    if ('vibrate' in navigator) navigator.vibrate(5);
+    onTabChange(tabId);
+  };
+
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
-      {/* Glassmorphism background */}
-      <div className="absolute inset-0 bg-card/80 backdrop-blur-2xl border-t border-border/50" />
-      
-      {/* Active indicator pill */}
-      <div
-        className="absolute top-0 h-[3px] bg-accent rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
-        style={{ left: indicatorStyle.left, width: indicatorStyle.width }}
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+      {/* Background with native blur */}
+      <div 
+        className="absolute inset-0 border-t border-white/[0.08]"
+        style={{
+          background: 'linear-gradient(to top, hsl(var(--card) / 0.92), hsl(var(--card) / 0.85))',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+        }}
       />
 
-      <div ref={containerRef} className="relative flex items-end justify-around px-1 pt-1.5 pb-1.5">
-        {allTabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+      {/* Safe area padding */}
+      <div className="relative">
+        {/* Sliding indicator */}
+        <div
+          className={cn(
+            'absolute top-0 h-[2.5px] w-6 rounded-full bg-accent',
+            mounted ? 'transition-transform duration-[450ms] ease-[cubic-bezier(0.25,1,0.5,1)]' : ''
+          )}
+          style={{ transform: `translateX(${indicatorX}px)` }}
+        />
 
-          return (
-            <button
-              key={tab.id}
-              data-tab={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={cn(
-                'flex flex-col items-center gap-0.5 py-1 px-1.5 rounded-xl transition-all duration-300 min-w-0 flex-1',
-                isActive
-                  ? 'text-accent'
-                  : 'text-muted-foreground/60 active:scale-90'
-              )}
-            >
-              <div
+        <div 
+          ref={containerRef} 
+          className="flex items-stretch justify-around px-0.5 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]"
+        >
+          {allTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+
+            return (
+              <button
+                key={tab.id}
+                data-tab={tab.id}
+                onClick={() => handleTap(tab.id)}
                 className={cn(
-                  'relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-500',
-                  isActive
-                    ? 'bg-accent/12 scale-110'
-                    : 'scale-100'
+                  'relative flex flex-col items-center justify-center py-1 flex-1 min-w-0',
+                  'outline-none select-none',
+                  '-webkit-tap-highlight-color: transparent',
                 )}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                <Icon
-                  size={20}
-                  strokeWidth={isActive ? 2.5 : 1.8}
+                {/* Icon container with active background */}
+                <div
                   className={cn(
-                    'transition-all duration-300',
-                    isActive && 'drop-shadow-[0_0_8px_hsl(var(--accent)/0.4)]'
+                    'relative flex items-center justify-center rounded-2xl transition-all',
+                    isActive 
+                      ? 'w-[52px] h-8 bg-accent/[0.12]' 
+                      : 'w-8 h-8',
+                    mounted ? 'duration-[350ms] ease-[cubic-bezier(0.25,1,0.5,1)]' : 'duration-0'
                   )}
-                />
-                {/* Active dot */}
-                {isActive && (
-                  <span className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-accent animate-scale-in" />
-                )}
-              </div>
-              <span
-                className={cn(
-                  'text-[9px] font-semibold tracking-tight leading-none transition-all duration-300 truncate max-w-full',
-                  isActive
-                    ? 'text-accent opacity-100 translate-y-0'
-                    : 'text-muted-foreground/50 opacity-80'
-                )}
-              >
-                {tab.label}
-              </span>
-            </button>
-          );
-        })}
+                >
+                  <Icon
+                    size={isActive ? 19 : 20}
+                    strokeWidth={isActive ? 2.4 : 1.6}
+                    className={cn(
+                      'transition-all',
+                      mounted ? 'duration-[250ms]' : 'duration-0',
+                      isActive 
+                        ? 'text-accent' 
+                        : 'text-muted-foreground/55'
+                    )}
+                  />
+                </div>
+
+                {/* Label */}
+                <span
+                  className={cn(
+                    'text-[10px] leading-none mt-0.5 tracking-tight transition-all truncate max-w-full px-0.5',
+                    mounted ? 'duration-[250ms]' : 'duration-0',
+                    isActive
+                      ? 'font-bold text-accent'
+                      : 'font-medium text-muted-foreground/45'
+                  )}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 };
 
-export default BottomTabBar;
+export default React.memo(BottomTabBar);
