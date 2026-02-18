@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { sendInvitationEmail, sendNotificationEmail } from '@/lib/emailjs';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,6 +65,7 @@ export interface Event {
   date: string;
   type: string;
   team?: string;
+  reason?: string;
   recurrence?: 'recurring' | 'ponctuel';
   presences?: Record<string, string>;
   convocations?: Record<string, Convocation>;
@@ -136,6 +138,9 @@ const tabs = [
 const Dashboard = () => {
   const { currentUser, logout, setCurrentUser } = useAuth();
   const navigate = useNavigate();
+  
+  // Register for push notifications on native platforms
+  usePushNotifications(currentUser?.uid);
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab');
@@ -589,14 +594,29 @@ const Dashboard = () => {
       
       await addDoc(collection(db, 'events'), eventToSave);
 
-      // Envoyer les notifications par email via Resend
+      const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
+      const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
+      const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const pushTitle = `${typeIcons[eventData.type] || '📅'} ${typeLabels[eventData.type] || 'Événement'} : ${eventData.title}`;
+      const pushBody = `📅 ${dateFormatted}${eventData.type === 'other' && eventData.reason ? ` — ${eventData.reason}` : ''}`;
+
+      // Envoyer notification push native
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ title: pushTitle, body: pushBody, data: { tab: 'presences' } }),
+        });
+      } catch (pushErr) {
+        console.error('Erreur envoi push:', pushErr);
+      }
+
+      // Envoyer les notifications par email
       if (sendEmail) {
         const targetMembers = members.filter(m => m.role === 'joueur');
         const memberEmails = targetMembers.map(m => m.email);
-        const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-        const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
-        const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
         for (const email of memberEmails) {
           try {
             await sendNotificationEmail({

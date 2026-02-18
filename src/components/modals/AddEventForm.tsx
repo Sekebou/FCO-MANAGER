@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
-  const [formData, setFormData] = useState({ title: '', date: '', type: isDirigeant ? 'training' : 'match', recurrence: 'ponctuel' as 'recurring' | 'ponctuel', sendNotification: true });
+  const [formData, setFormData] = useState({ title: '', date: '', type: isDirigeant ? 'training' : 'match', recurrence: 'ponctuel' as 'recurring' | 'ponctuel', sendNotification: true, reason: '' });
 
   const allTypeOptions = [
     { value: 'match', label: 'Match', shortLabel: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
@@ -97,6 +97,19 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
+          {/* Reason field for "other" type */}
+          {formData.type === 'other' && (
+            <div className="relative animate-fade-in">
+              <FileText size={16} className="absolute left-3.5 top-3.5 text-muted-foreground" />
+              <textarea
+                placeholder="Précisez la raison (ex: Réunion de bureau, Tournoi amical, Journée cohésion...)"
+                className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all resize-none"
+                rows={2}
+                value={formData.reason}
+                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+              />
+            </div>
+          )}
           {/* Notification */}
           {(formData.type === 'match' || formData.type === 'training') && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
