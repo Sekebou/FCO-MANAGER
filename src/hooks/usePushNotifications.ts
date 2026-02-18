@@ -27,26 +27,26 @@ export function usePushNotifications(userId: string | undefined) {
           return;
         }
 
-        // Register with FCM
-        await PushNotifications.register();
-
-        // Listen for token
+        // Listen for token BEFORE calling register to avoid race condition
         PushNotifications.addListener('registration', async (token) => {
           console.log('FCM Token:', token.value);
-          // Store the token in Supabase
-          const { error } = await supabase
-            .from('fcm_tokens')
-            .upsert({
-              user_id: userId,
-              token: token.value,
-              platform: Capacitor.getPlatform(),
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'user_id' });
-          
-          if (error) {
-            console.error('Error storing FCM token:', error);
-          } else {
-            registered.current = true;
+          try {
+            const { error } = await supabase
+              .from('fcm_tokens')
+              .upsert({
+                user_id: userId,
+                token: token.value,
+                platform: Capacitor.getPlatform(),
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id' });
+            
+            if (error) {
+              console.error('Error storing FCM token:', error);
+            } else {
+              registered.current = true;
+            }
+          } catch (e) {
+            console.error('Error saving FCM token:', e);
           }
         });
 
@@ -65,6 +65,13 @@ export function usePushNotifications(userId: string | undefined) {
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
           console.log('Push notification action:', action);
         });
+
+        // Register with FCM - wrapped in its own try/catch to prevent native crash propagation
+        try {
+          await PushNotifications.register();
+        } catch (registerErr) {
+          console.error('FCM register() failed (google-services.json missing?):', registerErr);
+        }
 
       } catch (err) {
         console.error('Push notification setup error:', err);
