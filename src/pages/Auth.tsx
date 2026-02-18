@@ -66,9 +66,10 @@ const Auth = () => {
       localStorage.setItem('currentUser', JSON.stringify(appUser));
       setCurrentUser(appUser as any);
 
-      const displayName = profile.name || profile.username || "joueur";
+      const fullName = profile.name || profile.username || "joueur";
+      const firstName = fullName.split(' ')[0];
       if (!profile.welcome_seen) {
-        sessionStorage.setItem('showWelcome', displayName);
+        sessionStorage.setItem('showWelcome', firstName);
         await supabase.from('profiles').update({ welcome_seen: true }).eq('id', user.id);
       }
 
