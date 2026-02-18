@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { auth, db, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, doc, getDoc, updateDoc } from "@/lib/firebase";
 import { setIdToken, isIOSCapacitor, restSendPasswordReset } from "@/lib/firestore-rest";
 import { signInWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { useAuth } from "@/contexts/AuthContext";
 import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft } from "lucide-react";
 import clubLogo from "@/assets/logo.svg";
 import { toast } from "sonner";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { setCurrentUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -118,18 +120,18 @@ const Auth = () => {
         // Store idToken for REST API calls
         setIdToken(idToken, parseInt(data.expiresIn || '3600'));
 
-        localStorage.setItem(
-          "currentUser",
-          JSON.stringify({
-            uid,
-            email: userEmail,
-            role: userData.role,
-            name: userData.name,
-            username: userData.username,
-            playerId: userData.playerId,
-            photoURL: userData.photoURL,
-          }),
-        );
+        const appUser = {
+          uid,
+          email: userEmail,
+          role: userData.role,
+          name: userData.name,
+          username: userData.username,
+          playerId: userData.playerId,
+          photoURL: userData.photoURL,
+        };
+        localStorage.setItem("currentUser", JSON.stringify(appUser));
+        // Update AuthContext state immediately so Dashboard doesn't redirect back
+        setCurrentUser(appUser as any);
 
         const displayName = userData.name || userData.username || "joueur";
         if (!userData.welcomeSeen) {
@@ -199,18 +201,17 @@ const Auth = () => {
       }
 
       const userData = userDoc.data();
-      localStorage.setItem(
-        "currentUser",
-        JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          role: userData.role,
-          name: userData.name,
-          username: userData.username || "",
-          playerId: userData.playerId || null,
-          photoURL: userData.photoURL || null,
-        }),
-      );
+      const appUser = {
+        uid: user.uid,
+        email: user.email || '',
+        role: userData.role,
+        name: userData.name,
+        username: userData.username || "",
+        playerId: userData.playerId || null,
+        photoURL: userData.photoURL || null,
+      };
+      localStorage.setItem("currentUser", JSON.stringify(appUser));
+      setCurrentUser(appUser as any);
 
       const displayName = userData.name || userData.username || "joueur";
       // Flag first login to show welcome modal on Dashboard
