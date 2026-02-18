@@ -48,16 +48,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Force local persistence for Capacitor/Android compatibility
-// Export a promise so AuthContext can wait for persistence to be ready
-// On iOS WebView, indexedDB can hang indefinitely — add a hard timeout
-const persistencePromise = setPersistence(auth, indexedDBLocalPersistence).catch(() => {
-  return setPersistence(auth, browserLocalPersistence);
-});
+// Detect iOS Capacitor WebView where indexedDB persistence hangs
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isCapacitor = !!(window as any).Capacitor;
+
+// On iOS Capacitor, go straight to browserLocalPersistence (indexedDB hangs)
+// On Android/other, try indexedDB first with browserLocal fallback
+const persistencePromise = (isIOS && isCapacitor)
+  ? setPersistence(auth, browserLocalPersistence)
+  : setPersistence(auth, indexedDBLocalPersistence).catch(() => {
+      return setPersistence(auth, browserLocalPersistence);
+    });
 
 export const authReady = Promise.race([
   persistencePromise,
-  new Promise<void>((resolve) => setTimeout(resolve, 3000))
+  new Promise<void>((resolve) => setTimeout(resolve, 2000))
 ]);
 
 export const db = getFirestore(app);
