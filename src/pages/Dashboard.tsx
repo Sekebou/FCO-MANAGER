@@ -880,8 +880,8 @@ const Dashboard = () => {
           <div className="flex justify-between items-center h-16 lg:h-20">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15">
-                  <img src={clubLogo} alt="FCO Logo" className="w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 object-contain drop-shadow-md" />
+                <div className="w-12 h-12 sm:w-13 sm:h-13 lg:w-14 lg:h-14 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15">
+                  <img src={clubLogo} alt="FCO Logo" className="w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 object-contain drop-shadow-md" />
                 </div>
                 <h1 className="text-base sm:text-lg lg:text-xl font-bold text-primary-foreground leading-tight">FCO Manager</h1>
               </div>
