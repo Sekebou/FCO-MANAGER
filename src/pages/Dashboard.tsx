@@ -528,19 +528,20 @@ const Dashboard = () => {
       toast.warning('Vous ne pouvez gérer que votre propre présence');
       return;
     }
-    try {
-      const event = events.find(e => e.id === eventId);
-      const currentPresences = { ...(event?.presences || {}) };
-      if (currentPresences[playerId] === status) {
-        delete currentPresences[playerId];
-      } else {
-        currentPresences[playerId] = status;
-      }
-      await _update('events', eventId, { presences: currentPresences });
-      await refetchNow();
-    } catch (err: any) {
-      toast.error('Erreur: ' + err.message);
+    // Optimistic update — instant UI change
+    const event = events.find(e => e.id === eventId);
+    const currentPresences = { ...(event?.presences || {}) };
+    if (currentPresences[playerId] === status) {
+      delete currentPresences[playerId];
+    } else {
+      currentPresences[playerId] = status;
     }
+    setEvents(prev => prev.map(e => e.id === eventId ? { ...e, presences: currentPresences } : e));
+    // Fire API in background
+    _update('events', eventId, { presences: currentPresences }).catch(err => {
+      toast.error('Erreur: ' + err.message);
+      refetchNow(); // revert on failure
+    });
   };
 
   const addPlayer = async (playerData: any) => {
@@ -835,41 +836,60 @@ const Dashboard = () => {
 
   const toggleLike = async (newsId: string) => {
     if (!currentUser) return;
-    try {
-      const newsItem = news.find(n => n.id === newsId);
-      if (!newsItem) return;
-      const likes = newsItem.likes || [];
-      const isLiked = likes.includes(currentUser.uid);
-      if (isIOSCapacitor) {
-        if (isLiked) {
-          await restArrayRemove('news', newsId, 'likes', currentUser.uid);
+    const newsItem = news.find(n => n.id === newsId);
+    if (!newsItem) return;
+    const likes = newsItem.likes || [];
+    const isLiked = likes.includes(currentUser.uid);
+    // Optimistic update
+    const newLikes = isLiked ? likes.filter(id => id !== currentUser.uid) : [...likes, currentUser.uid];
+    setNews(prev => prev.map(n => n.id === newsId ? { ...n, likes: newLikes } : n));
+    // Fire API in background
+    (async () => {
+      try {
+        if (isIOSCapacitor) {
+          if (isLiked) {
+            await restArrayRemove('news', newsId, 'likes', currentUser.uid);
+          } else {
+            await restArrayUnion('news', newsId, 'likes', currentUser.uid);
+          }
         } else {
-          await restArrayUnion('news', newsId, 'likes', currentUser.uid);
+          await updateDoc(doc(db, 'news', newsId), {
+            likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+          });
         }
-      } else {
-        await updateDoc(doc(db, 'news', newsId), {
-          likes: isLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
-        });
+      } catch (err: any) {
+        console.error('Error toggling like:', err);
+        refetchNow(); // revert on failure
       }
-      await refetchNow();
-    } catch (err: any) {
-      console.error('Error toggling like:', err);
-    }
+    })();
   };
 
   const addComment = async (newsId: string, content: string) => {
     if (!currentUser || !content.trim()) return;
-    try {
-      await _add('news_comments', {
-        newsId,
-        authorName: currentUser.name,
-        authorUid: currentUser.uid,
-        content: content.trim(),
-        createdAt: new Date().toISOString(),
-      });
-    } catch (err: any) {
+    // Optimistic update — show comment instantly
+    const tempId = `temp-${Date.now()}`;
+    const newComment: NewsComment = {
+      id: tempId,
+      newsId,
+      authorName: currentUser.name,
+      authorUid: currentUser.uid,
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    setNewsComments(prev => [...prev, newComment]);
+    // Fire API in background
+    _add('news_comments', {
+      newsId,
+      authorName: currentUser.name,
+      authorUid: currentUser.uid,
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+    }).then(() => {
+      refetchNow(); // sync real ID
+    }).catch(err => {
       console.error('Error adding comment:', err);
-    }
+      setNewsComments(prev => prev.filter(c => c.id !== tempId)); // revert
+    });
   };
 
   const deleteComment = async (commentId: string) => {
@@ -914,12 +934,14 @@ const Dashboard = () => {
 
   const updatePlayerStats = async (playerId: string, field: string, value: string) => {
     if (!canManage()) return;
-    try {
-      await _update('players', playerId, { [field]: parseInt(value) || 0 });
-      await refetchNow();
-    } catch (err: any) {
+    const numVal = parseInt(value) || 0;
+    // Optimistic update
+    setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, [field]: numVal } : p));
+    // Fire API in background
+    _update('players', playerId, { [field]: numVal }).catch(err => {
       console.error('Error updating stats:', err);
-    }
+      refetchNow(); // revert on failure
+    });
   };
 
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
