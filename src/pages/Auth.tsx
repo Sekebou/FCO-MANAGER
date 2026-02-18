@@ -141,9 +141,15 @@ const Auth = () => {
           );
         }
 
+        // Store refresh token so we can re-auth the SDK on app restart
+        if (data.refreshToken) {
+          localStorage.setItem('firebaseRefreshToken', data.refreshToken);
+        }
+        // Store credentials for SDK re-auth on iOS app restart
+        localStorage.setItem('iosAuthEmail', email.trim());
+        localStorage.setItem('iosAuthPass', btoa(password));
+
         // Now try to also sign in the Firebase SDK so Dashboard listeners work.
-        // The SDK uses inMemoryPersistence on iOS so it should not hang.
-        // Wrap in a timeout just in case.
         try {
           const { authReady: ar } = await import('@/lib/firebase');
           await Promise.race([ar, new Promise<void>(r => setTimeout(r, 2000))]);
