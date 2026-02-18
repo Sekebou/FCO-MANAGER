@@ -21,12 +21,21 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Wait for Firebase persistence to be ready before signing in (critical for iOS)
+      const { authReady } = await import('@/lib/firebase');
+      await Promise.race([
+        authReady,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout persistence')), 5000))
+      ]).catch(() => console.warn('Auth persistence setup timed out, continuing anyway'));
+
       const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       const user = userCredential.user;
       const userDoc = await getDoc(doc(db, "users", user.uid));
 
-      // Generate unique session token and write to Firestore
-      const sessionToken = crypto.randomUUID();
+      // Generate unique session token and write to Firestore (fallback for iOS WebView)
+      const sessionToken = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       await updateDoc(doc(db, "users", user.uid), { sessionToken });
       localStorage.setItem('sessionToken', sessionToken);
 
