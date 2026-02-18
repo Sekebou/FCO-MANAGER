@@ -351,7 +351,7 @@ const Dashboard = () => {
       iosRefetchRef.current = fetchAll;
 
       fetchAll();
-      const pollInterval = setInterval(fetchAll, 8000);
+      const pollInterval = setInterval(fetchAll, 5000);
       return () => { cancelled = true; clearInterval(pollInterval); iosRefetchRef.current = null; };
     }
 
