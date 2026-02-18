@@ -62,20 +62,57 @@ const Auth = () => {
         const userEmail = data.email;
         console.log('[AUTH-iOS] REST auth OK, uid=', uid);
 
-        // Fetch user profile from Firestore using the SDK (reads work fine)
-        const userDoc = await getDoc(doc(db, "users", uid));
-        console.log('[AUTH-iOS] getDoc OK, exists=', userDoc.exists());
-
-        if (!userDoc.exists()) {
+        // Firestore SDK also hangs on iOS Capacitor WebView.
+        // Use Firestore REST API with the idToken from auth.
+        const idToken = data.idToken;
+        const projectId = 'fco-manager-caccd';
+        
+        // Fetch user profile via Firestore REST API
+        console.log('[AUTH-iOS] Fetching user profile via REST...');
+        const userDocRes = await fetch(
+          `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}`,
+          { headers: { 'Authorization': `Bearer ${idToken}` } }
+        );
+        console.log('[AUTH-iOS] Firestore REST status:', userDocRes.status);
+        
+        if (!userDocRes.ok) {
           throw new Error("Profil utilisateur introuvable. Contactez l'administrateur.");
         }
+        
+        const userDocData = await userDocRes.json();
+        const fields = userDocData.fields || {};
+        
+        // Helper to extract Firestore REST field values
+        const getField = (f: any): any => {
+          if (!f) return null;
+          if (f.stringValue !== undefined) return f.stringValue;
+          if (f.booleanValue !== undefined) return f.booleanValue;
+          if (f.integerValue !== undefined) return Number(f.integerValue);
+          if (f.nullValue !== undefined) return null;
+          return null;
+        };
 
-        const userData = userDoc.data();
+        const userData = {
+          role: getField(fields.role) || '',
+          name: getField(fields.name) || '',
+          username: getField(fields.username) || '',
+          playerId: getField(fields.playerId) || null,
+          photoURL: getField(fields.photoURL) || null,
+          welcomeSeen: getField(fields.welcomeSeen) || false,
+        };
+        console.log('[AUTH-iOS] User profile loaded:', userData.name);
 
-        // Generate session token
+        // Generate session token and write via Firestore REST API
         const sessionToken = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        await updateDoc(doc(db, "users", uid), { sessionToken });
-        console.log('[AUTH-iOS] sessionToken written');
+        await fetch(
+          `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=sessionToken`,
+          {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: { sessionToken: { stringValue: sessionToken } } }),
+          }
+        );
+        console.log('[AUTH-iOS] sessionToken written via REST');
         localStorage.setItem('sessionToken', sessionToken);
 
         localStorage.setItem(
@@ -85,16 +122,23 @@ const Auth = () => {
             email: userEmail,
             role: userData.role,
             name: userData.name,
-            username: userData.username || "",
-            playerId: userData.playerId || null,
-            photoURL: userData.photoURL || null,
+            username: userData.username,
+            playerId: userData.playerId,
+            photoURL: userData.photoURL,
           }),
         );
 
         const displayName = userData.name || userData.username || "joueur";
         if (!userData.welcomeSeen) {
           sessionStorage.setItem('showWelcome', displayName);
-          await updateDoc(doc(db, "users", uid), { welcomeSeen: true });
+          await fetch(
+            `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/users/${uid}?updateMask.fieldPaths=welcomeSeen`,
+            {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ fields: { welcomeSeen: { booleanValue: true } } }),
+            }
+          );
         }
 
         navigate("/");
