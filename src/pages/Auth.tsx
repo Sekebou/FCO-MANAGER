@@ -141,6 +141,22 @@ const Auth = () => {
           );
         }
 
+        // Now try to also sign in the Firebase SDK so Dashboard listeners work.
+        // The SDK uses inMemoryPersistence on iOS so it should not hang.
+        // Wrap in a timeout just in case.
+        try {
+          const { authReady: ar } = await import('@/lib/firebase');
+          await Promise.race([ar, new Promise<void>(r => setTimeout(r, 2000))]);
+          const credential = EmailAuthProvider.credential(email.trim(), password);
+          await Promise.race([
+            signInWithCredential(auth, credential),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('SDK timeout')), 4000)),
+          ]);
+          console.log('[AUTH-iOS] SDK sign-in also succeeded — listeners will work');
+        } catch (sdkErr) {
+          console.warn('[AUTH-iOS] SDK sign-in failed/timed out, REST session only:', sdkErr);
+        }
+
         navigate("/");
         return; // Skip the normal SDK flow below
       }
