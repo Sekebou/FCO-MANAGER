@@ -3,7 +3,7 @@ import {
   Send, MessageCircle, Plus, ArrowLeft, Users as UsersIcon, Search,
   Trash2, Image as ImageIcon, X, Globe, Lock, UserPlus
 } from 'lucide-react';
-import clubLogo from '@/assets/logo.svg';
+import clubLogo from '@/assets/logo.png';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Member } from '@/pages/Dashboard';
