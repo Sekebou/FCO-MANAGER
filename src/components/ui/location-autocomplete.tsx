@@ -1,27 +1,28 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Loader2, X } from 'lucide-react';
+import { MapPin, Loader2, X, Check } from 'lucide-react';
 
 interface LocationAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
+  onValidSelection: (isValid: boolean) => void;
   placeholder?: string;
 }
 
 interface NominatimResult {
   display_name: string;
   place_id: number;
-  name?: string;
-  class?: string;
-  type?: string;
 }
 
-const LocationAutocomplete = ({ value, onChange, placeholder = "Rechercher un lieu, une ville..." }: LocationAutocompleteProps) => {
+const LocationAutocomplete = ({ value, onChange, onValidSelection, placeholder = "Rechercher une adresse, un stade..." }: LocationAutocompleteProps) => {
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<{ label: string; id: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState(value || '');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const isSelected = selectedLabel !== '' && query === selectedLabel;
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -33,10 +34,6 @@ const LocationAutocomplete = ({ value, onChange, placeholder = "Rechercher un li
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  useEffect(() => {
-    setQuery(value);
-  }, [value]);
-
   const search = useCallback(async (q: string) => {
     if (q.length < 3) {
       setResults([]);
@@ -44,38 +41,17 @@ const LocationAutocomplete = ({ value, onChange, placeholder = "Rechercher un li
     }
     setIsLoading(true);
     try {
-      // Two parallel searches: one for the exact query, one for the city/town name
-      // This helps find small municipal stadiums that aren't in OSM
-      const queries = [
-        fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&countrycodes=fr&accept-language=fr`,
-          { headers: { 'User-Agent': 'BluePitchDash/1.0' } }
-        ),
-      ];
-
-      // If the query looks like "Stade X" or "Terrain X", also search for the city
-      const locationMatch = q.match(/^(?:stade|terrain|gymnase|salle|complexe)\s+(?:de\s+|d'|du\s+|des\s+)?(.+)/i);
-      if (locationMatch) {
-        const cityName = locationMatch[1].trim();
-        if (cityName.length >= 2) {
-          queries.push(
-            fetch(
-              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=3&countrycodes=fr&accept-language=fr&featuretype=city`,
-              { headers: { 'User-Agent': 'BluePitchDash/1.0' } }
-            )
-          );
-        }
-      }
-
-      const responses = await Promise.all(queries);
-      const allData = await Promise.all(responses.map(r => r.json()));
+      // Search with addressdetails for better results
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=6&countrycodes=fr&accept-language=fr&addressdetails=1`,
+        { headers: { 'User-Agent': 'BluePitchDash/1.0' } }
+      );
+      const data: NominatimResult[] = await res.json();
 
       const seen = new Set<string>();
       const combined: { label: string; id: string }[] = [];
 
-      // Add direct results
-      for (const item of (allData[0] as NominatimResult[])) {
-        // Shorten display_name: keep first 3-4 parts
+      for (const item of data) {
         const parts = item.display_name.split(', ');
         const short = parts.slice(0, 4).join(', ');
         if (!seen.has(short)) {
@@ -84,16 +60,24 @@ const LocationAutocomplete = ({ value, onChange, placeholder = "Rechercher un li
         }
       }
 
-      // If we searched for a city, add "Stade de [city]" as a suggestion
-      if (allData[1]) {
-        const prefix = q.match(/^(stade|terrain|gymnase|salle|complexe)/i)?.[1] || 'Stade';
-        for (const item of (allData[1] as NominatimResult[])) {
-          const cityParts = item.display_name.split(', ');
-          const cityLabel = `${prefix.charAt(0).toUpperCase() + prefix.slice(1).toLowerCase()} de ${cityParts[0]}`;
-          const fullLabel = `${cityLabel}, ${cityParts.slice(0, 3).join(', ')}`;
-          if (!seen.has(fullLabel)) {
-            seen.add(fullLabel);
-            combined.unshift({ label: fullLabel, id: `city-${item.place_id}` });
+      // If query looks like "Stade/Terrain X", also search for the city to generate a suggestion
+      const locationMatch = q.match(/^(?:stade|terrain|gymnase|salle|complexe)\s+(?:de\s+|d'|du\s+|des\s+|municipal\s+)?(.+)/i);
+      if (locationMatch && combined.length < 3) {
+        const cityName = locationMatch[1].trim();
+        if (cityName.length >= 2) {
+          const cityRes = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=3&countrycodes=fr&accept-language=fr&featuretype=city`,
+            { headers: { 'User-Agent': 'BluePitchDash/1.0' } }
+          );
+          const cityData: NominatimResult[] = await cityRes.json();
+          for (const item of cityData) {
+            const cityParts = item.display_name.split(', ');
+            // Use the user's original text + city context
+            const fullLabel = `${q}, ${cityParts.slice(0, 3).join(', ')}`;
+            if (!seen.has(fullLabel)) {
+              seen.add(fullLabel);
+              combined.unshift({ label: fullLabel, id: `city-${item.place_id}` });
+            }
           }
         }
       }
@@ -110,20 +94,29 @@ const LocationAutocomplete = ({ value, onChange, placeholder = "Rechercher un li
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
-    onChange(val);
+    // If user modifies text after selecting, invalidate
+    if (val !== selectedLabel) {
+      setSelectedLabel('');
+      onValidSelection(false);
+      onChange('');
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(val), 400);
   };
 
   const handleSelect = (result: { label: string }) => {
     setQuery(result.label);
+    setSelectedLabel(result.label);
     onChange(result.label);
+    onValidSelection(true);
     setShowDropdown(false);
   };
 
   const handleClear = () => {
     setQuery('');
+    setSelectedLabel('');
     onChange('');
+    onValidSelection(false);
     setResults([]);
     setShowDropdown(false);
   };
@@ -134,15 +127,20 @@ const LocationAutocomplete = ({ value, onChange, placeholder = "Rechercher un li
       <input
         type="text"
         placeholder={placeholder}
-        className="w-full pl-10 pr-10 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all"
+        className={`w-full pl-10 pr-10 py-3 bg-secondary border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all ${
+          isSelected ? 'border-green-500/50 bg-green-500/5' : 'border-border'
+        }`}
         value={query}
         onChange={handleInputChange}
-        onFocus={() => results.length > 0 && setShowDropdown(true)}
+        onFocus={() => results.length > 0 && !isSelected && setShowDropdown(true)}
       />
       {isLoading && (
         <Loader2 size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" />
       )}
-      {!isLoading && query && (
+      {!isLoading && isSelected && (
+        <Check size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-green-500" />
+      )}
+      {!isLoading && query && !isSelected && (
         <button onClick={handleClear} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
           <X size={14} />
         </button>
@@ -161,6 +159,9 @@ const LocationAutocomplete = ({ value, onChange, placeholder = "Rechercher un li
             </button>
           ))}
         </div>
+      )}
+      {!isSelected && query.length >= 3 && !isLoading && results.length === 0 && !showDropdown && (
+        <p className="text-[11px] text-destructive mt-1">Aucun résultat. Essaie avec le nom de la ville.</p>
       )}
     </div>
   );
