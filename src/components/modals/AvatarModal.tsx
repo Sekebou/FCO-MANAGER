@@ -93,9 +93,9 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
       const compressed = await compressImage(file);
       await updateDoc(doc(db, 'users', currentUser.uid), { photoURL: compressed });
       setPhotoURL(compressed);
-      const stored = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+      const stored = JSON.parse(localStorage.getItem('currentUser') || '{}');
       stored.photoURL = compressed;
-      sessionStorage.setItem('currentUser', JSON.stringify(stored));
+      localStorage.setItem('currentUser', JSON.stringify(stored));
       onAvatarUpdated(compressed);
       toast.success('Photo mise à jour !');
     } catch (err: any) {
@@ -111,9 +111,9 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
     try {
       await updateDoc(doc(db, 'users', currentUser.uid), { photoURL: null });
       setPhotoURL(null);
-      const stored = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+      const stored = JSON.parse(localStorage.getItem('currentUser') || '{}');
       stored.photoURL = null;
-      sessionStorage.setItem('currentUser', JSON.stringify(stored));
+      localStorage.setItem('currentUser', JSON.stringify(stored));
       onAvatarUpdated(null);
       toast.success('Photo supprimée');
     } catch (err: any) {

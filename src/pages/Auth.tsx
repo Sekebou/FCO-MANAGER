@@ -28,14 +28,14 @@ const Auth = () => {
       // Generate unique session token and write to Firestore
       const sessionToken = crypto.randomUUID();
       await updateDoc(doc(db, "users", user.uid), { sessionToken });
-      sessionStorage.setItem('sessionToken', sessionToken);
+      localStorage.setItem('sessionToken', sessionToken);
 
       if (!userDoc.exists()) {
         throw new Error("Profil utilisateur introuvable. Contactez l'administrateur.");
       }
 
       const userData = userDoc.data();
-      sessionStorage.setItem(
+      localStorage.setItem(
         "currentUser",
         JSON.stringify({
           uid: user.uid,
