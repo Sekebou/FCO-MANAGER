@@ -619,24 +619,22 @@ const Dashboard = () => {
         console.error('Erreur envoi push:', pushErr);
       }
 
-      // Envoyer les notifications par email
+      // Envoyer les notifications par email (en parallèle pour la rapidité)
       if (sendEmail) {
         const targetMembers = members.filter(m => m.role === 'joueur');
         const memberEmails = targetMembers.map(m => m.email);
-        for (const email of memberEmails) {
-          try {
-            await sendNotificationEmail({
+        await Promise.allSettled(
+          memberEmails.map(email =>
+            sendNotificationEmail({
               to_email: email,
               event_title: eventData.title,
               event_type_label: typeLabels[eventData.type] || 'Événement',
               type_icon: typeIcons[eventData.type] || '📅',
               event_date: dateFormatted,
               response_link: 'https://blue-pitch-dash.lovable.app/?tab=presences',
-            });
-          } catch (emailErr) {
-            console.error('Erreur envoi email à', email, emailErr);
-          }
-        }
+            }).catch(emailErr => console.error('Erreur envoi email à', email, emailErr))
+          )
+        );
         setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: true, notifCount: memberEmails.length });
       } else {
         setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: false, notifCount: 0 });
