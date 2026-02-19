@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 interface Tab {
   id: string;
@@ -24,64 +24,97 @@ interface BottomTabBarProps {
   onTabChange: (tab: string) => void;
 }
 
-const BAR_HEIGHT = 62;
-const BUBBLE = 54;
-const NOTCH_SPREAD = 40;   // half-width of the notch curve
-const NOTCH_DEPTH = 26;    // how deep the curve goes (below bar top)
-const RISE = NOTCH_DEPTH + BUBBLE / 2 - 6; // bubble rise above bar top
+// Design constants — tweak these to adjust the look
+const BAR_HEIGHT   = 58;   // solid bar height
+const BUBBLE_R     = 28;   // circle radius (diameter = 56px)
+const NOTCH_W      = 88;   // total notch width at bar top
+const NOTCH_DEPTH  = 32;   // how deep the notch dips into the bar
 
-/** Build a smooth SVG path for the bar with an upward notch at cx */
-function buildBarPath(w: number, h: number, cx: number): string {
-  const s = NOTCH_SPREAD;
-  const d = NOTCH_DEPTH;
-  // Smooth bezier notch
+// Derived
+const BUBBLE_D = BUBBLE_R * 2;
+const BUBBLE_RISE = NOTCH_DEPTH + BUBBLE_R - 4; // total rise above bar top
+
+/**
+ * Builds an SVG path for the full-width bar with a smooth curved notch
+ * (upward bump) centered at `cx`.
+ *
+ *  ─────╮         ╭─────
+ *       ╰────╯
+ *   The notch is drawn *above* the bar baseline (negative y).
+ */
+function buildPath(totalW: number, barH: number, cx: number): string {
+  const hw   = NOTCH_W / 2;          // half notch width
+  const d    = NOTCH_DEPTH;          // notch depth
+  const ctrl = hw * 0.55;            // bezier handle scale
+
+  // Start at top-left, go right until the notch shoulder
   return [
-    `M0,0`,
-    `L${cx - s - 12},0`,
-    `C${cx - s},0 ${cx - s * 0.5},${-d} ${cx},${-d}`,
-    `C${cx + s * 0.5},${-d} ${cx + s},0 ${cx + s + 12},0`,
-    `L${w},0`,
-    `L${w},${h}`,
-    `L0,${h}`,
+    `M 0 0`,
+    `L ${cx - hw} 0`,
+    // Left shoulder → bottom of notch
+    `C ${cx - hw + ctrl} 0, ${cx - BUBBLE_R} ${-d}, ${cx} ${-d}`,
+    // Bottom of notch → right shoulder
+    `C ${cx + BUBBLE_R} ${-d}, ${cx + hw - ctrl} 0, ${cx + hw} 0`,
+    `L ${totalW} 0`,
+    `L ${totalW} ${barH}`,
+    `L 0 ${barH}`,
     `Z`,
   ].join(' ');
 }
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapRef   = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [barW,    setBarW]    = useState(390);
+  const [tabW,    setTabW]    = useState(70);
+  const [scrollL, setScrollL] = useState(0);
   const [mounted, setMounted] = useState(false);
-  const [barWidth, setBarWidth] = useState(390);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const tabWidth = Math.max(barWidth / Math.min(allTabs.length, 5.5), 56);
 
-  const activeIndex = allTabs.findIndex(t => t.id === activeTab);
+  const activeIdx = allTabs.findIndex(t => t.id === activeTab);
 
-  // Notch X = center of active tab minus scroll offset
-  const notchX = activeIndex * tabWidth + tabWidth / 2 - scrollLeft;
+  // Notch center = middle of active tab minus scroll offset
+  const targetNotchX = activeIdx * tabW + tabW / 2 - scrollL;
 
-  // Container resize
+  // Spring-animated notch position for smooth SVG morph
+  const notchMV = useMotionValue(targetNotchX);
+  const notchSpring = useSpring(notchMV, { stiffness: 320, damping: 26 });
+  const [notchX, setNotchX] = useState(targetNotchX);
+
   useEffect(() => {
-    const el = containerRef.current;
+    notchMV.set(targetNotchX);
+  }, [targetNotchX]);
+
+  useEffect(() => {
+    return notchSpring.on('change', v => setNotchX(v));
+  }, [notchSpring]);
+
+  // Measure container
+  useEffect(() => {
+    const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setBarWidth(el.offsetWidth));
+    const ro = new ResizeObserver(() => {
+      const w = el.offsetWidth;
+      setBarW(w);
+      setTabW(Math.max(w / Math.min(allTabs.length, 5.5), 56));
+    });
     ro.observe(el);
-    setBarWidth(el.offsetWidth);
+    setBarW(el.offsetWidth);
+    setTabW(Math.max(el.offsetWidth / Math.min(allTabs.length, 5.5), 56));
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
+  useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
 
-  // Auto-scroll active tab to center
+  // Auto-scroll active tab into centre
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    const center = activeIndex * tabWidth + tabWidth / 2;
+    if (!el || !tabW) return;
+    const center = activeIdx * tabW + tabW / 2;
     el.scrollTo({ left: center - el.offsetWidth / 2, behavior: mounted ? 'smooth' : 'auto' });
-  }, [activeIndex, tabWidth, mounted]);
+  }, [activeIdx, tabW, mounted]);
 
   const handleScroll = useCallback(() => {
-    setScrollLeft(scrollRef.current?.scrollLeft ?? 0);
+    setScrollL(scrollRef.current?.scrollLeft ?? 0);
   }, []);
 
   const handleTap = useCallback((id: string) => {
@@ -90,11 +123,10 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
     onTabChange(id);
   }, [activeTab, onTabChange]);
 
-  // Total SVG height = bar + space above for bubble
-  const svgOverflow = RISE + BUBBLE / 2 + 4;
-  const svgH = BAR_HEIGHT + svgOverflow;
-
-  const path = buildBarPath(barWidth, BAR_HEIGHT, notchX);
+  // Heights
+  const aboveBar  = BUBBLE_RISE + 6;           // space above bar for circle
+  const totalH    = aboveBar + BAR_HEIGHT;      // wrapper height
+  const svgPath   = buildPath(barW, BAR_HEIGHT, notchX);
 
   return (
     <div
@@ -102,57 +134,60 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <motion.div
-        ref={containerRef}
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        ref={wrapRef}
+        initial={{ y: 120, opacity: 0 }}
+        animate={{ y: 0,   opacity: 1 }}
         transition={{ type: 'spring', damping: 24, stiffness: 260, delay: 0.1 }}
-        style={{ position: 'relative', height: svgH }}
+        style={{ position: 'relative', height: totalH }}
       >
-        {/* ── SVG background bar with animated notch ── */}
+
+        {/* ── SVG bar with animated notch ── */}
         <svg
-          width={barWidth}
-          height={svgH}
-          viewBox={`0 0 ${barWidth} ${svgH}`}
+          width={barW}
+          height={totalH}
+          viewBox={`0 0 ${barW} ${totalH}`}
           style={{
             position: 'absolute',
-            bottom: 0,
-            left: 0,
+            inset: 0,
             pointerEvents: 'none',
             overflow: 'visible',
-            filter: 'drop-shadow(0 -3px 12px hsl(var(--foreground) / 0.10))',
           }}
         >
-          <motion.path
-            d={path}
+          <defs>
+            <filter id="nav-shadow" x="-2%" y="-40%" width="104%" height="180%">
+              <feDropShadow dx="0" dy="-2" stdDeviation="6"
+                floodColor="hsl(var(--foreground))" floodOpacity="0.09" />
+            </filter>
+          </defs>
+          {/* bar translated downward so the notch has room above */}
+          <path
+            d={svgPath}
             fill="hsl(var(--card))"
-            transform={`translate(0, ${svgOverflow})`}
-            animate={{ d: path }}
-            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+            filter="url(#nav-shadow)"
+            transform={`translate(0, ${aboveBar})`}
           />
         </svg>
 
-        {/* ── Scrollable tabs ── */}
+        {/* ── Scrollable tab row ── */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
           style={{
+            position: 'absolute',
+            inset: 0,
             display: 'flex',
             overflowX: 'auto',
             overflowY: 'visible',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: svgH,
             zIndex: 2,
           } as React.CSSProperties}
         >
           {allTabs.map((tab) => {
-            const Icon = tab.icon;
+            const Icon    = tab.icon;
             const isActive = activeTab === tab.id;
+            const color    = tab.featured ? 'hsl(var(--accent))' : 'hsl(var(--primary))';
 
             return (
               <button
@@ -160,88 +195,82 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 data-tab={tab.id}
                 onClick={() => handleTap(tab.id)}
                 style={{
-                  width: tabWidth,
+                  width: tabW,
                   minWidth: 56,
                   flexShrink: 0,
-                  height: svgH,
+                  height: totalH,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'flex-end',
                   paddingBottom: 10,
-                  gap: 4,
+                  gap: 0,
                   WebkitTapHighlightColor: 'transparent',
-                  outline: 'none',
                   background: 'transparent',
                   border: 'none',
-                  position: 'relative',
+                  outline: 'none',
                   cursor: 'pointer',
+                  position: 'relative',
+                  userSelect: 'none',
                 }}
               >
-                {/* ── Floating bubble ── */}
+                {/* ── Floating circle ── */}
                 <motion.div
                   animate={{
-                    y: isActive ? -(RISE) : 0,
-                    scale: isActive ? 1 : 0.78,
+                    y: isActive ? -(BUBBLE_RISE - 2) : 0,
+                    scale: isActive ? 1 : 0.75,
                   }}
-                  transition={{ type: 'spring', damping: 18, stiffness: 330 }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 340 }}
                   style={{
                     position: 'absolute',
-                    // Start at bar top + half bubble
-                    bottom: BAR_HEIGHT - BUBBLE / 2,
+                    bottom: BAR_HEIGHT - BUBBLE_R + 2,
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    width: BUBBLE,
-                    height: BUBBLE,
+                    width: BUBBLE_D,
+                    height: BUBBLE_D,
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: isActive
-                      ? tab.featured
-                        ? 'hsl(var(--accent))'
-                        : 'hsl(var(--primary))'
-                      : 'hsl(var(--muted))',
+                    background: isActive ? color : 'transparent',
                     zIndex: 10,
                     boxShadow: isActive
-                      ? tab.featured
-                        ? `0 6px 20px hsl(var(--accent) / 0.45)`
-                        : `0 6px 18px hsl(var(--primary) / 0.38)`
+                      ? `0 4px 16px ${color.replace(')', ' / 0.4)').replace('hsl(', 'hsl(')}`
                       : 'none',
                     transition: 'background 0.2s, box-shadow 0.2s',
                   }}
                 >
-                  {/* Glow ring for featured */}
+                  {/* Pulse ring for featured */}
                   {isActive && tab.featured && (
                     <motion.div
-                      animate={{ opacity: [0.25, 0.6, 0.25], scale: [1, 1.45, 1] }}
+                      animate={{ opacity: [0.2, 0.55, 0.2], scale: [1, 1.55, 1] }}
                       transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                       style={{
                         position: 'absolute',
                         inset: 0,
                         borderRadius: '50%',
-                        background: 'hsl(var(--accent) / 0.45)',
-                        filter: 'blur(12px)',
+                        background: color,
+                        opacity: 0.3,
+                        filter: 'blur(10px)',
                         zIndex: -1,
                       }}
                     />
                   )}
 
-                  <motion.div
-                    animate={{ rotate: isActive ? [0, -12, 12, 0] : 0 }}
-                    transition={isActive ? { duration: 0.28, ease: 'easeInOut' } : {}}
+                  <motion.span
+                    animate={{ rotate: isActive ? [0, -14, 14, 0] : 0 }}
+                    transition={isActive ? { duration: 0.3, ease: 'easeInOut' } : {}}
+                    style={{ display: 'flex' }}
                   >
                     <Icon
                       size={isActive ? 22 : 20}
                       strokeWidth={isActive ? 2.2 : 1.6}
                       style={{
-                        color: isActive
-                          ? 'hsl(var(--primary-foreground))'
-                          : 'hsl(var(--muted-foreground))',
+                        color: isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
                         transition: 'color 0.18s',
                       }}
                     />
-                  </motion.div>
+                  </motion.span>
                 </motion.div>
 
                 {/* ── Label ── */}
@@ -253,11 +282,11 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                     lineHeight: 1,
                     color: isActive
                       ? 'hsl(var(--foreground))'
-                      : 'hsl(var(--muted-foreground) / 0.6)',
+                      : 'hsl(var(--muted-foreground) / 0.55)',
                     transition: 'color 0.15s',
                     whiteSpace: 'nowrap',
-                    userSelect: 'none',
                     pointerEvents: 'none',
+                    marginTop: 2,
                   }}
                 >
                   {tab.label}
