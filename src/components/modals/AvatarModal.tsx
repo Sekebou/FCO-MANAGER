@@ -133,7 +133,7 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
   const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 z-[70]">
       <div className="bg-card rounded-2xl max-w-sm w-full border border-border shadow-xl animate-fade-in overflow-hidden">
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h3 className="text-lg font-bold text-foreground">Mon profil</h3>

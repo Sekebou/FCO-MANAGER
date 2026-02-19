@@ -31,7 +31,7 @@ const AdminResetPasswordForm = ({ member, onClose }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center p-4 z-[70]">
       <div className="bg-card rounded-2xl p-6 max-w-md w-full border border-border shadow-xl animate-fade-in">
         <h3 className="text-xl font-bold text-foreground mb-5 flex items-center gap-2">
           <Lock size={20} /> Réinitialiser le mot de passe
