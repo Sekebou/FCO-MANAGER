@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, useDragControls } from 'framer-motion';
 import {
   Send, MessageCircle, Plus, ArrowLeft, Users as UsersIcon, Search,
-  Trash2, Image as ImageIcon, X, Globe, Lock, UserPlus
+  Trash2, Image as ImageIcon, X, Globe, Lock, UserPlus, GripHorizontal
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.png';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,6 +99,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastSeenGlobalRef = useRef<number>(Date.now());
   const [unreadGlobal, setUnreadGlobal] = useState(0);
+  const dragControls = useDragControls();
 
   const changeView = (newView: ChatView) => {
     if (newView === view) return;
@@ -393,18 +395,48 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
 
   if (!chatOpen) {
     return (
-      <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-4 sm:right-6 z-50">
+      <motion.div
+        drag
+        dragMomentum={false}
+        dragConstraints={{
+          top: -(window.innerHeight - 100),
+          left: -(window.innerWidth - 80),
+          right: 0,
+          bottom: 0,
+        }}
+        whileDrag={{ scale: 1.1 }}
+        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-4 sm:right-6 z-50 touch-none"
+      >
         <button onClick={() => setChatOpen(true)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center bg-accent text-accent-foreground transition-all hover:scale-105 relative">
           <MessageCircle size={20} className="sm:w-6 sm:h-6" />
           {totalUnread > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center animate-scale-in shadow-md">{totalUnread > 99 ? '99+' : totalUnread}</span>}
         </button>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-4 sm:right-6 z-50 flex flex-col items-end gap-3">
+    <motion.div
+      drag
+      dragControls={dragControls}
+      dragListener={false}
+      dragMomentum={false}
+      dragConstraints={{
+        top: -(window.innerHeight - 120),
+        left: -(window.innerWidth - 60),
+        right: 0,
+        bottom: 0,
+      }}
+      className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-4 sm:right-6 z-50 flex flex-col items-end gap-3 touch-none"
+    >
       <div className="w-[calc(100vw-2rem)] sm:w-[380px] h-[60vh] sm:h-[540px] max-h-[75vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
+        {/* Drag handle */}
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="flex items-center justify-center py-2 cursor-grab active:cursor-grabbing bg-primary/5 hover:bg-primary/10 transition-colors shrink-0 border-b border-border/30"
+        >
+          <GripHorizontal size={16} className="text-foreground/30" />
+        </div>
         <div className={`flex flex-col flex-1 min-h-0 transition-all duration-200 ${animating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
 
         {view === 'tabs' && (
@@ -578,8 +610,9 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
         className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center bg-muted text-muted-foreground transition-all hover:scale-105">
         <X size={20} className="sm:w-6 sm:h-6" />
       </button>
-    </div>
+    </motion.div>
   );
 };
 
 export default ChatBubble;
+
