@@ -43,6 +43,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
   const [expandedPlayers, setExpandedPlayers] = useState<Record<string, boolean>>({});
+  const [expandedConvocationsEdit, setExpandedConvocationsEdit] = useState<Record<string, boolean>>({});
 
   // All events visible to everyone (no team filtering)
   const upcomingEvents = events
@@ -381,7 +382,15 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                           Aucun joueur n'a encore répondu présent.
                         </p>
                       )}
-                      {eventPlayers.filter(p => presences[p.id] === 'present').map(player => {
+                      {(() => {
+                        const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
+                        const MAX_CONV = 8;
+                        const isConvEditExpanded = expandedConvocationsEdit[event.id];
+                        const visibleConvPlayers = isConvEditExpanded ? presentPlayers : presentPlayers.slice(0, MAX_CONV);
+                        const hasMoreConv = presentPlayers.length > MAX_CONV;
+                        return (
+                          <>
+                            {visibleConvPlayers.map(player => {
                         const conv = draftConvocations[player.id];
                         const isConvoked = conv?.status === 'convoque';
                         const isNotConvoked = conv?.status === 'non_convoque';
@@ -452,8 +461,23 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                               </div>
                             )}
                           </div>
+                                );
+                            })}
+                            {hasMoreConv && (
+                              <button
+                                onClick={() => setExpandedConvocationsEdit(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/60 rounded-xl transition-all"
+                              >
+                                {isConvEditExpanded ? (
+                                  <><ChevronUp size={14} /> Réduire</>
+                                ) : (
+                                  <><ChevronDown size={14} /> {presentPlayers.length - MAX_CONV} joueur{presentPlayers.length - MAX_CONV > 1 ? 's' : ''} de plus</>
+                                )}
+                              </button>
+                            )}
+                          </>
                         );
-                      })}
+                      })()}
                       <div className="pt-3 flex gap-2">
                         <button onClick={() => setConvocationMode(null)} className="flex-1 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">
                           Annuler
