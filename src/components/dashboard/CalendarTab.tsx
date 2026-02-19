@@ -78,7 +78,12 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <h2 className="text-xl sm:text-2xl font-bold text-foreground">Calendrier</h2>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+          <CalendarDays className="text-accent" size={18} />
+        </div>
+        <h2 className="text-lg sm:text-xl font-bold text-foreground">Calendrier</h2>
+      </div>
 
       <div>
         <h3 className="text-lg font-semibold mb-3 text-accent">Événements à venir</h3>

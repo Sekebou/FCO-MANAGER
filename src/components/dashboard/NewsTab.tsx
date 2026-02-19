@@ -56,7 +56,12 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-between items-center gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Au cœur du club</h2>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <Bell className="text-accent" size={18} />
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Au cœur du club</h2>
+        </div>
         {canCreateNews() && (
           <button onClick={onAddNews} className="bg-accent text-accent-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 hover:bg-accent/90 transition-all text-xs sm:text-sm font-medium">
             <Plus size={16} /> <span className="hidden sm:inline">Nouvelle publication</span><span className="sm:hidden">Publier</span>

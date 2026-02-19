@@ -72,7 +72,12 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
       {/* Header with stats */}
       <div className="flex flex-col gap-3 sm:gap-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Membres du club</h2>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+              <Users className="text-accent" size={18} />
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Membres du club</h2>
+          </div>
           {canManage() && (
             <button onClick={onInvitePlayer} className="bg-primary/10 text-primary px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 hover:bg-primary/20 transition-all text-xs sm:text-sm font-medium border border-primary/20">
               <Send size={14} className="sm:w-4 sm:h-4" /> Inviter
