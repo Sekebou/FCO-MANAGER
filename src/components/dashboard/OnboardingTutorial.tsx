@@ -4,7 +4,7 @@ import {
   Users, TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, 
   ChevronRight, ChevronLeft, X, Smartphone, Hand, Rocket,
   ClipboardCheck, BarChart3, Newspaper, PenLine, CalendarPlus,
-  Images, FolderPlus, UserCog, Zap
+  Images, FolderPlus, UserCog, Zap, ArrowDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -187,7 +187,7 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
 
   const handleComplete = useCallback(() => {
     setCompleting(true);
-    setTimeout(() => onComplete(), 900);
+    setTimeout(() => onComplete(), 2500);
   }, [onComplete]);
 
   const goNext = useCallback(() => {
@@ -464,18 +464,34 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.4 }}
-              className="text-xl font-extrabold text-foreground tracking-tight"
+              className="text-2xl font-extrabold text-foreground tracking-tight"
             >
               C'est parti ! 🎉
             </motion.p>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.65 }}
+              transition={{ delay: 0.7 }}
               className="text-sm text-muted-foreground"
             >
-              Redirection vers Présences…
+              Tu es redirigé vers <span className="font-bold text-accent">Présences</span>
             </motion.p>
+            {/* Animated arrow pointing down toward nav bar */}
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: [0, 12, 0] }}
+              transition={{ delay: 0.9, duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex flex-col items-center gap-1 mt-2"
+            >
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9 }}
+                className="w-8 h-8 rounded-xl bg-accent/20 flex items-center justify-center"
+              >
+                <ArrowDown size={18} className="text-accent" />
+              </motion.div>
+            </motion.div>
           </div>
         </motion.div>
       )}
