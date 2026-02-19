@@ -84,49 +84,64 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
 
             if (isFeatured) {
               return (
-                <button
+                <div
                   key={tab.id}
                   data-tab={tab.id}
-                  onClick={() => handleTap(tab.id)}
-                  className="relative flex flex-col items-center justify-end min-w-[4.5rem] shrink-0 outline-none select-none -mt-3"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                  className="relative flex flex-col items-center min-w-[4.5rem] shrink-0"
+                  style={{ marginTop: '-2rem' }}
                 >
-                  {/* Raised featured button */}
-                  <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    className={cn(
-                      'relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg',
-                      isActive
-                        ? 'bg-accent shadow-accent/30'
-                        : 'bg-primary shadow-primary/20'
-                    )}
+                  <button
+                    onClick={() => handleTap(tab.id)}
+                    className="flex flex-col items-center outline-none select-none"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="featured-glow"
-                        className="absolute inset-0 rounded-2xl bg-accent/20 blur-md"
-                        initial={false}
-                        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                      />
-                    )}
-                    <Icon
-                      size={24}
-                      strokeWidth={2.2}
+                    {/* Raised featured button */}
+                    <motion.div
+                      whileTap={{ scale: 0.9 }}
+                      animate={isActive ? {
+                        scale: [1, 1.08, 1],
+                        transition: { duration: 0.5, ease: 'easeOut' }
+                      } : { scale: 1 }}
                       className={cn(
-                        'relative z-10',
-                        isActive ? 'text-accent-foreground' : 'text-primary-foreground'
+                        'relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl',
+                        isActive
+                          ? 'bg-accent shadow-accent/40'
+                          : 'bg-primary shadow-primary/30'
                       )}
-                    />
-                  </motion.div>
-                  <span
-                    className={cn(
-                      'text-[10px] leading-none mt-1.5 tracking-tight whitespace-nowrap font-bold',
-                      isActive ? 'text-accent' : 'text-muted-foreground/70'
-                    )}
-                  >
-                    {tab.label}
-                  </span>
-                </button>
+                    >
+                      {/* Glow */}
+                      {isActive && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: [0.5, 0.8, 0.5], scale: [1, 1.15, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                          className="absolute inset-0 rounded-2xl bg-accent/30 blur-md -z-10"
+                        />
+                      )}
+                      <motion.div
+                        animate={isActive ? { rotate: [0, -8, 8, 0], scale: [1, 1.1, 1] } : {}}
+                        transition={{ duration: 0.5, ease: 'easeInOut' }}
+                      >
+                        <Icon
+                          size={24}
+                          strokeWidth={2.2}
+                          className={cn(
+                            'relative z-10',
+                            isActive ? 'text-accent-foreground' : 'text-primary-foreground'
+                          )}
+                        />
+                      </motion.div>
+                    </motion.div>
+                    <span
+                      className={cn(
+                        'text-[10px] leading-none mt-1.5 tracking-tight whitespace-nowrap font-bold',
+                        isActive ? 'text-accent' : 'text-muted-foreground/70'
+                      )}
+                    >
+                      {tab.label}
+                    </span>
+                  </button>
+                </div>
               );
             }
 
