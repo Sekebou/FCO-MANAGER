@@ -991,33 +991,31 @@ const Dashboard = () => {
               }}
               onSendConvocationNotif={async (event, convocations) => {
                 try {
-                  // Get player IDs that are NOT convoked (non_convoque or absent from the list)
-                  const allPlayerIds = players.map(p => p.id);
-                  const nonConvokedPlayerIds = allPlayerIds.filter(pid => {
-                    const conv = convocations[pid];
-                    return !conv || conv.status === 'non_convoque';
-                  });
+                  // Get player IDs that ARE convoked
+                  const convokedPlayerIds = Object.entries(convocations)
+                    .filter(([, c]) => c.status === 'convoque')
+                    .map(([playerId]) => playerId);
 
-                  // Find member IDs linked to non-convoked players
-                  const nonConvokedMemberIds = members
-                    .filter(m => m.playerId && nonConvokedPlayerIds.includes(m.playerId))
+                  // Find member IDs linked to convoked players
+                  const convokedMemberIds = members
+                    .filter(m => m.playerId && convokedPlayerIds.includes(m.playerId))
                     .map(m => m.id);
 
-                  if (nonConvokedMemberIds.length === 0) {
-                    toast.info('Aucun joueur non convoqué à notifier');
+                  if (convokedMemberIds.length === 0) {
+                    toast.info('Aucun joueur convoqué à notifier');
                     return;
                   }
 
-                  // Fetch FCM tokens for non-convoked players only
+                  // Fetch FCM tokens for convoked players only
                   const { data: tokenRows } = await supabase
                     .from('fcm_tokens')
                     .select('token')
-                    .in('user_id', nonConvokedMemberIds);
+                    .in('user_id', convokedMemberIds);
 
                   const tokens = tokenRows?.map(r => r.token) || [];
 
                   if (tokens.length === 0) {
-                    toast.info('Aucun appareil enregistré pour les joueurs non convoqués');
+                    toast.info('Aucun appareil enregistré pour les joueurs convoqués');
                     return;
                   }
 
@@ -1025,15 +1023,15 @@ const Dashboard = () => {
 
                   const res = await supabase.functions.invoke('send-push-notification', {
                     body: {
-                      title: '❌ Non convoqué',
-                      body: `Tu n'es pas sélectionné pour ${event.title} le ${eventDate}`,
+                      title: '✅ Convocation',
+                      body: `Tu es sélectionné pour ${event.title} le ${eventDate} !`,
                       tokens,
-                      data: { type: 'non_convoque', eventId: event.id },
+                      data: { type: 'convocation', eventId: event.id },
                     },
                   });
 
                   if (res.error) throw res.error;
-                  toast.success(`Notification envoyée à ${tokens.length} joueur(s) non convoqué(s)`);
+                  toast.success(`Notification envoyée à ${tokens.length} joueur(s) convoqué(s)`);
                 } catch (err: any) {
                   toast.error('Erreur lors de l\'envoi : ' + err.message);
                 }
