@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil, Repeat, CircleDot, Bell, ChevronRight } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -35,13 +35,12 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const MAX_VISIBLE_PLAYERS = 8;
+
 
 const PresencesTab = ({ events, players, members, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif }: Props) => {
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
-  const [expandedPlayers, setExpandedPlayers] = useState<Record<string, boolean>>({});
 
   // All events visible to everyone (no team filtering)
   const upcomingEvents = events
@@ -77,9 +76,6 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
     setConvocationMode(null);
   };
 
-  const toggleExpandPlayers = (eventId: string) => {
-    setExpandedPlayers(prev => ({ ...prev, [eventId]: !prev[eventId] }));
-  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -109,9 +105,6 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
           const unknownCount = eventPlayers.length - presentCount - absentCount;
           const isConvocationMode = convocationMode === event.id;
           const isConvocationExpanded = expandedConvocations[event.id];
-          const isPlayersExpanded = expandedPlayers[event.id];
-          const visiblePlayers = isPlayersExpanded ? eventPlayers : eventPlayers.slice(0, MAX_VISIBLE_PLAYERS);
-          const hasMorePlayers = eventPlayers.length > MAX_VISIBLE_PLAYERS;
 
           return (
             <div key={event.id} className="bg-card border border-border rounded-2xl p-3 sm:p-5 shadow-sm animate-fade-in">
@@ -179,84 +172,83 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 </div>
               </div>
 
-              {/* Presences list — max 8 visible, then "Voir plus" */}
-              <div className="space-y-1.5">
+              {/* Presences list — scroll horizontal après 8 joueurs */}
+              <div className="relative">
                 {eventPlayers.length === 0 ? (
                   <p className="text-muted-foreground text-center py-4 text-sm">Aucun joueur enregistré</p>
                 ) : (
-                  <>
-                    {visiblePlayers.map(player => {
+                  <div
+                    className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide"
+                    style={{ WebkitOverflowScrolling: 'touch' }}
+                  >
+                    {eventPlayers.map(player => {
                       const status = presences[player.id];
                       return (
-                        <div key={player.id} className="flex items-center justify-between p-2 sm:p-2.5 bg-secondary/40 rounded-xl gap-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {(() => {
-                              const member = members.find(m => m.playerId === player.id);
-                              const photoURL = member?.photoURL;
-                              const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                              if (photoURL) {
-                                return <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
-                              }
-                              return (
-                                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                  <span className="text-primary text-[10px] font-bold">{initials}</span>
-                                </div>
-                              );
-                            })()}
-                            <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
-                          </div>
+                        <div
+                          key={player.id}
+                          className="snap-start shrink-0 w-[calc(100%/2.3)] sm:w-[calc(100%/3.3)] flex flex-col items-center gap-1.5 p-2.5 bg-secondary/40 rounded-xl"
+                        >
+                          {/* Avatar */}
+                          {(() => {
+                            const member = members.find(m => m.playerId === player.id);
+                            const photoURL = member?.photoURL;
+                            const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                            if (photoURL) {
+                              return <img src={photoURL} alt={player.name} className="w-10 h-10 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+                            }
+                            return (
+                              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                <span className="text-primary text-xs font-bold">{initials}</span>
+                              </div>
+                            );
+                          })()}
+                          {/* Nom */}
+                          <span className="font-medium text-xs text-foreground text-center leading-tight line-clamp-2 w-full">{player.name}</span>
+                          {/* Statut / Boutons */}
                           {canManageOwnPresence(player.id) ? (
-                            <div className="flex gap-1 shrink-0">
+                            <div className="flex gap-1 w-full mt-0.5">
                               <button
                                 onClick={() => togglePresence(event.id, player.id, 'present')}
-                                className={`w-9 h-8 rounded-lg flex items-center justify-center text-[11px] font-semibold transition-all ${
+                                className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-semibold transition-all ${
                                   status === 'present'
                                     ? 'bg-accent text-accent-foreground shadow-sm'
                                     : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
                                 }`}
-                                title="Présent"
                               >
-                                <Check size={14} />
+                                <Check size={12} />
+                                <span>Présent</span>
                               </button>
                               <button
                                 onClick={() => togglePresence(event.id, player.id, 'absent')}
-                                className={`w-9 h-8 rounded-lg flex items-center justify-center text-[11px] font-semibold transition-all ${
+                                className={`flex-1 h-8 rounded-lg flex items-center justify-center gap-1 text-[11px] font-semibold transition-all ${
                                   status === 'absent'
                                     ? 'bg-destructive text-destructive-foreground shadow-sm'
                                     : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
                                 }`}
-                                title="Absent"
                               >
-                                <X size={14} />
+                                <X size={12} />
+                                <span>Absent</span>
                               </button>
                             </div>
                           ) : (
-                            <span className={`w-8 h-8 rounded-lg text-[11px] font-semibold flex items-center justify-center shrink-0 ${
+                            <span className={`w-full h-7 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 mt-0.5 ${
                               status === 'present' ? 'bg-accent/10 text-accent' :
                               status === 'absent' ? 'bg-destructive/10 text-destructive' :
                               'bg-warning/10 text-warning'
                             }`}>
-                              {status === 'present' ? <Check size={13} /> : status === 'absent' ? <X size={13} /> : <Clock size={13} />}
+                              {status === 'present' ? <><Check size={12} /> Présent</> : status === 'absent' ? <><X size={12} /> Absent</> : <><Clock size={12} /> Attente</>}
                             </span>
                           )}
                         </div>
                       );
                     })}
-
-                    {/* Voir plus / moins */}
-                    {hasMorePlayers && (
-                      <button
-                        onClick={() => toggleExpandPlayers(event.id)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/60 rounded-xl transition-all mt-1"
-                      >
-                        {isPlayersExpanded ? (
-                          <><ChevronUp size={14} /> Réduire</>
-                        ) : (
-                          <><ChevronDown size={14} /> Voir {eventPlayers.length - MAX_VISIBLE_PLAYERS} joueur{eventPlayers.length - MAX_VISIBLE_PLAYERS > 1 ? 's' : ''} de plus</>
-                        )}
-                      </button>
+                    {/* Indicateur "fin de liste" si plus de 8 joueurs */}
+                    {eventPlayers.length > 8 && (
+                      <div className="snap-start shrink-0 w-10 flex items-center justify-center text-muted-foreground/40 text-xs font-bold">
+                        ···
+                      </div>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
 
