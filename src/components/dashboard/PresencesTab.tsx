@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil, Repeat, CircleDot } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Users, Send, ChevronDown, ChevronUp, UserCheck, UserX, Hash, Crosshair, Pencil, Repeat, CircleDot, Bell } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -27,7 +27,7 @@ interface Props {
   canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
   onUpdateConvocations: (eventId: string, convocations: Record<string, Convocation>) => void;
-  
+  onSendConvocationNotif?: (event: Event, convocations: Record<string, Convocation>) => void;
 }
 
 const CONVOCATION_STATUSES = [
@@ -35,7 +35,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations }: Props) => {
+const PresencesTab = ({ events, players, members, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif }: Props) => {
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
@@ -275,12 +275,22 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                               );
                             })}
                           {canManage() && (
-                            <button
-                              onClick={() => startConvocationMode(event.id, event)}
-                              className="mt-3 w-full flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors"
-                            >
-                              <Pencil size={14} /> Modifier les convocations
-                            </button>
+                            <div className="mt-3 flex gap-2">
+                              <button
+                                onClick={() => startConvocationMode(event.id, event)}
+                                className="flex-1 flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors"
+                              >
+                                <Pencil size={14} /> Modifier
+                              </button>
+                              {onSendConvocationNotif && event.convocations && (
+                                <button
+                                  onClick={() => onSendConvocationNotif(event, event.convocations!)}
+                                  className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors"
+                                >
+                                  <Bell size={14} /> Notifier
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}

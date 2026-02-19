@@ -981,7 +981,55 @@ const Dashboard = () => {
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)}
               onUpdateConvocations={async (eventId, convocations) => {
                 try { await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId); toast.success('Convocations publiées !'); } catch (err: any) { toast.error('Erreur: ' + err.message); }
-              }} />
+              }}
+              onSendConvocationNotif={async (event, convocations) => {
+                try {
+                  // Get FCM tokens for all convoked players
+                  const convokedPlayerIds = Object.entries(convocations)
+                    .filter(([, c]) => c.status === 'convoque')
+                    .map(([playerId]) => playerId);
+                  
+                  // Find member IDs that match convoked players
+                  const convokedMemberIds = members
+                    .filter(m => m.playerId && convokedPlayerIds.includes(m.playerId))
+                    .map(m => m.id);
+
+                  if (convokedMemberIds.length === 0) {
+                    toast.info('Aucun joueur convoqué à notifier');
+                    return;
+                  }
+
+                  // Fetch FCM tokens
+                  const { data: tokenRows } = await supabase
+                    .from('fcm_tokens')
+                    .select('token')
+                    .in('user_id', convokedMemberIds);
+
+                  const tokens = tokenRows?.map(r => r.token) || [];
+
+                  if (tokens.length === 0) {
+                    toast.info('Aucun appareil enregistré pour les joueurs convoqués');
+                    return;
+                  }
+
+                  const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+                  
+                  const res = await supabase.functions.invoke('send-push-notification', {
+                    body: {
+                      title: '📋 Convocation',
+                      body: `Tu es convoqué pour ${event.title} le ${eventDate}`,
+                      tokens,
+                      data: { type: 'convocation', eventId: event.id },
+                    },
+                  });
+
+                  if (res.error) throw res.error;
+                  toast.success(`Notification envoyée à ${tokens.length} joueur(s) convoqué(s)`);
+                } catch (err: any) {
+                  toast.error('Erreur lors de l\'envoi : ' + err.message);
+                }
+              }}
+            />
           )}
           {activeTab === 'stats' && <StatsTab players={visiblePlayersForStats} events={events} cards={cards} attendanceRecords={attendanceRecords} members={visibleMembers} currentUser={currentUser} canManage={canManage} updatePlayerStats={updatePlayerStats} deletePlayer={deletePlayer} getPlayerCards={getPlayerCards} deleteCard={deleteCard} onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }} />}
           {activeTab === 'championnat' && <ChampionnatTab championships={championships} matches={champMatches} currentUserRole={currentUser?.role} canManage={canManage} canUpdateChampionnat={canUpdateChampionnat} onAddChampionship={addChampionship} onDeleteChampionship={deleteChampionship} onAddMatch={addChampMatch} onUpdateMatchScore={updateMatchScore} onDeleteMatch={deleteChampMatch} onRefreshFromFFF={refreshFromFFF} />}
