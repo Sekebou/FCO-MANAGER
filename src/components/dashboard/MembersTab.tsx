@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin, ChevronDown } from 'lucide-react';
 
 interface Props {
   members: Member[];
@@ -284,26 +284,35 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           );
                         }
                         // Show role selector
+                        const roleOptions = [
+                          { value: 'joueur', label: 'Joueur' },
+                          { value: 'entraineur', label: 'Entraîneur' },
+                          { value: 'dirigeant', label: 'Dirigeant' },
+                          { value: 'photographe', label: 'Photographe' },
+                          { value: 'admin', label: 'Administrateur' },
+                          ...(isSuperAdmin ? [{ value: 'admin+', label: 'Admin+' }] : []),
+                        ];
                         return (
-                          <div className="flex items-center gap-2">
+                          <div className="relative flex items-center gap-2">
                             <Shield size={13} className="text-muted-foreground shrink-0" />
-                            <select
-                              value={member.role}
-                              onChange={(e) => {
-                                const newRole = e.target.value;
-                                if (newRole !== member.role) {
-                                  setRoleChangeRequest({ memberId: member.id, memberName: member.name, newRole });
-                                }
-                              }}
-                              className="flex-1 px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer"
-                            >
-                              <option value="joueur">Joueur</option>
-                              <option value="entraineur">Entraîneur</option>
-                              <option value="dirigeant">Dirigeant</option>
-                              <option value="photographe">Photographe</option>
-                              <option value="admin">Administrateur</option>
-                              {isSuperAdmin && <option value="admin+">Admin+</option>}
-                            </select>
+                            <div className="relative flex-1">
+                              <select
+                                value={member.role}
+                                onChange={(e) => {
+                                  const newRole = e.target.value;
+                                  if (newRole !== member.role) {
+                                    setRoleChangeRequest({ memberId: member.id, memberName: member.name, newRole });
+                                  }
+                                }}
+                                className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer pr-8"
+                                style={{ fontSize: '16px', lineHeight: '1.25rem' }}
+                              >
+                                {roleOptions.map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                            </div>
                           </div>
                         );
                       })()}
