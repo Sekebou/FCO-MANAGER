@@ -150,19 +150,24 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Target size={12} className="text-accent shrink-0" />
                         {canManage() ? (
-                          <div className="flex items-center gap-1">
-                            <span>Poste :</span>
-                            <select
-                              value={player.position || ''}
-                              onChange={(e) => onChangePosition(player.id, e.target.value)}
-                              className="bg-transparent border-none outline-none font-medium text-foreground text-xs cursor-pointer hover:text-primary transition-colors appearance-none pr-3"
-                            >
-                              <option value="">Non défini</option>
-                              <option value="Gardien">Gardien</option>
-                              <option value="Défenseur">Défenseur</option>
-                              <option value="Milieu">Milieu</option>
-                              <option value="Attaquant">Attaquant</option>
-                            </select>
+                          <div className="flex items-center gap-1 min-w-0 flex-1">
+                            <span className="shrink-0">Poste :</span>
+                            <div className="relative inline-flex items-center bg-secondary/60 border border-border/60 rounded-lg px-2 py-0.5 gap-1 cursor-pointer">
+                              <span className="text-[11px] font-medium text-foreground">{player.position || 'Non défini'}</span>
+                              <ChevronDown size={10} className="text-muted-foreground shrink-0" />
+                              <select
+                                value={player.position || ''}
+                                onChange={(e) => onChangePosition(player.id, e.target.value)}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                                style={{ fontSize: '16px' }}
+                              >
+                                <option value="">Non défini</option>
+                                <option value="Gardien">Gardien</option>
+                                <option value="Défenseur">Défenseur</option>
+                                <option value="Milieu">Milieu</option>
+                                <option value="Attaquant">Attaquant</option>
+                              </select>
+                            </div>
                           </div>
                         ) : (
                           <span>Poste : <span className="font-medium text-foreground">{player.position || 'Non défini'}</span></span>
@@ -293,9 +298,13 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           ...(isSuperAdmin ? [{ value: 'admin+', label: 'Admin+' }] : []),
                         ];
                         return (
-                          <div className="relative flex items-center gap-2">
+                          <div className="flex items-center gap-2">
                             <Shield size={13} className="text-muted-foreground shrink-0" />
-                            <div className="relative flex-1">
+                            <div className="relative flex-1 inline-flex items-center bg-secondary border border-border rounded-xl px-3 py-2 gap-2 cursor-pointer">
+                              <span className="text-xs font-medium text-foreground flex-1">
+                                {roleOptions.find(o => o.value === member.role)?.label || member.role}
+                              </span>
+                              <ChevronDown size={13} className="text-muted-foreground shrink-0 pointer-events-none" />
                               <select
                                 value={member.role}
                                 onChange={(e) => {
@@ -304,14 +313,13 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                                     setRoleChangeRequest({ memberId: member.id, memberName: member.name, newRole });
                                   }
                                 }}
-                                className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-medium text-foreground outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer pr-8"
-                                style={{ fontSize: '16px', lineHeight: '1.25rem' }}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                                style={{ fontSize: '16px' }}
                               >
                                 {roleOptions.map(opt => (
                                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                                 ))}
                               </select>
-                              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                             </div>
                           </div>
                         );
