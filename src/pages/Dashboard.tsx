@@ -504,8 +504,23 @@ const Dashboard = () => {
       message: 'Cette action est irréversible.',
       onConfirm: async () => {
         try {
-          if (playerId) await supabase.from('players').delete().eq('id', playerId);
-          await supabase.from('profiles').delete().eq('id', memberId);
+          // Delete related data first to avoid FK constraint errors
+          if (playerId) {
+            await supabase.from('cards').delete().eq('player_id', playerId);
+            await supabase.from('attendance_records').delete().eq('player_id', playerId);
+          }
+          // Delete user role
+          await supabase.from('user_roles').delete().eq('user_id', memberId);
+          // Delete profile
+          const { error: profileError } = await supabase.from('profiles').delete().eq('id', memberId);
+          if (profileError) throw profileError;
+          // Delete player last
+          if (playerId) {
+            await supabase.from('players').delete().eq('id', playerId);
+          }
+          toast.success('Membre supprimé avec succès');
+          setMembers(prev => prev.filter(m => m.id !== memberId));
+          if (playerId) setPlayers(prev => prev.filter(p => p.id !== playerId));
         } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
