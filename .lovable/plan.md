@@ -1,67 +1,47 @@
 
-## Deux améliorations dans l'onglet Présences
+## Correction du bandeau d'info dans le mode convocation
 
-### 1. Prénom + Nom mieux visibles dans les convocations
+### Problème
 
-**Problème actuel** : Le nom de famille est affiché en `text-[11px] text-muted-foreground uppercase` — trop discret, trop petit, et potentiellement tronqué si le prénom prend toute la place avec `truncate`.
+Le texte s'affiche collé : `"réponduPrésent"` car le `<span>` est directement accolé au texte sans espace React explicite. Le composant `<p>` est en `flex` avec `items-center`, ce qui supprime les espaces blancs entre les nœuds texte et les éléments inline.
 
-**Solution** : Restructurer le bloc nom pour que les deux parties soient lisibles :
-- Prénom : `text-sm font-semibold text-foreground` (inchangé)
-- Nom de famille : `text-sm font-medium text-foreground/70` (même taille, légèrement atténué — plus de `text-[11px]`, plus de `uppercase`)
-- Conteneur : `flex flex-col leading-tight` au lieu de `flex items-baseline gap-1` pour éviter les problèmes de troncature sur mobile (deux lignes plutôt qu'une seule ligne compressée)
+### Cause technique
 
-Résultat visuel :
+```tsx
+// Actuel — le flex supprime les espaces entre les nœuds
+<p className="... flex items-center gap-1.5">
+  <Clock size={11} />
+  Seuls les joueurs ayant répondu <span className="...">Présent</span> apparaissent ici.
+</p>
 ```
-[Avatar]  Jean
-          DUPONT           [Convoqué] [Non convoqué]
+
+En mode `flex`, les enfants deviennent des *flex items* — le nœud texte et le `<span>` sont deux items séparés, et le `gap-1.5` s'applique uniquement entre les enfants directs de flex, pas à l'intérieur d'un nœud texte mixte.
+
+### Solution
+
+Deux options possibles :
+
+**Option retenue — restructurer en une seule chaîne via un `<span>` wrapper** :
+
+```tsx
+<div className="text-[11px] text-muted-foreground/70 bg-muted/40 rounded-lg px-3 py-1.5 mb-2 flex items-center gap-1.5">
+  <Clock size={11} className="shrink-0 text-muted-foreground/50" />
+  <span>
+    Seuls les joueurs ayant répondu{' '}
+    <span className="font-semibold text-accent/80">Présent</span>
+    {' '}apparaissent ici.
+  </span>
+</div>
 ```
 
-### 2. Masquer la liste présences/absences quand on entre en mode convocation
-
-**Objectif** : Quand le coach clique sur "Gérer les convocations", la liste des joueurs avec leurs boutons Présent/Absent occupe beaucoup de place inutilement. En masquant cette section, la page se concentre uniquement sur la sélection des joueurs à convoquer.
-
-**Ce qui change** : Dans le rendu de la liste des présences (lignes 178-291), conditionner l'affichage entier avec `{!isConvocationMode && (...)}`.
-
-Résultat :
-- Mode normal : liste présences visible comme aujourd'hui
-- Mode convocation activé : liste présences masquée, seule la section convocation est affichée → page allégée, focus sur la tâche
+L'utilisation de `{' '}` (espace explicite React) garantit qu'il y a bien un espace avant et après le mot `Présent`, quelle que soit la mise en page. Le tout est dans un `<span>` inline qui se comporte comme un bloc de texte normal.
 
 ### Fichier modifié
 
-`src/components/dashboard/PresencesTab.tsx`
-
-**Changement 1** — Bloc nom (lignes 418-426) :
-```tsx
-// Avant
-<div className="flex items-baseline gap-1 min-w-0">
-  <span className="font-semibold text-sm text-foreground truncate">{firstName}</span>
-  {lastName && <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide truncate">{lastName}</span>}
-</div>
-
-// Après
-<div className="flex flex-col leading-tight min-w-0">
-  <span className="font-semibold text-sm text-foreground">{firstName}</span>
-  {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
-</div>
-```
-
-**Changement 2** — Wrapping de la liste présences (ligne 178) :
-```tsx
-// Avant
-<div className="space-y-1.5">
-  {/* liste joueurs */}
-</div>
-
-// Après
-{!isConvocationMode && (
-  <div className="space-y-1.5">
-    {/* liste joueurs */}
-  </div>
-)}
-```
+`src/components/dashboard/PresencesTab.tsx` — ligne 382-385 uniquement.
 
 ### Impact
 
-- Aucune logique métier modifiée
-- Deux retouches chirurgicales dans le même fichier
-- La liste des présences reste intacte, elle est juste masquée visuellement en mode édition convocation
+- Correction purement cosmétique
+- Aucune logique modifiée
+- Résultat : `"Seuls les joueurs ayant répondu Présent apparaissent ici."` avec l'espace correct de part et d'autre du mot en gras
