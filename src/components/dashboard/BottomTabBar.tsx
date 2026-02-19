@@ -102,8 +102,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   onClick={() => handleTap(tab.id)}
                   className="relative flex flex-col items-center justify-center gap-1 pt-2 pb-1.5 shrink-0 outline-none select-none"
                   style={{
-                    width: 'calc(100vw / 4)',
-                    minWidth: '4.25rem',
+                    width: 'calc(100vw / 5.5)',
+                    minWidth: '3.75rem',
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
@@ -188,8 +188,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 onClick={() => handleTap(tab.id)}
                 className="relative flex flex-col items-center justify-center gap-1 pt-2 pb-1.5 shrink-0 outline-none select-none"
                 style={{
-                  width: 'calc(100vw / 4)',
-                  minWidth: '4rem',
+                  width: 'calc(100vw / 5.5)',
+                  minWidth: '3.5rem',
                   WebkitTapHighlightColor: 'transparent',
                 }}
               >
