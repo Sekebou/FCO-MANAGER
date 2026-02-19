@@ -145,7 +145,7 @@ const ChatTab: React.FC<Props> = ({ currentUser }) => {
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100dvh - 10rem - env(safe-area-inset-bottom) - env(safe-area-inset-top))' }}>
       {isAdmin && messages.length > 0 && (
         <div className="flex items-center justify-end px-3 py-1.5 border-b border-border">
           <button onClick={() => setShowResetConfirm(true)} className="p-1.5 rounded-lg text-destructive hover:bg-destructive/10 transition-all" title="Supprimer tous les messages"><Trash2 size={15} /></button>
