@@ -376,7 +376,12 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                           <X size={16} />
                         </button>
                       </div>
-                      {eventPlayers.map(player => {
+                      {eventPlayers.filter(p => presences[p.id] === 'present').length === 0 && (
+                        <p className="text-center text-sm text-muted-foreground py-6">
+                          Aucun joueur n'a encore répondu présent.
+                        </p>
+                      )}
+                      {eventPlayers.filter(p => presences[p.id] === 'present').map(player => {
                         const conv = draftConvocations[player.id];
                         const isConvoked = conv?.status === 'convoque';
                         const isNotConvoked = conv?.status === 'non_convoque';
