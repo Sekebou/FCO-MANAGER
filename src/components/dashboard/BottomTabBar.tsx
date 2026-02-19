@@ -85,10 +85,14 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
       />
 
       <div className="relative">
+        {/* Fade gauche */}
+        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card to-transparent z-10 pointer-events-none" />
+        {/* Fade droite */}
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent z-10 pointer-events-none" />
         <div
           ref={scrollRef}
-          className="flex items-center overflow-x-auto scrollbar-hide px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-0"
-          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="flex items-center overflow-x-auto scrollbar-hide px-4 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-0"
+          style={{ WebkitOverflowScrolling: 'touch', scrollPaddingInline: '1rem' }}
         >
           {allTabs.map((tab) => {
             const Icon = tab.icon;
