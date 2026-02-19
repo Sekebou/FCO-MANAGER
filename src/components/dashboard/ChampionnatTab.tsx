@@ -603,10 +603,10 @@ const ChampionnatTab: React.FC<Props> = ({
 
       {/* Modal: Add Championship */}
       {showAddChamp && (
-        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setShowAddChamp(false)}>
-          <div className="bg-card rounded-2xl w-full max-w-md border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[60]" onClick={() => setShowAddChamp(false)}>
+          <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-border">
+            <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
                   <Trophy size={20} className="text-accent" />
@@ -619,7 +619,7 @@ const ChampionnatTab: React.FC<Props> = ({
             </div>
 
             {/* Body */}
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
                 <div className="flex gap-2">
@@ -689,7 +689,7 @@ const ChampionnatTab: React.FC<Props> = ({
             </div>
 
             {/* Footer */}
-            <div className="flex gap-3 p-5 border-t border-border">
+            <div className="flex gap-3 p-5 border-t border-border shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
               <button onClick={() => setShowAddChamp(false)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
                 Annuler
               </button>
@@ -706,8 +706,8 @@ const ChampionnatTab: React.FC<Props> = ({
         const champ = championships.find(c => c.id === showAddMatch);
         if (!champ) return null;
         return (
-          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setShowAddMatch(null)}>
-            <div className="bg-card rounded-2xl w-full max-w-md border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[60]" onClick={() => setShowAddMatch(null)}>
+            <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-border">
                 <div className="flex items-center gap-3">
@@ -762,7 +762,7 @@ const ChampionnatTab: React.FC<Props> = ({
               </div>
 
               {/* Footer */}
-              <div className="flex gap-3 p-5 border-t border-border">
+              <div className="flex gap-3 p-5 border-t border-border shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                 <button onClick={() => setShowAddMatch(null)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
                   Annuler
                 </button>
