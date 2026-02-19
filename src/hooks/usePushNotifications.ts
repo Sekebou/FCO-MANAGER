@@ -38,7 +38,7 @@ export function usePushNotifications(userId: string | undefined) {
               .delete()
               .eq('token', token.value);
 
-            // Then upsert for the current user
+            // Then upsert for the current user (conflict on token to support multiple devices)
             const { error } = await supabase
               .from('fcm_tokens')
               .upsert({
@@ -46,7 +46,7 @@ export function usePushNotifications(userId: string | undefined) {
                 token: token.value,
                 platform: Capacitor.getPlatform(),
                 updated_at: new Date().toISOString(),
-              }, { onConflict: 'user_id' });
+              }, { onConflict: 'token' });
             
             if (error) {
               console.error('Error storing FCM token:', error);
