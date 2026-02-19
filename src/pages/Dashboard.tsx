@@ -18,7 +18,7 @@ import CalendarTab from '@/components/dashboard/CalendarTab';
 import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
-import ChatBubble from '@/components/dashboard/ChatBubble';
+import ChatTab from '@/components/dashboard/ChatTab';
 import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
 import NotificationBell from '@/components/dashboard/NotificationBell';
@@ -138,6 +138,7 @@ const tabs = [
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: Users },
+  { id: 'chat', label: 'Discussions', icon: MessageCircle },
 ];
 
 // ---- Supabase helpers: map DB snake_case → app camelCase ----
@@ -179,7 +180,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
+  
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialMandatory, setTutorialMandatory] = useState(false);
@@ -1043,6 +1044,7 @@ const Dashboard = () => {
           {activeTab === 'news' && <NewsTab news={news} comments={newsComments} members={members} currentUser={currentUser} canManage={canManage} canCreateNews={canCreateNews} deleteNews={deleteNews} toggleLike={toggleLike} addComment={addComment} deleteComment={deleteComment} onAddNews={() => setShowAddNews(true)} />}
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryTab albums={albums} photos={galleryPhotos} currentUser={currentUser} canManagePhotos={canManagePhotos} onCreateAlbum={createAlbum} onDeleteAlbum={deleteAlbum} onUploadPhotos={uploadPhotos} onDeletePhoto={deletePhoto} />}
+          {activeTab === 'chat' && <ChatTab currentUser={currentUser} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
               onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
@@ -1070,7 +1072,6 @@ const Dashboard = () => {
         </div>
       </main>
 
-      <ChatBubble currentUser={currentUser} members={members} chatOpen={chatOpen} setChatOpen={setChatOpen} />
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
 
       <footer className="hidden lg:block border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">

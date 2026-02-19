@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck } from 'lucide-react';
+import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,7 @@ const allTabs: Tab[] = [
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: UserCheck },
+  { id: 'chat', label: 'Discussions', icon: MessageCircle },
 ];
 
 /** Icône animée : bounce prononcé + rotation à l'activation */
