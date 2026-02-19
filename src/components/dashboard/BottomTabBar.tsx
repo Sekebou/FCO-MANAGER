@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface Tab {
@@ -28,29 +28,10 @@ interface BottomTabBarProps {
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
   const [featuredJustActivated, setFeaturedJustActivated] = useState(false);
   const prevActiveTab = useRef(activeTab);
 
   useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 6);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 6);
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    const ro = new ResizeObserver(checkScroll);
-    ro.observe(el);
-    return () => { el.removeEventListener('scroll', checkScroll); ro.disconnect(); };
-  }, [checkScroll]);
 
   // Auto-scroll to active tab
   useEffect(() => {
@@ -99,58 +80,14 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
       />
 
       <div className="relative">
-        {/* ── Indicateurs de scroll : dots lumineux pulsants ── */}
-        <AnimatePresence>
-          {canScrollLeft && (
-            <motion.div
-              key="dot-left"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              className="absolute left-1 top-1/2 -translate-y-1/2 z-20 pointer-events-none flex flex-col gap-[3px] items-center"
-              style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-            >
-              {[0, 0.25, 0.5].map((delay) => (
-                <motion.div
-                  key={delay}
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay }}
-                  className="w-[3px] h-[3px] rounded-full bg-accent"
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {canScrollRight && (
-            <motion.div
-              key="dot-right"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              className="absolute right-1 top-1/2 -translate-y-1/2 z-20 pointer-events-none flex flex-col gap-[3px] items-center"
-              style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-            >
-              {[0, 0.25, 0.5].map((delay) => (
-                <motion.div
-                  key={delay}
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay }}
-                  className="w-[3px] h-[3px] rounded-full bg-accent"
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Scroll container ── */}
+        {/* ── Scroll container — 4 onglets fixes visibles ── */}
         <div
           ref={scrollRef}
           className="flex items-stretch overflow-x-auto scrollbar-hide"
           style={{
             WebkitOverflowScrolling: 'touch',
             paddingBottom: 'env(safe-area-inset-bottom)',
+            scrollSnapType: 'none',
           }}
         >
           {allTabs.map((tab) => {
@@ -158,7 +95,6 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
             const isActive = activeTab === tab.id;
 
             if (tab.featured) {
-              // ── Onglet Présences : même structure que les autres, pill colorée centrée ──
               return (
                 <button
                   key={tab.id}
@@ -166,12 +102,12 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   onClick={() => handleTap(tab.id)}
                   className="relative flex flex-col items-center justify-center gap-1 pt-2 pb-1.5 shrink-0 outline-none select-none"
                   style={{
-                    width: 'calc(100vw / 4.5)',
+                    width: 'calc(100vw / 4)',
                     minWidth: '4.25rem',
                     WebkitTapHighlightColor: 'transparent',
                   }}
                 >
-                  {/* Indicateur top identique aux autres */}
+                  {/* Indicateur top */}
                   <motion.div
                     initial={false}
                     animate={{ width: isActive ? 28 : 0, opacity: isActive ? 1 : 0 }}
@@ -179,12 +115,12 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                     className="absolute top-0 left-1/2 -translate-x-1/2 h-[2.5px] rounded-full bg-accent"
                   />
 
-                  {/* Pill colorée — TAILLE FIXE pour ne jamais changer la hauteur de la barre */}
+                  {/* Pill colorée — TAILLE FIXE */}
                   <motion.div
                     whileTap={{ scale: 0.87 }}
                     animate={
                       featuredJustActivated
-                        ? { scale: [1, 1.12, 0.95, 1], transition: { duration: 0.42, ease: [0.34, 1.56, 0.64, 1] } }
+                        ? { scale: [1, 1.14, 0.93, 1.04, 1], transition: { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] } }
                         : { scale: 1 }
                     }
                     className="relative flex items-center justify-center rounded-[14px]"
@@ -192,24 +128,35 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                       width: 44,
                       height: 32,
                       flexShrink: 0,
-                      background: isActive ? 'hsl(var(--accent))' : 'hsl(var(--primary) / 0.85)',
+                      background: isActive
+                        ? 'hsl(var(--accent))'
+                        : 'hsl(var(--primary) / 0.85)',
                       boxShadow: isActive
-                        ? '0 0 12px 2px hsl(var(--accent) / 0.40)'
+                        ? '0 0 18px 4px hsl(var(--accent) / 0.55), 0 0 6px 1px hsl(var(--accent) / 0.8)'
                         : '0 2px 8px -2px hsl(var(--primary) / 0.35)',
                     }}
                   >
-                    {/* Glow ambiant quand actif */}
+                    {/* Halo pulsant quand actif */}
                     {isActive && (
-                      <motion.div
-                        animate={{ opacity: [0.2, 0.5, 0.2] }}
-                        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-                        className="absolute inset-0 rounded-[14px] bg-accent/50 blur-sm -z-10"
-                      />
+                      <>
+                        <motion.div
+                          animate={{ opacity: [0.4, 0.9, 0.4], scale: [1, 1.25, 1] }}
+                          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                          className="absolute inset-0 rounded-[14px] blur-md -z-10"
+                          style={{ background: 'hsl(var(--accent) / 0.7)' }}
+                        />
+                        <motion.div
+                          animate={{ opacity: [0.15, 0.45, 0.15] }}
+                          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                          className="absolute -inset-2 rounded-[18px] blur-xl -z-20"
+                          style={{ background: 'hsl(var(--accent) / 0.5)' }}
+                        />
+                      </>
                     )}
                     <motion.div
                       animate={
                         featuredJustActivated
-                          ? { rotate: [0, -8, 8, 0], transition: { duration: 0.38, ease: 'easeInOut' } }
+                          ? { rotate: [0, -10, 10, -5, 0], transition: { duration: 0.45, ease: 'easeInOut' } }
                           : { rotate: 0 }
                       }
                     >
@@ -241,7 +188,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 onClick={() => handleTap(tab.id)}
                 className="relative flex flex-col items-center justify-center gap-1 pt-2 pb-1.5 shrink-0 outline-none select-none"
                 style={{
-                  width: 'calc(100vw / 4.5)',
+                  width: 'calc(100vw / 4)',
                   minWidth: '4rem',
                   WebkitTapHighlightColor: 'transparent',
                 }}
