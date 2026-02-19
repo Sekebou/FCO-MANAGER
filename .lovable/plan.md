@@ -1,72 +1,72 @@
 
-## Reconstruire l'onglet Discussions avec toutes les vues
+## Refonte de l'onglet Discussions
 
-### Diagnostic
+### Changements demandés
 
-La migration de la bulle vers l'onglet a remplacé `ChatBubble.tsx` par un `ChatTab.tsx` simplifié qui n'a que le chat global. Toute la logique multi-vues de `ChatBubble.tsx` a été perdue :
+1. **Supprimer le fond bleu (`bg-primary`)** dans tous les headers de l'onglet → utiliser `bg-card border-b border-border` comme les autres onglets du dashboard
+2. **Supprimer le logo** à côté du titre "Discussions" dans le header d'accueil et le header du chat global
+3. **Indicateur de présence en ligne** (point vert pulsé / rouge) dans la liste des conversations et dans l'en-tête du chat privé
+4. **Système "Vu par"** sur les messages privés — affichage de l'avatar de l'autre utilisateur sous le dernier message qu'il a lu, comme Facebook Messenger ou iMessage
 
-- Vue "tabs" : écran d'accueil avec choix Discussion Globale / Messages Privés
-- Vue "global" : chat global du club
-- Vue "conversations" : liste des conversations privées/groupes
-- Vue "new-convo" : création d'une nouvelle conversation ou groupe
-- Vue "private-chat" : chat privé ou de groupe
+---
 
-Le "leader" (header de navigation en haut) qui disparaissait était lié au fait que le `ChatBubble` avait un bouton de fermeture (`setChatOpen(false)`) — désormais inutile dans un onglet, mais il faut remplacer ce comportement par une navigation entre vues.
+### Détails techniques
 
-### Solution
+#### 1. Suppression du fond bleu + logo
 
-Réécrire `ChatTab.tsx` en portant toute la logique de `ChatBubble.tsx` dans une version adaptée pour un affichage plein écran en tant qu'onglet :
+Tous les headers (`bg-primary text-primary-foreground`) deviennent `bg-card border-b border-border text-foreground`. Les textes s'adaptent. Les boutons `hover:bg-white/15` deviennent `hover:bg-secondary`. Les `ArrowLeft` et icônes restent visibles en `text-foreground`.
 
-1. Supprimer les props `chatOpen` / `setChatOpen` (plus besoin)
-2. Ajouter la prop `members` (nécessaire pour les conversations privées)
-3. Garder les 5 vues : `tabs` → `global` | `conversations` → `new-convo` → `private-chat`
-4. Remplacer le bouton "fermer (X)" par un bouton "retour (←)" qui ramène à la vue `tabs`
-5. Adapter les hauteurs pour un affichage plein écran (pas un panel flottant)
+Concernant le logo :
+- Vue `tabs` : supprimer `<img src={clubLogo} ...>` dans le header
+- Vue `global` : supprimer `<img src={clubLogo} ...>` dans le header du chat global
+- L'import `clubLogo` reste utile pour l'avatar de la discussion globale dans la liste → on le garde
 
-### Changements
+#### 2. Présence en ligne — nouveau système
 
-**`src/components/dashboard/ChatTab.tsx`** — réécriture complète en portant le code de `ChatBubble.tsx` et en :
-- Supprimant toute référence à `chatOpen` / `setChatOpen`
-- Remplaçant le bouton X par un bouton ← (retour à l'accueil `tabs`)
-- Adaptant la hauteur du conteneur pour `100dvh` moins header + navbar
-- Ajoutant la prop `members: Member[]`
+**Base de données :** Ajouter une colonne `last_seen_at` à la table `profiles` (timestamp, nullable). Une migration SQL sera créée.
 
-**`src/pages/Dashboard.tsx`** — modifier la ligne 1047 pour passer `members` :
-```tsx
-// Avant
-{activeTab === 'chat' && <ChatTab currentUser={currentUser} />}
-// Après
-{activeTab === 'chat' && <ChatTab currentUser={currentUser} members={members} />}
+**Logique frontend :**
+- À l'ouverture de l'onglet Discussions, mettre à jour `last_seen_at` toutes les **30 secondes** via un `setInterval`
+- Un utilisateur est considéré **en ligne** (🟢) si son `last_seen_at` est dans les **2 dernières minutes**
+- Un utilisateur est considéré **hors ligne** (🔴) si son `last_seen_at` est plus ancien ou absent
+- Charger les `last_seen_at` de tous les membres via `profiles` en temps réel (realtime channel)
+- Afficher le point dans :
+  - La liste des conversations privées (sur l'avatar)
+  - L'en-tête du chat privé ouvert (avec texte "En ligne" ou "Hors ligne")
+  - La liste de sélection de membres (vue `new-convo`)
+
+**Apparence :**
+```
+🟢 point vert pulsé → en ligne (last_seen < 2 min)
+🔴 point rouge fixe → hors ligne
 ```
 
-### Architecture des vues dans le nouvel onglet
+#### 3. Système "Vu par" — style Facebook/iMessage
 
-```text
-Onglet "Discussions"
-│
-├── Vue "tabs" (accueil — par défaut)
-│   ├── [💬 Discussion Globale du Club] → vue "global"
-│   └── [🔒 Messages Privés]           → vue "conversations"
-│
-├── Vue "global" (chat global)
-│   └── [← retour] → vue "tabs"
-│
-├── Vue "conversations" (liste des convos)
-│   ├── [← retour] → vue "tabs"
-│   └── [+ Nouvelle] → vue "new-convo"
-│       └── [← retour] → vue "conversations"
-│
-└── Vue "private-chat" (chat privé/groupe)
-    └── [← retour] → vue "conversations"
+**Base de données :** Ajouter une colonne `read_by` de type `jsonb` (objet `{ userId: lastReadMessageId }`) à la table `conversations`. Quand un utilisateur ouvre une conversation, on enregistre l'ID du dernier message qu'il a vu.
+
+**Logique :**
+- Quand l'utilisateur ouvre un chat privé → `read_by[userId] = lastMessageId`
+- Affichage : sous le **dernier message envoyé par l'utilisateur courant**, afficher les petits avatars des participants qui ont vu jusqu'à ce message (hors soi-même)
+- Si plusieurs personnes ont vu → afficher leurs avatars empilés (max 3)
+- Style : petits avatars circulaires de 14px, alignés à droite sous la bulle
+
+**Exemple visuel :**
 ```
+[Mon message ici              ]
+                         Vu ✓✓ 👤
+```
+
+---
 
 ### Fichiers modifiés
 
-- `src/components/dashboard/ChatTab.tsx` — réécriture complète
-- `src/pages/Dashboard.tsx` — ajout de `members` dans le rendu de `<ChatTab>`
+- `src/components/dashboard/ChatTab.tsx` — suppression fond bleu + logo + présence + "vu par"
+- **Migration SQL** — ajout de `last_seen_at` à `profiles` et `read_by` à `conversations`
 
 ### Impact
 
-- Aucune modification de base de données
-- Toutes les fonctionnalités existantes (messages privés, groupes, photos) sont restaurées
-- La bulle flottante reste supprimée — l'onglet devient la seule interface de chat
+- Aucune logique métier touchée
+- Les messages existants ne sont pas affectés
+- La présence en ligne est passive (mise à jour auto toutes les 30 sec)
+- Rétrocompatible : `read_by` est nullable, `last_seen_at` est nullable
