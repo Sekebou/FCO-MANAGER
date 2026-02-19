@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send, MessageCircle, Plus, ArrowLeft, Users as UsersIcon, Search,
-  Trash2, Image as ImageIcon, X, Lock, AlertTriangle
+  Trash2, Image as ImageIcon, X, Lock, AlertTriangle, Wifi, WifiOff
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.png';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,7 @@ interface Conversation {
   lastMessageAt?: string;
   createdBy?: string;
   unreadCount?: Record<string, number>;
+  readBy?: Record<string, string>; // userId -> lastReadMessageId
 }
 
 interface ChatMessage {
@@ -73,7 +74,23 @@ const mapConvo = (r: any): Conversation => ({
   participantPhotos: r.participant_photos || {}, participantRoles: r.participant_roles || {},
   type: r.type as any, name: r.name, lastMessage: r.last_message,
   lastMessageAt: r.last_message_at, createdBy: r.created_by, unreadCount: r.unread_count || {},
+  readBy: r.read_by || {},
 });
+
+// Présence : en ligne si last_seen_at < 2 minutes
+const isOnline = (lastSeenAt: string | null | undefined): boolean => {
+  if (!lastSeenAt) return false;
+  return Date.now() - new Date(lastSeenAt).getTime() < 2 * 60 * 1000;
+};
+
+// Indicateur de présence visuel
+const PresenceDot = ({ online }: { online: boolean }) => (
+  <span
+    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card ${
+      online ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+    }`}
+  />
+);
 
 const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
   const [view, setView] = useState<ChatView>('tabs');
@@ -92,6 +109,9 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
   const [deletingConvo, setDeletingConvo] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
+  // Présence: userId -> last_seen_at
+  const [presenceMap, setPresenceMap] = useState<Record<string, string | null>>({});
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,7 +125,42 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
     setTimeout(() => { setView(newView); setTimeout(() => setAnimating(false), 20); }, 150);
   };
 
-  // Global chat
+  // ─── HEARTBEAT : mise à jour last_seen_at toutes les 30s ───
+  const updateLastSeen = useCallback(async () => {
+    if (!currentUser) return;
+    await (supabase.from('profiles') as any).update({ last_seen_at: new Date().toISOString() }).eq('id', currentUser.uid);
+  }, [currentUser]);
+
+  useEffect(() => {
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 30000);
+    return () => clearInterval(interval);
+  }, [updateLastSeen]);
+
+  // ─── PRESENCE : charger + écouter last_seen_at de tous les profils ───
+  useEffect(() => {
+    const fetchPresence = async () => {
+      const { data } = await supabase.from('profiles').select('id, last_seen_at');
+      if (data) {
+        const map: Record<string, string | null> = {};
+        data.forEach((p: any) => { map[p.id] = p.last_seen_at; });
+        setPresenceMap(map);
+      }
+    };
+    fetchPresence();
+
+    const channel = supabase.channel('presence-profiles')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
+        const p = payload.new as any;
+        if (p?.id && 'last_seen_at' in p) {
+          setPresenceMap(prev => ({ ...prev, [p.id]: p.last_seen_at }));
+        }
+      }).subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  // ─── GLOBAL CHAT ───
   useEffect(() => {
     const fetchGlobal = async () => {
       const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(200);
@@ -127,7 +182,7 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Conversations
+  // ─── CONVERSATIONS ───
   useEffect(() => {
     if (!currentUser) return;
     const fetchConvos = async () => {
@@ -144,24 +199,35 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
 
-  // Private messages
+  // ─── MESSAGES PRIVÉS + "VU PAR" ───
   useEffect(() => {
     if (!activeConversation) { setPrivateMessages([]); return; }
     const fetchMsgs = async () => {
       const { data } = await supabase.from('conversation_messages').select('*').eq('conversation_id', activeConversation.id).order('created_at', { ascending: true });
-      if (data) setPrivateMessages(data.map(mapConvoMsg));
+      if (data) {
+        const msgs = data.map(mapConvoMsg);
+        setPrivateMessages(msgs);
+
+        // Marquer comme lu : enregistrer le dernier message ID dans read_by
+        if (currentUser && msgs.length > 0) {
+          const lastMsgId = msgs[msgs.length - 1].id;
+          const updatedReadBy = { ...(activeConversation.readBy || {}), [currentUser.uid]: lastMsgId };
+          const uc = { ...(activeConversation.unreadCount || {}), [currentUser.uid]: 0 };
+          await supabase.from('conversations').update({ unread_count: uc, read_by: updatedReadBy }).eq('id', activeConversation.id);
+          // Mettre à jour localement
+          setActiveConversation(prev => prev ? { ...prev, readBy: updatedReadBy } : null);
+        }
+      }
     };
     fetchMsgs();
-    if (currentUser) {
-      const uc = { ...(activeConversation.unreadCount || {}), [currentUser.uid]: 0 };
-      supabase.from('conversations').update({ unread_count: uc }).eq('id', activeConversation.id).then(() => {});
-    }
+
     const channel = supabase.channel(`chattab-msgs-${activeConversation.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_messages', filter: `conversation_id=eq.${activeConversation.id}` }, fetchMsgs)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [activeConversation?.id, currentUser]);
 
+  // ─── SCROLL AUTO ───
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [globalMessages, privateMessages, view]);
 
   const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount?.[currentUser?.uid || ''] || 0), 0);
@@ -181,7 +247,9 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
     const oid = c.participants.find(id => id !== currentUser?.uid);
     return oid ? c.participantRoles?.[oid] : null;
   };
+  const getConvoOtherId = (c: Conversation) => c.participants.find(id => id !== currentUser?.uid);
 
+  // ─── ENVOI GLOBAL ───
   const sendGlobal = async () => {
     if (!newMessage.trim() || !currentUser || sending) return;
     const text = newMessage.trim(); setNewMessage(''); setSending(true);
@@ -194,21 +262,37 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
     } catch { setNewMessage(text); } finally { setSending(false); }
   };
 
+  // ─── ENVOI PRIVÉ ───
   const sendPrivate = async () => {
     if (!newMessage.trim() || !currentUser || !activeConversation || sending) return;
     const text = newMessage.trim(); setNewMessage(''); setSending(true);
     try {
-      await supabase.from('conversation_messages').insert({
+      const { data: inserted } = await supabase.from('conversation_messages').insert({
         conversation_id: activeConversation.id, text, sender_id: currentUser.uid,
         sender_name: currentUser.name, sender_role: currentUser.role, sender_photo: currentUser.photoURL || null,
-      });
+      }).select('id').single();
+
       const uc = { ...(activeConversation.unreadCount || {}) };
       activeConversation.participants.forEach(pid => { if (pid !== currentUser.uid) uc[pid] = (uc[pid] || 0) + 1; });
-      await supabase.from('conversations').update({ last_message: text.slice(0, 60), last_message_at: new Date().toISOString(), unread_count: uc }).eq('id', activeConversation.id);
+
+      // Marquer comme lu pour moi immédiatement
+      const updatedReadBy = inserted
+        ? { ...(activeConversation.readBy || {}), [currentUser.uid]: inserted.id }
+        : activeConversation.readBy || {};
+
+      await supabase.from('conversations').update({
+        last_message: text.slice(0, 60),
+        last_message_at: new Date().toISOString(),
+        unread_count: uc,
+        read_by: updatedReadBy,
+      }).eq('id', activeConversation.id);
+
+      setActiveConversation(prev => prev ? { ...prev, readBy: updatedReadBy } : null);
       inputRef.current?.focus();
     } catch { setNewMessage(text); } finally { setSending(false); }
   };
 
+  // ─── UPLOAD IMAGE ───
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser || !activeConversation) return;
@@ -283,10 +367,11 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
       const { data: inserted, error } = await supabase.from('conversations').insert({
         participants: all, participant_names: names, participant_photos: photos, participant_roles: roles,
         type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : null,
-        last_message: null, last_message_at: new Date().toISOString(), created_by: currentUser.uid, unread_count: unread,
+        last_message: null, last_message_at: new Date().toISOString(), created_by: currentUser.uid,
+        unread_count: unread, read_by: {},
       }).select('id').single();
       if (error) throw error;
-      setActiveConversation({ id: inserted.id, participants: all, participantNames: names, participantPhotos: photos, participantRoles: roles, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount: unread });
+      setActiveConversation({ id: inserted.id, participants: all, participantNames: names, participantPhotos: photos, participantRoles: roles, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount: unread, readBy: {} });
       changeView('private-chat'); setSelectedMembers([]); setGroupName(''); setSearchMember('');
     } catch { toast.error('Erreur lors de la création'); }
   };
@@ -330,7 +415,34 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
 
   const filteredMembers = visibleMembers.filter(m => m.id !== currentUser?.uid && m.name.toLowerCase().includes(searchMember.toLowerCase()));
 
-  const renderMessages = (msgs: ChatMessage[], isGlobal: boolean, isGroupChat: boolean) => (
+  // ─── CALCUL "VU PAR" ───
+  // Retourne les participants qui ont vu jusqu'à ce message (hors moi)
+  const getSeenByForMessage = (msg: ChatMessage, msgs: ChatMessage[], convo: Conversation | null): { id: string; name: string; photo: string | null }[] => {
+    if (!convo || !currentUser) return [];
+    const readBy = convo.readBy || {};
+    const seenBy: { id: string; name: string; photo: string | null }[] = [];
+
+    // Pour chaque participant (hors moi), vérifier si son lastReadMessageId >= ce message
+    for (const pid of convo.participants) {
+      if (pid === currentUser.uid) continue;
+      const lastReadId = readBy[pid];
+      if (!lastReadId) continue;
+      // Trouver l'index du message lu par rapport à la liste
+      const lastReadIdx = msgs.findIndex(m => m.id === lastReadId);
+      const currentIdx = msgs.findIndex(m => m.id === msg.id);
+      if (lastReadIdx >= currentIdx && currentIdx !== -1) {
+        seenBy.push({
+          id: pid,
+          name: convo.participantNames?.[pid] || 'Utilisateur',
+          photo: convo.participantPhotos?.[pid] || null,
+        });
+      }
+    }
+    return seenBy.slice(0, 3);
+  };
+
+  // ─── RENDER MESSAGES ───
+  const renderMessages = (msgs: ChatMessage[], isGlobal: boolean, isGroupChat: boolean, convo: Conversation | null = null) => (
     <div className="flex-1 overflow-y-auto px-4 py-3 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
       {msgs.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full gap-3 py-12">
@@ -349,6 +461,15 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
         const consecutive = isConsec(msgs, idx);
         const showDateSep = isDiffDay(msgs, idx);
         const canDelete = own || isAdmin;
+
+        // "Vu par" uniquement sur mes propres messages dans les chats privés/groupes
+        const isLastOwnMsg = !isGlobal && own && (() => {
+          for (let i = msgs.length - 1; i >= 0; i--) {
+            if ((msgs[i].senderId || msgs[i].userId) === currentUser?.uid) return msgs[i].id === msg.id;
+          }
+          return false;
+        })();
+        const seenBy = isLastOwnMsg ? getSeenByForMessage(msg, msgs, convo) : [];
 
         return (
           <React.Fragment key={msg.id}>
@@ -381,6 +502,27 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
                   {!own && isAdmin && <button onClick={() => deleteMessage(msg.id, isGlobal)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-destructive transition-all"><Trash2 size={12} /></button>}
                 </div>
                 {!consecutive && <span className={`text-[10px] text-muted-foreground/60 mt-0.5 ${own ? 'mr-0.5' : 'ml-0.5'}`}>{formatMsgTime(msg.createdAt)}</span>}
+
+                {/* ─── "VU PAR" — style iMessage/Facebook ─── */}
+                {seenBy.length > 0 && (
+                  <div className="flex items-center gap-1 mt-1 mr-0.5">
+                    <span className="text-[9px] text-muted-foreground/60">Vu</span>
+                    <div className="flex -space-x-1">
+                      {seenBy.map(s => (
+                        <div
+                          key={s.id}
+                          className={`w-3.5 h-3.5 rounded-full border border-card overflow-hidden flex items-center justify-center text-[6px] font-bold text-white shrink-0 ${ROLE_COLORS[convo?.participantRoles?.[s.id] || ''] || 'bg-muted-foreground'}`}
+                          title={s.name}
+                        >
+                          {s.photo
+                            ? <img src={s.photo} alt="" className="w-full h-full object-cover" />
+                            : getInitials(s.name)
+                          }
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </React.Fragment>
@@ -419,9 +561,9 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
         {/* ─── VUE ACCUEIL (tabs) ─── */}
         {view === 'tabs' && (
           <>
-            <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground shrink-0">
-              <img src={clubLogo} alt="Logo" className="w-7 h-7 object-contain rounded-full bg-white/10 p-0.5" />
-              <span className="font-bold text-base flex-1">Discussions</span>
+            {/* Header sans fond bleu, sans logo */}
+            <div className="flex items-center gap-3 px-4 py-3 bg-card border-b border-border shrink-0">
+              <span className="font-bold text-base flex-1 text-foreground">Discussions</span>
               {totalUnread > 0 && (
                 <span className="bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center">{totalUnread > 99 ? '99+' : totalUnread}</span>
               )}
@@ -429,8 +571,8 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
 
             <div className="flex-1 overflow-y-auto">
               {/* Discussion globale */}
-              <button onClick={() => changeView('global')} className="flex items-center gap-3 w-full px-4 py-4 hover:bg-primary/5 transition-all border-b border-border text-left">
-                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden shrink-0">
+              <button onClick={() => changeView('global')} className="flex items-center gap-3 w-full px-4 py-4 hover:bg-secondary/50 transition-all border-b border-border text-left">
+                <div className="w-12 h-12 rounded-full bg-card flex items-center justify-center shadow-md overflow-hidden shrink-0 border border-border">
                   <img src={clubLogo} alt="Logo du club" className="w-9 h-9 object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -461,12 +603,18 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
                   const name = getConvoName(convo);
                   const photo = getConvoPhoto(convo);
                   const role = getConvoRole(convo);
+                  const otherId = getConvoOtherId(convo);
+                  const online = convo.type === 'private' && otherId ? isOnline(presenceMap[otherId]) : false;
                   const unread = convo.unreadCount?.[currentUser?.uid || ''] || 0;
                   return (
                     <button key={convo.id} onClick={() => { setActiveConversation(convo); changeView('private-chat'); }}
                       className={`flex items-center gap-3 w-full px-4 py-3.5 text-left transition-all border-b border-border/50 ${unread > 0 ? 'bg-accent/5 hover:bg-accent/10' : 'hover:bg-secondary/50'}`}>
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden shadow-sm ${convo.type === 'group' ? 'bg-accent' : (ROLE_COLORS[role || ''] || 'bg-muted-foreground')}`}>
-                        {convo.type === 'group' ? <UsersIcon size={16} /> : photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                      {/* Avatar avec indicateur de présence */}
+                      <div className="relative shrink-0">
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden shadow-sm ${convo.type === 'group' ? 'bg-accent' : (ROLE_COLORS[role || ''] || 'bg-muted-foreground')}`}>
+                          {convo.type === 'group' ? <UsersIcon size={16} /> : photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                        </div>
+                        {convo.type === 'private' && <PresenceDot online={online} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
@@ -489,12 +637,12 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
         {/* ─── VUE CHAT GLOBAL ─── */}
         {view === 'global' && (
           <>
-            <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground shrink-0">
-              <button onClick={() => changeView('tabs')} className="p-1.5 rounded-lg hover:bg-white/15 transition-all"><ArrowLeft size={20} /></button>
-              <img src={clubLogo} alt="Logo" className="w-7 h-7 object-contain rounded-full bg-white/10 p-0.5" />
-              <span className="font-bold text-sm flex-1">Discussion globale du club</span>
+            {/* Header sans fond bleu, sans logo */}
+            <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border shrink-0">
+              <button onClick={() => changeView('tabs')} className="p-1.5 rounded-lg hover:bg-secondary transition-all text-foreground"><ArrowLeft size={20} /></button>
+              <span className="font-bold text-sm flex-1 text-foreground">Discussion globale du club</span>
               {isAdmin && globalMessages.length > 0 && (
-                <button onClick={() => setShowResetConfirm(true)} className="p-1.5 rounded-lg hover:bg-white/15 transition-all" title="Vider le chat"><Trash2 size={16} /></button>
+                <button onClick={() => setShowResetConfirm(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-all text-muted-foreground hover:text-destructive" title="Vider le chat"><Trash2 size={16} /></button>
               )}
             </div>
 
@@ -514,7 +662,7 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
               </div>
             )}
 
-            {renderMessages(globalMessages, true, true)}
+            {renderMessages(globalMessages, true, true, null)}
             {currentUser ? renderInput(sendGlobal, false) : (
               <div className="border-t border-border px-4 py-4 text-center text-sm text-muted-foreground bg-secondary/50">🔒 Connectez-vous pour participer</div>
             )}
@@ -524,9 +672,9 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
         {/* ─── VUE NOUVELLE CONVERSATION ─── */}
         {view === 'new-convo' && (
           <>
-            <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground shrink-0">
-              <button onClick={() => { changeView('tabs'); setSelectedMembers([]); setGroupName(''); setSearchMember(''); }} className="p-1.5 rounded-lg hover:bg-white/15 transition-all"><ArrowLeft size={20} /></button>
-              <span className="font-bold text-sm flex-1">Nouvelle conversation</span>
+            <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border shrink-0">
+              <button onClick={() => { changeView('tabs'); setSelectedMembers([]); setGroupName(''); setSearchMember(''); }} className="p-1.5 rounded-lg hover:bg-secondary transition-all text-foreground"><ArrowLeft size={20} /></button>
+              <span className="font-bold text-sm flex-1 text-foreground">Nouvelle conversation</span>
             </div>
             <div className="p-4 space-y-3 flex-1 overflow-y-auto">
               <div className="relative">
@@ -548,23 +696,33 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
                   className="w-full px-3 py-2.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/40 text-sm" />
               )}
               <div className="space-y-1">
-                {filteredMembers.map(member => (
-                  <button key={member.id} onClick={() => toggleMember(member.id)}
-                    className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all text-left ${selectedMembers.includes(member.id) ? 'bg-accent/10 ring-1 ring-accent/30' : 'hover:bg-secondary/60'}`}>
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 overflow-hidden ${ROLE_COLORS[member.role] || 'bg-muted-foreground'}`}>
-                      {member.photoURL ? <img src={member.photoURL} alt="" className="w-full h-full object-cover" /> : getInitials(member.name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
-                      <span className={`text-[10px] font-semibold uppercase ${ROLE_TEXT_COLORS[member.role] || 'text-muted-foreground'}`}>{ROLE_LABELS[member.role] || member.role}</span>
-                    </div>
-                    {selectedMembers.includes(member.id) && (
-                      <div className="w-5 h-5 bg-accent rounded-full flex items-center justify-center shrink-0">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                {filteredMembers.map(member => {
+                  const online = isOnline(presenceMap[member.id]);
+                  return (
+                    <button key={member.id} onClick={() => toggleMember(member.id)}
+                      className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all text-left ${selectedMembers.includes(member.id) ? 'bg-accent/10 ring-1 ring-accent/30' : 'hover:bg-secondary/60'}`}>
+                      {/* Avatar avec indicateur de présence */}
+                      <div className="relative shrink-0">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden ${ROLE_COLORS[member.role] || 'bg-muted-foreground'}`}>
+                          {member.photoURL ? <img src={member.photoURL} alt="" className="w-full h-full object-cover" /> : getInitials(member.name)}
+                        </div>
+                        <PresenceDot online={online} />
                       </div>
-                    )}
-                  </button>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[10px] font-semibold uppercase ${ROLE_TEXT_COLORS[member.role] || 'text-muted-foreground'}`}>{ROLE_LABELS[member.role] || member.role}</span>
+                          <span className={`text-[9px] ${online ? 'text-green-500' : 'text-muted-foreground/60'}`}>• {online ? 'En ligne' : 'Hors ligne'}</span>
+                        </div>
+                      </div>
+                      {selectedMembers.includes(member.id) && (
+                        <div className="w-5 h-5 bg-accent rounded-full flex items-center justify-center shrink-0">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div className="p-4 border-t border-border shrink-0">
@@ -579,25 +737,37 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
         {/* ─── VUE CHAT PRIVÉ / GROUPE ─── */}
         {view === 'private-chat' && activeConversation && (
           <>
-            <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground shrink-0">
-              <button onClick={() => { changeView('tabs'); setActiveConversation(null); }} className="p-1.5 rounded-lg hover:bg-white/15 transition-all"><ArrowLeft size={20} /></button>
+            <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border shrink-0">
+              <button onClick={() => { changeView('tabs'); setActiveConversation(null); }} className="p-1.5 rounded-lg hover:bg-secondary transition-all text-foreground"><ArrowLeft size={20} /></button>
               {(() => {
                 const photo = getConvoPhoto(activeConversation);
                 const role = getConvoRole(activeConversation);
                 const name = getConvoName(activeConversation);
+                const otherId = getConvoOtherId(activeConversation);
+                const online = activeConversation.type === 'private' && otherId ? isOnline(presenceMap[otherId]) : false;
                 return (
                   <>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 overflow-hidden ring-1 ring-white/20 ${activeConversation.type === 'group' ? 'bg-white/20' : (ROLE_COLORS[role || ''] || 'bg-white/20')}`}>
-                      {activeConversation.type === 'group' ? <UsersIcon size={14} /> : photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                    {/* Avatar avec indicateur de présence */}
+                    <div className="relative shrink-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden ${activeConversation.type === 'group' ? 'bg-accent' : (ROLE_COLORS[role || ''] || 'bg-muted-foreground')}`}>
+                        {activeConversation.type === 'group' ? <UsersIcon size={14} /> : photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : getInitials(name)}
+                      </div>
+                      {activeConversation.type === 'private' && <PresenceDot online={online} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate">{name}</p>
-                      {activeConversation.type === 'group' && <p className="text-[10px] opacity-70">{activeConversation.participants.length} membres</p>}
+                      <p className="text-sm font-bold truncate text-foreground">{name}</p>
+                      {activeConversation.type === 'private' ? (
+                        <p className={`text-[10px] font-medium flex items-center gap-1 ${online ? 'text-green-500' : 'text-muted-foreground'}`}>
+                          {online ? <><Wifi size={9} /> En ligne</> : <><WifiOff size={9} /> Hors ligne</>}
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground">{activeConversation.participants.length} membres</p>
+                      )}
                     </div>
                   </>
                 );
               })()}
-              <button onClick={() => setShowDeleteConvo(true)} className="p-1.5 rounded-lg hover:bg-white/15 transition-all" title="Supprimer"><Trash2 size={16} /></button>
+              <button onClick={() => setShowDeleteConvo(true)} className="p-1.5 rounded-lg hover:bg-secondary transition-all text-muted-foreground hover:text-destructive" title="Supprimer"><Trash2 size={16} /></button>
             </div>
 
             {showDeleteConvo && (
@@ -613,7 +783,7 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
               </div>
             )}
 
-            {renderMessages(privateMessages, false, activeConversation.type === 'group')}
+            {renderMessages(privateMessages, false, activeConversation.type === 'group', activeConversation)}
             {currentUser && renderInput(sendPrivate, true)}
           </>
         )}
