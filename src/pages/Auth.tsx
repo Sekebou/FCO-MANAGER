@@ -68,10 +68,8 @@ const Auth = () => {
 
       const fullName = profile.name || profile.username || "joueur";
       const firstName = fullName.split(' ')[0];
-      if (!profile.welcome_seen) {
-        sessionStorage.setItem('showWelcome', firstName);
-        await supabase.from('profiles').update({ welcome_seen: true }).eq('id', user.id);
-      }
+      // TEMPORAIRE: toujours afficher bienvenue + tuto pour la vidéo
+      sessionStorage.setItem('showWelcome', firstName);
 
       navigate("/");
     } catch (err: any) {
