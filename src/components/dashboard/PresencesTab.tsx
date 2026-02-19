@@ -286,9 +286,9 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                 <button
                                   onClick={() => onSendConvocationNotif(event, event.convocations!)}
                                   className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors"
-                                  title="Notifier les joueurs non convoqués"
+                                  title="Notifier les joueurs convoqués"
                                 >
-                                  <Bell size={14} /> Non convoqués
+                                  <Bell size={14} /> Convoqués
                                 </button>
                               )}
                             </div>
