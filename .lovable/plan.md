@@ -1,81 +1,60 @@
 
-# Animation de fin de tutoriel et bouton Présences en "pop-out"
+# Corrections : onglets coupés + bulle de chat simplifiée
 
-## Problèmes actuels
+## Problème 1 — Onglets rognés sur les côtés
 
-### 1. Animation de fin trop rapide
-- Le `setTimeout` dans `handleComplete` n'est que de **900ms**, l'écran de célébration disparaît avant que l'utilisateur puisse le voir correctement
-- La redirection vers "Présences" est immédiate dans `onComplete` de `Dashboard.tsx`, donc le changement d'onglet est invisible sous l'écran de célébration
-- Il faut allonger la durée et séquencer : célébration → fermeture overlay → changement d'onglet avec un délai visible
+### Cause
+Le conteneur scrollable de la `BottomTabBar` a seulement `px-1` de padding horizontal. Quand l'utilisateur scrolle jusqu'au premier onglet (Stats) ou au dernier (Membres), une partie de l'icône ou du label est visuellement coupée par les bords de l'écran.
 
-### 2. Bouton Présences à l'intérieur de la barre
-- Actuellement le bouton a `marginTop: '-2rem'` mais la barre parent a `items-end` et une hauteur fixe, ce qui fait que le bouton reste visuellement **à l'intérieur** de la barre
-- Il faut que le bouton **dépasse physiquement** vers le haut, au-dessus de la barre de fond
-- Le fond de la barre doit avoir un "creux" ou laisser apparaître le bouton au-dessus
+### Solution
+- Ajouter `scroll-padding-inline` et remplacer `px-1` par **`pl-3 pr-3`** sur le conteneur scrollable pour que les onglets extrêmes ne collent pas aux bords
+- Ajouter un **fade gradient** à gauche et à droite de la barre (pseudo-overlay `pointer-events-none`) pour signaler visuellement qu'il y a du contenu scrollable et masquer la coupure nette
+- Les fades seront deux `div` absolues avec `bg-gradient-to-r from-card to-transparent` (et l'inverse à droite), qui disparaissent progressivement
 
-## Solutions
+## Problème 2 — Bulle de chat à simplifier
 
-### Fichier 1 : `src/components/dashboard/OnboardingTutorial.tsx`
+### Cause
+L'utilisateur a dit "non non déplorable" concernant la bulle de chat draggable/déplaçable. Le drag est trop complexe sur mobile, il cause des conflits de gestes et n'est pas agréable.
 
-**Allonger la séquence de célébration :**
-- `handleComplete` : passer le timeout de **900ms à 2200ms** pour que l'utilisateur voit bien la célébration
-- Ajouter une **animation de transition** vers l'onglet Présences : afficher l'icône `ClipboardCheck` animée qui "vole" vers le bas (vers la BottomTabBar) juste avant la fermeture
-- Enrichir l'écran de célébration :
-  - Texte "C'est parti 🎉" → reste mais plus grand, avec un sous-texte "Tu es redirigé vers Présences" 
-  - Ajouter une flèche animée qui pointe vers le bas (vers la barre de navigation)
-  - Conserver les rings radiatifs mais les laisser plus longtemps visibles
+### Solution : position fixe simple, propre et discrète
+Revenir à une **bulle fixe positionnée** sans drag, à une hauteur intermédiaire pour ne pas gêner la bottom bar, avec un design épuré :
 
-### Fichier 2 : `src/components/dashboard/BottomTabBar.tsx`
+- **Position** : `fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4` sur mobile — juste au-dessus de la barre de navigation
+- **Design bulle fermée** : rond de 52px, couleur `accent`, ombre douce, badge non-lus
+- **Panneau ouvert** : ancré en bas à droite, sans drag handle, avec juste un bouton X pour fermer — simple et fonctionnel
+- Supprimer entièrement le système de `drag` / `dragControls` / `useDragControls` / `GripHorizontal`
 
-**Faire sortir réellement le bouton Présences de la barre :**
-
-La structure actuelle pose le problème : le container `relative` de la barre englobe tout. Il faut restructurer pour que le bouton featured soit **en dehors du flow de la barre** mais positionné absolument au-dessus.
-
-Approche :
-```text
-STRUCTURE ACTUELLE :
-┌─────────────────────────────┐ ← barre (z-50)
-│ Stats  Classem. [Présences] │   bouton à l'intérieur
-└─────────────────────────────┘
-
-STRUCTURE CIBLE :
-        [Présences]            ← bouton (z-51) au-dessus
-┌────────────────────────────┐ ← barre (z-50) avec espace central
-│ Stats  Classem.    Calendr.│
-└────────────────────────────┘
-```
-
-**Implémentation concrète :**
-1. Wrapper la barre dans un conteneur `relative` qui a de la **hauteur supplémentaire en haut** (ex: `pt-8`) pour "réserver" l'espace du bouton featured
-2. Positionner le bouton `Présences` en **`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2`** sur le wrapper, pour qu'il soit à cheval entre l'extérieur et la barre
-3. Le fond de la barre utilise `inset-0` mais avec une forme qui laisse un "creux" en haut au centre — via un `clipPath` arrondi ou simplement en ajoutant un cercle blanc/card en arrière-plan derrière le bouton featured (style FAB)
-4. Ajouter un **cercle de fond** derrière le bouton (même couleur que la barre) avec `border-t` pour simuler la barre qui "accueille" le bouton
-5. Animation d'entrée du bouton avec un `spring` depuis le bas (scale + translateY)
-
-**Animation de l'icône Présences lors de la redirection :**
-- Quand `activeTab` passe à `'presences'`, déclencher une animation :
-  - Scale pulse : `[1, 1.25, 1]`
-  - Rotation : `[0, -10, 10, 0]` 
-  - Glow qui s'intensifie momentanément
-  - Durée : ~800ms visible
-
-### Fichier 3 : `src/pages/Dashboard.tsx`
-
-**Séquencer la redirection :**
-```ts
-onComplete={() => {
-  setShowTutorial(false);
-  setTutorialMandatory(false);
-  // Délai pour laisser l'overlay se fermer avant de changer l'onglet
-  setTimeout(() => setActiveTab('presences'), 400);
-}}
-```
-Ainsi l'utilisateur voit d'abord l'onglet en cours, puis la barre de navigation reprend vie avec l'onglet Présences animé.
-
-## Résumé des changements
+## Fichiers modifiés
 
 | Fichier | Changement |
 |---|---|
-| `OnboardingTutorial.tsx` | Timeout 900ms → 2200ms, écran célébration enrichi avec flèche et texte de redirection |
-| `BottomTabBar.tsx` | Restructuration du bouton Présences en position absolue au-dessus de la barre + animation forte à l'activation |
-| `Dashboard.tsx` | Délai de 400ms avant `setActiveTab('presences')` pour que la transition soit visible |
+| `src/components/dashboard/BottomTabBar.tsx` | Augmenter le padding latéral du scroll container + ajouter fades aux extrémités |
+| `src/components/dashboard/ChatBubble.tsx` | Supprimer le drag, position fixe simple, panneau épuré sans poignée |
+
+## Détail technique
+
+### BottomTabBar — Fades aux extrémités
+```text
+┌──────────────────────────────────────┐
+│▓▓▓[Stats][Clasmt][Actus][Pres][Cal]▓▓▓│
+│← fade                       fade →  │
+└──────────────────────────────────────┘
+```
+Deux `div` absolues `z-10 pointer-events-none` :
+- Gauche : `left-0 w-6 bg-gradient-to-r from-card to-transparent`
+- Droite : `right-0 w-6 bg-gradient-to-l from-card to-transparent`
+
+Et `px-4` sur le scroll container pour que les onglets démarrent décalés des bords.
+
+### ChatBubble — Structure simplifiée
+```text
+FERMÉE :               OUVERTE :
+[💬]  ←  rond fixe    ┌─────────────┐
+        en bas droite  │ Discussion  │[X]
+                       │ ...         │
+                       │             │
+                       └─────────────┘
+                          (ancré bas droite)
+```
+
+Le panneau ouvert reste `fixed bottom-[...] right-4` avec `w-[calc(100vw-2rem)] sm:w-[380px] h-[60vh]` — identique à avant mais sans le système de drag.
