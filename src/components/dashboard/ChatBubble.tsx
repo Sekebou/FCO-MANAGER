@@ -395,7 +395,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
 
   if (!chatOpen) {
     return (
-      <div className="fixed bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-24 right-4 sm:right-6 z-50">
+      <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 sm:left-auto sm:right-6 z-50">
         <button onClick={() => setChatOpen(true)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center bg-accent text-accent-foreground transition-all hover:scale-105 relative">
           <MessageCircle size={20} className="sm:w-6 sm:h-6" />
           {totalUnread > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center animate-scale-in shadow-md">{totalUnread > 99 ? '99+' : totalUnread}</span>}
@@ -405,8 +405,8 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
   }
 
   return (
-    <div className="fixed bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-24 right-4 sm:right-6 z-50 flex flex-col items-end gap-3">
-      <div className="w-[calc(100vw-2rem)] sm:w-[380px] h-[60vh] sm:h-[540px] max-h-[75vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
+    <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 sm:left-auto sm:right-6 z-50 flex flex-col items-start sm:items-end gap-3">
+      <div className="w-[calc(100vw-2rem)] sm:w-[380px] h-[55vh] sm:h-[540px] max-h-[calc(100dvh-12rem-env(safe-area-inset-bottom)-env(safe-area-inset-top))] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
         <div className={`flex flex-col flex-1 min-h-0 transition-all duration-200 ${animating ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
 
 
