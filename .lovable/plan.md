@@ -1,46 +1,55 @@
 
+# Rendre la bulle de conversation déplaçable
 
-# Synchronisation quasi-instantanee des actions sur iOS
+## Problème actuel
+La bulle de chat (fermée ET ouverte) est fixée dans le coin bas-droit de l'écran (`fixed bottom-[calc(4.5rem+...)] right-4`). Quand elle est ouverte, elle prend beaucoup de place et bloque certains éléments de l'interface. L'utilisateur ne peut pas la déplacer.
 
-## Probleme actuel
+## Solution
+Utiliser **Framer Motion** (déjà installé dans le projet) pour rendre l'ensemble de la bulle déplaçable librement sur l'écran, aussi bien à l'état fermé (bouton rond) qu'à l'état ouvert (panneau de chat).
 
-Sur iOS, toutes les donnees sont recuperees via un polling REST toutes les **5 secondes** qui telecharge l'integralite des collections (joueurs, evenements, news, presences, etc.). Quand un utilisateur clique sur "Present" depuis le web, il faut attendre jusqu'a 5s pour que ca apparaisse sur l'app iOS.
+## Comportement attendu
 
-## Solution proposee
+- **Bulle fermée** : le bouton rond peut être glissé partout sur l'écran
+- **Panneau ouvert** : une poignée de drag (en haut du panneau) permet de repositionner l'ensemble
+- La position est mémorisée pendant la session (si on ouvre/ferme le chat, il reste au même endroit)
+- Sur mobile, le drag fonctionne bien avec le touch
+- La bulle ne sort pas des bords de l'écran (contrainte `dragConstraints` liée aux dimensions de l'écran)
 
-Separer les donnees en deux categories avec des frequences de polling differentes :
+## Détails techniques
 
-- **Donnees "chaudes"** (changent souvent, doivent etre rapides) : presences, likes/commentaires news, stats joueurs -- polling toutes les **2 secondes**
-- **Donnees "froides"** (changent rarement) : evenements, championnats, albums, membres, cartes -- polling toutes les **8 secondes**
+### Fichier modifié : `src/components/dashboard/ChatBubble.tsx`
 
-Cela divise la charge reseau tout en rendant les mises a jour de presences et interactions quasi-instantanees (2s max au lieu de 5s).
+1. **Ajouter le state de position** avec `useRef` pour le conteneur drag :
+   ```tsx
+   const dragRef = useRef(null);
+   ```
 
-## Details techniques
+2. **Remplacer le conteneur `fixed`** par un `motion.div` avec les props Framer Motion :
+   ```tsx
+   <motion.div
+     drag
+     dragMomentum={false}
+     dragConstraints={{ top: -500, left: -300, right: 0, bottom: 0 }}
+     className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-50"
+   >
+     ...
+   </motion.div>
+   ```
 
-### Fichier modifie : `src/pages/Dashboard.tsx`
+3. **Ajouter une poignée de drag** sur le panneau ouvert (une barre discrète tout en haut du panneau) :
+   ```tsx
+   <div className="flex justify-center py-1.5 cursor-grab active:cursor-grabbing bg-primary/10">
+     <div className="w-10 h-1 bg-primary/30 rounded-full" />
+   </div>
+   ```
+   Cette poignée sera utilisée avec `dragControls` pour ne pas interférer avec les actions internes (boutons, scroll, input).
 
-Dans le bloc iOS REST polling (lignes ~304-356), remplacer le `fetchAll` unique par deux fonctions :
+4. **Gestion du conflit scroll vs drag** : utiliser `dragListener={false}` sur le contenu scrollable pour que le scroll interne des messages ne déclenche pas le drag.
 
-1. **`fetchHot()`** -- appele toutes les 2s :
-   - `attendance_records`
-   - `news` (pour les likes)
-   - `news_comments`
-   - `players` (pour les stats)
+### Contraintes de drag
+Les `dragConstraints` seront calculées dynamiquement selon la taille de l'écran via `window.innerWidth` / `window.innerHeight` pour éviter que la bulle sorte de l'écran.
 
-2. **`fetchCold()`** -- appele toutes les 8s :
-   - `events`
-   - `users` (membres)
-   - `cards`
-   - `championships`
-   - `championship_matches`
-   - `albums`
-   - `gallery_photos`
-
-3. Au demarrage, les deux sont appeles immediatement pour le chargement initial.
-
-4. La fonction `refetchNow()` (apres actions locales) continue de tout rafraichir instantanement.
-
-### Mise a jour du footer
-
-Changer le texte "Rafraichissement auto toutes les 10s" en "Synchro auto" pour ne pas afficher un chiffre qui ne correspond plus a une seule frequence.
-
+## Ce qui ne change pas
+- Le design et les fonctionnalités du chat restent identiques
+- La position de départ reste en bas à droite
+- Le z-index et les autres comportements sont conservés
