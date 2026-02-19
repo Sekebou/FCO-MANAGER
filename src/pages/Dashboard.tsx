@@ -1244,7 +1244,7 @@ const Dashboard = () => {
       {showTutorial && currentUser && (
         <OnboardingTutorial
           userRole={currentUser.role}
-          onComplete={() => { setShowTutorial(false); setTutorialMandatory(false); }}
+          onComplete={() => { setShowTutorial(false); setTutorialMandatory(false); setActiveTab('presences'); }}
           onTabChange={handleTabChange}
           mandatory={tutorialMandatory}
         />

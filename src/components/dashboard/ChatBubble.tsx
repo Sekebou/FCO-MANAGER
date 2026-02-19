@@ -405,7 +405,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
           bottom: 0,
         }}
         whileDrag={{ scale: 1.1 }}
-        className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-4 sm:right-6 z-50 touch-none"
+        className="fixed bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-24 right-4 sm:right-6 z-50 touch-none"
       >
         <button onClick={() => setChatOpen(true)} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg flex items-center justify-center bg-accent text-accent-foreground transition-all hover:scale-105 relative">
           <MessageCircle size={20} className="sm:w-6 sm:h-6" />
@@ -427,7 +427,7 @@ const ChatBubble: React.FC<Props> = ({ currentUser, members, chatOpen, setChatOp
         right: 0,
         bottom: 0,
       }}
-      className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-6 right-4 sm:right-6 z-50 flex flex-col items-end gap-3 touch-none"
+      className="fixed bottom-[calc(8rem+env(safe-area-inset-bottom))] lg:bottom-24 right-4 sm:right-6 z-50 flex flex-col items-end gap-3 touch-none"
     >
       <div className="w-[calc(100vw-2rem)] sm:w-[380px] h-[60vh] sm:h-[540px] max-h-[75vh] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-fade-in flex flex-col">
         {/* Drag handle */}
