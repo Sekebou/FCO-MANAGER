@@ -1,45 +1,65 @@
 
-## Corriger le bug : bulle de chat sous la navbar sur la page Présences
+## Masquer la bulle de chat derrière les modaux
 
-### Cause du problème
+### Diagnostic
 
-La `BottomTabBar` (`fixed bottom-0 z-50`) et la bulle de chat (`fixed z-50`) ont le **même niveau de z-index (50)**. En CSS, quand deux éléments `fixed` ont le même z-index, c'est **l'ordre d'apparition dans le DOM** qui décide lequel s'affiche au-dessus. La `BottomTabBar` étant rendue après la bulle dans l'arbre React, elle passe par-dessus la bulle.
+Actuellement les z-index sont répartis ainsi :
 
-Sur la page Présences en particulier, le re-rendu du composant `PresencesTab` peut modifier l'ordre de rendu et aggraver le problème.
+| Élément | Z-index actuel |
+|---|---|
+| BottomTabBar | z-50 (50) |
+| Modaux standards (AddEventForm, AddPlayerForm…) | z-50 (50) |
+| Modaux Championnat | z-[60] (60) |
+| Bulle de chat | z-[60] (60) |
 
-### Solution — 1 fichier, 2 lignes
+La bulle est au même niveau que les modaux Championnat et **au-dessus** des modaux standards → elle passe par-dessus tout.
 
-Augmenter le z-index de la bulle de `z-50` à `z-[60]` dans `ChatBubble.tsx`. Cela garantit qu'elle est toujours au-dessus de la `BottomTabBar` (z-50), quelle que soit la page.
-
-```tsx
-// Bulle fermée — ligne 398
-// Avant
-"fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 sm:left-auto sm:right-6 z-50"
-// Après
-"fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 sm:left-auto sm:right-6 z-[60]"
-
-// Panel ouvert — ligne 407
-// Avant
-"fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 sm:left-auto sm:right-6 z-50 flex flex-col items-start sm:items-end gap-3"
-// Après
-"fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3 sm:left-auto sm:right-6 z-[60] flex flex-col items-start sm:items-end gap-3"
-```
-
-### Hiérarchie des z-index après correction
+### Solution — Hiérarchie claire en 3 niveaux
 
 ```text
-z-[60]  → Bulle de chat (toujours au-dessus)
+z-[70]  → Modaux (backdrop + contenu) — toujours au premier plan
+z-[55]  → Bulle de chat — au-dessus de la navbar, sous les modaux
 z-50    → BottomTabBar
-z-50    → Modals (backdrop z-60 déjà géré par radix)
 ```
 
-### Fichier modifié
+**Changements :**
 
-`src/components/dashboard/ChatBubble.tsx` — lignes 398 et 407 uniquement : `z-50` → `z-[60]`
+1. `ChatBubble.tsx` — passer `z-[60]` à `z-[55]` (2 occurrences : bulle fermée + panel ouvert)
+
+2. Tous les modaux à `z-50` → `z-[70]` pour être au-dessus de la bulle :
+   - `src/components/modals/AddEventForm.tsx`
+   - `src/components/modals/AddPlayerForm.tsx`
+   - `src/components/modals/AddNewsForm.tsx`
+   - `src/components/modals/AddCardForm.tsx`
+   - `src/components/modals/ConfirmModal.tsx`
+   - `src/components/modals/InvitePlayerForm.tsx`
+   - `src/components/modals/ChangePasswordForm.tsx`
+   - `src/components/modals/AdminResetPasswordForm.tsx`
+   - `src/components/modals/AvatarModal.tsx`
+
+3. Modaux Championnat dans `ChampionnatTab.tsx` → `z-[60]` à `z-[70]`
+
+### Résultat
+
+Quand un modal s'ouvre, son backdrop (fond foncé) couvre toute la page y compris la bulle de chat, qui disparaît visuellement derrière l'overlay. La bulle reste néanmoins au-dessus de la navbar en toute circonstance.
+
+### Fichiers modifiés
+
+- `src/components/dashboard/ChatBubble.tsx` — z-[60] → z-[55]
+- `src/components/modals/AddEventForm.tsx` — z-50 → z-[70]
+- `src/components/modals/AddPlayerForm.tsx` — z-50 → z-[70]
+- `src/components/modals/AddNewsForm.tsx` — z-50 → z-[70]
+- `src/components/modals/AddCardForm.tsx` — z-50 → z-[70]
+- `src/components/modals/ConfirmModal.tsx` — z-50 → z-[70]
+- `src/components/modals/InvitePlayerForm.tsx` — z-50 → z-[70]
+- `src/components/modals/ChangePasswordForm.tsx` — z-50 → z-[70]
+- `src/components/modals/AdminResetPasswordForm.tsx` — z-50 → z-[70]
+- `src/components/modals/AvatarModal.tsx` — z-50 → z-[70]
+- `src/components/dashboard/ChampionnatTab.tsx` — z-[60] → z-[70]
 
 ### Impact
 
-- Correction purement CSS, aucune logique modifiée
+- Aucune logique métier modifiée
 - Aucune base de données touchée
-- Le panel de chat ouvert sera également au-dessus de la navbar (comportement attendu)
-- Compatible toutes pages (Présences, Calendrier, etc.)
+- Changement purement CSS
+- Comportement cohérent sur toutes les pages et tous les modaux
