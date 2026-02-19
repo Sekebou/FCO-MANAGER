@@ -1,81 +1,61 @@
 
-# Animation de fin de tutoriel et bouton Présences en "pop-out"
+## Remplacement des boutons de convocation par des boutons animés style "Présent/Absent"
 
-## Problèmes actuels
+### Contexte
 
-### 1. Animation de fin trop rapide
-- Le `setTimeout` dans `handleComplete` n'est que de **900ms**, l'écran de célébration disparaît avant que l'utilisateur puisse le voir correctement
-- La redirection vers "Présences" est immédiate dans `onComplete` de `Dashboard.tsx`, donc le changement d'onglet est invisible sous l'écran de célébration
-- Il faut allonger la durée et séquencer : célébration → fermeture overlay → changement d'onglet avec un délai visible
+Dans le mode édition des convocations (lignes 421-438 de `PresencesTab.tsx`), les boutons actuels sont de simples icônes sans texte ni animation. L'objectif est de les remplacer par des boutons plein texte **"Convoqué"** et **"Non convoqué"** avec les mêmes animations que les boutons Présent/Absent.
 
-### 2. Bouton Présences à l'intérieur de la barre
-- Actuellement le bouton a `marginTop: '-2rem'` mais la barre parent a `items-end` et une hauteur fixe, ce qui fait que le bouton reste visuellement **à l'intérieur** de la barre
-- Il faut que le bouton **dépasse physiquement** vers le haut, au-dessus de la barre de fond
-- Le fond de la barre doit avoir un "creux" ou laisser apparaître le bouton au-dessus
+### Ce qui sera modifié
 
-## Solutions
+**Fichier : `src/components/dashboard/PresencesTab.tsx`** — Section du mode convocation (lignes 421-438)
 
-### Fichier 1 : `src/components/dashboard/OnboardingTutorial.tsx`
+Remplacement du rendu des boutons via `CONVOCATION_STATUSES.map(...)` par deux blocs distincts avec :
 
-**Allonger la séquence de célébration :**
-- `handleComplete` : passer le timeout de **900ms à 2200ms** pour que l'utilisateur voit bien la célébration
-- Ajouter une **animation de transition** vers l'onglet Présences : afficher l'icône `ClipboardCheck` animée qui "vole" vers le bas (vers la BottomTabBar) juste avant la fermeture
-- Enrichir l'écran de célébration :
-  - Texte "C'est parti 🎉" → reste mais plus grand, avec un sous-texte "Tu es redirigé vers Présences" 
-  - Ajouter une flèche animée qui pointe vers le bas (vers la barre de navigation)
-  - Conserver les rings radiatifs mais les laisser plus longtemps visibles
+**Bouton "Convoqué"** (vert accent) :
+- `whileTap={{ scale: 0.82 }}` au clic
+- `animate` avec keyframes `[1, 1.25, 0.95, 1.08, 1]` quand actif
+- 3 particules `✓` animées (`AnimatePresence`) qui s'envolent vers le haut
+- Style actif : `bg-accent text-accent-foreground shadow-md shadow-accent/30`
 
-### Fichier 2 : `src/components/dashboard/BottomTabBar.tsx`
+**Bouton "Non convoqué"** (rouge destructive) :
+- Mêmes animations mais avec keyframes `✕`
+- Style actif : `bg-destructive text-destructive-foreground shadow-md shadow-destructive/30`
 
-**Faire sortir réellement le bouton Présences de la barre :**
+Les deux boutons affichent leur icône + texte (`<UserCheck size={12} /> Convoqué` et `<UserX size={12} /> Non convoqué`), avec le wrapper `relative overflow-visible` pour que les particules dépassent.
 
-La structure actuelle pose le problème : le container `relative` de la barre englobe tout. Il faut restructurer pour que le bouton featured soit **en dehors du flow de la barre** mais positionné absolument au-dessus.
+### Détail technique
 
-Approche :
-```text
-STRUCTURE ACTUELLE :
-┌─────────────────────────────┐ ← barre (z-50)
-│ Stats  Classem. [Présences] │   bouton à l'intérieur
-└─────────────────────────────┘
+```tsx
+// Bouton "Convoqué"
+<div className="relative overflow-visible">
+  <motion.button
+    onClick={() => updateDraft(player.id, { status: 'convoque' })}
+    whileTap={{ scale: 0.82 }}
+    animate={isConvoked ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
+    transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
+    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+      isConvoked
+        ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30'
+        : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
+    }`}
+  >
+    <UserCheck size={12} /> Convoqué
+  </motion.button>
+  <AnimatePresence>
+    {isConvoked && (
+      <>
+        <motion.span key={...} initial={{...}} animate={{...}} exit={{...}} className="...">✓</motion.span>
+        {/* x2 autres particules */}
+      </>
+    )}
+  </AnimatePresence>
+</div>
 
-STRUCTURE CIBLE :
-        [Présences]            ← bouton (z-51) au-dessus
-┌────────────────────────────┐ ← barre (z-50) avec espace central
-│ Stats  Classem.    Calendr.│
-└────────────────────────────┘
+// Bouton "Non convoqué" (même structure, couleurs destructive, particules ✕)
 ```
 
-**Implémentation concrète :**
-1. Wrapper la barre dans un conteneur `relative` qui a de la **hauteur supplémentaire en haut** (ex: `pt-8`) pour "réserver" l'espace du bouton featured
-2. Positionner le bouton `Présences` en **`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2`** sur le wrapper, pour qu'il soit à cheval entre l'extérieur et la barre
-3. Le fond de la barre utilise `inset-0` mais avec une forme qui laisse un "creux" en haut au centre — via un `clipPath` arrondi ou simplement en ajoutant un cercle blanc/card en arrière-plan derrière le bouton featured (style FAB)
-4. Ajouter un **cercle de fond** derrière le bouton (même couleur que la barre) avec `border-t` pour simuler la barre qui "accueille" le bouton
-5. Animation d'entrée du bouton avec un `spring` depuis le bas (scale + translateY)
+### Impact
 
-**Animation de l'icône Présences lors de la redirection :**
-- Quand `activeTab` passe à `'presences'`, déclencher une animation :
-  - Scale pulse : `[1, 1.25, 1]`
-  - Rotation : `[0, -10, 10, 0]` 
-  - Glow qui s'intensifie momentanément
-  - Durée : ~800ms visible
-
-### Fichier 3 : `src/pages/Dashboard.tsx`
-
-**Séquencer la redirection :**
-```ts
-onComplete={() => {
-  setShowTutorial(false);
-  setTutorialMandatory(false);
-  // Délai pour laisser l'overlay se fermer avant de changer l'onglet
-  setTimeout(() => setActiveTab('presences'), 400);
-}}
-```
-Ainsi l'utilisateur voit d'abord l'onglet en cours, puis la barre de navigation reprend vie avec l'onglet Présences animé.
-
-## Résumé des changements
-
-| Fichier | Changement |
-|---|---|
-| `OnboardingTutorial.tsx` | Timeout 900ms → 2200ms, écran célébration enrichi avec flèche et texte de redirection |
-| `BottomTabBar.tsx` | Restructuration du bouton Présences en position absolue au-dessus de la barre + animation forte à l'activation |
-| `Dashboard.tsx` | Délai de 400ms avant `setActiveTab('presences')` pour que la transition soit visible |
+- Aucune logique métier modifiée
+- Uniquement le rendu des boutons dans le mode édition des convocations
+- Cohérence visuelle totale avec les boutons Présent/Absent
