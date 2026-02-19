@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck } from 'lucide-react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Tab {
   id: string;
@@ -24,98 +24,39 @@ interface BottomTabBarProps {
   onTabChange: (tab: string) => void;
 }
 
-// Design constants — tweak these to adjust the look
-const BAR_HEIGHT   = 58;   // solid bar height
-const BUBBLE_R     = 28;   // circle radius (diameter = 56px)
-const NOTCH_W      = 88;   // total notch width at bar top
-const NOTCH_DEPTH  = 32;   // how deep the notch dips into the bar
-
-// Derived
-const BUBBLE_D = BUBBLE_R * 2;
-const BUBBLE_RISE = NOTCH_DEPTH + BUBBLE_R - 4; // total rise above bar top
-
-/**
- * Builds an SVG path for the full-width bar with a smooth curved notch
- * (upward bump) centered at `cx`.
- *
- *  ─────╮         ╭─────
- *       ╰────╯
- *   The notch is drawn *above* the bar baseline (negative y).
- */
-function buildPath(totalW: number, barH: number, cx: number): string {
-  const hw   = NOTCH_W / 2;          // half notch width
-  const d    = NOTCH_DEPTH;          // notch depth
-  const ctrl = hw * 0.55;            // bezier handle scale
-
-  // Start at top-left, go right until the notch shoulder
-  return [
-    `M 0 0`,
-    `L ${cx - hw} 0`,
-    // Left shoulder → bottom of notch
-    `C ${cx - hw + ctrl} 0, ${cx - BUBBLE_R} ${-d}, ${cx} ${-d}`,
-    // Bottom of notch → right shoulder
-    `C ${cx + BUBBLE_R} ${-d}, ${cx + hw - ctrl} 0, ${cx + hw} 0`,
-    `L ${totalW} 0`,
-    `L ${totalW} ${barH}`,
-    `L 0 ${barH}`,
-    `Z`,
-  ].join(' ');
-}
+const BUBBLE = 52;   // circle size px
+const LIFT   = 28;   // how many px the circle rises above the bar top
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
-  const wrapRef   = useRef<HTMLDivElement>(null);
+  const barRef    = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [barW,    setBarW]    = useState(390);
-  const [tabW,    setTabW]    = useState(70);
-  const [scrollL, setScrollL] = useState(0);
+  const [tabW, setTabW]   = useState(0);
   const [mounted, setMounted] = useState(false);
 
   const activeIdx = allTabs.findIndex(t => t.id === activeTab);
 
-  // Notch center = middle of active tab minus scroll offset
-  const targetNotchX = activeIdx * tabW + tabW / 2 - scrollL;
-
-  // Spring-animated notch position for smooth SVG morph
-  const notchMV = useMotionValue(targetNotchX);
-  const notchSpring = useSpring(notchMV, { stiffness: 320, damping: 26 });
-  const [notchX, setNotchX] = useState(targetNotchX);
-
+  /* measure tab width once bar mounts */
   useEffect(() => {
-    notchMV.set(targetNotchX);
-  }, [targetNotchX]);
-
-  useEffect(() => {
-    return notchSpring.on('change', v => setNotchX(v));
-  }, [notchSpring]);
-
-  // Measure container
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => {
-      const w = el.offsetWidth;
-      setBarW(w);
+    const measure = () => {
+      if (!barRef.current) return;
+      const w = barRef.current.offsetWidth;
       setTabW(Math.max(w / Math.min(allTabs.length, 5.5), 56));
-    });
-    ro.observe(el);
-    setBarW(el.offsetWidth);
-    setTabW(Math.max(el.offsetWidth / Math.min(allTabs.length, 5.5), 56));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (barRef.current) ro.observe(barRef.current);
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
+  useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
 
-  // Auto-scroll active tab into centre
+  /* auto-scroll active tab to centre */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !tabW) return;
-    const center = activeIdx * tabW + tabW / 2;
-    el.scrollTo({ left: center - el.offsetWidth / 2, behavior: mounted ? 'smooth' : 'auto' });
+    const centre = activeIdx * tabW + tabW / 2;
+    el.scrollTo({ left: centre - el.offsetWidth / 2, behavior: mounted ? 'smooth' : 'auto' });
   }, [activeIdx, tabW, mounted]);
-
-  const handleScroll = useCallback(() => {
-    setScrollL(scrollRef.current?.scrollLeft ?? 0);
-  }, []);
 
   const handleTap = useCallback((id: string) => {
     if (id === activeTab) return;
@@ -123,180 +64,158 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
     onTabChange(id);
   }, [activeTab, onTabChange]);
 
-  // Heights
-  const aboveBar  = BUBBLE_RISE + 6;           // space above bar for circle
-  const totalH    = aboveBar + BAR_HEIGHT;      // wrapper height
-  const svgPath   = buildPath(barW, BAR_HEIGHT, notchX);
+  /* x position of bubble centre (relative to scroll container) */
+  const bubbleX = tabW ? activeIdx * tabW + tabW / 2 : 0;
 
   return (
-    <div
+    <motion.div
+      ref={barRef}
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0,   opacity: 1 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 260, delay: 0.1 }}
     >
-      <motion.div
-        ref={wrapRef}
-        initial={{ y: 120, opacity: 0 }}
-        animate={{ y: 0,   opacity: 1 }}
-        transition={{ type: 'spring', damping: 24, stiffness: 260, delay: 0.1 }}
-        style={{ position: 'relative', height: totalH }}
-      >
+      {/* Wrapper that gives space above the bar for the bubble to rise into */}
+      <div style={{ position: 'relative', paddingTop: LIFT + BUBBLE / 2 }}>
 
-        {/* ── SVG bar with animated notch ── */}
-        <svg
-          width={barW}
-          height={totalH}
-          viewBox={`0 0 ${barW} ${totalH}`}
+        {/* ── Solid bar ── */}
+        <div
           style={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
+            position: 'relative',
+            background: 'hsl(var(--card))',
+            boxShadow: '0 -2px 16px hsl(var(--foreground) / 0.08)',
             overflow: 'visible',
           }}
         >
-          <defs>
-            <filter id="nav-shadow" x="-2%" y="-40%" width="104%" height="180%">
-              <feDropShadow dx="0" dy="-2" stdDeviation="6"
-                floodColor="hsl(var(--foreground))" floodOpacity="0.09" />
-            </filter>
-          </defs>
-          {/* bar translated downward so the notch has room above */}
-          <path
-            d={svgPath}
-            fill="hsl(var(--card))"
-            filter="url(#nav-shadow)"
-            transform={`translate(0, ${aboveBar})`}
-          />
-        </svg>
-
-        {/* ── Scrollable tab row ── */}
-        <div
-          ref={scrollRef}
-          onScroll={handleScroll}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            overflowX: 'auto',
-            overflowY: 'visible',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            WebkitOverflowScrolling: 'touch',
-            zIndex: 2,
-          } as React.CSSProperties}
-        >
-          {allTabs.map((tab) => {
-            const Icon    = tab.icon;
-            const isActive = activeTab === tab.id;
-            const color    = tab.featured ? 'hsl(var(--accent))' : 'hsl(var(--primary))';
-
-            return (
-              <button
-                key={tab.id}
-                data-tab={tab.id}
-                onClick={() => handleTap(tab.id)}
-                style={{
-                  width: tabW,
-                  minWidth: 56,
-                  flexShrink: 0,
-                  height: totalH,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  paddingBottom: 10,
-                  gap: 0,
-                  WebkitTapHighlightColor: 'transparent',
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  userSelect: 'none',
-                }}
-              >
-                {/* ── Floating circle ── */}
+          {/* ── Sliding bubble (lives above bar, absolutely positioned) ── */}
+          {tabW > 0 && (
+            <motion.div
+              animate={{ x: bubbleX - BUBBLE / 2 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+              style={{
+                position: 'absolute',
+                top: -(LIFT + BUBBLE / 2),
+                left: 0,
+                width: BUBBLE,
+                height: BUBBLE,
+                borderRadius: '50%',
+                zIndex: 20,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: allTabs[activeIdx]?.featured
+                  ? 'hsl(var(--accent))'
+                  : 'hsl(var(--primary))',
+                /* box-shadow trick: ring matching the page background creates the notch illusion */
+                boxShadow: allTabs[activeIdx]?.featured
+                  ? `0 0 0 6px hsl(var(--background)), 0 6px 20px hsl(var(--accent) / 0.45)`
+                  : `0 0 0 6px hsl(var(--background)), 0 6px 16px hsl(var(--primary) / 0.38)`,
+              }}
+            >
+              {/* Pulse glow for featured tab */}
+              {allTabs[activeIdx]?.featured && (
                 <motion.div
-                  animate={{
-                    y: isActive ? -(BUBBLE_RISE - 2) : 0,
-                    scale: isActive ? 1 : 0.75,
-                  }}
-                  transition={{ type: 'spring', damping: 20, stiffness: 340 }}
+                  animate={{ opacity: [0.2, 0.6, 0.2], scale: [1, 1.5, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                   style={{
                     position: 'absolute',
-                    bottom: BAR_HEIGHT - BUBBLE_R + 2,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: BUBBLE_D,
-                    height: BUBBLE_D,
+                    inset: 0,
                     borderRadius: '50%',
+                    background: 'hsl(var(--accent) / 0.4)',
+                    filter: 'blur(10px)',
+                    zIndex: -1,
+                  }}
+                />
+              )}
+              {/* Icon of active tab */}
+              {(() => {
+                const ActiveIcon = allTabs[activeIdx]?.icon;
+                return ActiveIcon ? (
+                  <ActiveIcon
+                    size={22}
+                    strokeWidth={2.2}
+                    style={{ color: 'hsl(var(--primary-foreground))' }}
+                  />
+                ) : null;
+              })()}
+            </motion.div>
+          )}
+
+          {/* ── Scrollable tab strip ── */}
+          <div
+            ref={scrollRef}
+            style={{
+              display: 'flex',
+              overflowX: 'auto',
+              overflowY: 'visible',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              WebkitOverflowScrolling: 'touch',
+            } as React.CSSProperties}
+          >
+            {allTabs.map((tab) => {
+              const Icon     = tab.icon;
+              const isActive = tab.id === activeTab;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTap(tab.id)}
+                  style={{
+                    width: tabW || 'auto',
+                    minWidth: 56,
+                    flexShrink: 0,
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: isActive ? color : 'transparent',
-                    zIndex: 10,
-                    boxShadow: isActive
-                      ? `0 4px 16px ${color.replace(')', ' / 0.4)').replace('hsl(', 'hsl(')}`
-                      : 'none',
-                    transition: 'background 0.2s, box-shadow 0.2s',
+                    paddingTop: LIFT / 2 + 6,
+                    paddingBottom: 12,
+                    gap: 4,
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
                   }}
                 >
-                  {/* Pulse ring for featured */}
-                  {isActive && tab.featured && (
-                    <motion.div
-                      animate={{ opacity: [0.2, 0.55, 0.2], scale: [1, 1.55, 1] }}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: '50%',
-                        background: color,
-                        opacity: 0.3,
-                        filter: 'blur(10px)',
-                        zIndex: -1,
-                      }}
+                  {/* Invisible spacer where the bubble sits — keeps label aligned */}
+                  <div style={{ width: BUBBLE, height: isActive ? BUBBLE : 20, opacity: 0, flexShrink: 0 }} />
+
+                  {/* Show icon only when NOT active (active icon is in the floating bubble) */}
+                  {!isActive && (
+                    <Icon
+                      size={20}
+                      strokeWidth={1.6}
+                      style={{ color: 'hsl(var(--muted-foreground))' }}
                     />
                   )}
 
-                  <motion.span
-                    animate={{ rotate: isActive ? [0, -14, 14, 0] : 0 }}
-                    transition={isActive ? { duration: 0.3, ease: 'easeInOut' } : {}}
-                    style={{ display: 'flex' }}
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: isActive ? 700 : 500,
+                      letterSpacing: '0.01em',
+                      lineHeight: 1,
+                      color: isActive
+                        ? 'hsl(var(--foreground))'
+                        : 'hsl(var(--muted-foreground) / 0.6)',
+                      whiteSpace: 'nowrap',
+                      transition: 'color 0.15s',
+                      userSelect: 'none',
+                      pointerEvents: 'none',
+                    }}
                   >
-                    <Icon
-                      size={isActive ? 22 : 20}
-                      strokeWidth={isActive ? 2.2 : 1.6}
-                      style={{
-                        color: isActive ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
-                        transition: 'color 0.18s',
-                      }}
-                    />
-                  </motion.span>
-                </motion.div>
-
-                {/* ── Label ── */}
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: isActive ? 700 : 500,
-                    letterSpacing: '0.01em',
-                    lineHeight: 1,
-                    color: isActive
-                      ? 'hsl(var(--foreground))'
-                      : 'hsl(var(--muted-foreground) / 0.55)',
-                    transition: 'color 0.15s',
-                    whiteSpace: 'nowrap',
-                    pointerEvents: 'none',
-                    marginTop: 2,
-                  }}
-                >
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 };
 
