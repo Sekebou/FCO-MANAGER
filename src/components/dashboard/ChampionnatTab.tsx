@@ -451,52 +451,43 @@ const ChampionnatTab: React.FC<Props> = ({
                   <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <Award size={16} className="text-accent" /> Classement
                   </h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
-                          <th className="text-left py-2.5 px-2">#</th>
-                          <th className="text-left py-2.5 px-2">Équipe</th>
-                          <th className="text-center py-2.5 px-2">MJ</th>
-                          <th className="text-center py-2.5 px-2">V</th>
-                          <th className="text-center py-2.5 px-2">N</th>
-                          <th className="text-center py-2.5 px-2">D</th>
-                          <th className="text-center py-2.5 px-2">BP</th>
-                          <th className="text-center py-2.5 px-2">BC</th>
-                          <th className="text-center py-2.5 px-2">Diff</th>
-                          <th className="text-center py-2.5 px-2 font-bold">Pts</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {standings.map((s, i) => (
-                          <tr key={s.team} className={`border-b border-border/50 ${i < 3 ? 'bg-accent/5' : ''} hover:bg-secondary/30 transition-colors`}>
-                            <td className="py-2.5 px-2">
-                              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                                i === 0 ? 'bg-yellow-400/20 text-yellow-600' : i === 1 ? 'bg-gray-300/20 text-gray-500' : i === 2 ? 'bg-amber-600/20 text-amber-700' : 'text-muted-foreground'
-                              }`}>{i + 1}</span>
-                            </td>
-                            <td className="py-2.5 px-2 font-semibold text-foreground">
-                              <div className="flex items-center gap-2">
-                                <TeamLogo team={s.team} champId={champ.id} size={20} />
-                                <span>{s.team}</span>
-                              </div>
-                            </td>
-                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.played}</td>
-                            <td className="text-center py-2.5 px-2 text-emerald-500 font-medium">{s.won}</td>
-                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.drawn}</td>
-                            <td className="text-center py-2.5 px-2 text-red-400 font-medium">{s.lost}</td>
-                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.gf}</td>
-                            <td className="text-center py-2.5 px-2 text-muted-foreground">{s.ga}</td>
-                            <td className="text-center py-2.5 px-2 font-medium">
-                              <span className={s.gf - s.ga > 0 ? 'text-emerald-500' : s.gf - s.ga < 0 ? 'text-red-400' : 'text-muted-foreground'}>
-                                {s.gf - s.ga > 0 ? '+' : ''}{s.gf - s.ga}
-                              </span>
-                            </td>
-                            <td className="text-center py-2.5 px-2 font-bold text-foreground text-base">{s.points}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  {/* Classement mobile-friendly */}
+                  <div className="space-y-1">
+                    {/* Header */}
+                    <div className="flex items-center px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      <span className="w-7 shrink-0">#</span>
+                      <span className="flex-1">Équipe</span>
+                      <span className="w-7 text-center">MJ</span>
+                      <span className="w-7 text-center text-emerald-500">V</span>
+                      <span className="w-7 text-center">N</span>
+                      <span className="w-7 text-center text-red-400">D</span>
+                      <span className="w-10 text-center">Diff</span>
+                      <span className="w-9 text-center font-black text-foreground">Pts</span>
+                    </div>
+                    {standings.map((s, i) => (
+                      <div key={s.team} className={`flex items-center px-2 py-2.5 rounded-xl transition-colors ${
+                        i === 0 ? 'bg-yellow-400/10 border border-yellow-400/20' :
+                        i === 1 ? 'bg-secondary/60 border border-border/30' :
+                        i === 2 ? 'bg-amber-600/8 border border-amber-600/15' :
+                        'bg-secondary/30'
+                      }`}>
+                        <span className={`w-7 shrink-0 text-xs font-bold ${
+                          i === 0 ? 'text-yellow-500' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-amber-600' : 'text-muted-foreground/60'
+                        }`}>{i + 1}</span>
+                        <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                          <TeamLogo team={s.team} champId={champ.id} size={18} />
+                          <span className="text-xs font-semibold text-foreground truncate">{s.team}</span>
+                        </div>
+                        <span className="w-7 text-center text-xs text-muted-foreground">{s.played}</span>
+                        <span className="w-7 text-center text-xs text-emerald-600 font-semibold">{s.won}</span>
+                        <span className="w-7 text-center text-xs text-muted-foreground">{s.drawn}</span>
+                        <span className="w-7 text-center text-xs text-red-500 font-semibold">{s.lost}</span>
+                        <span className={`w-10 text-center text-xs font-semibold ${s.gf - s.ga > 0 ? 'text-emerald-600' : s.gf - s.ga < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                          {s.gf - s.ga > 0 ? '+' : ''}{s.gf - s.ga}
+                        </span>
+                        <span className={`w-9 text-center text-sm font-black ${i < 3 ? 'text-accent' : 'text-foreground'}`}>{s.points}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -527,55 +518,55 @@ const ChampionnatTab: React.FC<Props> = ({
                           const isAwayWin = m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore;
                           const isDraw = m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore === m.awayScore;
                           return (
-                            <div key={m.id} className="px-4 py-3.5 hover:bg-secondary/50 transition-colors">
-                              {/* Date row */}
-                              <div className="text-center mb-2">
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                                  {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-                                </span>
-                              </div>
-                              {/* Teams + Score */}
+                            <div key={m.id} className={`px-3 py-3 hover:bg-secondary/60 transition-colors ${m.played ? '' : 'opacity-90'}`}>
                               <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-2.5 flex-1 justify-end min-w-0">
-                                  <span className={`text-sm font-bold truncate text-right ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
+                                {/* Home */}
+                                <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+                                  <span className={`text-xs font-bold truncate text-right leading-tight ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
                                     {m.homeTeam}
                                   </span>
-                                  <TeamLogo team={m.homeTeam} champId={champ.id} size={28} />
+                                  <TeamLogo team={m.homeTeam} champId={champ.id} size={26} />
                                 </div>
-
-                                {m.played ? (
-                                  <div className={`px-4 py-1.5 rounded-xl text-sm font-black min-w-[68px] text-center tracking-widest shadow-sm ${
-                                    isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
-                                  }`}>
-                                    {m.homeScore} - {m.awayScore}
-                                  </div>
-                                ) : (
-                                  <div className="min-w-[68px] text-center">
-                                    {canManage() ? (
-                                      <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-xs bg-accent/10 text-accent px-3.5 py-1.5 rounded-lg font-medium hover:bg-accent/20 transition-all">
-                                        Score
-                                      </button>
-                                    ) : (
-                                      <div className="px-4 py-1.5 rounded-xl bg-secondary border border-border text-xs font-semibold text-muted-foreground min-w-[68px] text-center">
-                                        VS
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                  <TeamLogo team={m.awayTeam} champId={champ.id} size={28} />
-                                  <span className={`text-sm font-bold truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
+                                {/* Score / VS */}
+                                <div className="shrink-0 min-w-[64px] flex justify-center">
+                                  {m.played && m.homeScore !== null ? (
+                                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-black tracking-wider shadow-sm ${
+                                      isDraw ? 'bg-secondary text-muted-foreground' : 'bg-primary text-primary-foreground'
+                                    }`}>
+                                      <span>{m.homeScore}</span>
+                                      <span className="opacity-50">-</span>
+                                      <span>{m.awayScore}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-center">
+                                      {canManage() ? (
+                                        <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-[10px] bg-accent/10 text-accent px-2.5 py-1.5 rounded-lg font-semibold hover:bg-accent/20 transition-all">
+                                          Score
+                                        </button>
+                                      ) : (
+                                        <span className="text-xs font-black text-muted-foreground/40 tracking-widest">VS</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Away */}
+                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                  <TeamLogo team={m.awayTeam} champId={champ.id} size={26} />
+                                  <span className={`text-xs font-bold truncate leading-tight ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
                                     {m.awayTeam}
                                   </span>
                                 </div>
-
+                                {/* Delete */}
                                 {canManage() && (
-                                  <button onClick={() => onDeleteMatch(m.id)} className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all shrink-0">
-                                    <Trash2 size={14} />
+                                  <button onClick={() => onDeleteMatch(m.id)} className="shrink-0 text-destructive/50 hover:text-destructive hover:bg-destructive/10 p-1 rounded-lg transition-all">
+                                    <Trash2 size={12} />
                                   </button>
                                 )}
                               </div>
+                              {/* Date */}
+                              <p className="text-center text-[10px] text-muted-foreground/60 mt-1.5">
+                                {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                              </p>
                             </div>
                           );
                         })}
