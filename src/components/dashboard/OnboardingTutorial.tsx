@@ -256,7 +256,7 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
   };
 
   return (
-    <>
+    <div>
       {/* ── REVEAL PHASE: site visible, overlay disappears ── */}
       <AnimatePresence>
         {phase === 'reveal' && (
@@ -558,7 +558,7 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 
