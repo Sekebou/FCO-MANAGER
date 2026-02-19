@@ -193,8 +193,8 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 </div>
               </div>
 
-              {/* Presences list — masquée en mode convocation */}
-              {!isConvocationMode && (
+              {/* Presences list — masquée en mode convocation et après publication des convocations */}
+              {!isConvocationMode && !event.convocationsPublished && (
               <div className="space-y-1.5">
                 {eventPlayers.length === 0 ? (
                   <p className="text-muted-foreground text-center py-4 text-sm">Aucun joueur enregistré</p>
