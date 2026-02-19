@@ -532,7 +532,7 @@ const Dashboard = () => {
     if (new Date(eventData.date) < today) { toast.error("Impossible de créer un événement à une date passée"); return; }
     if (currentUser?.role === 'dirigeant' && eventData.type === 'match') { toast.error("Les dirigeants ne peuvent créer que des entraînements"); return; }
     try {
-      const sendEmail = eventData.sendNotification;
+      const sendNotification = eventData.sendNotification;
       delete eventData.sendNotification;
 
       const typeLabels: Record<string, string> = { match: 'Match', training: 'Entraînement', other: 'Événement' };
@@ -541,7 +541,8 @@ const Dashboard = () => {
       const memberEmails = [...new Set(targetMembers.map(m => m.email).filter(Boolean))];
 
       setShowAddEvent(false);
-      setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: sendEmail, notifCount: sendEmail ? memberEmails.length : 0 });
+      const isNotifiable = eventData.type === 'match' || eventData.type === 'training';
+      setEventCreatedResult({ title: eventData.title, date: eventData.date, type: eventData.type, notified: sendNotification && isNotifiable, notifCount: (sendNotification && isNotifiable) ? memberEmails.length : 0 });
 
       const tempId = `temp-${Date.now()}`;
       const tempEvent: Event = { ...eventData, id: tempId, presences: {}, createdBy: currentUser?.uid, createdByName: currentUser?.name, createdAt: new Date().toISOString() };
@@ -557,26 +558,31 @@ const Dashboard = () => {
             team: eventData.team || null, reason: eventData.reason || null,
           });
 
-          const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
-          const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-          const timeFormatted = eventData.time ? ` à ${eventData.time}` : '';
-          const locationInfo = eventData.location ? `\n📍 ${eventData.location}` : '';
-          const pushTitle = `${typeIcons[eventData.type] || '📅'} Nouveau ${(typeLabels[eventData.type] || 'événement').toLowerCase()} disponible !`;
-          const pushBody = `${eventData.title}\n📅 ${dateFormatted}${timeFormatted}${locationInfo}\n\nN'oublie pas de répondre présent ou absent ! 💪`;
+          // Only send notifications for match and training
+          if (sendNotification && isNotifiable) {
+            const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
+            const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const timeFormatted = eventData.time ? ` à ${eventData.time}` : '';
+            const locationInfo = eventData.location ? `\n📍 ${eventData.location}` : '';
+            const pushTitle = `${typeIcons[eventData.type] || '📅'} Nouveau ${(typeLabels[eventData.type] || 'événement').toLowerCase()} !`;
+            const pushBody = `${eventData.title}\n📅 ${dateFormatted}${timeFormatted}${locationInfo}\n\nN'oublie pas de répondre présent ou absent ! 💪`;
 
-          const { data: tokenRows } = await supabase.from('fcm_tokens').select('token');
-          const fcmTokens = [...new Set((tokenRows || []).map((r: any) => r.token).filter(Boolean))];
-          const tasks: Promise<any>[] = [];
-          if (fcmTokens.length > 0) {
-            tasks.push(
-              fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-                body: JSON.stringify({ title: pushTitle, body: pushBody, data: { tab: 'presences' }, tokens: fcmTokens }),
-              }).catch(e => console.error('Push error:', e))
-            );
-          }
-          if (sendEmail) {
+            const tasks: Promise<any>[] = [];
+
+            // Push notification to all members
+            const { data: tokenRows } = await supabase.from('fcm_tokens').select('token');
+            const fcmTokens = [...new Set((tokenRows || []).map((r: any) => r.token).filter(Boolean))];
+            if (fcmTokens.length > 0) {
+              tasks.push(
+                fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+                  body: JSON.stringify({ title: pushTitle, body: pushBody, data: { tab: 'presences' }, tokens: fcmTokens }),
+                }).catch(e => console.error('Push error:', e))
+              );
+            }
+
+            // Email to all notifiable members
             tasks.push(...memberEmails.map(email =>
               sendEventEmail({
                 to_email: email,
@@ -585,8 +591,9 @@ const Dashboard = () => {
                 event_type: eventData.type,
               }).catch(e => console.error('Email error:', e))
             ));
+
+            await Promise.allSettled(tasks);
           }
-          await Promise.allSettled(tasks);
         } catch (err) { console.error('Background event save error:', err); toast.error('Erreur lors de la sauvegarde'); }
       })();
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
@@ -984,47 +991,49 @@ const Dashboard = () => {
               }}
               onSendConvocationNotif={async (event, convocations) => {
                 try {
-                  // Get FCM tokens for all convoked players
-                  const convokedPlayerIds = Object.entries(convocations)
-                    .filter(([, c]) => c.status === 'convoque')
-                    .map(([playerId]) => playerId);
-                  
-                  // Find member IDs that match convoked players
-                  const convokedMemberIds = members
-                    .filter(m => m.playerId && convokedPlayerIds.includes(m.playerId))
+                  // Get player IDs that are NOT convoked (non_convoque or absent from the list)
+                  const allPlayerIds = players.map(p => p.id);
+                  const nonConvokedPlayerIds = allPlayerIds.filter(pid => {
+                    const conv = convocations[pid];
+                    return !conv || conv.status === 'non_convoque';
+                  });
+
+                  // Find member IDs linked to non-convoked players
+                  const nonConvokedMemberIds = members
+                    .filter(m => m.playerId && nonConvokedPlayerIds.includes(m.playerId))
                     .map(m => m.id);
 
-                  if (convokedMemberIds.length === 0) {
-                    toast.info('Aucun joueur convoqué à notifier');
+                  if (nonConvokedMemberIds.length === 0) {
+                    toast.info('Aucun joueur non convoqué à notifier');
                     return;
                   }
 
-                  // Fetch FCM tokens
+                  // Fetch FCM tokens for non-convoked players only
                   const { data: tokenRows } = await supabase
                     .from('fcm_tokens')
                     .select('token')
-                    .in('user_id', convokedMemberIds);
+                    .in('user_id', nonConvokedMemberIds);
 
                   const tokens = tokenRows?.map(r => r.token) || [];
 
                   if (tokens.length === 0) {
-                    toast.info('Aucun appareil enregistré pour les joueurs convoqués');
+                    toast.info('Aucun appareil enregistré pour les joueurs non convoqués');
                     return;
                   }
 
                   const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-                  
+
                   const res = await supabase.functions.invoke('send-push-notification', {
                     body: {
-                      title: '📋 Convocation',
-                      body: `Tu es convoqué pour ${event.title} le ${eventDate}`,
+                      title: '❌ Non convoqué',
+                      body: `Tu n'es pas sélectionné pour ${event.title} le ${eventDate}`,
                       tokens,
-                      data: { type: 'convocation', eventId: event.id },
+                      data: { type: 'non_convoque', eventId: event.id },
                     },
                   });
 
                   if (res.error) throw res.error;
-                  toast.success(`Notification envoyée à ${tokens.length} joueur(s) convoqué(s)`);
+                  toast.success(`Notification envoyée à ${tokens.length} joueur(s) non convoqué(s)`);
                 } catch (err: any) {
                   toast.error('Erreur lors de l\'envoi : ' + err.message);
                 }

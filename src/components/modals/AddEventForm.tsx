@@ -157,7 +157,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                   <span className="text-sm font-medium text-foreground flex items-center gap-1.5">
                     <Bell size={14} className="text-accent" /> Notifier les joueurs
                   </span>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Email de confirmation de présence</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Notification push + email envoyés à tous les membres</p>
                 </div>
               </label>
             </div>
