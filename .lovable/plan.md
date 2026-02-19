@@ -1,72 +1,97 @@
 
-## Refonte de l'onglet Discussions
+## Ajouter le badge icône dans les headers de tous les onglets
 
-### Changements demandés
+### Constat
 
-1. **Supprimer le fond bleu (`bg-primary`)** dans tous les headers de l'onglet → utiliser `bg-card border-b border-border` comme les autres onglets du dashboard
-2. **Supprimer le logo** à côté du titre "Discussions" dans le header d'accueil et le header du chat global
-3. **Indicateur de présence en ligne** (point vert pulsé / rouge) dans la liste des conversations et dans l'en-tête du chat privé
-4. **Système "Vu par"** sur les messages privés — affichage de l'avatar de l'autre utilisateur sous le dernier message qu'il a lu, comme Facebook Messenger ou iMessage
+L'onglet **Championnats** a un header avec un badge icône stylisé :
+```tsx
+<div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+  <Trophy className="text-accent" size={18} />
+</div>
+<div>
+  <h2 className="text-lg sm:text-xl font-bold text-foreground">Championnats</h2>
+  <p className="text-xs sm:text-sm text-muted-foreground">...</p>
+</div>
+```
+
+Tous les autres onglets ont un header sans badge, juste un `h2` nu. L'objectif est d'uniformiser.
 
 ---
 
-### Détails techniques
+### Fichiers et modifications
 
-#### 1. Suppression du fond bleu + logo
+#### 1. `src/components/dashboard/StatsTab.tsx` — ligne 79-81
 
-Tous les headers (`bg-primary text-primary-foreground`) deviennent `bg-card border-b border-border text-foreground`. Les textes s'adaptent. Les boutons `hover:bg-white/15` deviennent `hover:bg-secondary`. Les `ArrowLeft` et icônes restent visibles en `text-foreground`.
+Remplacer le `h2` nu par le pattern avec badge :
+- Icône : `TrendingUp` (déjà importé)
+- Titre : "Statistiques"
 
-Concernant le logo :
-- Vue `tabs` : supprimer `<img src={clubLogo} ...>` dans le header
-- Vue `global` : supprimer `<img src={clubLogo} ...>` dans le header du chat global
-- L'import `clubLogo` reste utile pour l'avatar de la discussion globale dans la liste → on le garde
+#### 2. `src/components/dashboard/NewsTab.tsx` — ligne 58-65
 
-#### 2. Présence en ligne — nouveau système
+Remplacer le `h2` par le pattern avec badge dans le `flex justify-between` :
+- Icône : `Bell` (déjà importé)
+- Titre : "Au cœur du club"
 
-**Base de données :** Ajouter une colonne `last_seen_at` à la table `profiles` (timestamp, nullable). Une migration SQL sera créée.
+#### 3. `src/components/dashboard/PresencesTab.tsx` — ligne 85-94
 
-**Logique frontend :**
-- À l'ouverture de l'onglet Discussions, mettre à jour `last_seen_at` toutes les **30 secondes** via un `setInterval`
-- Un utilisateur est considéré **en ligne** (🟢) si son `last_seen_at` est dans les **2 dernières minutes**
-- Un utilisateur est considéré **hors ligne** (🔴) si son `last_seen_at` est plus ancien ou absent
-- Charger les `last_seen_at` de tous les membres via `profiles` en temps réel (realtime channel)
-- Afficher le point dans :
-  - La liste des conversations privées (sur l'avatar)
-  - L'en-tête du chat privé ouvert (avec texte "En ligne" ou "Hors ligne")
-  - La liste de sélection de membres (vue `new-convo`)
+Remplacer le `h2` par le pattern avec badge :
+- Icône : `ClipboardCheck` (à importer depuis lucide-react)
+- Titre : "Gestion des présences"
 
-**Apparence :**
-```
-🟢 point vert pulsé → en ligne (last_seen < 2 min)
-🔴 point rouge fixe → hors ligne
-```
+#### 4. `src/components/dashboard/CalendarTab.tsx` — ligne 81
 
-#### 3. Système "Vu par" — style Facebook/iMessage
+Remplacer le `h2` par le pattern avec badge :
+- Icône : `CalendarDays` (déjà importé)
+- Titre : "Calendrier"
 
-**Base de données :** Ajouter une colonne `read_by` de type `jsonb` (objet `{ userId: lastReadMessageId }`) à la table `conversations`. Quand un utilisateur ouvre une conversation, on enregistre l'ID du dernier message qu'il a vu.
+#### 5. `src/components/dashboard/GalleryTab.tsx` — ligne 112-115
 
-**Logique :**
-- Quand l'utilisateur ouvre un chat privé → `read_by[userId] = lastMessageId`
-- Affichage : sous le **dernier message envoyé par l'utilisateur courant**, afficher les petits avatars des participants qui ont vu jusqu'à ce message (hors soi-même)
-- Si plusieurs personnes ont vu → afficher leurs avatars empilés (max 3)
-- Style : petits avatars circulaires de 14px, alignés à droite sous la bulle
+Remplacer `<Camera size={28} className="text-accent" />` + `h2` nu par le badge pattern :
+- Icône : `Camera` (déjà importé)
+- Titre : "Galerie photos"
 
-**Exemple visuel :**
-```
-[Mon message ici              ]
-                         Vu ✓✓ 👤
-```
+#### 6. `src/components/dashboard/MembersTab.tsx` — ligne 74-81
+
+Remplacer le `h2` nu par le badge pattern :
+- Icône : `Users` (déjà importé)
+- Titre : "Membres du club"
+
+#### 7. `src/components/dashboard/ChatTab.tsx` — ligne 564-570 (vue `tabs` uniquement)
+
+Remplacer le header du chat par le pattern avec badge :
+- Icône : `MessageCircle` (déjà importé)
+- Titre : "Discussions"
 
 ---
+
+### Pattern exact à reproduire (identique à ChampionnatTab)
+
+```tsx
+<div className="flex items-center gap-2 sm:gap-3">
+  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+    <IconName className="text-accent" size={18} />
+  </div>
+  <div>
+    <h2 className="text-lg sm:text-xl font-bold text-foreground">Titre</h2>
+    {/* sous-titre optionnel */}
+  </div>
+</div>
+```
+
+Les headers qui ont un bouton d'action à droite (Actus, Présences, Membres, Galerie) gardent leur `flex justify-between` — le badge et le titre s'encapsulent dans un `div flex items-center gap-2 sm:gap-3` à gauche.
 
 ### Fichiers modifiés
 
-- `src/components/dashboard/ChatTab.tsx` — suppression fond bleu + logo + présence + "vu par"
-- **Migration SQL** — ajout de `last_seen_at` à `profiles` et `read_by` à `conversations`
+- `src/components/dashboard/StatsTab.tsx`
+- `src/components/dashboard/NewsTab.tsx`
+- `src/components/dashboard/PresencesTab.tsx`
+- `src/components/dashboard/CalendarTab.tsx`
+- `src/components/dashboard/GalleryTab.tsx`
+- `src/components/dashboard/MembersTab.tsx`
+- `src/components/dashboard/ChatTab.tsx`
 
 ### Impact
 
-- Aucune logique métier touchée
-- Les messages existants ne sont pas affectés
-- La présence en ligne est passive (mise à jour auto toutes les 30 sec)
-- Rétrocompatible : `read_by` est nullable, `last_seen_at` est nullable
+- Aucune modification de base de données
+- Aucun changement de logique métier
+- Purement cosmétique — cohérence visuelle entre tous les onglets
