@@ -266,20 +266,12 @@ const Auth = () => {
           {/* Quick test accounts */}
           <div className="mt-4 space-y-2 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
             <p className="text-xs text-muted-foreground text-center font-medium">Connexion rapide (démo)</p>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               {[
-                { label: '🛡️ Super Admin', email: 'admin@fco.test', password: 'Admin123!' },
-                { label: '👔 Admin', email: 'admin2@fco.test', password: 'Admin123!' },
-                { label: '🏋️ N. Ferreira', email: 'nicolas.ferreira@fco.test', password: 'Demo1234!' },
-                { label: '🏋️ S. Roux', email: 'stephane.roux@fco.test', password: 'Demo1234!' },
-                { label: '⚽ L. Martin', email: 'lucas.martin@fco.test', password: 'Demo1234!' },
-                { label: '⚽ M. Benali', email: 'mehdi.benali@fco.test', password: 'Demo1234!' },
-                { label: '⚽ T. Dupont', email: 'thomas.dupont@fco.test', password: 'Demo1234!' },
-                { label: '⚽ Y. Kaci', email: 'yassine.kaci@fco.test', password: 'Demo1234!' },
-                { label: '⚽ A. Moreau', email: 'antoine.moreau@fco.test', password: 'Demo1234!' },
-                { label: '⚽ K. Silva', email: 'kevin.silva@fco.test', password: 'Demo1234!' },
-                { label: '📷 J. Blanc', email: 'julie.blanc@fco.test', password: 'Demo1234!' },
-                { label: '🤵 P. Garnier', email: 'philippe.garnier@fco.test', password: 'Demo1234!' },
+                { label: '🛡️ Admin', email: 'admin@fco.test', password: 'Admin123!' },
+                { label: '⚽ Joueur', email: 'lucas.martin@fco.test', password: 'Demo1234!' },
+                { label: '📷 Photographe', email: 'julie.blanc@fco.test', password: 'Demo1234!' },
+                { label: '🤵 Dirigeant', email: 'philippe.garnier@fco.test', password: 'Demo1234!' },
               ].map((acc) => (
                 <button key={acc.email} type="button" onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
                   className="px-2 py-1.5 text-[10px] font-medium rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-foreground transition-all truncate">
