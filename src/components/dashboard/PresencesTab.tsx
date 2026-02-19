@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
@@ -205,27 +206,51 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                               <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
                             </div>
                             {canManageOwnPresence(player.id) ? (
-                              <div className="flex gap-1 shrink-0">
-                                <button
-                                  onClick={() => togglePresence(event.id, player.id, 'present')}
-                                  className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-all ${
-                                    status === 'present'
-                                      ? 'bg-accent text-accent-foreground shadow-sm'
-                                      : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
-                                  }`}
-                                >
-                                  <Check size={12} /> Présent
-                                </button>
-                                <button
+                              <div className="flex gap-1 shrink-0 relative">
+                                {/* Bouton Présent avec animation */}
+                                <div className="relative">
+                                  <motion.button
+                                    onClick={() => togglePresence(event.id, player.id, 'present')}
+                                    whileTap={{ scale: 0.88 }}
+                                    animate={status === 'present' ? { scale: [1, 1.18, 1] } : { scale: 1 }}
+                                    transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+                                    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                                      status === 'present'
+                                        ? 'bg-accent text-accent-foreground shadow-sm'
+                                        : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
+                                    }`}
+                                  >
+                                    <Check size={12} /> Présent
+                                  </motion.button>
+                                  {/* Particule ✓ qui s'envole */}
+                                  <AnimatePresence>
+                                    {status === 'present' && (
+                                      <motion.span
+                                        key={`spark-present-${player.id}`}
+                                        initial={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+                                        animate={{ opacity: 0, y: -28, x: 4, scale: 1.4 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.55, ease: 'easeOut' }}
+                                        className="absolute -top-1 left-1/2 -translate-x-1/2 pointer-events-none text-accent text-sm font-black"
+                                      >
+                                        ✓
+                                      </motion.span>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+
+                                {/* Bouton Absent */}
+                                <motion.button
                                   onClick={() => togglePresence(event.id, player.id, 'absent')}
-                                  className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-all ${
+                                  whileTap={{ scale: 0.88 }}
+                                  className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
                                     status === 'absent'
                                       ? 'bg-destructive text-destructive-foreground shadow-sm'
                                       : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
                                   }`}
                                 >
                                   <X size={12} /> Absent
-                                </button>
+                                </motion.button>
                               </div>
                             ) : (
                               <span className={`px-2.5 h-8 rounded-lg text-[11px] font-semibold flex items-center gap-1 shrink-0 ${
