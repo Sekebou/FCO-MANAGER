@@ -379,10 +379,14 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                           <X size={16} />
                         </button>
                       </div>
-                      <p className="text-[11px] text-muted-foreground/70 bg-muted/40 rounded-lg px-3 py-1.5 mb-2 flex items-center gap-1.5">
-                        <Clock size={11} className="shrink-0" />
-                        Seuls les joueurs ayant répondu <span className="font-semibold text-accent/80 mx-0.5">Présent</span> apparaissent ici.
-                      </p>
+                      <div className="text-[11px] text-muted-foreground/70 bg-muted/40 rounded-lg px-3 py-1.5 mb-2 flex items-center gap-1.5">
+                        <Clock size={11} className="shrink-0 text-muted-foreground/50" />
+                        <span>
+                          Seuls les joueurs ayant répondu{' '}
+                          <span className="font-semibold text-accent/80">Présent</span>
+                          {' '}apparaissent ici.
+                        </span>
+                      </div>
                       {eventPlayers.filter(p => presences[p.id] === 'present').length === 0 && (
                         <p className="text-center text-sm text-muted-foreground py-6">
                           Aucun joueur n'a encore répondu présent.
