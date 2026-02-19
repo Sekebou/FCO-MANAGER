@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -145,7 +145,25 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                   {event.time && <span className="ml-1.5">• {event.time}</span>}
                 </p>
                 {event.location && (
-                  <p className="text-[11px] text-muted-foreground/70 mt-0.5">📍 {event.location}</p>
+                  <div className="mt-1">
+                    {event.type === 'match' && (
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide block mb-0.5">
+                        Lieu du match
+                      </span>
+                    )}
+                    <a
+                      href={`https://waze.com/ul?q=${encodeURIComponent(event.location)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 group max-w-full min-w-0"
+                    >
+                      <MapPin size={11} className="shrink-0 text-accent/70" />
+                      <span className="text-[11px] text-accent/80 underline underline-offset-2 truncate group-active:text-accent transition-colors">
+                        {event.location}
+                      </span>
+                      <ExternalLink size={9} className="shrink-0 text-accent/50" />
+                    </a>
+                  </div>
                 )}
                 {event.createdByName && (
                   <p className="flex items-center gap-1.5 text-muted-foreground/60 text-[11px] mt-0.5">
@@ -380,12 +398,8 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                         </button>
                       </div>
                       <div className="text-[11px] text-muted-foreground/70 bg-muted/40 rounded-lg px-3 py-1.5 mb-2 flex items-center gap-1.5">
-                        <Clock size={11} className="shrink-0 text-muted-foreground/50" />
-                        <span>
-                          Seuls les joueurs ayant répondu{' '}
-                          <span className="font-semibold text-accent/80">Présent</span>
-                          {' '}apparaissent ici.
-                        </span>
+                        <UserCheck size={11} className="shrink-0 text-muted-foreground/50" />
+                        <span className="truncate">Affichage limité aux joueurs présents</span>
                       </div>
                       {eventPlayers.filter(p => presences[p.id] === 'present').length === 0 && (
                         <p className="text-center text-sm text-muted-foreground py-6">
