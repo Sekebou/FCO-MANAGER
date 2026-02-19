@@ -77,7 +77,12 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Statistiques</h2>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <TrendingUp className="text-accent" size={18} />
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
+        </div>
       </div>
 
       {/* Attendance section - admin only */}

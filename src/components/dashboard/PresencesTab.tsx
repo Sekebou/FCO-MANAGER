@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -83,7 +83,12 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-2 sm:gap-3">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Gestion des présences</h2>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <ClipboardCheck className="text-accent" size={18} />
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Gestion des présences</h2>
+        </div>
         <div className="flex gap-2">
           {canCreateEvent() && (
             <button onClick={onAddEvent} className="bg-primary text-primary-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 hover:bg-primary/90 transition-all text-xs sm:text-sm font-medium">

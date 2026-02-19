@@ -109,9 +109,11 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <Camera size={28} className="text-accent" />
-            <h2 className="text-2xl font-bold text-foreground">Galerie photos</h2>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+              <Camera className="text-accent" size={18} />
+            </div>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Galerie photos</h2>
           </div>
           <div className="flex gap-2 items-center">
             <div className="flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-xl">
