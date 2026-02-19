@@ -1,75 +1,67 @@
 
-## Amélioration de la ligne joueur dans le mode Convocation
+## Deux améliorations dans l'onglet Présences
 
-### Problèmes identifiés
+### 1. Prénom + Nom mieux visibles dans les convocations
 
-1. **Affichage du nom** : `player.name` est affiché en un seul bloc. Il n'existe pas de champ `firstName`/`lastName` séparé dans les types `Player` ou `Member`. La solution est de découper `player.name` sur le premier espace pour afficher le prénom en gras et le nom de famille en secondaire.
+**Problème actuel** : Le nom de famille est affiché en `text-[11px] text-muted-foreground uppercase` — trop discret, trop petit, et potentiellement tronqué si le prénom prend toute la place avec `truncate`.
 
-2. **Sélecteur de poste** : C'est un `<select>` brut avec `font-size: 16px` (anti-zoom iOS) mais sans habillage visuel — il apparaît trop grand et peu raffiné.
+**Solution** : Restructurer le bloc nom pour que les deux parties soient lisibles :
+- Prénom : `text-sm font-semibold text-foreground` (inchangé)
+- Nom de famille : `text-sm font-medium text-foreground/70` (même taille, légèrement atténué — plus de `text-[11px]`, plus de `uppercase`)
+- Conteneur : `flex flex-col leading-tight` au lieu de `flex items-baseline gap-1` pour éviter les problèmes de troncature sur mobile (deux lignes plutôt qu'une seule ligne compressée)
 
-3. **Input numéro** : Même problème, trop large (w-16) et visuellement lourd pour un simple numéro 1-99.
+Résultat visuel :
+```
+[Avatar]  Jean
+          DUPONT           [Convoqué] [Non convoqué]
+```
 
----
+### 2. Masquer la liste présences/absences quand on entre en mode convocation
 
-### Solution retenue : Sélecteurs "flat" avec overlay invisible (pattern existant)
+**Objectif** : Quand le coach clique sur "Gérer les convocations", la liste des joueurs avec leurs boutons Présent/Absent occupe beaucoup de place inutilement. En masquant cette section, la page se concentre uniquement sur la sélection des joueurs à convoquer.
 
-Le projet utilise déjà ce pattern dans `MembersTab.tsx` pour les sélecteurs de poste/rôle : un affichage visuel compact + un `<select>` invisible superposé avec `font-size: 16px` pour éviter le zoom iOS. On applique le même principe ici.
+**Ce qui change** : Dans le rendu de la liste des présences (lignes 178-291), conditionner l'affichage entier avec `{!isConvocationMode && (...)}`.
 
----
+Résultat :
+- Mode normal : liste présences visible comme aujourd'hui
+- Mode convocation activé : liste présences masquée, seule la section convocation est affichée → page allégée, focus sur la tâche
 
-### Ce qui sera modifié
+### Fichier modifié
 
-**Fichier : `src/components/dashboard/PresencesTab.tsx`** — Section lignes 403-495
+`src/components/dashboard/PresencesTab.tsx`
 
-**1. Ligne joueur (informations)**
-
-Découpage du nom :
+**Changement 1** — Bloc nom (lignes 418-426) :
 ```tsx
-const [firstName, ...rest] = player.name.split(' ');
-const lastName = rest.join(' ');
+// Avant
+<div className="flex items-baseline gap-1 min-w-0">
+  <span className="font-semibold text-sm text-foreground truncate">{firstName}</span>
+  {lastName && <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide truncate">{lastName}</span>}
+</div>
+
+// Après
+<div className="flex flex-col leading-tight min-w-0">
+  <span className="font-semibold text-sm text-foreground">{firstName}</span>
+  {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
+</div>
 ```
 
-Affichage restructuré :
+**Changement 2** — Wrapping de la liste présences (ligne 178) :
+```tsx
+// Avant
+<div className="space-y-1.5">
+  {/* liste joueurs */}
+</div>
+
+// Après
+{!isConvocationMode && (
+  <div className="space-y-1.5">
+    {/* liste joueurs */}
+  </div>
+)}
 ```
-[Avatar] [Prénom en gras] [NOM en muted] [Poste si mobile masqué → gardé]
-```
-
-**2. Sélecteur de poste — style "flat natif"**
-
-Remplacement du `<select>` brut par un wrapper visuel élégant :
-```
-┌────────────────────────────────────┐
-│  Gardien          ˅               │  ← label visible, petit, compact
-└────────────────────────────────────┘
-       [select opacity-0 par-dessus, font-size:16px]
-```
-
-Classes visuelles : `bg-secondary/50 border border-border/60 rounded-lg px-2 py-1 text-[11px] font-medium`
-Icône : `ChevronDown size={9}` en muted à droite
-
-**3. Input numéro — style "flat natif"**
-
-Remplacement de l'input large par un champ ultra-compact :
-- Largeur : `w-12` au lieu de `w-16`
-- Hauteur : `h-7` (28px)
-- Style : même bg/border que le sélecteur de poste
-- Placeholder : `#` centré
-- `font-size: 16px` inline pour anti-zoom iOS
-- `text-[11px]` pour l'affichage visuel
-
-**Résultat visuel attendu**
-
-```
-[Avatar] Jean DUPONT                    [✓ Convoqué] [✕ Non conv.]
-
-         [Défenseur central ˅]  [# 5]   ← compact, natif, discret
-```
-
-La ligne d'édition (poste + numéro) n'apparaît que quand `isConvoked === true`, ce qui reste inchangé.
 
 ### Impact
 
 - Aucune logique métier modifiée
-- Aucun type à modifier (`name` est splitté à la volée)
-- Cohérence visuelle avec le pattern de `MembersTab.tsx`
-- Respect de l'anti-zoom iOS (font-size 16px sur les éléments natifs)
+- Deux retouches chirurgicales dans le même fichier
+- La liste des présences reste intacte, elle est juste masquée visuellement en mode édition convocation
