@@ -833,17 +833,30 @@ const Dashboard = () => {
   const uploadPhotos = async (albumId: string, files: File[]) => {
     if (!canManagePhotos()) return;
     for (const file of files) {
+      // iOS peut envoyer des fichiers sans type MIME correct, on le force
+      let uploadFile = file;
+      if (!file.type || file.type === 'application/octet-stream') {
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const mimeMap: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif' };
+        const mime = mimeMap[ext] || 'image/jpeg';
+        uploadFile = new File([file], file.name, { type: mime });
+      }
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', uploadFile);
       formData.append('albumId', albumId);
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-photos`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: formData,
       });
-      const { publicUrl, storagePath } = await res.json();
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erreur upload');
+      }
+      const { url, path } = await res.json();
       await supabase.from('gallery_photos').insert({
-        album_id: albumId, url: publicUrl, storage_path: storagePath,
+        album_id: albumId, url, storage_path: path,
         title: file.name.replace(/\.[^/.]+$/, ''), uploaded_by: currentUser!.uid, uploader_name: currentUser!.name,
       });
     }

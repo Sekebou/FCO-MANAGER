@@ -66,7 +66,8 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     if (!selectedAlbum || !e.target.files?.length) return;
     const files = Array.from(e.target.files);
     
-    const validFiles = files.filter(f => f.type.startsWith('image/'));
+    // Sur iOS, les images HEIC sont valides aussi
+    const validFiles = files.filter(f => f.type.startsWith('image/') || /\.(heic|heif|jpg|jpeg|png|gif|webp)$/i.test(f.name));
     if (validFiles.length !== files.length) {
       toast.warning('Seules les images sont acceptées');
     }
