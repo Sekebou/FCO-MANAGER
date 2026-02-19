@@ -184,6 +184,7 @@ const Dashboard = () => {
   const [welcomeName, setWelcomeName] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialMandatory, setTutorialMandatory] = useState(false);
+  const [licenseNeedsReminder, setLicenseNeedsReminder] = useState(false);
 
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -424,7 +425,13 @@ const Dashboard = () => {
           const { data: player } = await supabase.from('players').select('license_expiry').eq('id', currentUser.playerId).single();
           playerLicense = player?.license_expiry || null;
         }
-        if (!(profile?.license_expiry || playerLicense)) setShowLicenseReminder(true);
+        if (!(profile?.license_expiry || playerLicense)) {
+          if (!showTutorial) {
+            setShowLicenseReminder(true);
+          } else {
+            setLicenseNeedsReminder(true);
+          }
+        }
       } catch (err) { console.warn('License check error:', err); }
     };
     checkLicense();
@@ -1300,7 +1307,7 @@ const Dashboard = () => {
       {showTutorial && currentUser && (
         <OnboardingTutorial
           userRole={currentUser.role}
-          onComplete={() => { setShowTutorial(false); setTutorialMandatory(false); setTimeout(() => setActiveTab('presences'), 400); }}
+          onComplete={() => { setShowTutorial(false); setTutorialMandatory(false); setTimeout(() => setActiveTab('presences'), 400); setTimeout(() => { if (licenseNeedsReminder) setShowLicenseReminder(true); }, 1000); }}
           onTabChange={handleTabChange}
           mandatory={tutorialMandatory}
         />
