@@ -415,8 +415,16 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                     </div>
                                   );
                                 })()}
-                                <span className="font-medium text-sm text-foreground truncate">{player.name}</span>
-                                {player.position && <span className="text-[10px] text-muted-foreground hidden sm:inline">{player.position}</span>}
+                                 {(() => {
+                                   const [firstName, ...rest] = player.name.split(' ');
+                                   const lastName = rest.join(' ');
+                                   return (
+                                     <div className="flex items-baseline gap-1 min-w-0">
+                                       <span className="font-semibold text-sm text-foreground truncate">{firstName}</span>
+                                       {lastName && <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide truncate">{lastName}</span>}
+                                     </div>
+                                   );
+                                 })()}
                               </div>
                               <div className="flex gap-1.5 shrink-0">
                                 {/* Bouton Convoqué */}
@@ -472,22 +480,30 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                               </div>
                             </div>
                             {isConvoked && (
-                              <div className="mt-2 flex gap-1.5">
-                                <select
-                                  value={conv?.position || ''}
-                                  onChange={e => updateDraft(player.id, { position: e.target.value })}
-                                  className="flex-1 text-[11px] bg-card border border-border rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:border-accent/50"
-                                  style={{ fontSize: 16 }}
-                                >
-                                  <option value="">Poste</option>
-                                  {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-                                </select>
+                              <div className="mt-2 flex gap-1.5 items-center">
+                                {/* Sélecteur de poste — flat natif */}
+                                <div className="relative flex-1 inline-flex items-center bg-secondary/50 border border-border/60 rounded-lg px-2 h-7 gap-1 cursor-pointer">
+                                  <span className="text-[11px] font-medium text-foreground flex-1 truncate">
+                                    {conv?.position || <span className="text-muted-foreground">Poste</span>}
+                                  </span>
+                                  <ChevronDown size={9} className="text-muted-foreground shrink-0" />
+                                  <select
+                                    value={conv?.position || ''}
+                                    onChange={e => updateDraft(player.id, { position: e.target.value })}
+                                    className="absolute inset-0 opacity-0 w-full cursor-pointer"
+                                    style={{ fontSize: 16 }}
+                                  >
+                                    <option value="">Poste</option>
+                                    {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                                  </select>
+                                </div>
+                                {/* Input numéro — ultra-compact */}
                                 <input
                                   type="number"
                                   placeholder="#"
                                   value={conv?.number || ''}
                                   onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })}
-                                  className="w-16 text-[11px] bg-card border border-border rounded-lg px-2 py-1.5 text-foreground text-center focus:outline-none focus:border-accent/50"
+                                  className="w-12 h-7 text-[11px] bg-secondary/50 border border-border/60 rounded-lg px-1.5 text-foreground text-center focus:outline-none focus:border-accent/50"
                                   style={{ fontSize: 16 }}
                                   min={1}
                                   max={99}
