@@ -412,7 +412,7 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
           </motion.div>
         </motion.div>
       ) : (
-        /* Celebration outro screen */
+        /* Celebration outro screen — avec flou progressif avant redirection */
         <motion.div
           key="outro"
           className="fixed inset-0 z-[200] flex items-center justify-center"
@@ -421,13 +421,23 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
+          {/* Fond radial accent */}
           <motion.div
             className="absolute inset-0"
             initial={{ background: 'radial-gradient(circle, hsl(var(--accent)/0) 0%, transparent 100%)' }}
             animate={{ background: 'radial-gradient(circle, hsl(var(--accent)/0.18) 0%, transparent 70%)' }}
             transition={{ duration: 0.6 }}
           />
-          <div className="flex flex-col items-center gap-4">
+
+          {/* Voile de flou blanc/sombre qui s'intensifie à partir de ~1.8s pour masquer la transition */}
+          <motion.div
+            className="absolute inset-0 bg-background backdrop-blur-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0, 0, 0.6, 1] }}
+            transition={{ duration: 2.5, times: [0, 0.5, 0.7, 0.85, 1], ease: 'easeInOut' }}
+          />
+
+          <div className="flex flex-col items-center gap-4 relative z-10">
             {/* Animated checkmark */}
             <motion.div
               initial={{ scale: 0, rotate: -30 }}
