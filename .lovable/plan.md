@@ -1,97 +1,85 @@
 
-## Ajouter le badge icône dans les headers de tous les onglets
+## Décaler le rappel de licence après la fin du tutoriel
 
-### Constat
+### Diagnostic précis
 
-L'onglet **Championnats** a un header avec un badge icône stylisé :
-```tsx
-<div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-  <Trophy className="text-accent" size={18} />
-</div>
-<div>
-  <h2 className="text-lg sm:text-xl font-bold text-foreground">Championnats</h2>
-  <p className="text-xs sm:text-sm text-muted-foreground">...</p>
-</div>
+Le `useEffect` de vérification de licence (ligne 416) s'exécute dès que `currentUser` est chargé — indépendamment du tutoriel. Si la licence n'est pas renseignée, `setShowLicenseReminder(true)` est appelé **immédiatement**, bien avant la fin des animations (reveal 1.4s + celebrate 2.5s = ~4s) et de la redirection vers l'onglet Présences.
+
+Chronologie actuelle (problématique) :
+```text
+t=0s    → Montage Dashboard, currentUser chargé
+t=0.1s  → checkLicense() → showLicenseReminder = true  ← TROP TÔT
+t=0.5s  → Tutoriel affiché (si première connexion)
+t=4.9s  → Fin du tutoriel + redirection Présences
 ```
 
-Tous les autres onglets ont un header sans badge, juste un `h2` nu. L'objectif est d'uniformiser.
-
----
-
-### Fichiers et modifications
-
-#### 1. `src/components/dashboard/StatsTab.tsx` — ligne 79-81
-
-Remplacer le `h2` nu par le pattern avec badge :
-- Icône : `TrendingUp` (déjà importé)
-- Titre : "Statistiques"
-
-#### 2. `src/components/dashboard/NewsTab.tsx` — ligne 58-65
-
-Remplacer le `h2` par le pattern avec badge dans le `flex justify-between` :
-- Icône : `Bell` (déjà importé)
-- Titre : "Au cœur du club"
-
-#### 3. `src/components/dashboard/PresencesTab.tsx` — ligne 85-94
-
-Remplacer le `h2` par le pattern avec badge :
-- Icône : `ClipboardCheck` (à importer depuis lucide-react)
-- Titre : "Gestion des présences"
-
-#### 4. `src/components/dashboard/CalendarTab.tsx` — ligne 81
-
-Remplacer le `h2` par le pattern avec badge :
-- Icône : `CalendarDays` (déjà importé)
-- Titre : "Calendrier"
-
-#### 5. `src/components/dashboard/GalleryTab.tsx` — ligne 112-115
-
-Remplacer `<Camera size={28} className="text-accent" />` + `h2` nu par le badge pattern :
-- Icône : `Camera` (déjà importé)
-- Titre : "Galerie photos"
-
-#### 6. `src/components/dashboard/MembersTab.tsx` — ligne 74-81
-
-Remplacer le `h2` nu par le badge pattern :
-- Icône : `Users` (déjà importé)
-- Titre : "Membres du club"
-
-#### 7. `src/components/dashboard/ChatTab.tsx` — ligne 564-570 (vue `tabs` uniquement)
-
-Remplacer le header du chat par le pattern avec badge :
-- Icône : `MessageCircle` (déjà importé)
-- Titre : "Discussions"
-
----
-
-### Pattern exact à reproduire (identique à ChampionnatTab)
-
-```tsx
-<div className="flex items-center gap-2 sm:gap-3">
-  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-    <IconName className="text-accent" size={18} />
-  </div>
-  <div>
-    <h2 className="text-lg sm:text-xl font-bold text-foreground">Titre</h2>
-    {/* sous-titre optionnel */}
-  </div>
-</div>
+Chronologie souhaitée :
+```text
+t=0s    → Montage Dashboard, currentUser chargé
+t=0.5s  → Tutoriel affiché (si première connexion)
+t=4.9s  → Fin du tutoriel + redirection Présences
+t=5.5s  → SEULEMENT MAINTENANT : afficher le rappel licence  ← CORRECT
 ```
 
-Les headers qui ont un bouton d'action à droite (Actus, Présences, Membres, Galerie) gardent leur `flex justify-between` — le badge et le titre s'encapsulent dans un `div flex items-center gap-2 sm:gap-3` à gauche.
+### Solution
+
+Deux changements dans `src/pages/Dashboard.tsx` :
+
+**1. Stocker le résultat du check en mémoire sans l'afficher immédiatement**
+
+Ajouter un état `licenseNeedsReminder` (boolean) qui indique si le rappel doit être montré, mais sans déclencher la popup directement.
+
+```tsx
+const [licenseNeedsReminder, setLicenseNeedsReminder] = useState(false);
+```
+
+Dans le `useEffect` de vérification, remplacer :
+```tsx
+if (!(profile?.license_expiry || playerLicense)) setShowLicenseReminder(true);
+```
+Par :
+```tsx
+if (!(profile?.license_expiry || playerLicense)) setLicenseNeedsReminder(true);
+```
+
+**2. Déclencher l'affichage seulement après la fin du tutoriel**
+
+Dans le callback `onComplete` du tutoriel (ligne 1303), enchaîner l'affichage du rappel après le délai de redirection :
+
+```tsx
+onComplete={() => {
+  setShowTutorial(false);
+  setTutorialMandatory(false);
+  // Redirection vers Présences après 400ms
+  setTimeout(() => setActiveTab('presences'), 400);
+  // Rappel licence après la fin complète de l'animation (400ms redirection + 600ms marge)
+  setTimeout(() => {
+    if (licenseNeedsReminder) setShowLicenseReminder(true);
+  }, 1000);
+}}
+```
+
+**3. Pour les utilisateurs sans tutoriel (déjà connectés)**
+
+Le `useEffect` doit afficher le rappel directement si le tutoriel n'est pas actif. Modifier la condition :
+
+```tsx
+// Si pas de tutoriel en cours → afficher directement
+if (!(profile?.license_expiry || playerLicense)) {
+  if (!showTutorial) {
+    setShowLicenseReminder(true);
+  } else {
+    setLicenseNeedsReminder(true);
+  }
+}
+```
 
 ### Fichiers modifiés
 
-- `src/components/dashboard/StatsTab.tsx`
-- `src/components/dashboard/NewsTab.tsx`
-- `src/components/dashboard/PresencesTab.tsx`
-- `src/components/dashboard/CalendarTab.tsx`
-- `src/components/dashboard/GalleryTab.tsx`
-- `src/components/dashboard/MembersTab.tsx`
-- `src/components/dashboard/ChatTab.tsx`
+- `src/pages/Dashboard.tsx` uniquement — 3 petits changements
 
 ### Impact
 
 - Aucune modification de base de données
-- Aucun changement de logique métier
-- Purement cosmétique — cohérence visuelle entre tous les onglets
+- Pour les utilisateurs existants (pas de tutoriel) : comportement identique, la popup apparaît comme avant
+- Pour les nouvelles connexions (tutoriel actif) : la popup attend la fin complète de l'animation + redirection avant de s'afficher
