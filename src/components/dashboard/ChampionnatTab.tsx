@@ -594,7 +594,7 @@ const ChampionnatTab: React.FC<Props> = ({
 
       {/* Modal: Add Championship */}
       {showAddChamp && (
-        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[60]" onClick={() => setShowAddChamp(false)}>
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => setShowAddChamp(false)}>
           <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
@@ -697,7 +697,7 @@ const ChampionnatTab: React.FC<Props> = ({
         const champ = championships.find(c => c.id === showAddMatch);
         if (!champ) return null;
         return (
-          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[60]" onClick={() => setShowAddMatch(null)}>
+          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => setShowAddMatch(null)}>
             <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-border">
@@ -772,7 +772,7 @@ const ChampionnatTab: React.FC<Props> = ({
         if (!match) return null;
         const champ = championships.find(c => c.id === match.championshipId);
         return (
-          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setEditingMatch(null)}>
+          <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={() => setEditingMatch(null)}>
             <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-border">
@@ -860,7 +860,7 @@ const ChampionnatTab: React.FC<Props> = ({
 
       {/* Modal: Refresh Result */}
       {refreshResult && (
-        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={() => setRefreshResult(null)}>
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={() => setRefreshResult(null)}>
           <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-border">

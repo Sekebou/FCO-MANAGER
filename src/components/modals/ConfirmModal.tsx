@@ -15,7 +15,7 @@ const ConfirmModal = ({ title, message, confirmLabel = 'Supprimer', cancelLabel 
   const isDanger = variant === 'danger';
 
   return (
-    <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={onClose}>
       <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
         {/* Header icon */}
         <div className="flex flex-col items-center pt-8 pb-4 px-6">
