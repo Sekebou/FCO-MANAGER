@@ -1015,7 +1015,7 @@ const Dashboard = () => {
                   const tokens = tokenRows?.map(r => r.token) || [];
 
                   if (tokens.length === 0) {
-                    toast.info('Aucun appareil enregistré pour les joueurs convoqués');
+                    toast.info('Aucun appareil enregistré pour les joueurs convoqués. Les joueurs doivent ouvrir l\'application mobile pour activer les notifications.');
                     return;
                   }
 
