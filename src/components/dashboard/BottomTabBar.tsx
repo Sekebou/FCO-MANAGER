@@ -20,7 +20,7 @@ const allTabs: Tab[] = [
   { id: 'members', label: 'Membres', icon: UserCheck },
 ];
 
-/** Icône animée : bounce élastique + micro-rotation à l'activation */
+/** Icône animée : bounce prononcé + rotation à l'activation */
 const AnimatedIcon = ({ icon: Icon, isActive, size, strokeWidth, className }: {
   icon: React.ElementType;
   isActive: boolean;
@@ -28,17 +28,36 @@ const AnimatedIcon = ({ icon: Icon, isActive, size, strokeWidth, className }: {
   strokeWidth: number;
   className?: string;
 }) => (
-  <AnimatePresence initial={false}>
-    <motion.div
-      key={isActive ? 'active' : 'idle'}
-      initial={isActive ? { scale: 0.55, rotate: -14, opacity: 0 } : { scale: 1.05, rotate: 6, opacity: 0 }}
-      animate={{ scale: 1, rotate: 0, opacity: 1 }}
-      exit={{ scale: 0.7, opacity: 0, position: 'absolute' } as any}
-      transition={{ type: 'spring', damping: 18, stiffness: 400, duration: 0.18 }}
-    >
-      <Icon size={size} strokeWidth={strokeWidth} className={className} />
-    </motion.div>
-  </AnimatePresence>
+  <div className="relative flex items-center justify-center">
+    {/* Halo flash à l'activation */}
+    <AnimatePresence>
+      {isActive && (
+        <motion.div
+          key="halo"
+          initial={{ scale: 0.6, opacity: 0.8 }}
+          animate={{ scale: 2.2, opacity: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="absolute inset-0 rounded-full bg-accent pointer-events-none"
+        />
+      )}
+    </AnimatePresence>
+
+    {/* Icône avec bounce */}
+    <AnimatePresence initial={false}>
+      <motion.div
+        key={isActive ? 'active' : 'idle'}
+        initial={isActive
+          ? { scale: 0, rotate: -30, opacity: 0 }
+          : { scale: 1.2, rotate: 15, opacity: 0 }}
+        animate={{ scale: 1, rotate: 0, opacity: 1 }}
+        exit={{ scale: 0.5, opacity: 0, position: 'absolute' } as any}
+        transition={{ type: 'spring', damping: 12, stiffness: 320 }}
+      >
+        <Icon size={size} strokeWidth={strokeWidth} className={className} />
+      </motion.div>
+    </AnimatePresence>
+  </div>
 );
 
 interface BottomTabBarProps {
