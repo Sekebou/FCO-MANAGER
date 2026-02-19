@@ -175,7 +175,8 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 </div>
               </div>
 
-              {/* Presences list — 8 max, puis "Voir plus" */}
+              {/* Presences list — masquée en mode convocation */}
+              {!isConvocationMode && (
               <div className="space-y-1.5">
                 {eventPlayers.length === 0 ? (
                   <p className="text-muted-foreground text-center py-4 text-sm">Aucun joueur enregistré</p>
@@ -288,6 +289,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                   );
                 })()}
               </div>
+              )}
 
               {/* Convocation section - only for match events */}
               {event.type === 'match' && (
@@ -419,9 +421,9 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                    const [firstName, ...rest] = player.name.split(' ');
                                    const lastName = rest.join(' ');
                                    return (
-                                     <div className="flex items-baseline gap-1 min-w-0">
-                                       <span className="font-semibold text-sm text-foreground truncate">{firstName}</span>
-                                       {lastName && <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide truncate">{lastName}</span>}
+                                     <div className="flex flex-col leading-tight min-w-0">
+                                       <span className="font-semibold text-sm text-foreground">{firstName}</span>
+                                       {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
                                      </div>
                                    );
                                  })()}
