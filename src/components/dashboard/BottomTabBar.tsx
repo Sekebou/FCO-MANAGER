@@ -28,13 +28,13 @@ const AnimatedIcon = ({ icon: Icon, isActive, size, strokeWidth, className }: {
   strokeWidth: number;
   className?: string;
 }) => (
-  <AnimatePresence mode="wait" initial={false}>
+  <AnimatePresence initial={false}>
     <motion.div
       key={isActive ? 'active' : 'idle'}
-      initial={isActive ? { scale: 0.4, rotate: -18, opacity: 0 } : { scale: 1.1, rotate: 8, opacity: 0 }}
+      initial={isActive ? { scale: 0.55, rotate: -14, opacity: 0 } : { scale: 1.05, rotate: 6, opacity: 0 }}
       animate={{ scale: 1, rotate: 0, opacity: 1 }}
-      exit={{ scale: 0.6, rotate: 10, opacity: 0 }}
-      transition={{ type: 'spring', damping: 14, stiffness: 280, duration: 0.35 }}
+      exit={{ scale: 0.7, opacity: 0, position: 'absolute' } as any}
+      transition={{ type: 'spring', damping: 18, stiffness: 400, duration: 0.18 }}
     >
       <Icon size={size} strokeWidth={strokeWidth} className={className} />
     </motion.div>
