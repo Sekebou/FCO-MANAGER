@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface Tab {
   id: string;
@@ -10,13 +11,13 @@ interface Tab {
 }
 
 const allTabs: Tab[] = [
-  { id: 'stats',       label: 'Stats',      icon: TrendingUp },
+  { id: 'stats', label: 'Stats', icon: TrendingUp },
   { id: 'championnat', label: 'Classement', icon: Trophy },
-  { id: 'news',        label: 'Actus',      icon: Bell },
-  { id: 'presences',   label: 'Présences',  icon: ClipboardCheck, featured: true },
-  { id: 'calendar',    label: 'Calendrier', icon: Calendar },
-  { id: 'gallery',     label: 'Galerie',    icon: Camera },
-  { id: 'members',     label: 'Membres',    icon: UserCheck },
+  { id: 'news', label: 'Actus', icon: Bell },
+  { id: 'presences', label: 'Présences', icon: ClipboardCheck, featured: true },
+  { id: 'calendar', label: 'Calendrier', icon: Calendar },
+  { id: 'gallery', label: 'Galerie', icon: Camera },
+  { id: 'members', label: 'Membres', icon: UserCheck },
 ];
 
 interface BottomTabBarProps {
@@ -24,195 +25,184 @@ interface BottomTabBarProps {
   onTabChange: (tab: string) => void;
 }
 
-const BUBBLE = 52;   // circle size px
-const LIFT   = 28;   // how many px the circle rises above the bar top
-
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
-  const barRef    = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [tabW, setTabW]   = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [featuredJustActivated, setFeaturedJustActivated] = useState(false);
+  const prevActiveTab = useRef(activeTab);
 
-  const activeIdx = allTabs.findIndex(t => t.id === activeTab);
-
-  /* measure tab width once bar mounts */
   useEffect(() => {
-    const measure = () => {
-      if (!barRef.current) return;
-      const w = barRef.current.offsetWidth;
-      setTabW(Math.max(w / Math.min(allTabs.length, 5.5), 56));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (barRef.current) ro.observe(barRef.current);
-    return () => ro.disconnect();
+    setTimeout(() => setMounted(true), 50);
   }, []);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
-
-  /* auto-scroll active tab to centre */
+  // Auto-scroll to active tab
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || !tabW) return;
-    const centre = activeIdx * tabW + tabW / 2;
-    el.scrollTo({ left: centre - el.offsetWidth / 2, behavior: mounted ? 'smooth' : 'auto' });
-  }, [activeIdx, tabW, mounted]);
+    const container = scrollRef.current;
+    if (!container) return;
+    const activeBtn = container.querySelector(`[data-tab="${activeTab}"]`) as HTMLElement;
+    if (activeBtn) {
+      const containerRect = container.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      const scrollLeft = container.scrollLeft;
+      const btnCenter = btnRect.left - containerRect.left + scrollLeft + btnRect.width / 2;
+      const targetScroll = btnCenter - containerRect.width / 2;
+      container.scrollTo({ left: targetScroll, behavior: mounted ? 'smooth' : 'auto' });
+    }
+  }, [activeTab, mounted]);
 
-  const handleTap = useCallback((id: string) => {
-    if (id === activeTab) return;
-    if ('vibrate' in navigator) navigator.vibrate(8);
-    onTabChange(id);
+  // One-shot animation when featured tab is activated
+  useEffect(() => {
+    if (prevActiveTab.current !== activeTab && activeTab === 'presences') {
+      setFeaturedJustActivated(true);
+      const t = setTimeout(() => setFeaturedJustActivated(false), 700);
+      prevActiveTab.current = activeTab;
+      return () => clearTimeout(t);
+    }
+    prevActiveTab.current = activeTab;
+  }, [activeTab]);
+
+  const handleTap = useCallback((tabId: string) => {
+    if (tabId === activeTab) return;
+    if ('vibrate' in navigator) navigator.vibrate(5);
+    onTabChange(tabId);
   }, [activeTab, onTabChange]);
-
-  /* x position of bubble centre (relative to scroll container) */
-  const bubbleX = tabW ? activeIdx * tabW + tabW / 2 : 0;
 
   return (
     <motion.div
-      ref={barRef}
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0,   opacity: 1 }}
-      transition={{ type: 'spring', damping: 24, stiffness: 260, delay: 0.1 }}
+      initial={{ y: 80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 260, delay: 0.2 }}
     >
-      {/* Wrapper that gives space above the bar for the bubble to rise into */}
-      <div style={{ position: 'relative', paddingTop: LIFT + BUBBLE / 2 }}>
+      {/* Background */}
+      <div
+        className="absolute inset-0 border-t border-white/[0.08]"
+        style={{
+          background: 'linear-gradient(to top, hsl(var(--card) / 0.97), hsl(var(--card) / 0.90))',
+          WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+          backdropFilter: 'saturate(180%) blur(20px)',
+        }}
+      />
 
-        {/* ── Solid bar ── */}
+      <div className="relative">
         <div
-          style={{
-            position: 'relative',
-            background: 'hsl(var(--card))',
-            boxShadow: '0 -2px 16px hsl(var(--foreground) / 0.08)',
-            overflow: 'visible',
-          }}
+          ref={scrollRef}
+          className="flex items-center overflow-x-auto scrollbar-hide px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-0"
+          style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {/* ── Sliding bubble (lives above bar, absolutely positioned) ── */}
-          {tabW > 0 && (
-            <motion.div
-              animate={{ x: bubbleX - BUBBLE / 2 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-              style={{
-                position: 'absolute',
-                top: -(LIFT + BUBBLE / 2),
-                left: 0,
-                width: BUBBLE,
-                height: BUBBLE,
-                borderRadius: '50%',
-                zIndex: 20,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: allTabs[activeIdx]?.featured
-                  ? 'hsl(var(--accent))'
-                  : 'hsl(var(--primary))',
-                /* box-shadow trick: ring matching the page background creates the notch illusion */
-                boxShadow: allTabs[activeIdx]?.featured
-                  ? `0 0 0 6px hsl(var(--background)), 0 6px 20px hsl(var(--accent) / 0.45)`
-                  : `0 0 0 6px hsl(var(--background)), 0 6px 16px hsl(var(--primary) / 0.38)`,
-              }}
-            >
-              {/* Pulse glow for featured tab */}
-              {allTabs[activeIdx]?.featured && (
-                <motion.div
-                  animate={{ opacity: [0.2, 0.6, 0.2], scale: [1, 1.5, 1] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    borderRadius: '50%',
-                    background: 'hsl(var(--accent) / 0.4)',
-                    filter: 'blur(10px)',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              {/* Icon of active tab */}
-              {(() => {
-                const ActiveIcon = allTabs[activeIdx]?.icon;
-                return ActiveIcon ? (
-                  <ActiveIcon
-                    size={22}
-                    strokeWidth={2.2}
-                    style={{ color: 'hsl(var(--primary-foreground))' }}
-                  />
-                ) : null;
-              })()}
-            </motion.div>
-          )}
+          {allTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            const isFeatured = tab.featured;
 
-          {/* ── Scrollable tab strip ── */}
-          <div
-            ref={scrollRef}
-            style={{
-              display: 'flex',
-              overflowX: 'auto',
-              overflowY: 'visible',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              WebkitOverflowScrolling: 'touch',
-            } as React.CSSProperties}
-          >
-            {allTabs.map((tab) => {
-              const Icon     = tab.icon;
-              const isActive = tab.id === activeTab;
-
+            if (isFeatured) {
               return (
                 <button
                   key={tab.id}
+                  data-tab={tab.id}
                   onClick={() => handleTap(tab.id)}
-                  style={{
-                    width: tabW || 'auto',
-                    minWidth: 56,
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingTop: LIFT / 2 + 6,
-                    paddingBottom: 12,
-                    gap: 4,
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
+                  className="relative flex flex-col items-center justify-center min-w-[4.5rem] shrink-0 outline-none select-none py-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  {/* Invisible spacer where the bubble sits — keeps label aligned */}
-                  <div style={{ width: BUBBLE, height: isActive ? BUBBLE : 20, opacity: 0, flexShrink: 0 }} />
-
-                  {/* Show icon only when NOT active (active icon is in the floating bubble) */}
-                  {!isActive && (
-                    <Icon
-                      size={20}
-                      strokeWidth={1.6}
-                      style={{ color: 'hsl(var(--muted-foreground))' }}
-                    />
-                  )}
-
-                  <span
+                  {/* Featured pill button */}
+                  <motion.div
+                    whileTap={{ scale: 0.88 }}
+                    animate={featuredJustActivated
+                      ? { scale: [1, 1.14, 0.96, 1], transition: { duration: 0.45, ease: [0.34, 1.56, 0.64, 1], repeat: 0 } }
+                      : { scale: 1 }
+                    }
+                    className={cn(
+                      'relative flex items-center justify-center rounded-2xl',
+                      isActive ? 'bg-accent w-14 h-12' : 'bg-primary/90 w-12 h-10'
+                    )}
                     style={{
-                      fontSize: 10,
-                      fontWeight: isActive ? 700 : 500,
-                      letterSpacing: '0.01em',
-                      lineHeight: 1,
-                      color: isActive
-                        ? 'hsl(var(--foreground))'
-                        : 'hsl(var(--muted-foreground) / 0.6)',
-                      whiteSpace: 'nowrap',
-                      transition: 'color 0.15s',
-                      userSelect: 'none',
-                      pointerEvents: 'none',
+                      boxShadow: isActive
+                        ? '0 3px 16px -3px hsl(var(--accent) / 0.55)'
+                        : '0 3px 12px -3px hsl(var(--primary) / 0.45)',
+                      transition: 'width 0.25s ease, height 0.25s ease',
                     }}
+                  >
+                    {/* Subtle glow when active */}
+                    {isActive && (
+                      <motion.div
+                        animate={{ opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                        className="absolute inset-0 rounded-2xl bg-accent/30 blur-md -z-10"
+                      />
+                    )}
+                    <motion.div
+                      animate={featuredJustActivated
+                        ? { rotate: [0, -7, 7, 0], transition: { duration: 0.4, ease: 'easeInOut', repeat: 0 } }
+                        : { rotate: 0 }
+                      }
+                    >
+                      <Icon
+                        size={isActive ? 22 : 20}
+                        strokeWidth={2.4}
+                        className={cn('relative z-10 transition-colors duration-200', isActive ? 'text-accent-foreground' : 'text-primary-foreground')}
+                      />
+                    </motion.div>
+                  </motion.div>
+                  <span
+                    className={cn(
+                      'text-[10px] leading-none mt-1.5 tracking-tight whitespace-nowrap transition-colors duration-200',
+                      isActive ? 'font-bold text-accent' : 'font-semibold text-muted-foreground/70'
+                    )}
                   >
                     {tab.label}
                   </span>
                 </button>
               );
-            })}
-          </div>
+            }
+
+            return (
+              <button
+                key={tab.id}
+                data-tab={tab.id}
+                onClick={() => handleTap(tab.id)}
+                className={cn(
+                  'relative flex flex-col items-center justify-center pt-1.5 pb-1 min-w-[4rem] shrink-0',
+                  'outline-none select-none',
+                )}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
+              >
+                {/* Active pill indicator on top */}
+                <motion.div
+                  initial={false}
+                  animate={{ width: isActive ? 28 : 0, opacity: isActive ? 1 : 0 }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                  className="absolute top-0 left-1/2 -translate-x-1/2 h-[2.5px] rounded-full bg-accent"
+                />
+
+                {/* Icon */}
+                <motion.div
+                  initial={false}
+                  animate={{
+                    width: isActive ? 56 : 32,
+                    backgroundColor: isActive ? 'hsl(var(--accent) / 0.12)' : 'transparent',
+                  }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                  className="relative flex items-center justify-center rounded-2xl h-8"
+                >
+                  <Icon
+                    size={isActive ? 20 : 21}
+                    strokeWidth={isActive ? 2.4 : 1.6}
+                    className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')}
+                  />
+                </motion.div>
+
+                {/* Label */}
+                <span
+                  className={cn(
+                    'text-[10px] leading-none mt-1 tracking-tight whitespace-nowrap transition-colors duration-200',
+                    isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45'
+                  )}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </motion.div>
