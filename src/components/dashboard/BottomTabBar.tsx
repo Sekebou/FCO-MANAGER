@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface Tab {
@@ -19,6 +19,27 @@ const allTabs: Tab[] = [
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: UserCheck },
 ];
+
+/** Icône animée : bounce élastique + micro-rotation à l'activation */
+const AnimatedIcon = ({ icon: Icon, isActive, size, strokeWidth, className }: {
+  icon: React.ElementType;
+  isActive: boolean;
+  size: number;
+  strokeWidth: number;
+  className?: string;
+}) => (
+  <AnimatePresence mode="wait" initial={false}>
+    <motion.div
+      key={isActive ? 'active' : 'idle'}
+      initial={isActive ? { scale: 0.4, rotate: -18, opacity: 0 } : { scale: 1.1, rotate: 8, opacity: 0 }}
+      animate={{ scale: 1, rotate: 0, opacity: 1 }}
+      exit={{ scale: 0.6, rotate: 10, opacity: 0 }}
+      transition={{ type: 'spring', damping: 14, stiffness: 280, duration: 0.35 }}
+    >
+      <Icon size={size} strokeWidth={strokeWidth} className={className} />
+    </motion.div>
+  </AnimatePresence>
+);
 
 interface BottomTabBarProps {
   activeTab: string;
@@ -148,7 +169,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                       />
                     )}
                     <motion.div animate={featuredJustActivated ? { rotate: [0, -12, 12, -5, 0], transition: { duration: 0.5, ease: 'easeInOut' } } : { rotate: 0 }}>
-                      <Icon size={isActive ? 25 : 22} strokeWidth={2.5} className={cn('relative z-10 transition-all duration-200', isActive ? 'text-accent-foreground' : 'text-primary-foreground')} />
+                      <AnimatedIcon icon={Icon} isActive={isActive} size={isActive ? 25 : 22} strokeWidth={2.5} className={cn('relative z-10', isActive ? 'text-accent-foreground' : 'text-primary-foreground')} />
                     </motion.div>
                   </motion.div>
                   <span className={cn('text-[10px] leading-none mt-1.5 tracking-tight whitespace-nowrap transition-colors duration-200', isActive ? 'font-extrabold text-accent' : 'font-semibold text-muted-foreground/70')}>
@@ -178,7 +199,13 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   transition={{ type: 'spring', damping: 20, stiffness: 300 }}
                   className="relative flex items-center justify-center rounded-2xl h-8"
                 >
-                  <Icon size={isActive ? 20 : 21} strokeWidth={isActive ? 2.4 : 1.6} className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')} />
+                  <AnimatedIcon
+                    icon={Icon}
+                    isActive={isActive}
+                    size={isActive ? 20 : 21}
+                    strokeWidth={isActive ? 2.4 : 1.6}
+                    className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')}
+                  />
                 </motion.div>
                 <span className={cn('text-[10px] leading-none mt-1 tracking-tight whitespace-nowrap transition-colors duration-200', isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45')}>
                   {tab.label}
@@ -233,7 +260,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                     transition: 'width 0.3s ease, height 0.3s ease',
                   }}
                 >
-                  <Icon size={isActive ? 24 : 21} strokeWidth={2.5} className={cn('relative z-10', isActive ? 'text-accent-foreground' : 'text-primary-foreground')} />
+                  <AnimatedIcon icon={Icon} isActive={isActive} size={isActive ? 24 : 21} strokeWidth={2.5} className={cn('relative z-10', isActive ? 'text-accent-foreground' : 'text-primary-foreground')} />
                 </motion.div>
                 <span className={cn('text-[10px] leading-none mt-1.5 tracking-tight whitespace-nowrap', isActive ? 'font-extrabold text-accent' : 'font-semibold text-muted-foreground/70')}>
                   {tab.label}
@@ -262,7 +289,13 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 transition={{ type: 'spring', damping: 20, stiffness: 300 }}
                 className="relative flex items-center justify-center rounded-2xl h-9"
               >
-                <Icon size={isActive ? 21 : 22} strokeWidth={isActive ? 2.4 : 1.6} className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')} />
+                <AnimatedIcon
+                  icon={Icon}
+                  isActive={isActive}
+                  size={isActive ? 21 : 22}
+                  strokeWidth={isActive ? 2.4 : 1.6}
+                  className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')}
+                />
               </motion.div>
               <span className={cn('text-[10px] leading-none mt-1 tracking-tight whitespace-nowrap', isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45')}>
                 {tab.label}
