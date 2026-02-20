@@ -213,12 +213,12 @@ function extractStandings(markdown: string): ScrapedStanding[] {
   const lines = markdown.split('\n');
 
   let inStandingsTable = false;
-  let headerCells: string[] = [];
   let headerFound = false;
 
-  // Column index map (detected dynamically from header)
-  let idxPts = -1, idxJ = -1, idxG = -1, idxN = -1, idxP = -1;
-  let idxF = -1, idxPbo = -1, idxBp = -1, idxBc = -1, idxDiff = -1;
+  // Offsets relative to the first numeric cell after [rank, teamLink] block
+  // numCells[0] = Pts column (idxPts position in header - offset)
+  let offsetPts = -1, offsetJ = -1, offsetG = -1, offsetN = -1, offsetP = -1;
+  let offsetF = -1, offsetPbo = -1, offsetBp = -1, offsetBc = -1, offsetDiff = -1;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -229,21 +229,37 @@ function extractStandings(markdown: string): ScrapedStanding[] {
       headerFound = false;
 
       // Parse header columns dynamically
-      headerCells = trimmed.split('|').map(c => c.trim()).filter(Boolean);
-      // headerCells[0] = rank, [1] = Pr., [2] = team link area
-      idxPts  = findColIndex(headerCells, ['pts', 'points']);
-      idxJ    = findColIndex(headerCells, ['j.', 'j', 'joues', 'joue', 'played']);
-      idxG    = findColIndex(headerCells, ['g.', 'g', 'gagne', 'won']);
-      idxN    = findColIndex(headerCells, ['n.', 'n', 'nul', 'draw']);
-      idxP    = findColIndex(headerCells, ['p.', 'perdu', 'lost']);
-      idxF    = findColIndex(headerCells, ['f.', 'forfait', 'forfaits']);
-      idxPbo  = findColIndex(headerCells, ['p/bo', 'p/bo.', 'penalites', 'penalties']);
-      idxBp   = findColIndex(headerCells, ['bp.', 'bp', 'buts pour', 'goalsfor']);
-      idxBc   = findColIndex(headerCells, ['bc.', 'bc', 'buts contre', 'goalsagainst']);
-      idxDiff = findColIndex(headerCells, ['diff.', 'diff', 'difference']);
+      const headerCells = trimmed.split('|').map(c => c.trim()).filter(Boolean);
+      // headerCells layout: ["Pr.", "Equipe", "Pts", "J.", "G.", "N.", "P.", "F.", "P/Bo.", "Bp.", "Bc.", "Diff.", ...]
+      // The first numeric column in the header is at index 2 (after "Pr." and "Equipe")
+      // We'll compute offsets relative to index 2 (the first numeric header column)
+      const numericStartIdx = 2; // "Pts" is at index 2 in header
+
+      const idxPts  = findColIndex(headerCells, ['pts', 'points']);
+      const idxJ    = findColIndex(headerCells, ['j.', 'j', 'joues', 'joue', 'played']);
+      const idxG    = findColIndex(headerCells, ['g.', 'g', 'gagne', 'won']);
+      const idxN    = findColIndex(headerCells, ['n.', 'n', 'nul', 'draw']);
+      const idxP    = findColIndex(headerCells, ['p.', 'perdu', 'lost']);
+      const idxF    = findColIndex(headerCells, ['f.', 'forfait', 'forfaits']);
+      const idxPbo  = findColIndex(headerCells, ['p/bo', 'p/bo.', 'penalites', 'penalties']);
+      const idxBp   = findColIndex(headerCells, ['bp.', 'bp', 'buts pour', 'goalsfor']);
+      const idxBc   = findColIndex(headerCells, ['bc.', 'bc', 'buts contre', 'goalsagainst']);
+      const idxDiff = findColIndex(headerCells, ['diff.', 'diff', 'difference']);
+
+      // Compute offsets: position in the numericCells array (0-based from Pts)
+      offsetPts  = idxPts  !== -1 ? idxPts  - numericStartIdx : -1;
+      offsetJ    = idxJ    !== -1 ? idxJ    - numericStartIdx : -1;
+      offsetG    = idxG    !== -1 ? idxG    - numericStartIdx : -1;
+      offsetN    = idxN    !== -1 ? idxN    - numericStartIdx : -1;
+      offsetP    = idxP    !== -1 ? idxP    - numericStartIdx : -1;
+      offsetF    = idxF    !== -1 ? idxF    - numericStartIdx : -1;
+      offsetPbo  = idxPbo  !== -1 ? idxPbo  - numericStartIdx : -1;
+      offsetBp   = idxBp   !== -1 ? idxBp   - numericStartIdx : -1;
+      offsetBc   = idxBc   !== -1 ? idxBc   - numericStartIdx : -1;
+      offsetDiff = idxDiff !== -1 ? idxDiff - numericStartIdx : -1;
 
       console.log('Standing header detected:', headerCells);
-      console.log('Column indices — Pts:', idxPts, 'J:', idxJ, 'G:', idxG, 'N:', idxN, 'P:', idxP, 'F:', idxF, 'Bp:', idxBp, 'Bc:', idxBc, 'Diff:', idxDiff);
+      console.log('Offsets — Pts:', offsetPts, 'J:', offsetJ, 'G:', offsetG, 'N:', offsetN, 'P:', offsetP, 'F:', offsetF, 'Bp:', offsetBp, 'Bc:', offsetBc, 'Diff:', offsetDiff);
       continue;
     }
 
@@ -255,47 +271,68 @@ function extractStandings(markdown: string): ScrapedStanding[] {
 
     // Parse data rows
     if (inStandingsTable && headerFound && trimmed.startsWith('|')) {
-      // Extract team name from the markdown link pattern
+      // Step 1: Extract the rank (first cell before any link)
+      const firstCellMatch = trimmed.match(/^\|\s*(\d+)\s*\|/);
+      if (!firstCellMatch) continue;
+      const rank = parseInt(firstCellMatch[1], 10);
+
+      // Step 2: Extract team name from the markdown link pattern
+      // Pattern: [![undefined](logo_url) TEAM NAME](https://epreuves.fff.fr/...)
       const teamMatch = trimmed.match(/\[!\[(?:undefined|[^\]]*)\]\([^)]*\)\s+([^\]]+)\]\(https:\/\/epreuves\.fff\.fr/);
       if (!teamMatch) continue;
-
       const teamName = teamMatch[1].trim();
 
-      // Split the row by | and parse numbers
-      const cells = trimmed.split('|').map(c => c.trim()).filter(Boolean);
+      // Step 3: Remove the entire markdown link block from the line, then re-split
+      // This eliminates all | characters inside the team link that cause index drift
+      // Remove: | rank | [![ ... ](club_url) | (the entire team cell including nested brackets)
+      // Strategy: find the position right after the closing )](fff_url) of the team link
+      const teamLinkEndPattern = /\]\(https:\/\/epreuves\.fff\.fr\/competition\/club\/[^)]+\)/;
+      const endMatch = teamLinkEndPattern.exec(trimmed);
+      if (!endMatch) continue;
 
-      if (cells.length >= 10) {
-        const rank = parseInt(cells[0], 10);
+      // Everything after the team link closing paren
+      const afterTeamLink = trimmed.substring(endMatch.index + endMatch[0].length);
 
-        const getCell = (idx: number) => idx !== -1 && idx < cells.length ? parseInt(cells[idx], 10) : NaN;
+      // Now split the remaining part by | to get the numeric cells
+      const numCells = afterTeamLink
+        .split('|')
+        .map(c => c.trim())
+        .filter(c => c.length > 0 && c !== '');
 
-        const pts  = getCell(idxPts);
-        const j    = getCell(idxJ);
-        const g    = getCell(idxG);
-        const n    = getCell(idxN);
-        const p    = getCell(idxP);
-        const f    = getCell(idxF);
-        const pbo  = getCell(idxPbo);
-        const bp   = getCell(idxBp);
-        const bc   = getCell(idxBc);
-        const diff = getCell(idxDiff);
+      // numCells[offsetPts] = Pts, numCells[offsetJ] = J, etc.
+      const getNum = (offset: number): number => {
+        if (offset < 0 || offset >= numCells.length) return NaN;
+        return parseInt(numCells[offset], 10);
+      };
 
-        if (!isNaN(rank) && teamName) {
-          standings.push({
-            rank,
-            team: teamName,
-            points:       isNaN(pts)  ? 0 : pts,
-            played:       isNaN(j)    ? 0 : j,
-            won:          isNaN(g)    ? 0 : g,
-            drawn:        isNaN(n)    ? 0 : n,
-            lost:         isNaN(p)    ? 0 : p,
-            forfeits:     isNaN(f)    ? 0 : f,
-            penalties:    isNaN(pbo)  ? 0 : pbo,
-            goalsFor:     isNaN(bp)   ? 0 : bp,
-            goalsAgainst: isNaN(bc)   ? 0 : bc,
-            goalDiff:     isNaN(diff) ? 0 : diff,
-          });
-        }
+      const pts  = getNum(offsetPts);
+      const j    = getNum(offsetJ);
+      const g    = getNum(offsetG);
+      const n    = getNum(offsetN);
+      const p    = getNum(offsetP);
+      const f    = getNum(offsetF);
+      const pbo  = getNum(offsetPbo);
+      const bp   = getNum(offsetBp);
+      const bc   = getNum(offsetBc);
+      const diff = getNum(offsetDiff);
+
+      console.log(`Row ${rank} ${teamName}: numCells=${JSON.stringify(numCells)} → pts=${pts} j=${j} g=${g}`);
+
+      if (!isNaN(rank) && teamName) {
+        standings.push({
+          rank,
+          team: teamName,
+          points:       isNaN(pts)  ? 0 : pts,
+          played:       isNaN(j)    ? 0 : j,
+          won:          isNaN(g)    ? 0 : g,
+          drawn:        isNaN(n)    ? 0 : n,
+          lost:         isNaN(p)    ? 0 : p,
+          forfeits:     isNaN(f)    ? 0 : f,
+          penalties:    isNaN(pbo)  ? 0 : pbo,
+          goalsFor:     isNaN(bp)   ? 0 : bp,
+          goalsAgainst: isNaN(bc)   ? 0 : bc,
+          goalDiff:     isNaN(diff) ? 0 : diff,
+        });
       }
     }
 
