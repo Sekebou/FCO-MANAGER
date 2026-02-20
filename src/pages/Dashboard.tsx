@@ -719,13 +719,14 @@ const Dashboard = () => {
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
 
   // Championship CRUD
-  const addChampionship = async (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
+  const addChampionship = async (data: { name: string; season: string; teams: string[]; team?: string; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
     if (!canManage()) return;
     try {
       const { matches: importedMatches, standings, teamLogos, ...champData } = data;
       const { data: inserted, error } = await supabase.from('championships').insert({
         name: champData.name, season: champData.season, teams: champData.teams,
         fff_url: champData.fffUrl || null, fff_standings: standings || [], team_logos: teamLogos || {},
+        team: (champData as any).team || 'A',
       }).select('id').single();
       if (error) throw error;
       if (importedMatches && importedMatches.length > 0) {
