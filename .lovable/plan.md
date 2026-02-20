@@ -1,85 +1,71 @@
 
-## Décaler le rappel de licence après la fin du tutoriel
+## Correction des deux bugs de l'onglet Championnats
 
-### Diagnostic précis
+### Bug 1 — Championnat toujours placé en équipe A
 
-Le `useEffect` de vérification de licence (ligne 416) s'exécute dès que `currentUser` est chargé — indépendamment du tutoriel. Si la licence n'est pas renseignée, `setShowLicenseReminder(true)` est appelé **immédiatement**, bien avant la fin des animations (reveal 1.4s + celebrate 2.5s = ~4s) et de la redirection vers l'onglet Présences.
+**Cause racine :** Dans `Dashboard.tsx`, la fonction `addChampionship` déstructure correctement `data` (qui contient `team`), mais l'insert Supabase n'inclut **pas** le champ `team` :
 
-Chronologie actuelle (problématique) :
-```text
-t=0s    → Montage Dashboard, currentUser chargé
-t=0.1s  → checkLicense() → showLicenseReminder = true  ← TROP TÔT
-t=0.5s  → Tutoriel affiché (si première connexion)
-t=4.9s  → Fin du tutoriel + redirection Présences
+```ts
+// Ligne 726-729 actuelle — team manquant !
+await supabase.from('championships').insert({
+  name: champData.name, season: champData.season, teams: champData.teams,
+  fff_url: champData.fffUrl || null, fff_standings: standings || [], team_logos: teamLogos || {},
+  // ← team: champData.team  OUBLIÉ !
+})
 ```
 
-Chronologie souhaitée :
-```text
-t=0s    → Montage Dashboard, currentUser chargé
-t=0.5s  → Tutoriel affiché (si première connexion)
-t=4.9s  → Fin du tutoriel + redirection Présences
-t=5.5s  → SEULEMENT MAINTENANT : afficher le rappel licence  ← CORRECT
+Résultat : `team = null` en base. Le filtre `(c.team || 'A') === selectedTeam` transforme null en `'A'`, donc tout apparaît dans l'onglet Équipe A.
+
+**Fix :** Ajouter `team: champData.team || 'A'` dans l'objet insert.
+
+---
+
+### Bug 2 — Points incorrects dans le classement (ex: 8 au lieu de 24)
+
+**Cause racine :** Dans `supabase/functions/scrape-fff-teams/index.ts`, la fonction `extractStandings` suppose cet ordre de colonnes dans le tableau FFF :
+
+```
+| rank | Pr. | Team | Pts | J. | G. | N. | P. | F. | P/Bo | Bp | Bc | Diff |
+  [0]    [1]   [2]   [3]  [4]
 ```
 
-### Solution
+Mais le format réel du tableau FFF (tel que scraped par Firecrawl en markdown) est :
 
-Deux changements dans `src/pages/Dashboard.tsx` :
-
-**1. Stocker le résultat du check en mémoire sans l'afficher immédiatement**
-
-Ajouter un état `licenseNeedsReminder` (boolean) qui indique si le rappel doit être montré, mais sans déclencher la popup directement.
-
-```tsx
-const [licenseNeedsReminder, setLicenseNeedsReminder] = useState(false);
+```
+| rank | Pr. | Team | J. | Pts | G. | N. | P. | F. | P/Bo | Bp | Bc | Diff |
+  [0]    [1]   [2]   [3]  [4]
 ```
 
-Dans le `useEffect` de vérification, remplacer :
-```tsx
-if (!(profile?.license_expiry || playerLicense)) setShowLicenseReminder(true);
-```
-Par :
-```tsx
-if (!(profile?.license_expiry || playerLicense)) setLicenseNeedsReminder(true);
-```
+Les colonnes **J. (matchs joués)** et **Pts (points)** sont **inversées**. Donc `cells[3]` = J. = 8 (matchs joués) et `cells[4]` = Pts = 24 (points réels).
 
-**2. Déclencher l'affichage seulement après la fin du tutoriel**
+**Fix :** La solution la plus robuste est de **lire dynamiquement l'ordre des colonnes depuis la ligne d'en-tête** plutôt que d'utiliser des indices fixes. On détecte la position de `Pts` et `J.` dans le header pour les utiliser correctement.
 
-Dans le callback `onComplete` du tutoriel (ligne 1303), enchaîner l'affichage du rappel après le délai de redirection :
+Voici la logique corrigée pour `extractStandings` :
 
-```tsx
-onComplete={() => {
-  setShowTutorial(false);
-  setTutorialMandatory(false);
-  // Redirection vers Présences après 400ms
-  setTimeout(() => setActiveTab('presences'), 400);
-  // Rappel licence après la fin complète de l'animation (400ms redirection + 600ms marge)
-  setTimeout(() => {
-    if (licenseNeedsReminder) setShowLicenseReminder(true);
-  }, 1000);
-}}
+```ts
+// Dans le header, on détecte les positions
+let ptsIdx = -1, jIdx = -1, gIdx = -1, nIdx = -1, pIdx = -1, fIdx = -1, pboIdx = -1, bpIdx = -1, bcIdx = -1, diffIdx = -1;
+
+// Pour le header row | Pr. | | Pts | J. | ...
+// On mappe les colonnes depuis la position du Pr. et Team (fixes)
+// puis on utilise les positions détectées pour les valeurs numériques
 ```
 
-**3. Pour les utilisateurs sans tutoriel (déjà connectés)**
+Alternative simple (sans détection dynamique) : **inverser les indices** en changeant `cells[3]` → pts et `cells[4]` → j par `cells[3]` → j et `cells[4]` → pts.
 
-Le `useEffect` doit afficher le rappel directement si le tutoriel n'est pas actif. Modifier la condition :
+Mais pour robustesse maximale, on parsera le header row pour trouver l'index exact de chaque colonne (`Pts`, `J.`, `G.`, `N.`, `P.`, `F.`, `P/Bo.`, `Bp.`, `Bc.`, `Diff.`).
 
-```tsx
-// Si pas de tutoriel en cours → afficher directement
-if (!(profile?.license_expiry || playerLicense)) {
-  if (!showTutorial) {
-    setShowLicenseReminder(true);
-  } else {
-    setLicenseNeedsReminder(true);
-  }
-}
-```
+---
 
 ### Fichiers modifiés
 
-- `src/pages/Dashboard.tsx` uniquement — 3 petits changements
+1. **`src/pages/Dashboard.tsx`** — 1 ligne ajoutée dans l'insert Supabase de `addChampionship`
+2. **`supabase/functions/scrape-fff-teams/index.ts`** — Refonte de `extractStandings` pour détecter dynamiquement les positions des colonnes depuis le header
 
 ### Impact
 
-- Aucune modification de base de données
-- Pour les utilisateurs existants (pas de tutoriel) : comportement identique, la popup apparaît comme avant
-- Pour les nouvelles connexions (tutoriel actif) : la popup attend la fin complète de l'animation + redirection avant de s'afficher
+- Aucune migration de base de données nécessaire (la colonne `team` existe déjà dans `championships`)
+- Les championnats déjà créés avec `team = null` resteront en équipe A (comportement actuel préservé pour l'existant)
+- La correction ne touche qu'au parsing et à l'insert — aucune logique métier modifiée
+- Les nouveaux championnats seront correctement associés à leur équipe (A, B ou C)
+- Les points du classement seront correctement lus depuis la colonne FFF appropriée
