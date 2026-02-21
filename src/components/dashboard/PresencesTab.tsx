@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -185,7 +185,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 {/* Points info */}
                 {(event.type === 'match' || event.type === 'training') && (
                   <p className="text-[10px] text-accent/70 mt-2 flex items-center gap-1">
-                    <span>🎁</span> 5 pts de pari seront ajoutés à votre solde en répondant
+                    <Coins size={12} className="text-amber-500 shrink-0" /> 5 pts de pari seront ajoutés à votre solde en répondant
                   </p>
                 )}
                 {/* Presence counters */}

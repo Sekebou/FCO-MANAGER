@@ -6,8 +6,8 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle
+import {
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.png';
 import { toast } from 'sonner';
@@ -154,6 +154,22 @@ const mapChamp = (r: any): Championship => ({ id: r.id, name: r.name, season: r.
 const mapMatch = (r: any): Match => ({ id: r.id, championshipId: r.championship_id, homeTeam: r.home_team, awayTeam: r.away_team, homeScore: r.home_score, awayScore: r.away_score, date: r.date, journee: r.journee, played: r.played ?? false });
 const mapAlbum = (r: any): Album => ({ id: r.id, name: r.name, description: r.description, createdAt: r.created_at, createdBy: r.created_by, coverUrl: r.cover_url });
 const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url, storagePath: r.storage_path, title: r.title, uploadedAt: r.uploaded_at, uploadedBy: r.uploaded_by, uploaderName: r.uploader_name });
+// Small component showing points in header
+const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
+  const [pts, setPts] = useState<number | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle().then(({ data }) => {
+      setPts(data?.balance ?? 100);
+    });
+  }, [userId]);
+  if (pts === null) return null;
+  return (
+    <span className="flex items-center gap-0.5 text-amber-400/80 ml-1">
+      <Coins size={9} /> {pts}
+    </span>
+  );
+};
 
 const Dashboard = () => {
   const { currentUser, logout, setCurrentUser } = useAuth();
@@ -686,17 +702,44 @@ const Dashboard = () => {
     setNews(prev => prev.map(n => n.id === newsId ? { ...n, likes: newLikes } : n));
     const { error } = await supabase.from('news').update({ likes: newLikes }).eq('id', newsId);
     if (error) console.error('Error toggling like:', error);
+
+    // Award 1 point for liking (not un-liking)
+    if (!isLiked) {
+      try {
+        const { data: existing } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
+        if (existing) {
+          await supabase.from('user_points').update({ balance: existing.balance + 1, updated_at: new Date().toISOString() }).eq('id', existing.id);
+        } else {
+          await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 101 });
+        }
+        await supabase.from('points_transactions').insert({ user_id: currentUser.uid, amount: 1, type: 'like', description: `Like sur : ${newsItem.title}` });
+        toast.success('+1 pt de pari ajouté !', { icon: '❤️' });
+      } catch (err) { console.warn('Like points error:', err); }
+    }
   };
 
   const addComment = async (newsId: string, content: string) => {
     if (!currentUser || !content.trim()) return;
+    const newsItem = news.find(n => n.id === newsId);
     const tempId = `temp-${Date.now()}`;
     const newComment: NewsComment = { id: tempId, newsId, authorName: currentUser.name, authorUid: currentUser.uid, content: content.trim(), createdAt: new Date().toISOString() };
     setNewsComments(prev => [...prev, newComment]);
     const { error } = await supabase.from('news_comments').insert({
       news_id: newsId, author_name: currentUser.name, author_uid: currentUser.uid, content: content.trim(),
     });
-    if (error) { setNewsComments(prev => prev.filter(c => c.id !== tempId)); console.error('Error adding comment:', error); }
+    if (error) { setNewsComments(prev => prev.filter(c => c.id !== tempId)); console.error('Error adding comment:', error); return; }
+
+    // Award 5 points for commenting
+    try {
+      const { data: existing } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
+      if (existing) {
+        await supabase.from('user_points').update({ balance: existing.balance + 5, updated_at: new Date().toISOString() }).eq('id', existing.id);
+      } else {
+        await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 105 });
+      }
+      await supabase.from('points_transactions').insert({ user_id: currentUser.uid, amount: 5, type: 'comment', description: `Commentaire sur : ${newsItem?.title || 'Actu'}` });
+      toast.success('+5 pts de pari ajoutés !', { icon: '💬' });
+    } catch (err) { console.warn('Comment points error:', err); }
   };
 
   const deleteComment = async (commentId: string) => {
@@ -991,13 +1034,14 @@ const Dashboard = () => {
                     </span>
                     {currentUser?.role === 'admin+' && <svg className="w-4 h-4 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
+                  <div className="flex items-center gap-1.5 text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
                     {currentUser?.role === 'admin+' ? <><Shield size={10} className="text-accent" /><span>Super Admin</span></> :
                      currentUser?.role === 'admin' ? <><Shield size={10} /><span>Administrateur</span></> :
                      currentUser?.role === 'entraineur' ? <><Dumbbell size={10} /><span>Entraîneur</span></> :
                      currentUser?.role === 'photographe' ? <><Camera size={10} /><span>Photographe</span></> :
                      currentUser?.role === 'dirigeant' ? <><Briefcase size={10} /><span>Dirigeant</span></> :
                      <><UserCircle size={10} /><span>Joueur</span></>}
+                    <HeaderPoints userId={currentUser?.uid} />
                   </div>
                 </div>
               </button>
