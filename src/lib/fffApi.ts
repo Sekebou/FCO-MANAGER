@@ -92,6 +92,7 @@ export type ScrapedMatch = {
 export type ScrapedStanding = {
   rank: number;
   team: string;
+  clNo?: number;
   points: number;
   played: number;
   won: number;
@@ -104,33 +105,42 @@ export type ScrapedStanding = {
   goalDiff: number;
 };
 
-/** Transforme la réponse classement de l'API FFF en ScrapedStanding[] */
+/** Transforme la réponse classement de l'API FFF en ScrapedStanding[] 
+ * Accepte soit le tableau hydra:member directement, soit la réponse complète */
 export function mapClassementToStandings(classementData: any): ScrapedStanding[] {
   if (!classementData) return [];
   
-  // classement_journees returns an array of journees, take the latest
-  const journees = Array.isArray(classementData) ? classementData : classementData.journees || [];
-  if (journees.length === 0) return [];
+  // Support hydra:member array directly, or extract it from response
+  let entries: any[] = [];
+  if (Array.isArray(classementData)) {
+    entries = classementData;
+  } else if (classementData['hydra:member']) {
+    entries = classementData['hydra:member'];
+  } else {
+    // Legacy fallback: journees structure
+    const journees = classementData.journees || [];
+    if (journees.length === 0) return [];
+    const latestJournee = journees[journees.length - 1];
+    entries = latestJournee?.classement_journee || latestJournee?.classement || [];
+    if (!Array.isArray(entries)) return [];
+  }
   
-  // Get the latest journee (last element)
-  const latestJournee = journees[journees.length - 1];
-  const classement = latestJournee?.classement_journee || latestJournee?.classement || latestJournee;
+  if (!Array.isArray(entries) || entries.length === 0) return [];
   
-  if (!Array.isArray(classement)) return [];
-  
-  return classement.map((entry: any, index: number) => ({
-    rank: entry.rank || entry.rang || index + 1,
+  return entries.map((entry: any, index: number) => ({
+    rank: entry.rang ?? entry.rank ?? index + 1,
     team: entry.equipe?.short_name || entry.equipe?.name || entry.club?.name || entry.nom || '',
-    points: entry.pts ?? entry.points ?? 0,
-    played: entry.mj ?? entry.played ?? entry.j ?? 0,
-    won: entry.g ?? entry.won ?? entry.victoires ?? 0,
-    drawn: entry.n ?? entry.drawn ?? entry.nuls ?? 0,
-    lost: entry.p ?? entry.lost ?? entry.defaites ?? 0,
+    clNo: entry.equipe?.club?.cl_no ?? undefined,
+    points: entry.point_count ?? entry.pts ?? entry.points ?? 0,
+    played: entry.total_games_count ?? entry.mj ?? entry.played ?? 0,
+    won: entry.won_games_count ?? entry.g ?? entry.won ?? 0,
+    drawn: entry.draw_games_count ?? entry.n ?? entry.drawn ?? 0,
+    lost: entry.lost_games_count ?? entry.p ?? entry.lost ?? 0,
     forfeits: entry.f ?? entry.forfaits ?? 0,
     penalties: entry.pen ?? entry.penalties ?? 0,
-    goalsFor: entry.bp ?? entry.goals_for ?? entry.buts_pour ?? 0,
-    goalsAgainst: entry.bc ?? entry.goals_against ?? entry.buts_contre ?? 0,
-    goalDiff: entry.diff ?? entry.goal_diff ?? (entry.bp ?? 0) - (entry.bc ?? 0),
+    goalsFor: entry.goals_for_count ?? entry.bp ?? entry.goals_for ?? 0,
+    goalsAgainst: entry.goals_against_count ?? entry.bc ?? entry.goals_against ?? 0,
+    goalDiff: entry.goals_diff ?? entry.diff ?? entry.goal_diff ?? 0,
   })).filter((s: ScrapedStanding) => s.team);
 }
 
@@ -194,19 +204,45 @@ export function extractTeamLogosFromClassement(classementData: any): Record<stri
   const logos: Record<string, string> = {};
   if (!classementData) return logos;
   
-  const journees = Array.isArray(classementData) ? classementData : classementData.journees || [];
-  if (journees.length === 0) return logos;
+  // Support hydra:member array directly, or extract it
+  let entries: any[] = [];
+  if (Array.isArray(classementData)) {
+    entries = classementData;
+  } else if (classementData['hydra:member']) {
+    entries = classementData['hydra:member'];
+  } else {
+    const journees = classementData.journees || [];
+    if (journees.length === 0) return logos;
+    const latestJournee = journees[journees.length - 1];
+    entries = latestJournee?.classement_journee || latestJournee?.classement || [];
+  }
   
-  const latestJournee = journees[journees.length - 1];
-  const classement = latestJournee?.classement_journee || latestJournee?.classement || latestJournee;
+  if (!Array.isArray(entries)) return logos;
   
-  if (!Array.isArray(classement)) return logos;
-  
-  for (const entry of classement) {
+  for (const entry of entries) {
     const name = entry.equipe?.short_name || entry.equipe?.name || entry.club?.name || '';
     const logo = entry.equipe?.club?.logo || entry.club?.logo || '';
     if (name && logo) logos[name.toUpperCase()] = logo;
   }
   
   return logos;
+}
+
+/** Trouve l'engagement championnat d'une équipe et retourne les paramètres API */
+export function getTeamChampionship(equipes: any[], categoryCode: string, code: number): { cpNo: number; phase: number; poule: number } | null {
+  const equipe = equipes.find(
+    (eq: any) => eq.category_code === categoryCode && eq.code === code
+  );
+  if (!equipe?.engagements) return null;
+  
+  const engagement = equipe.engagements.find(
+    (eng: any) => eng.competition?.type === 'CH'
+  );
+  if (!engagement) return null;
+  
+  return {
+    cpNo: engagement.competition.cp_no,
+    phase: engagement.phase?.number || 1,
+    poule: engagement.poule?.stage_number || 1,
+  };
 }
