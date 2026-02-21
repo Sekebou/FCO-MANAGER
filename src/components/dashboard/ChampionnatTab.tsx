@@ -306,12 +306,15 @@ const ChampionnatTab: React.FC<Props> = ({
 
   const filteredChampIds = new Set(filteredChampionships.map(c => c.id));
 
+  const isOisemontMatch = (m: Match) =>
+    m.homeTeam.toUpperCase().includes('OISEMONT') || m.awayTeam.toUpperCase().includes('OISEMONT');
+
   const upcomingMatches = matches
-    .filter(m => !m.played && m.date >= todayStr && filteredChampIds.has(m.championshipId))
+    .filter(m => !m.played && m.date >= todayStr && filteredChampIds.has(m.championshipId) && isOisemontMatch(m))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const recentResults = matches
-    .filter(m => m.played && filteredChampIds.has(m.championshipId))
+    .filter(m => m.played && filteredChampIds.has(m.championshipId) && isOisemontMatch(m))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 5);
 
