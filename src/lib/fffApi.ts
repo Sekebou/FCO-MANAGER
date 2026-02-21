@@ -54,7 +54,7 @@ export async function getTousMatchsAvenir(cpNo: number, phase = 1, poule = 1, cl
         const data = await callFFF(
           `/compets/${cpNo}/phases/${phase}/poules/${poule}/calendrier?ma_dat[after]=${m.after}&ma_dat[before]=${m.before}`
         );
-        const members = data?.['hydra:member'] || [];
+        const members = Array.isArray(data) ? data : data?.['hydra:member'] || [];
         const matchs = members.filter(
           (match: any) => match.home?.club?.cl_no === clubId || match.away?.club?.cl_no === clubId
         );
@@ -94,7 +94,7 @@ export async function getTousResultats(cpNo: number, phase = 1, poule = 1, clubI
         const data = await callFFF(
           `/compets/${cpNo}/phases/${phase}/poules/${poule}/resultat?ma_dat[after]=${m.after}&ma_dat[before]=${m.before}`
         );
-        const members = data?.['hydra:member'] || [];
+        const members = Array.isArray(data) ? data : data?.['hydra:member'] || [];
         const matchs = members.filter(
           (match: any) => match.home?.club?.cl_no === clubId || match.away?.club?.cl_no === clubId
         );
