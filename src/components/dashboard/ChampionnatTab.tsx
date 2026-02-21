@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users, MapPin, Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import { 
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
@@ -48,6 +49,21 @@ interface Props {
   onDeleteMatch: (id: string) => void;
   onRefreshFromFFF?: (championshipId: string, fffUrl: string) => Promise<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string }>;
 }
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } }
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.92 },
+  show: { opacity: 1, scale: 1, transition: { duration: 0.3 } }
+};
 
 const ChampionnatTab: React.FC<Props> = ({
   championships,
@@ -135,8 +151,6 @@ const ChampionnatTab: React.FC<Props> = ({
       />
     );
   };
-
-  // getStandings removed - live classement from FFF API is used instead
 
   // Load FFF competitions when the modal opens
   useEffect(() => {
@@ -275,7 +289,6 @@ const ChampionnatTab: React.FC<Props> = ({
       const calendarMatches = mapMatchesToScrapedMatches(calendrierData);
       const logos = extractTeamLogosFromClassement(classementData);
 
-      // Merge matches (avoid duplicates)
       const allMatches = [...resultMatches];
       const seen = new Set(resultMatches.map(m => `${m.homeTeam}-${m.awayTeam}-${m.date}`));
       for (const m of calendarMatches) {
@@ -286,7 +299,6 @@ const ChampionnatTab: React.FC<Props> = ({
         }
       }
 
-      // Extract team names from standings (most reliable)
       const teams = standings.length > 0
         ? standings.map(s => s.team)
         : [...new Set(allMatches.flatMap(m => [m.homeTeam, m.awayTeam]))];
@@ -354,144 +366,251 @@ const ChampionnatTab: React.FC<Props> = ({
 
   const filteredChampIds = new Set(filteredChampionships.map(c => c.id));
 
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-            <Trophy className="text-accent" size={18} />
-          </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-foreground">Championnats</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">{filteredChampionships.length} champ. — Éq. {selectedTeam}</p>
-          </div>
-        </div>
-        {canManage() && !teamHasChampionship(selectedTeam) && (
-          <button onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} className="flex items-center gap-1.5 sm:gap-2 bg-accent text-accent-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm text-xs sm:text-sm">
-            <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
-          </button>
-        )}
-      </div>
+  // Compute Oisemont bilan from results
+  const computeBilan = () => {
+    let v = 0, n = 0, d = 0;
+    liveResults.forEach(g => g.matchs.forEach((m: FFFLiveMatch) => {
+      const hs = m.home_score ?? null;
+      const as = m.away_score ?? null;
+      if (hs === null || as === null) return;
+      const isHome = m.home?.club?.cl_no === OISEMONT_CL_NO;
+      const ourScore = isHome ? hs : as;
+      const theirScore = isHome ? as : hs;
+      if (ourScore > theirScore) v++;
+      else if (ourScore === theirScore) n++;
+      else d++;
+    }));
+    return { v, n, d };
+  };
+  const bilan = computeBilan();
 
-      {/* Team selector */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+  return (
+    <div className="space-y-5 sm:space-y-6">
+      {/* ─── Header ─── */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-accent to-primary p-5 sm:p-6 text-primary-foreground"
+      >
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--accent)/0.4),transparent_60%)]" />
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-foreground/5 rounded-full blur-2xl" />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-primary-foreground/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-primary-foreground/10">
+              <Trophy size={22} />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">Championnats</h2>
+              <p className="text-xs sm:text-sm text-primary-foreground/70 mt-0.5">Saison 2025-2026 • Équipe {selectedTeam}</p>
+            </div>
+          </div>
+          {canManage() && !teamHasChampionship(selectedTeam) && (
+            <motion.button 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} 
+              className="flex items-center gap-1.5 bg-primary-foreground/20 backdrop-blur-sm text-primary-foreground px-4 py-2.5 rounded-xl font-semibold hover:bg-primary-foreground/30 transition-all text-xs sm:text-sm border border-primary-foreground/10"
+            >
+              <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
+            </motion.button>
+          )}
+        </div>
+      </motion.div>
+
+      {/* ─── Team selector pills ─── */}
+      <motion.div 
+        initial={{ opacity: 0, y: 8 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ delay: 0.08 }}
+        className="flex items-center gap-2 p-1.5 bg-secondary/60 backdrop-blur-sm rounded-2xl border border-border/50"
+      >
         {TEAM_OPTIONS.map(team => (
-          <button
+          <motion.button
             key={team}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setSelectedTeam(team)}
-            className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+            className={`relative flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
               selectedTeam === team
-                ? 'bg-accent text-accent-foreground shadow-sm'
-                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+                ? 'text-accent-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Éq. {team}
-          </button>
+            {selectedTeam === team && (
+              <motion.div
+                layoutId="team-pill"
+                className="absolute inset-0 bg-accent rounded-xl shadow-lg shadow-accent/25"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10">Équipe {team}</span>
+          </motion.button>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Live classement from FFF API */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-        <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
-          <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
-            <BarChart3 size={16} className="text-accent" />
-          </div>
-          <h3 className="font-semibold text-foreground">Classement Éq. {selectedTeam}</h3>
-        </div>
-        {isLoadingLive ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-            <Loader2 size={20} className="animate-spin" />
-            <span className="text-sm">Chargement du classement...</span>
-          </div>
-        ) : liveError ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-            <AlertCircle size={16} />
-            <span className="text-sm">{liveError}</span>
-          </div>
-        ) : liveClassement.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border bg-secondary/40">
-                  <th className="px-2 py-2.5 text-left font-bold text-muted-foreground w-8">#</th>
-                  <th className="px-2 py-2.5 text-left font-bold text-muted-foreground">Équipe</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-foreground w-9">Pts</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">J</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">G</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">N</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">P</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-8">Bp</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-8">Bc</th>
-                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-9">Diff</th>
-                </tr>
-              </thead>
-              <tbody>
-                {liveClassement.map((s, i) => {
-                  const isOisemont = s.clNo === OISEMONT_CL_NO;
-                  const logo = liveLogos[s.team?.toUpperCase()] || null;
-                  return (
-                    <tr
-                      key={`${s.team}-${i}`}
-                      className={`border-b border-border/40 transition-colors ${
-                        isOisemont 
-                          ? 'bg-accent/15 border-l-4 border-l-accent font-bold' 
-                          : i % 2 === 0 ? 'bg-card' : 'bg-secondary/20'
-                      }`}
-                    >
-                      <td className={`px-2 py-2.5 font-bold ${i === 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>{s.rank}</td>
-                      <td className="px-2 py-2.5">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {logo && (
-                            <img src={logo} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 bg-muted" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          )}
-                          <span className={`truncate ${isOisemont ? 'text-accent font-bold' : 'text-foreground'}`}>{s.team}</span>
-                        </div>
-                      </td>
-                      <td className={`px-2 py-2.5 text-center font-black ${isOisemont ? 'text-accent' : 'text-foreground'}`}>{s.points}</td>
-                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.played}</td>
-                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.won}</td>
-                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.drawn}</td>
-                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.lost}</td>
-                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.goalsFor}</td>
-                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.goalsAgainst}</td>
-                      <td className={`px-2 py-2.5 text-center font-semibold ${s.goalDiff > 0 ? 'text-emerald-600' : s.goalDiff < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                        {s.goalDiff > 0 ? '+' : ''}{s.goalDiff}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground text-center py-10">Sélectionnez une équipe pour voir le classement</p>
-        )}
-      </div>
-
-      {/* Quick overview: upcoming + recent - LIVE from FFF API */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Prochains matchs - live */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
-            <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
-              <Clock size={16} className="text-accent" />
+      {/* ─── Live classement ─── */}
+      <motion.div 
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12 }}
+        className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden"
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-gradient-to-br from-accent/20 to-accent/5 rounded-xl flex items-center justify-center">
+              <BarChart3 size={17} className="text-accent" />
             </div>
-            <h3 className="font-semibold text-foreground">Prochains matchs</h3>
+            <div>
+              <h3 className="font-bold text-foreground text-sm">Classement</h3>
+              <p className="text-[11px] text-muted-foreground">Équipe {selectedTeam} — Live FFF</p>
+            </div>
+          </div>
+          {isLoadingLive && <Loader2 size={16} className="text-accent animate-spin" />}
+        </div>
+
+        <AnimatePresence mode="wait">
+          {isLoadingLive ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center gap-3 py-16">
+              <div className="w-10 h-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+              <span className="text-xs text-muted-foreground">Chargement du classement...</span>
+            </motion.div>
+          ) : liveError ? (
+            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+              <AlertCircle size={16} />
+              <span className="text-sm">{liveError}</span>
+            </motion.div>
+          ) : liveClassement.length > 0 ? (
+            <motion.div key="table" variants={stagger} initial="hidden" animate="show" className="divide-y divide-border/30">
+              {liveClassement.map((s, i) => {
+                const isOisemont = s.clNo === OISEMONT_CL_NO;
+                const logo = liveLogos[s.team?.toUpperCase()] || null;
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+                
+                return (
+                  <motion.div
+                    key={`${s.team}-${i}`}
+                    variants={fadeUp}
+                    className={`flex items-center gap-3 px-4 py-3 transition-all ${
+                      isOisemont 
+                        ? 'bg-accent/8 border-l-[3px] border-l-accent' 
+                        : 'hover:bg-secondary/40'
+                    }`}
+                  >
+                    {/* Rank */}
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                      i === 0 ? 'bg-yellow-500/15 text-yellow-600' :
+                      i === 1 ? 'bg-slate-400/15 text-slate-500' :
+                      i === 2 ? 'bg-amber-600/15 text-amber-700' :
+                      'bg-secondary text-muted-foreground'
+                    }`}>
+                      {medal || s.rank}
+                    </div>
+
+                    {/* Logo + Name */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {logo ? (
+                        <img src={logo} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-border/50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0 text-[10px] font-bold text-muted-foreground">{s.team?.charAt(0)}</div>
+                      )}
+                      <span className={`text-sm truncate ${isOisemont ? 'font-extrabold text-accent' : 'font-medium text-foreground'}`}>{s.team}</span>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-2 text-[11px] shrink-0">
+                      <div className="flex items-center gap-0.5">
+                        <span className="text-muted-foreground">{s.played}J</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <span className="text-emerald-600 font-semibold">{s.won}V</span>
+                        <span>{s.drawn}N</span>
+                        <span className="text-red-500">{s.lost}D</span>
+                      </div>
+                      <div className={`font-semibold text-[11px] ${s.goalDiff > 0 ? 'text-emerald-600' : s.goalDiff < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                        {s.goalDiff > 0 ? '+' : ''}{s.goalDiff}
+                      </div>
+                    </div>
+
+                    {/* Points */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
+                      isOisemont
+                        ? 'bg-accent text-accent-foreground shadow-md shadow-accent/20'
+                        : i < 3 ? 'bg-primary/10 text-primary' : 'bg-secondary text-foreground'
+                    }`}>
+                      {s.points}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-14">Sélectionnez une équipe pour voir le classement</p>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* ─── Bilan rapide ─── */}
+      {(bilan.v + bilan.n + bilan.d) > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="grid grid-cols-3 gap-3"
+        >
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <TrendingUp size={14} className="text-emerald-600" />
+              <span className="text-2xl font-black text-emerald-600">{bilan.v}</span>
+            </div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600/70">Victoires</span>
+          </div>
+          <div className="bg-secondary border border-border/50 rounded-2xl p-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Minus size={14} className="text-muted-foreground" />
+              <span className="text-2xl font-black text-foreground">{bilan.n}</span>
+            </div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nuls</span>
+          </div>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <TrendingDown size={14} className="text-red-500" />
+              <span className="text-2xl font-black text-red-500">{bilan.d}</span>
+            </div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-red-500/70">Défaites</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ─── Matches sections ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+        {/* Prochains matchs */}
+        <motion.div 
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden"
+        >
+          <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border/50 bg-gradient-to-r from-accent/5 to-transparent">
+            <div className="w-9 h-9 bg-gradient-to-br from-accent/20 to-accent/5 rounded-xl flex items-center justify-center">
+              <Clock size={17} className="text-accent" />
+            </div>
+            <h3 className="font-bold text-foreground text-sm">Prochains matchs</h3>
           </div>
           {isLoadingMatches ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-              <Loader2 size={20} className="animate-spin" />
-              <span className="text-sm">Chargement des matchs...</span>
+            <div className="flex flex-col items-center justify-center gap-3 py-16">
+              <div className="w-10 h-10 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+              <span className="text-xs text-muted-foreground">Chargement...</span>
             </div>
           ) : liveUpcoming.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10">Aucun match à venir</p>
+            <div className="text-center py-14">
+              <Calendar size={32} className="mx-auto text-muted-foreground/20 mb-2" />
+              <p className="text-sm text-muted-foreground">Aucun match à venir</p>
+            </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <motion.div variants={stagger} initial="hidden" animate="show" className="divide-y divide-border/30">
               {liveUpcoming.map((group) => (
                 <div key={group.mois}>
-                  <div className="px-5 py-2.5 bg-secondary/40 border-b border-border/50">
-                    <span className="text-xs font-bold text-accent uppercase tracking-wider">{group.mois}</span>
+                  <div className="px-5 py-2 bg-secondary/30">
+                    <span className="text-[11px] font-bold text-accent uppercase tracking-widest">{group.mois}</span>
                   </div>
                   {group.matchs.map((match: FFFLiveMatch, idx: number) => {
                     const isHome = match.home?.club?.cl_no === OISEMONT_CL_NO;
@@ -506,62 +625,78 @@ const ChampionnatTab: React.FC<Props> = ({
                     const ville = match.terrain?.city || '';
                     
                     return (
-                      <div key={`${match.date}-${idx}`} className={`px-5 py-4 transition-all ${isImminent ? 'bg-accent/5 border-l-4 border-l-accent' : ''}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold text-muted-foreground">
-                            {matchDate?.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      <motion.div 
+                        key={`${match.date}-${idx}`} 
+                        variants={fadeUp}
+                        className={`px-5 py-4 transition-all ${isImminent ? 'bg-accent/5' : 'hover:bg-secondary/30'}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[11px] font-medium text-muted-foreground">
+                            {matchDate?.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                             {match.time ? ` • ${match.time}` : ''}
                           </span>
                           {isImminent && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full animate-pulse">
-                              {diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full animate-pulse">
+                              {diffDays <= 0 ? "Auj." : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
                             <span className={`text-xs font-bold truncate text-right ${isHome ? 'text-accent' : 'text-foreground'}`}>{homeName}</span>
-                            {homeLogo && <img src={homeLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                            {homeLogo ? <img src={homeLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
                           </div>
-                          <div className="px-3 py-1.5 rounded-xl bg-secondary border border-border text-xs font-black text-muted-foreground tracking-widest shrink-0 min-w-[48px] text-center">
+                          <div className="px-2.5 py-1 rounded-lg bg-secondary/80 border border-border/50 text-[10px] font-black text-muted-foreground tracking-widest shrink-0">
                             VS
                           </div>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {awayLogo && <img src={awayLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                            {awayLogo ? <img src={awayLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
                             <span className={`text-xs font-bold truncate ${!isHome ? 'text-accent' : 'text-foreground'}`}>{awayName}</span>
                           </div>
                         </div>
-                        {ville && <p className="text-[11px] text-muted-foreground mt-2 text-center">📍 {ville}</p>}
-                      </div>
+                        {ville && (
+                          <p className="text-[10px] text-muted-foreground mt-2 text-center flex items-center justify-center gap-1">
+                            <MapPin size={10} /> {ville}
+                          </p>
+                        )}
+                      </motion.div>
                     );
                   })}
                 </div>
               ))}
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Derniers résultats - live */}
-        <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
-            <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
-              <Award size={16} className="text-accent" />
+        {/* Derniers résultats */}
+        <motion.div 
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.25 }}
+          className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden"
+        >
+          <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border/50 bg-gradient-to-r from-primary/5 to-transparent">
+            <div className="w-9 h-9 bg-gradient-to-br from-primary/20 to-primary/5 rounded-xl flex items-center justify-center">
+              <Award size={17} className="text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground">Derniers résultats</h3>
+            <h3 className="font-bold text-foreground text-sm">Derniers résultats</h3>
           </div>
           {isLoadingMatches ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-              <Loader2 size={20} className="animate-spin" />
-              <span className="text-sm">Chargement des résultats...</span>
+            <div className="flex flex-col items-center justify-center gap-3 py-16">
+              <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+              <span className="text-xs text-muted-foreground">Chargement...</span>
             </div>
           ) : liveResults.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10">Aucun résultat</p>
+            <div className="text-center py-14">
+              <Award size={32} className="mx-auto text-muted-foreground/20 mb-2" />
+              <p className="text-sm text-muted-foreground">Aucun résultat</p>
+            </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <motion.div variants={stagger} initial="hidden" animate="show" className="divide-y divide-border/30">
               {liveResults.map((group) => (
                 <div key={group.mois}>
-                  <div className="px-5 py-2.5 bg-secondary/40 border-b border-border/50">
-                    <span className="text-xs font-bold text-accent uppercase tracking-wider">{group.mois}</span>
+                  <div className="px-5 py-2 bg-secondary/30">
+                    <span className="text-[11px] font-bold text-primary uppercase tracking-widest">{group.mois}</span>
                   </div>
                   {group.matchs.map((match: FFFLiveMatch, idx: number) => {
                     const homeScore = match.home_score ?? null;
@@ -574,44 +709,61 @@ const ChampionnatTab: React.FC<Props> = ({
                     const isHomeWin = homeScore !== null && awayScore !== null && homeScore > awayScore;
                     const isAwayWin = homeScore !== null && awayScore !== null && awayScore > homeScore;
                     const isDraw = homeScore !== null && awayScore !== null && homeScore === awayScore;
-                    const matchDate = match.date ? new Date(match.date) : null;
+                    const matchDateObj = match.date ? new Date(match.date) : null;
+                    
+                    // Determine result color for Oisemont
+                    const isOisemontWin = (isHome && isHomeWin) || (!isHome && isAwayWin);
+                    const isOisemontLoss = (isHome && isAwayWin) || (!isHome && isHomeWin);
 
                     return (
-                      <div key={`${match.date}-${idx}`} className="px-5 py-4">
-                        <p className="text-[11px] text-muted-foreground text-center mb-2">
-                          {matchDate?.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      <motion.div 
+                        key={`${match.date}-${idx}`} 
+                        variants={fadeUp}
+                        className="px-5 py-4 hover:bg-secondary/30 transition-all"
+                      >
+                        <p className="text-[10px] text-muted-foreground text-center mb-3 font-medium">
+                          {matchDateObj?.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </p>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-                            <span className={`text-xs font-bold truncate text-right ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>{homeName}</span>
-                            {homeLogo && <img src={homeLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                            <span className={`text-xs font-bold truncate text-right ${isHomeWin ? 'text-foreground' : 'text-muted-foreground'}`}>{homeName}</span>
+                            {homeLogo ? <img src={homeLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
                           </div>
-                          <div className={`px-4 py-1.5 rounded-xl text-sm font-black min-w-[60px] text-center tracking-wider shadow-sm ${
-                            isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
+                          <div className={`px-3 py-1.5 rounded-xl text-sm font-black min-w-[56px] text-center tracking-wider shadow-sm ${
+                            isOisemontWin 
+                              ? 'bg-emerald-500 text-white' 
+                              : isOisemontLoss 
+                                ? 'bg-red-500 text-white' 
+                                : 'bg-secondary text-foreground border border-border/50'
                           }`}>
                             {homeScore} - {awayScore}
                           </div>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {awayLogo && <img src={awayLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
-                            <span className={`text-xs font-bold truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>{awayName}</span>
+                            {awayLogo ? <img src={awayLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
+                            <span className={`text-xs font-bold truncate ${isAwayWin ? 'text-foreground' : 'text-muted-foreground'}`}>{awayName}</span>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
               ))}
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </div>
 
-      {/* Championship admin bar (refresh + delete) */}
+      {/* ─── Admin bar ─── */}
       {canManage() && filteredChampionships.map(champ => (
-        <div key={champ.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <motion.div 
+          key={champ.id} 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }}
+          className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden"
+        >
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
                 <Trophy size={16} className="text-accent" />
               </div>
               <div>
@@ -642,21 +794,30 @@ const ChampionnatTab: React.FC<Props> = ({
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
       ))}
 
       {filteredChampionships.length === 0 && (
-        <div className="text-center py-16 bg-card rounded-2xl border border-border">
-          <Trophy size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-16 bg-card rounded-2xl border border-border/60"
+        >
+          <Trophy size={48} className="mx-auto text-muted-foreground/20 mb-4" />
           <p className="text-lg font-medium text-muted-foreground">Aucun championnat pour l'équipe {selectedTeam}</p>
           {canManage() && !teamHasChampionship(selectedTeam) && <p className="text-sm text-muted-foreground mt-1">Créez le championnat de l'équipe {selectedTeam}</p>}
-        </div>
+        </motion.div>
       )}
 
-      {/* Modal: Add Championship */}
+      {/* ─── Modal: Add Championship ─── */}
       {showAddChamp && (
         <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => { resetForm(); }}>
-          <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl max-h-[90vh] flex flex-col" 
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -779,17 +940,22 @@ const ChampionnatTab: React.FC<Props> = ({
                 Créer le championnat
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
-      {/* Modal: Add Match */}
+      {/* ─── Modal: Add Match ─── */}
       {showAddMatch && (() => {
         const champ = championships.find(c => c.id === showAddMatch);
         if (!champ) return null;
         return (
           <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => setShowAddMatch(null)}>
-            <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <motion.div 
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl max-h-[90vh] flex flex-col" 
+              onClick={e => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between p-5 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -842,19 +1008,24 @@ const ChampionnatTab: React.FC<Props> = ({
                   Ajouter
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
         );
       })()}
 
-      {/* Modal: Edit Score */}
+      {/* ─── Modal: Edit Score ─── */}
       {editingMatch && (() => {
         const match = matches.find(m => m.id === editingMatch);
         if (!match) return null;
         const champ = championships.find(c => c.id === match.championshipId);
         return (
           <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={() => setEditingMatch(null)}>
-            <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl" 
+              onClick={e => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between p-5 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -918,15 +1089,20 @@ const ChampionnatTab: React.FC<Props> = ({
                   Valider le score
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
         );
       })()}
 
-      {/* Modal: Refresh Result */}
+      {/* ─── Modal: Refresh Result ─── */}
       {refreshResult && (
         <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={() => setRefreshResult(null)}>
-          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl" 
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between p-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${refreshResult.success ? 'bg-accent/10' : 'bg-destructive/10'}`}>
@@ -993,7 +1169,7 @@ const ChampionnatTab: React.FC<Props> = ({
                 Fermer
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
     </div>
