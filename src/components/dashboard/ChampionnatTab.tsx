@@ -495,10 +495,10 @@ const ChampionnatTab: React.FC<Props> = ({
                   </div>
                   {group.matchs.map((match: FFFLiveMatch, idx: number) => {
                     const isHome = match.home?.club?.cl_no === OISEMONT_CL_NO;
-                    const adversaire = isHome ? (match.away?.short_name || match.away?.name) : (match.home?.short_name || match.home?.name);
-                    const logoAdversaire = isHome ? match.away?.club?.logo : match.home?.club?.logo;
-                    const logoOisemont = isHome ? match.home?.club?.logo : match.away?.club?.logo;
-                    const lieu = isHome ? '🏠 Domicile' : '✈️ Extérieur';
+                    const homeName = match.home?.short_name || match.home?.name || '';
+                    const awayName = match.away?.short_name || match.away?.name || '';
+                    const homeLogo = match.home?.club?.logo;
+                    const awayLogo = match.away?.club?.logo;
                     const matchDate = match.date ? new Date(match.date) : null;
                     const now = new Date();
                     const diffDays = matchDate ? Math.ceil((matchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 999;
@@ -518,15 +518,20 @@ const ChampionnatTab: React.FC<Props> = ({
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3">
-                          {logoAdversaire && (
-                            <img src={logoAdversaire} alt="" className="w-8 h-8 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-foreground truncate">{lieu} vs {adversaire}</p>
-                            {ville && <p className="text-[11px] text-muted-foreground mt-0.5">📍 {ville}</p>}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                            <span className={`text-xs font-bold truncate text-right ${isHome ? 'text-accent' : 'text-foreground'}`}>{homeName}</span>
+                            {homeLogo && <img src={homeLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                          </div>
+                          <div className="px-3 py-1.5 rounded-xl bg-secondary border border-border text-xs font-black text-muted-foreground tracking-widest shrink-0 min-w-[48px] text-center">
+                            VS
+                          </div>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {awayLogo && <img src={awayLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                            <span className={`text-xs font-bold truncate ${!isHome ? 'text-accent' : 'text-foreground'}`}>{awayName}</span>
                           </div>
                         </div>
+                        {ville && <p className="text-[11px] text-muted-foreground mt-2 text-center">📍 {ville}</p>}
                       </div>
                     );
                   })}
@@ -562,32 +567,33 @@ const ChampionnatTab: React.FC<Props> = ({
                     const homeScore = match.home_score ?? null;
                     const awayScore = match.away_score ?? null;
                     const isHome = match.home?.club?.cl_no === OISEMONT_CL_NO;
-                    const oisemontScore = isHome ? homeScore : awayScore;
-                    const adversaireScore = isHome ? awayScore : homeScore;
-                    const adversaire = isHome ? (match.away?.short_name || match.away?.name) : (match.home?.short_name || match.home?.name);
-                    const logoAdversaire = isHome ? match.away?.club?.logo : match.home?.club?.logo;
-                    const isWin = oisemontScore !== null && adversaireScore !== null && oisemontScore > adversaireScore;
-                    const isLoss = oisemontScore !== null && adversaireScore !== null && oisemontScore < adversaireScore;
-                    const isDraw = oisemontScore !== null && adversaireScore !== null && oisemontScore === adversaireScore;
+                    const homeName = match.home?.short_name || match.home?.name || '';
+                    const awayName = match.away?.short_name || match.away?.name || '';
+                    const homeLogo = match.home?.club?.logo;
+                    const awayLogo = match.away?.club?.logo;
+                    const isHomeWin = homeScore !== null && awayScore !== null && homeScore > awayScore;
+                    const isAwayWin = homeScore !== null && awayScore !== null && awayScore > homeScore;
+                    const isDraw = homeScore !== null && awayScore !== null && homeScore === awayScore;
                     const matchDate = match.date ? new Date(match.date) : null;
-                    const lieu = isHome ? '🏠' : '✈️';
 
                     return (
                       <div key={`${match.date}-${idx}`} className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          {logoAdversaire && (
-                            <img src={logoAdversaire} alt="" className="w-8 h-8 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-foreground truncate">{lieu} vs {adversaire}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
-                              {matchDate?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
-                            </p>
+                        <p className="text-[11px] text-muted-foreground text-center mb-2">
+                          {matchDate?.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+                            <span className={`text-xs font-bold truncate text-right ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>{homeName}</span>
+                            {homeLogo && <img src={homeLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
                           </div>
-                          <div className={`px-3 py-1.5 rounded-lg text-sm font-black min-w-[56px] text-center ${
-                            isWin ? 'bg-emerald-500/15 text-emerald-600' : isLoss ? 'bg-red-500/15 text-red-500' : 'bg-muted text-muted-foreground'
+                          <div className={`px-4 py-1.5 rounded-xl text-sm font-black min-w-[60px] text-center tracking-wider shadow-sm ${
+                            isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
                           }`}>
                             {homeScore} - {awayScore}
+                          </div>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {awayLogo && <img src={awayLogo} alt="" className="w-7 h-7 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                            <span className={`text-xs font-bold truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>{awayName}</span>
                           </div>
                         </div>
                       </div>
@@ -600,146 +606,44 @@ const ChampionnatTab: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Championships list */}
-      {filteredChampionships.map(champ => {
-        const champMatches = getChampMatches(champ.id).sort((a, b) => a.journee - b.journee || new Date(a.date).getTime() - new Date(b.date).getTime());
-        const isExpanded = expandedChamp === champ.id;
-        const journees = [...new Set(champMatches.map(m => m.journee))].sort((a, b) => a - b);
-
-        return (
-          <div key={champ.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-            <button
-              onClick={() => setExpandedChamp(isExpanded ? null : champ.id)}
-              className="w-full flex items-center justify-between p-5 hover:bg-secondary/30 transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-accent to-accent/60 rounded-xl flex items-center justify-center">
-                  <Trophy size={20} className="text-accent-foreground" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-bold text-foreground">{champ.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {champ.season} • {champ.teams.length} équipes • {champMatches.length} matchs
-                  </p>
-                </div>
+      {/* Championship admin bar (refresh + delete) */}
+      {canManage() && filteredChampionships.map(champ => (
+        <div key={champ.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
+                <Trophy size={16} className="text-accent" />
               </div>
-              <div className="flex items-center gap-2">
-                {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
-                  <span
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setRefreshingChamp(champ.id);
-                      try {
-                        const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
-                        setRefreshResult({ ...result, champName: champ.name });
-                      } finally {
-                        setRefreshingChamp(null);
-                      }
-                    }}
-                    className="p-2 rounded-lg hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all cursor-pointer"
-                    title="Mettre à jour les scores depuis la FFF"
-                  >
-                    <RefreshCw size={16} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
-                  </span>
-                )}
-                {canManage() && (
-                  <span onClick={(e) => { e.stopPropagation(); onDeleteChampionship(champ.id); }} className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all cursor-pointer">
-                    <Trash2 size={16} />
-                  </span>
-                )}
-                {isExpanded ? <ChevronUp size={20} className="text-muted-foreground" /> : <ChevronDown size={20} className="text-muted-foreground" />}
+              <div>
+                <h3 className="text-sm font-bold text-foreground">{champ.name}</h3>
+                <p className="text-[11px] text-muted-foreground">{champ.season} • Éq. {champ.team || 'A'}</p>
               </div>
-            </button>
-
-            {isExpanded && (
-              <div className="border-t border-border p-5 space-y-6">
-                {/* Matchs par journée */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2">
-                      <Calendar size={16} className="text-accent" /> Matchs
-                    </h4>
-                    {canManage() && (
-                      <button onClick={() => setShowAddMatch(champ.id)} className="text-sm flex items-center gap-1.5 text-accent hover:text-accent/80 font-medium transition-all">
-                        <Plus size={16} /> Ajouter un match
-                      </button>
-                    )}
-                  </div>
-
-                  {journees.map(j => (
-                    <div key={j} className="mb-6">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
-                          <Hash size={13} className="text-accent" />
-                        </div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Journée {j}</span>
-                      </div>
-                      <div className="bg-secondary/30 rounded-xl border border-border/50 overflow-hidden divide-y divide-border/40">
-                        {champMatches.filter(m => m.journee === j).map(m => {
-                          const isHomeWin = m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore;
-                          const isAwayWin = m.played && m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore;
-                          const isDraw = m.played && m.homeScore !== null && m.awayScore !== null && m.homeScore === m.awayScore;
-                          return (
-                            <div key={m.id} className={`px-3 py-3 hover:bg-secondary/60 transition-colors ${m.played ? '' : 'opacity-90'}`}>
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
-                                  <span className={`text-xs font-bold truncate text-right leading-tight ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
-                                    {m.homeTeam}
-                                  </span>
-                                  <TeamLogo team={m.homeTeam} champId={champ.id} size={26} />
-                                </div>
-                                <div className="shrink-0 min-w-[64px] flex justify-center">
-                                  {m.played && m.homeScore !== null ? (
-                                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-black tracking-wider shadow-sm ${
-                                      isDraw ? 'bg-secondary text-muted-foreground' : 'bg-primary text-primary-foreground'
-                                    }`}>
-                                      <span>{m.homeScore}</span>
-                                      <span className="opacity-50">-</span>
-                                      <span>{m.awayScore}</span>
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-col items-center">
-                                      {canManage() ? (
-                                        <button onClick={() => { setEditingMatch(m.id); setEditHome(0); setEditAway(0); }} className="text-[10px] bg-accent/10 text-accent px-2.5 py-1.5 rounded-lg font-semibold hover:bg-accent/20 transition-all">
-                                          Score
-                                        </button>
-                                      ) : (
-                                        <span className="text-xs font-black text-muted-foreground/40 tracking-widest">VS</span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                  <TeamLogo team={m.awayTeam} champId={champ.id} size={26} />
-                                  <span className={`text-xs font-bold truncate leading-tight ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
-                                    {m.awayTeam}
-                                  </span>
-                                </div>
-                                {canManage() && (
-                                  <button onClick={() => onDeleteMatch(m.id)} className="shrink-0 text-destructive/50 hover:text-destructive hover:bg-destructive/10 p-1 rounded-lg transition-all">
-                                    <Trash2 size={12} />
-                                  </button>
-                                )}
-                              </div>
-                              <p className="text-center text-[10px] text-muted-foreground/60 mt-1.5">
-                                {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-
-                  {champMatches.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-6">Aucun match programmé</p>
-                  )}
-                </div>
-              </div>
-            )}
+            </div>
+            <div className="flex items-center gap-1">
+              {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
+                <span
+                  onClick={async () => {
+                    setRefreshingChamp(champ.id);
+                    try {
+                      const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
+                      setRefreshResult({ ...result, champName: champ.name });
+                    } finally {
+                      setRefreshingChamp(null);
+                    }
+                  }}
+                  className="p-2 rounded-lg hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all cursor-pointer"
+                  title="Mettre à jour depuis la FFF"
+                >
+                  <RefreshCw size={16} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
+                </span>
+              )}
+              <span onClick={() => onDeleteChampionship(champ.id)} className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all cursor-pointer">
+                <Trash2 size={16} />
+              </span>
+            </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
 
       {filteredChampionships.length === 0 && (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
