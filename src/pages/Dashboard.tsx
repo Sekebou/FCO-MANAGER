@@ -744,19 +744,38 @@ const Dashboard = () => {
   const refreshFromFFF = async (championshipId: string, fffUrl: string): Promise<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string }> => {
     if (!canUpdateChampionnat()) return { success: false, updated: 0, added: 0, standingsCount: 0, error: 'Non autorisé' };
     try {
-      const { scrapeFFFTeams } = await import('@/lib/api/scrape-fff');
-      const result = await scrapeFFFTeams(fffUrl);
-      if (!result.success || !result.matches) return { success: false, updated: 0, added: 0, standingsCount: 0, error: result.error || 'Impossible de récupérer les données' };
+      const { decodeFFFApiRef, getClassement, getResultats, getCalendrier, mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement } = await import('@/lib/fffApi');
+      const apiRef = decodeFFFApiRef(fffUrl);
+      if (!apiRef) return { success: false, updated: 0, added: 0, standingsCount: 0, error: 'Référence API FFF invalide' };
+
+      const [classementData, resultatsData, calendrierData] = await Promise.all([
+        getClassement(apiRef.cpNo, apiRef.phase, apiRef.poule).catch(() => null),
+        getResultats(apiRef.cpNo, apiRef.phase, apiRef.poule).catch(() => null),
+        getCalendrier(apiRef.cpNo, apiRef.phase, apiRef.poule).catch(() => null),
+      ]);
+
+      const standings = mapClassementToStandings(classementData);
+      const resultMatches = mapMatchesToScrapedMatches(resultatsData);
+      const calendarMatches = mapMatchesToScrapedMatches(calendrierData);
+      const logos = extractTeamLogosFromClassement(classementData);
+
+      // Merge matches
+      const allNewMatches = [...resultMatches];
+      const seen = new Set(resultMatches.map(m => `${m.homeTeam}-${m.awayTeam}-${m.date}`));
+      for (const m of calendarMatches) {
+        const key = `${m.homeTeam}-${m.awayTeam}-${m.date}`;
+        if (!seen.has(key)) { allNewMatches.push(m); seen.add(key); }
+      }
 
       const updateData: Record<string, any> = {};
-      if (result.standings && result.standings.length > 0) updateData.fff_standings = result.standings;
-      if (result.teamLogos && Object.keys(result.teamLogos).length > 0) updateData.team_logos = result.teamLogos;
+      if (standings.length > 0) updateData.fff_standings = standings;
+      if (Object.keys(logos).length > 0) updateData.team_logos = logos;
       if (Object.keys(updateData).length > 0) await supabase.from('championships').update(updateData).eq('id', championshipId);
 
       const existingMatches = champMatches.filter(m => m.championshipId === championshipId);
       let updated = 0, added = 0;
 
-      for (const scraped of result.matches) {
+      for (const scraped of allNewMatches) {
         const existing = existingMatches.find(m => m.homeTeam.toUpperCase() === scraped.homeTeam.toUpperCase() && m.awayTeam.toUpperCase() === scraped.awayTeam.toUpperCase() && m.date === scraped.date);
         if (existing) {
           if (scraped.played && !existing.played && scraped.homeScore !== null && scraped.awayScore !== null) {
@@ -771,7 +790,7 @@ const Dashboard = () => {
           added++;
         }
       }
-      return { success: true, updated, added, standingsCount: result.standings?.length || 0 };
+      return { success: true, updated, added, standingsCount: standings.length };
     } catch (err: any) { return { success: false, updated: 0, added: 0, standingsCount: 0, error: err.message }; }
   };
 
@@ -926,7 +945,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex flex-col pb-24 lg:pb-0">
+    <div className="min-h-screen bg-secondary/30 flex flex-col pb-24">
       {/* Header */}
       <header className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${headerVisible ? 'top-0 translate-y-0' : 'top-0 -translate-y-full'}`}>
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
@@ -977,18 +996,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Navigation — desktop only (mobile uses bottom tab bar) */}
-      <nav className={`hidden lg:block bg-card border-b border-border sticky z-40 transition-all duration-300 ease-in-out lg:top-[calc(5rem+env(safe-area-inset-top))]`}>
-        <div className="mx-auto">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            {tabs.map(tab => { const Icon = tab.icon; return (
-              <button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all whitespace-nowrap text-sm font-medium shrink-0 ${activeTab === tab.id ? 'border-accent text-accent' : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'}`}>
-                <Icon size={18} />{tab.label}
-              </button>
-            ); })}
-          </div>
-        </div>
-      </nav>
+
 
       {/* Content */}
       <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
@@ -1082,12 +1090,8 @@ const Dashboard = () => {
 
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
 
-      <footer className="hidden lg:block border-t border-border bg-card px-3 py-3 sm:p-4 text-center mt-auto">
-        <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
-          <div className="w-2 h-2 bg-success rounded-full animate-pulse shrink-0" />
-          <span>Connecté au serveur — Synchro auto</span>
-        </div>
-      </footer>
+
+
 
       {/* Modals */}
       {showAddPlayer && <AddPlayerForm onSubmit={addPlayer} onClose={() => setShowAddPlayer(false)} currentUser={currentUser} />}

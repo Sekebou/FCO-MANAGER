@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Link, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
-import { scrapeFFFTeams, type ScrapedMatch, type ScrapedStanding } from '@/lib/api/scrape-fff';
+import { 
+  getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
+  mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
+  encodeFFFApiRef, OISEMONT_CL_NO,
+  type ScrapedMatch, type ScrapedStanding, type FFFCompetition
+} from '@/lib/fffApi';
 import { toast } from 'sonner';
 
 
@@ -67,12 +72,14 @@ const ChampionnatTab: React.FC<Props> = ({
   const [champSeason, setChampSeason] = useState('2024-2025');
   const [champTeam, setChampTeam] = useState<string>('A');
   const isAdmin = currentUserRole === 'admin' || currentUserRole === 'admin+';
-  const [teamsInput, setTeamsInput] = useState('');
-  const [fffUrl, setFffUrl] = useState('');
-  const [isScrapingFFF, setIsScrapingFFF] = useState(false);
+  const [isLoadingEquipes, setIsLoadingEquipes] = useState(false);
+  const [fffCompetitions, setFffCompetitions] = useState<FFFCompetition[]>([]);
+  const [selectedCompetition, setSelectedCompetition] = useState<FFFCompetition | null>(null);
+  const [isImportingFFF, setIsImportingFFF] = useState(false);
   const [importedMatches, setImportedMatches] = useState<ScrapedMatch[]>([]);
   const [importedStandings, setImportedStandings] = useState<ScrapedStanding[]>([]);
   const [importedLogos, setImportedLogos] = useState<Record<string, string>>({});
+  const [importedTeams, setImportedTeams] = useState<string[]>([]);
   const [refreshingChamp, setRefreshingChamp] = useState<string | null>(null);
 
   // Add match form state
@@ -95,7 +102,6 @@ const ChampionnatTab: React.FC<Props> = ({
   const getChampMatches = (champId: string) => matches.filter(m => m.championshipId === champId);
 
   const getTeamLogo = (teamName: string, champId?: string) => {
-    // Search across all championships for the team logo
     const searchChamps = champId ? [championships.find(c => c.id === champId)] : championships;
     for (const champ of searchChamps) {
       if (!champ?.teamLogos) continue;
@@ -123,7 +129,6 @@ const ChampionnatTab: React.FC<Props> = ({
     const champ = championships.find(c => c.id === champId);
     if (!champ) return [];
 
-    // Use FFF standings if available
     if (champ.fffStandings && champ.fffStandings.length > 0) {
       return champ.fffStandings.map(s => ({
         team: s.team,
@@ -169,39 +174,92 @@ const ChampionnatTab: React.FC<Props> = ({
     return Object.values(stats).sort((a, b) => b.points - a.points || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
   };
 
-  const handleAddChamp = () => {
-    if (!champName.trim()) return;
-    const teams = teamsInput.split('\n').map(t => t.trim()).filter(Boolean);
-    if (teams.length < 2) { toast.warning('Ajoutez au moins 2 équipes'); return; }
-    if (teamHasChampionship(champTeam)) { toast.error(`L'équipe ${champTeam} a déjà un championnat`); return; }
-    onAddChampionship({ name: champName, season: champSeason, teams, fffUrl: fffUrl.trim() || undefined, matches: importedMatches.length > 0 ? importedMatches : undefined, standings: importedStandings.length > 0 ? importedStandings : undefined, teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined, team: champTeam });
-    setChampName(''); setTeamsInput(''); setFffUrl(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); setChampTeam('A'); setShowAddChamp(false);
+  // Load FFF competitions when the modal opens
+  useEffect(() => {
+    if (!showAddChamp) return;
+    setIsLoadingEquipes(true);
+    getEquipes(OISEMONT_CL_NO)
+      .then((data) => {
+        const comps = getAllCompetitions(Array.isArray(data) ? data : data?.equipes || []);
+        setFffCompetitions(comps);
+      })
+      .catch((err) => {
+        console.error('Error loading FFF equipes:', err);
+        toast.error('Impossible de charger les équipes FFF');
+      })
+      .finally(() => setIsLoadingEquipes(false));
+  }, [showAddChamp]);
+
+  const handleImportCompetition = async (comp: FFFCompetition) => {
+    setSelectedCompetition(comp);
+    setIsImportingFFF(true);
+    try {
+      const [classementData, resultatsData, calendrierData] = await Promise.all([
+        getClassement(comp.cpNo, comp.phase, comp.poule).catch(() => null),
+        getResultats(comp.cpNo, comp.phase, comp.poule).catch(() => null),
+        getCalendrier(comp.cpNo, comp.phase, comp.poule).catch(() => null),
+      ]);
+
+      const standings = mapClassementToStandings(classementData);
+      const resultMatches = mapMatchesToScrapedMatches(resultatsData);
+      const calendarMatches = mapMatchesToScrapedMatches(calendrierData);
+      const logos = extractTeamLogosFromClassement(classementData);
+
+      // Merge matches (avoid duplicates)
+      const allMatches = [...resultMatches];
+      const seen = new Set(resultMatches.map(m => `${m.homeTeam}-${m.awayTeam}-${m.date}`));
+      for (const m of calendarMatches) {
+        const key = `${m.homeTeam}-${m.awayTeam}-${m.date}`;
+        if (!seen.has(key)) {
+          allMatches.push(m);
+          seen.add(key);
+        }
+      }
+
+      // Extract team names from standings (most reliable)
+      const teams = standings.length > 0
+        ? standings.map(s => s.team)
+        : [...new Set(allMatches.flatMap(m => [m.homeTeam, m.awayTeam]))];
+
+      setImportedStandings(standings);
+      setImportedMatches(allMatches);
+      setImportedLogos(logos);
+      setImportedTeams(teams);
+      setChampName(comp.competitionName || '');
+
+      toast.success(`${teams.length} équipes, ${allMatches.length} matchs, ${standings.length} classements importés`);
+    } catch (err) {
+      console.error('Error importing competition:', err);
+      toast.error('Erreur lors de l\'import de la compétition');
+    } finally {
+      setIsImportingFFF(false);
+    }
   };
 
-  const handleImportFFF = async () => {
-    if (!fffUrl.trim()) return;
-    setIsScrapingFFF(true);
-    try {
-      const result = await scrapeFFFTeams(fffUrl);
-      if (result.success && result.teams && result.teams.length > 0) {
-        setTeamsInput(result.teams.join('\n'));
-        if (result.matches && result.matches.length > 0) {
-          setImportedMatches(result.matches);
-        }
-        if (result.standings && result.standings.length > 0) {
-          setImportedStandings(result.standings);
-        }
-        if (result.teamLogos && Object.keys(result.teamLogos).length > 0) {
-          setImportedLogos(result.teamLogos);
-        }
-      } else {
-        toast.error(result.error || 'Aucune équipe trouvée sur cette page');
-      }
-    } catch {
-      toast.error('Erreur lors de la récupération des équipes');
-    } finally {
-      setIsScrapingFFF(false);
-    }
+  const handleAddChamp = () => {
+    if (!champName.trim()) return;
+    const teams = importedTeams.length > 0 ? importedTeams : [];
+    if (teams.length < 2) { toast.warning('Importez une compétition FFF avec au moins 2 équipes'); return; }
+    if (teamHasChampionship(champTeam)) { toast.error(`L'équipe ${champTeam} a déjà un championnat`); return; }
+    
+    const fffUrl = selectedCompetition 
+      ? encodeFFFApiRef(selectedCompetition.cpNo, selectedCompetition.phase, selectedCompetition.poule)
+      : undefined;
+
+    onAddChampionship({ 
+      name: champName, season: champSeason, teams, 
+      fffUrl, 
+      matches: importedMatches.length > 0 ? importedMatches : undefined, 
+      standings: importedStandings.length > 0 ? importedStandings : undefined, 
+      teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined, 
+      team: champTeam 
+    });
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setChampName(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); 
+    setImportedTeams([]); setChampTeam('A'); setSelectedCompetition(null); setShowAddChamp(false);
   };
 
   const handleAddMatch = (champId: string) => {
@@ -224,7 +282,6 @@ const ChampionnatTab: React.FC<Props> = ({
     setEditingMatch(null);
   };
 
-  // Use local date to avoid timezone issues with YYYY-MM-DD strings
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
@@ -299,7 +356,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 const isImminent = diffDays <= 3;
                 return (
                   <div key={m.id} className={`px-5 py-4 transition-all ${isImminent ? 'bg-accent/5' : ''} ${idx === 0 ? 'border-l-4 border-l-accent' : ''}`}>
-                    {/* Date + badge */}
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         {matchDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
@@ -310,7 +366,6 @@ const ChampionnatTab: React.FC<Props> = ({
                         </span>
                       )}
                     </div>
-                    {/* Teams */}
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
                         <span className="text-sm font-bold text-foreground truncate text-right">{m.homeTeam}</span>
@@ -324,7 +379,6 @@ const ChampionnatTab: React.FC<Props> = ({
                         <span className="text-sm font-bold text-foreground truncate">{m.awayTeam}</span>
                       </div>
                     </div>
-                    {/* Champ info */}
                     <div className="flex items-center gap-1.5 mt-2.5 text-[11px] text-muted-foreground">
                       <Trophy size={10} />
                       <span>Journée {m.journee} • {champ?.name}</span>
@@ -355,7 +409,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 const isDraw = m.homeScore !== null && m.awayScore !== null && m.homeScore === m.awayScore;
                 return (
                   <div key={m.id} className="px-5 py-4">
-                    {/* Date */}
                     <div className="text-center mb-3">
                       <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                         {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -363,7 +416,6 @@ const ChampionnatTab: React.FC<Props> = ({
                         Journée {m.journee}
                       </span>
                     </div>
-                    {/* Teams + Score */}
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
                         <span className={`text-sm font-bold truncate text-right ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
@@ -400,7 +452,6 @@ const ChampionnatTab: React.FC<Props> = ({
 
         return (
           <div key={champ.id} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-            {/* Champ header */}
             <button
               onClick={() => setExpandedChamp(isExpanded ? null : champ.id)}
               className="w-full flex items-center justify-between p-5 hover:bg-secondary/30 transition-all"
@@ -451,9 +502,7 @@ const ChampionnatTab: React.FC<Props> = ({
                   <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <Award size={16} className="text-accent" /> Classement
                   </h4>
-                  {/* Classement mobile-friendly */}
                   <div className="space-y-1">
-                    {/* Header */}
                     <div className="flex items-center px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                       <span className="w-7 shrink-0">#</span>
                       <span className="flex-1">Équipe</span>
@@ -520,14 +569,12 @@ const ChampionnatTab: React.FC<Props> = ({
                           return (
                             <div key={m.id} className={`px-3 py-3 hover:bg-secondary/60 transition-colors ${m.played ? '' : 'opacity-90'}`}>
                               <div className="flex items-center gap-2">
-                                {/* Home */}
                                 <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
                                   <span className={`text-xs font-bold truncate text-right leading-tight ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
                                     {m.homeTeam}
                                   </span>
                                   <TeamLogo team={m.homeTeam} champId={champ.id} size={26} />
                                 </div>
-                                {/* Score / VS */}
                                 <div className="shrink-0 min-w-[64px] flex justify-center">
                                   {m.played && m.homeScore !== null ? (
                                     <div className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-sm font-black tracking-wider shadow-sm ${
@@ -549,21 +596,18 @@ const ChampionnatTab: React.FC<Props> = ({
                                     </div>
                                   )}
                                 </div>
-                                {/* Away */}
                                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
                                   <TeamLogo team={m.awayTeam} champId={champ.id} size={26} />
                                   <span className={`text-xs font-bold truncate leading-tight ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
                                     {m.awayTeam}
                                   </span>
                                 </div>
-                                {/* Delete */}
                                 {canManage() && (
                                   <button onClick={() => onDeleteMatch(m.id)} className="shrink-0 text-destructive/50 hover:text-destructive hover:bg-destructive/10 p-1 rounded-lg transition-all">
                                     <Trash2 size={12} />
                                   </button>
                                 )}
                               </div>
-                              {/* Date */}
                               <p className="text-center text-[10px] text-muted-foreground/60 mt-1.5">
                                 {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                               </p>
@@ -594,9 +638,8 @@ const ChampionnatTab: React.FC<Props> = ({
 
       {/* Modal: Add Championship */}
       {showAddChamp && (
-        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => setShowAddChamp(false)}>
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => { resetForm(); }}>
           <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -604,13 +647,13 @@ const ChampionnatTab: React.FC<Props> = ({
                 </div>
                 <h3 className="text-lg font-bold text-foreground">Nouveau championnat</h3>
               </div>
-              <button onClick={() => setShowAddChamp(false)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+              <button onClick={() => resetForm()} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
                 <X size={16} className="text-muted-foreground" />
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Team selector */}
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
                 <div className="flex gap-2">
@@ -634,58 +677,89 @@ const ChampionnatTab: React.FC<Props> = ({
                   ))}
                 </div>
               </div>
+
+              {/* FFF Competition selector */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Compétition FFF</label>
+                {isLoadingEquipes ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
+                    <Loader2 size={16} className="animate-spin" />
+                    Chargement des compétitions...
+                  </div>
+                ) : fffCompetitions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Aucune compétition trouvée</p>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {fffCompetitions.map((comp, i) => (
+                      <button
+                        key={`${comp.cpNo}-${i}`}
+                        type="button"
+                        onClick={() => handleImportCompetition(comp)}
+                        disabled={isImportingFFF}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-all text-sm ${
+                          selectedCompetition?.cpNo === comp.cpNo
+                            ? 'bg-accent/10 border-accent/30 text-accent'
+                            : 'bg-secondary border-border hover:bg-secondary/80 text-foreground'
+                        } ${isImportingFFF ? 'opacity-50 cursor-wait' : ''}`}
+                      >
+                        <div className="font-semibold">{comp.competitionName}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{comp.equipe} • {comp.category}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {isImportingFFF && (
+                  <div className="flex items-center gap-2 text-sm text-accent mt-2 justify-center">
+                    <Loader2 size={14} className="animate-spin" />
+                    Import en cours...
+                  </div>
+                )}
+              </div>
+
+              {/* Name */}
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
-                <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District D1" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+                <input value={champName} onChange={e => setChampName(e.target.value)} placeholder="Ex: Championnat District D6" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
               </div>
+
+              {/* Season */}
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Saison</label>
                 <input value={champSeason} onChange={e => setChampSeason(e.target.value)} placeholder="2024-2025" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Importer depuis la FFF</label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Link size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input value={fffUrl} onChange={e => setFffUrl(e.target.value)} placeholder="URL epreuves.fff.fr..." className="w-full pl-9 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
+
+              {/* Import summary */}
+              {importedTeams.length > 0 && (
+                <div className="bg-accent/5 border border-accent/20 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-accent">
+                    <CheckCircle2 size={16} />
+                    Données importées
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleImportFFF}
-                    disabled={!fffUrl.trim() || isScrapingFFF}
-                    className="px-4 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center gap-2 whitespace-nowrap"
-                  >
-                    {isScrapingFFF ? <Loader2 size={14} className="animate-spin" /> : <Link size={14} />}
-                    {isScrapingFFF ? 'Import...' : 'Importer'}
-                  </button>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-secondary/50 rounded-lg p-2">
+                      <div className="text-lg font-black text-foreground">{importedTeams.length}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase">Équipes</div>
+                    </div>
+                    <div className="bg-secondary/50 rounded-lg p-2">
+                      <div className="text-lg font-black text-foreground">{importedMatches.length}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase">Matchs</div>
+                    </div>
+                    <div className="bg-secondary/50 rounded-lg p-2">
+                      <div className="text-lg font-black text-foreground">{importedStandings.length}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase">Classement</div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Collez l'URL d'une page équipe/classement FFF pour importer les clubs et matchs.{' '}
-                  <a href="https://epreuves.fff.fr" target="_blank" rel="noopener noreferrer" className="text-accent underline hover:brightness-110 transition-all">
-                    Trouver mon championnat sur epreuves.fff.fr
-                  </a>
-                </p>
-                {importedMatches.length > 0 && (
-                  <div className="mt-2 flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-lg">
-                    <Trophy size={14} />
-                    <span className="text-xs font-medium">{importedMatches.length} match(s) trouvé(s) — seront importés automatiquement</span>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipes (une par ligne)</label>
-                <textarea value={teamsInput} onChange={e => setTeamsInput(e.target.value)} rows={6} placeholder={"FCO\nAS Rivière\nFC Montagne\nUS Vallée"} className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all resize-none" />
-                <p className="text-xs text-muted-foreground mt-1.5">{teamsInput.split('\n').filter(t => t.trim()).length} équipe(s) ajoutée(s)</p>
-              </div>
+              )}
             </div>
 
             {/* Footer */}
             <div className="flex gap-3 p-5 border-t border-border shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-              <button onClick={() => setShowAddChamp(false)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+              <button onClick={() => resetForm()} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
                 Annuler
               </button>
-              <button onClick={handleAddChamp} disabled={!champName.trim() || teamsInput.split('\n').filter(t => t.trim()).length < 2} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20">
-                Créer
+              <button onClick={handleAddChamp} disabled={!champName.trim() || importedTeams.length < 2} className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20">
+                Créer le championnat
               </button>
             </div>
           </div>
@@ -699,7 +773,6 @@ const ChampionnatTab: React.FC<Props> = ({
         return (
           <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => setShowAddMatch(null)}>
             <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-border shadow-2xl animate-fade-in max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -715,14 +788,12 @@ const ChampionnatTab: React.FC<Props> = ({
                 </button>
               </div>
 
-              {/* Body */}
               <div className="p-5 space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Journée</label>
                   <p className="text-[11px] text-muted-foreground/70 mb-2">Le numéro du tour (ex: J1 = 1er week-end de matchs)</p>
                   <input type="number" min="1" value={matchJournee} onChange={e => setMatchJournee(Number(e.target.value))} placeholder="Ex: 1" className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" />
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Équipe domicile</label>
                   <p className="text-[11px] text-muted-foreground/70 mb-2">L'équipe qui reçoit (joue à la maison)</p>
@@ -731,7 +802,6 @@ const ChampionnatTab: React.FC<Props> = ({
                     {champ.teams.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Équipe extérieur</label>
                   <p className="text-[11px] text-muted-foreground/70 mb-2">L'équipe qui se déplace</p>
@@ -740,19 +810,13 @@ const ChampionnatTab: React.FC<Props> = ({
                     {champ.teams.filter(t => t !== matchHome).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Date du match</label>
                   <p className="text-[11px] text-muted-foreground/70 mb-2">Quand le match est prévu</p>
-                  <NativeDatePicker
-                    value={matchDate}
-                    onChange={setMatchDate}
-                    placeholder="Date du match"
-                  />
+                  <NativeDatePicker value={matchDate} onChange={setMatchDate} placeholder="Date du match" />
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="flex gap-3 p-5 border-t border-border shrink-0 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
                 <button onClick={() => setShowAddMatch(null)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
                   Annuler
@@ -774,7 +838,6 @@ const ChampionnatTab: React.FC<Props> = ({
         return (
           <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={() => setEditingMatch(null)}>
             <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
-              {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -790,18 +853,14 @@ const ChampionnatTab: React.FC<Props> = ({
                 </button>
               </div>
 
-              {/* Body */}
               <div className="p-6 space-y-6">
-                {/* Date */}
                 <div className="text-center">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {new Date(match.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                   </span>
                 </div>
 
-                {/* Teams + Score inputs */}
                 <div className="flex items-center gap-4">
-                  {/* Home */}
                   <div className="flex-1 text-center space-y-3">
                     <div className="flex flex-col items-center gap-2">
                       <TeamLogo team={match.homeTeam} champId={match.championshipId} size={40} />
@@ -812,18 +871,11 @@ const ChampionnatTab: React.FC<Props> = ({
                       </div>
                     </div>
                     <input
-                      type="number"
-                      min="0"
-                      value={editHome}
-                      onChange={e => setEditHome(Number(e.target.value))}
+                      type="number" min="0" value={editHome} onChange={e => setEditHome(Number(e.target.value))}
                       className="w-20 mx-auto text-center rounded-xl border-2 border-border bg-secondary text-3xl font-black py-3 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
                     />
                   </div>
-
-                  {/* Separator */}
                   <div className="text-2xl font-black text-muted-foreground/50 pt-8">—</div>
-
-                  {/* Away */}
                   <div className="flex-1 text-center space-y-3">
                     <div className="flex flex-col items-center gap-2">
                       <TeamLogo team={match.awayTeam} champId={match.championshipId} size={40} />
@@ -834,17 +886,13 @@ const ChampionnatTab: React.FC<Props> = ({
                       </div>
                     </div>
                     <input
-                      type="number"
-                      min="0"
-                      value={editAway}
-                      onChange={e => setEditAway(Number(e.target.value))}
+                      type="number" min="0" value={editAway} onChange={e => setEditAway(Number(e.target.value))}
                       className="w-20 mx-auto text-center rounded-xl border-2 border-border bg-secondary text-3xl font-black py-3 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="flex gap-3 p-5 border-t border-border">
                 <button onClick={() => setEditingMatch(null)} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
                   Annuler
@@ -862,7 +910,6 @@ const ChampionnatTab: React.FC<Props> = ({
       {refreshResult && (
         <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={() => setRefreshResult(null)}>
           <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
-            {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${refreshResult.success ? 'bg-accent/10' : 'bg-destructive/10'}`}>
@@ -882,11 +929,9 @@ const ChampionnatTab: React.FC<Props> = ({
               </button>
             </div>
 
-            {/* Body */}
             <div className="p-5">
               {refreshResult.success ? (
                 <div className="space-y-3">
-                  {/* Stats cards */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-secondary/50 rounded-xl p-4 text-center border border-border/50">
                       <div className="flex items-center justify-center gap-1.5 mb-1">
@@ -926,7 +971,6 @@ const ChampionnatTab: React.FC<Props> = ({
               )}
             </div>
 
-            {/* Footer */}
             <div className="p-5 border-t border-border">
               <button onClick={() => setRefreshResult(null)} className="w-full py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-accent/20">
                 Fermer
