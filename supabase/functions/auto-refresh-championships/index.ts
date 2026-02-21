@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Fetch all championships with a fff_url
+    // Fetch all championships with a fff_url starting with "fff-api::"
     const chRes = await fetch(`${supabaseUrl}/rest/v1/championships?fff_url=not.is.null&select=id,name,fff_url`, {
       headers: {
         'apikey': supabaseKey,
@@ -31,108 +31,147 @@ Deno.serve(async (req) => {
     }
 
     const championships: { id: string; name: string; fff_url: string }[] = await chRes.json();
-    console.log(`Found ${championships.length} championships with fff_url`);
+    const apiChampionships = championships.filter(c => c.fff_url?.startsWith('fff-api::'));
+    console.log(`Found ${apiChampionships.length} championships with FFF API ref`);
 
     const results: { id: string; name: string; success: boolean; error?: string }[] = [];
 
-    for (const champ of championships) {
+    for (const champ of apiChampionships) {
       try {
         console.log(`Refreshing championship: ${champ.name} (${champ.id})`);
 
-        // Call scrape-fff-teams edge function
-        const scrapeRes = await fetch(`${supabaseUrl}/functions/v1/scrape-fff-teams`, {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ url: champ.fff_url }),
-        });
-
-        if (!scrapeRes.ok) {
-          const err = await scrapeRes.text();
-          console.error(`Scrape failed for ${champ.name}:`, err);
-          results.push({ id: champ.id, name: champ.name, success: false, error: 'Scrape failed' });
+        // Parse fff_url: "fff-api::{cpNo}::{phase}::{poule}"
+        const parts = champ.fff_url.split('::');
+        if (parts.length !== 4) {
+          results.push({ id: champ.id, name: champ.name, success: false, error: 'Invalid fff_url format' });
           continue;
         }
+        const cpNo = parseInt(parts[1], 10);
+        const phase = parseInt(parts[2], 10);
+        const poule = parseInt(parts[3], 10);
 
-        const scrapeData = await scrapeRes.json();
+        // Call FFF API via fff-proxy
+        const proxyUrl = `${supabaseUrl}/functions/v1/fff-proxy`;
 
-        if (!scrapeData.success) {
-          console.error(`Scrape error for ${champ.name}:`, scrapeData.error);
-          results.push({ id: champ.id, name: champ.name, success: false, error: scrapeData.error });
-          continue;
-        }
+        const [classementRes, resultatsRes, calendrierRes] = await Promise.all([
+          fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: `/compets/${cpNo}/phases/${phase}/poules/${poule}/classement_journees` }),
+          }).catch(() => null),
+          fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: `/compets/${cpNo}/phases/${phase}/poules/${poule}/resultat` }),
+          }).catch(() => null),
+          fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: `/compets/${cpNo}/phases/${phase}/poules/${poule}/calendrier` }),
+          }).catch(() => null),
+        ]);
 
-        // Update championship standings
+        const classementData = classementRes?.ok ? await classementRes.json() : null;
+        const resultatsData = resultatsRes?.ok ? await resultatsRes.json() : null;
+        const calendrierData = calendrierRes?.ok ? await calendrierRes.json() : null;
+
+        // Process standings
         const updateBody: Record<string, unknown> = {};
+        
+        if (classementData) {
+          // Extract standings from the latest journee
+          const journees = Array.isArray(classementData) ? classementData : classementData.journees || [];
+          if (journees.length > 0) {
+            const latestJournee = journees[journees.length - 1];
+            const classement = latestJournee?.classement_journee || latestJournee?.classement || latestJournee;
+            if (Array.isArray(classement)) {
+              const standings = classement.map((entry: any, index: number) => ({
+                rank: entry.rank || entry.rang || index + 1,
+                team: entry.equipe?.short_name || entry.equipe?.name || entry.club?.name || '',
+                points: entry.pts ?? entry.points ?? 0,
+                played: entry.mj ?? entry.played ?? entry.j ?? 0,
+                won: entry.g ?? entry.won ?? entry.victoires ?? 0,
+                drawn: entry.n ?? entry.drawn ?? entry.nuls ?? 0,
+                lost: entry.p ?? entry.lost ?? entry.defaites ?? 0,
+                forfeits: entry.f ?? entry.forfaits ?? 0,
+                penalties: entry.pen ?? entry.penalties ?? 0,
+                goalsFor: entry.bp ?? entry.goals_for ?? entry.buts_pour ?? 0,
+                goalsAgainst: entry.bc ?? entry.goals_against ?? entry.buts_contre ?? 0,
+                goalDiff: entry.diff ?? entry.goal_diff ?? (entry.bp ?? 0) - (entry.bc ?? 0),
+              })).filter((s: any) => s.team);
 
-        if (scrapeData.standings && scrapeData.standings.length > 0) {
-          updateBody.fff_standings = scrapeData.standings;
-        }
-        if (scrapeData.teamLogos && Object.keys(scrapeData.teamLogos).length > 0) {
-          updateBody.team_logos = scrapeData.teamLogos;
-        }
-        if (scrapeData.teams && scrapeData.teams.length > 0) {
-          updateBody.teams = scrapeData.teams;
-        }
-
-        if (Object.keys(updateBody).length > 0) {
-          const updateRes = await fetch(`${supabaseUrl}/rest/v1/championships?id=eq.${champ.id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal',
-            },
-            body: JSON.stringify(updateBody),
-          });
-
-          if (!updateRes.ok) {
-            const err = await updateRes.text();
-            console.error(`Update failed for ${champ.name}:`, err);
-            results.push({ id: champ.id, name: champ.name, success: false, error: 'Update failed' });
-            continue;
+              if (standings.length > 0) {
+                updateBody.fff_standings = standings;
+                updateBody.teams = standings.map((s: any) => s.team);
+                
+                // Extract logos
+                const logos: Record<string, string> = {};
+                for (const entry of classement) {
+                  const name = entry.equipe?.short_name || entry.equipe?.name || entry.club?.name || '';
+                  const logo = entry.equipe?.club?.logo || entry.club?.logo || '';
+                  if (name && logo) logos[name.toUpperCase()] = logo;
+                }
+                if (Object.keys(logos).length > 0) updateBody.team_logos = logos;
+              }
+            }
           }
         }
 
-        // Upsert matches
-        if (scrapeData.matches && scrapeData.matches.length > 0) {
-          // Delete old matches and re-insert (simpler than upsert with composite keys)
+        if (Object.keys(updateBody).length > 0) {
+          await fetch(`${supabaseUrl}/rest/v1/championships?id=eq.${champ.id}`, {
+            method: 'PATCH',
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify(updateBody),
+          });
+        }
+
+        // Process matches
+        const parseMatches = (data: any) => {
+          if (!data) return [];
+          const list = Array.isArray(data) ? data : data.results || data.matchs || data.calendrier || [];
+          if (!Array.isArray(list)) return [];
+          return list.map((m: any) => {
+            const homeTeam = m.home?.short_name || m.home?.name || m.dom?.short_name || m.dom?.name || '';
+            const awayTeam = m.away?.short_name || m.away?.name || m.ext?.short_name || m.ext?.name || '';
+            const homeScore = m.home_score ?? m.score_home ?? m.dom_score ?? null;
+            const awayScore = m.away_score ?? m.score_away ?? m.ext_score ?? null;
+            let date = '';
+            if (m.date) {
+              const d = new Date(m.date);
+              if (!isNaN(d.getTime())) date = d.toISOString().split('T')[0];
+              else date = m.date;
+            }
+            const journee = m.journee?.number || m.journee?.numero || m.journee || 1;
+            return {
+              home_team: homeTeam, away_team: awayTeam,
+              home_score: homeScore !== null ? Number(homeScore) : null,
+              away_score: awayScore !== null ? Number(awayScore) : null,
+              date, journee: typeof journee === 'number' ? journee : parseInt(journee, 10) || 1,
+              played: homeScore !== null && awayScore !== null,
+              championship_id: champ.id,
+            };
+          }).filter((m: any) => m.home_team && m.away_team);
+        };
+
+        const resultMatches = parseMatches(resultatsData);
+        const calendarMatches = parseMatches(calendrierData);
+        const allMatches = [...resultMatches];
+        const seen = new Set(resultMatches.map((m: any) => `${m.home_team}-${m.away_team}-${m.date}`));
+        for (const m of calendarMatches) {
+          const key = `${m.home_team}-${m.away_team}-${m.date}`;
+          if (!seen.has(key)) { allMatches.push(m); seen.add(key); }
+        }
+
+        if (allMatches.length > 0) {
           await fetch(`${supabaseUrl}/rest/v1/championship_matches?championship_id=eq.${champ.id}`, {
             method: 'DELETE',
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-            },
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           });
-
-          const matchRows = scrapeData.matches.map((m: {
-            homeTeam: string; awayTeam: string;
-            homeScore: number | null; awayScore: number | null;
-            date: string; journee: number; played: boolean;
-          }) => ({
-            championship_id: champ.id,
-            home_team: m.homeTeam,
-            away_team: m.awayTeam,
-            home_score: m.homeScore,
-            away_score: m.awayScore,
-            date: m.date,
-            journee: m.journee,
-            played: m.played,
-          }));
 
           await fetch(`${supabaseUrl}/rest/v1/championship_matches`, {
             method: 'POST',
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal',
-            },
-            body: JSON.stringify(matchRows),
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify(allMatches),
           });
         }
 
