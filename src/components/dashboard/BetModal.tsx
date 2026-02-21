@@ -16,8 +16,42 @@ interface BetModalProps {
   userName: string;
 }
 
-/** Generate deterministic odds from match details */
-function generateOdds(homeTeam: string, awayTeam: string, matchDate: string): { home: number; draw: number; away: number } {
+/** Generate odds based on standings positions.
+ * homeRank / awayRank: position in standings (1 = first). 
+ * If not provided, falls back to deterministic hash. 
+ * Lower rank = stronger team = lower odds for their win. */
+function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, homeRank?: number, awayRank?: number, totalTeams?: number): { home: number; draw: number; away: number } {
+  const total = totalTeams || 12;
+  
+  if (homeRank && awayRank) {
+    // Normalize ranks: 0 = best, 1 = worst
+    const homeStrength = 1 - ((homeRank - 1) / (total - 1));
+    const awayStrength = 1 - ((awayRank - 1) / (total - 1));
+    
+    // Home advantage + strength difference
+    const homePower = homeStrength + 0.1; // slight home advantage
+    const awayPower = awayStrength;
+    const totalPower = homePower + awayPower;
+    
+    // Convert to probabilities (with draw share)
+    const drawBase = 0.22;
+    const homeProb = (homePower / totalPower) * (1 - drawBase);
+    const awayProb = (awayPower / totalPower) * (1 - drawBase);
+    
+    // Convert probabilities to odds (with ~10% margin)
+    const margin = 1.10;
+    const homeOdd = Math.max(1.15, Math.min(8.0, margin / homeProb));
+    const drawOdd = Math.max(2.5, Math.min(6.0, margin / drawBase));
+    const awayOdd = Math.max(1.15, Math.min(8.0, margin / awayProb));
+    
+    return {
+      home: Math.round(homeOdd * 100) / 100,
+      draw: Math.round(drawOdd * 100) / 100,
+      away: Math.round(awayOdd * 100) / 100,
+    };
+  }
+  
+  // Fallback: deterministic hash
   let hash = 0;
   const str = `${homeTeam}-${awayTeam}-${matchDate}`;
   for (let i = 0; i < str.length; i++) {
@@ -25,9 +59,9 @@ function generateOdds(homeTeam: string, awayTeam: string, matchDate: string): { 
     hash |= 0;
   }
   const abs = Math.abs(hash);
-  const homeOdd = 1.5 + ((abs % 35) / 10);        // 1.5 - 5.0
-  const drawOdd = 2.0 + (((abs >> 8) % 30) / 10);  // 2.0 - 5.0
-  const awayOdd = 1.5 + (((abs >> 16) % 35) / 10); // 1.5 - 5.0
+  const homeOdd = 1.5 + ((abs % 35) / 10);
+  const drawOdd = 2.0 + (((abs >> 8) % 30) / 10);
+  const awayOdd = 1.5 + (((abs >> 16) % 35) / 10);
   return {
     home: Math.round(homeOdd * 100) / 100,
     draw: Math.round(drawOdd * 100) / 100,

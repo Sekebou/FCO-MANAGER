@@ -653,36 +653,40 @@ const ChampionnatTab: React.FC<Props> = ({
       {/* ─── Next Match Hero (Premium) ─── */}
       {nextMatch && !isLoadingMatches && (() => {
         const live = isMatchLive(nextMatch.date);
-        const odds = generateOdds(
-          nextMatch.home?.short_name || nextMatch.home?.name || '',
-          nextMatch.away?.short_name || nextMatch.away?.name || '',
-          nextMatch.date
-        );
+        const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
+        const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
+        
+        // Find ranks from live classement for smart odds
+        const homeClNo = nextMatch.home?.club?.cl_no;
+        const awayClNo = nextMatch.away?.club?.cl_no;
+        const homeStanding = liveClassement.find(s => s.clNo === homeClNo);
+        const awayStanding = liveClassement.find(s => s.clNo === awayClNo);
+        const homeRank = homeStanding ? liveClassement.indexOf(homeStanding) + 1 : undefined;
+        const awayRank = awayStanding ? liveClassement.indexOf(awayStanding) + 1 : undefined;
+        
+        const odds = generateOdds(homeName, awayName, nextMatch.date, homeRank, awayRank, liveClassement.length || undefined);
+        
         return (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className={`relative rounded-2xl overflow-hidden shadow-xl ${
-              live ? 'ring-2 ring-red-500/60' : ''
-            }`}
+            className={`relative rounded-2xl overflow-hidden border shadow-sm ${
+              live ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-border/60'
+            } bg-card`}
           >
-            {/* Dark gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-accent/20" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent" />
-
             {live && (
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse" />
             )}
 
-            <div className="relative z-10 px-5 py-5">
+            <div className="px-5 py-5">
               {/* Header */}
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 bg-accent/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                  <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
                     <Timer size={14} className="text-accent" />
                   </div>
-                  <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">Prochain Match</span>
+                  <span className="text-[11px] font-bold text-foreground uppercase tracking-widest">Prochain Match</span>
                 </div>
                 {live && (
                   <span className="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full animate-pulse">
@@ -696,22 +700,24 @@ const ChampionnatTab: React.FC<Props> = ({
               <div className="flex items-center justify-center gap-5 mb-5">
                 <div className="flex flex-col items-center gap-2.5 flex-1">
                   {nextMatch.home?.club?.logo ? (
-                    <img src={nextMatch.home.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-white/20 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  ) : <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm" />}
-                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-white'}`}>
-                    {nextMatch.home?.short_name || nextMatch.home?.name}
+                    <img src={nextMatch.home.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-border/30 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : <div className="w-16 h-16 rounded-full bg-secondary" />}
+                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
+                    {homeName}
                   </span>
+                  {homeRank && <span className="text-[9px] text-muted-foreground font-medium">{homeRank}e au classement</span>}
                 </div>
                 <div className="relative">
-                  <span className="text-2xl font-black text-white/30" style={{ textShadow: '0 0 20px hsl(var(--accent) / 0.3)' }}>VS</span>
+                  <span className="text-2xl font-black text-muted-foreground/30" style={{ textShadow: '0 0 15px hsl(var(--accent) / 0.2)' }}>VS</span>
                 </div>
                 <div className="flex flex-col items-center gap-2.5 flex-1">
                   {nextMatch.away?.club?.logo ? (
-                    <img src={nextMatch.away.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-white/20 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  ) : <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm" />}
-                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-white'}`}>
-                    {nextMatch.away?.short_name || nextMatch.away?.name}
+                    <img src={nextMatch.away.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-border/30 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : <div className="w-16 h-16 rounded-full bg-secondary" />}
+                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
+                    {awayName}
                   </span>
+                  {awayRank && <span className="text-[9px] text-muted-foreground font-medium">{awayRank}e au classement</span>}
                 </div>
               </div>
 
@@ -725,10 +731,10 @@ const ChampionnatTab: React.FC<Props> = ({
                     { val: countdown.seconds, label: 'SEC' },
                   ].map((c, i) => (
                     <React.Fragment key={c.label}>
-                      {i > 0 && <span className="text-lg font-black text-accent/50 animate-pulse mx-0.5">:</span>}
-                      <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[48px] border border-white/5">
-                        <div className="text-lg font-black text-white leading-none">{String(c.val).padStart(2, '0')}</div>
-                        <div className="text-[7px] font-bold text-white/40 uppercase mt-1 tracking-wider">{c.label}</div>
+                      {i > 0 && <span className="text-lg font-black text-accent/40 animate-pulse mx-0.5">:</span>}
+                      <div className="bg-secondary rounded-xl px-3 py-2 text-center min-w-[48px]">
+                        <div className="text-lg font-black text-foreground leading-none">{String(c.val).padStart(2, '0')}</div>
+                        <div className="text-[7px] font-bold text-muted-foreground uppercase mt-1 tracking-wider">{c.label}</div>
                       </div>
                     </React.Fragment>
                   ))}
@@ -736,42 +742,55 @@ const ChampionnatTab: React.FC<Props> = ({
               )}
 
               {/* Date & Time */}
-              <p className="text-[11px] text-white/50 text-center mb-3">
+              <p className="text-[11px] text-muted-foreground text-center mb-3">
                 {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
                 {nextMatch.time ? ` • ${nextMatch.time}` : ''}
               </p>
 
-              {/* Bet button with odds preview */}
+              {/* Odds preview with labels */}
+              {currentUser && !live && (
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {[
+                    { label: '1', teamName: homeName, odd: odds.home, desc: `Victoire de ${homeName}` },
+                    { label: 'N', teamName: 'Nul', odd: odds.draw, desc: 'Match nul' },
+                    { label: '2', teamName: awayName, odd: odds.away, desc: `Victoire de ${awayName}` },
+                  ].map(o => (
+                    <button
+                      key={o.label}
+                      onClick={() => setBetMatch({
+                        homeTeam: homeName,
+                        awayTeam: awayName,
+                        matchDate: nextMatch.date,
+                        homeLogo: nextMatch.home?.club?.logo,
+                        awayLogo: nextMatch.away?.club?.logo,
+                      })}
+                      className="bg-secondary/80 hover:bg-accent/10 border border-border/50 hover:border-accent/30 rounded-xl px-2 py-2.5 text-center transition-all group"
+                    >
+                      <div className="text-lg font-black text-foreground group-hover:text-accent transition-colors">{o.odd.toFixed(2)}</div>
+                      <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider truncate">Cote à {o.odd.toFixed(2)}</div>
+                      <div className="text-[7px] text-muted-foreground/60 truncate mt-0.5">{o.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Bet button */}
               {currentUser && !live && (
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => setBetMatch({
-                    homeTeam: nextMatch.home?.short_name || nextMatch.home?.name || '',
-                    awayTeam: nextMatch.away?.short_name || nextMatch.away?.name || '',
+                    homeTeam: homeName,
+                    awayTeam: awayName,
                     matchDate: nextMatch.date,
                     homeLogo: nextMatch.home?.club?.logo,
                     awayLogo: nextMatch.away?.club?.logo,
                   })}
-                  className="w-full py-3 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-3 shadow-lg shadow-accent/30 hover:shadow-accent/50 transition-all mb-3"
+                  className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent/20 hover:brightness-110 transition-all"
                 >
                   <Zap size={15} />
                   <span>Parier sur ce match</span>
                 </motion.button>
-              )}
-              {currentUser && !live && (
-                <div className="flex items-center justify-center gap-2">
-                  {[
-                    { label: '1', val: odds.home.toFixed(2) },
-                    { label: 'N', val: odds.draw.toFixed(2) },
-                    { label: '2', val: odds.away.toFixed(2) },
-                  ].map(o => (
-                    <div key={o.label} className="flex items-center gap-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5">
-                      <span className="text-[10px] font-bold text-white/50">{o.label}</span>
-                      <span className="text-[11px] font-black text-accent">{o.val}</span>
-                    </div>
-                  ))}
-                </div>
               )}
 
               {/* Location */}
@@ -780,14 +799,14 @@ const ChampionnatTab: React.FC<Props> = ({
                 const label = [nextMatch.terrain?.name, nextMatch.terrain?.city].filter(Boolean).join(', ');
                 if (!label) return null;
                 return (
-                  <div className="flex items-center justify-center gap-1.5 mt-4 pt-3 border-t border-white/10">
-                    <MapPin size={11} className="text-white/30 shrink-0" />
+                  <div className="flex items-center justify-center gap-1.5 mt-4 pt-3 border-t border-border/30">
+                    <MapPin size={11} className="text-muted-foreground shrink-0" />
                     {link ? (
-                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/40 hover:text-white/60 underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1 transition-colors">
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1">
                         {label} <ExternalLink size={9} />
                       </a>
                     ) : (
-                      <span className="text-[10px] text-white/30 truncate">{label}</span>
+                      <span className="text-[10px] text-muted-foreground truncate">{label}</span>
                     )}
                   </div>
                 );
