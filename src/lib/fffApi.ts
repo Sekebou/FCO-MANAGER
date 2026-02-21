@@ -11,6 +11,103 @@ async function callFFF(endpoint: string) {
   return data;
 }
 
+export interface FFFLiveMatch {
+  home: { short_name: string; name: string; club: { cl_no: number; logo?: string } };
+  away: { short_name: string; name: string; club: { cl_no: number; logo?: string } };
+  home_score: number | null;
+  away_score: number | null;
+  date: string;
+  time?: string;
+  terrain?: { city?: string; name?: string };
+  journee?: { number?: number };
+  [key: string]: any;
+}
+
+export interface FFFMonthGroup {
+  mois: string;
+  matchs: FFFLiveMatch[];
+}
+
+/** Récupère TOUS les matchs à venir d'Oisemont mois par mois jusqu'à juin */
+export async function getTousMatchsAvenir(cpNo: number, phase = 1, poule = 1, clubId = OISEMONT_CL_NO): Promise<FFFMonthGroup[]> {
+  const mois: { label: string; after: string; before: string }[] = [];
+  const now = new Date();
+  const fin = new Date(now.getFullYear(), 5, 30); // juin de l'année courante
+  if (fin < now) fin.setFullYear(fin.getFullYear() + 1);
+
+  const cursor = new Date(now.getFullYear(), now.getMonth(), 1);
+  while (cursor <= fin) {
+    const annee = cursor.getFullYear();
+    const moisNum = String(cursor.getMonth() + 1).padStart(2, '0');
+    const derJour = new Date(annee, cursor.getMonth() + 1, 0).getDate();
+    mois.push({
+      label: cursor.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+      after: `${annee}-${moisNum}-01`,
+      before: `${annee}-${moisNum}-${derJour}`,
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  const resultats = await Promise.all(
+    mois.map(async (m) => {
+      try {
+        const data = await callFFF(
+          `/compets/${cpNo}/phases/${phase}/poules/${poule}/calendrier?ma_dat[after]=${m.after}&ma_dat[before]=${m.before}`
+        );
+        const members = data?.['hydra:member'] || [];
+        const matchs = members.filter(
+          (match: any) => match.home?.club?.cl_no === clubId || match.away?.club?.cl_no === clubId
+        );
+        return { mois: m.label, matchs };
+      } catch {
+        return { mois: m.label, matchs: [] };
+      }
+    })
+  );
+
+  return resultats.filter(r => r.matchs.length > 0);
+}
+
+/** Récupère TOUS les résultats passés d'Oisemont mois par mois depuis septembre */
+export async function getTousResultats(cpNo: number, phase = 1, poule = 1, clubId = OISEMONT_CL_NO): Promise<FFFMonthGroup[]> {
+  const mois: { label: string; after: string; before: string }[] = [];
+  const now = new Date();
+  // Start from September of current season
+  const debut = new Date(now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1, 8, 1);
+  const cursor = new Date(debut);
+
+  while (cursor <= now) {
+    const annee = cursor.getFullYear();
+    const moisNum = String(cursor.getMonth() + 1).padStart(2, '0');
+    const derJour = new Date(annee, cursor.getMonth() + 1, 0).getDate();
+    mois.push({
+      label: cursor.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+      after: `${annee}-${moisNum}-01`,
+      before: `${annee}-${moisNum}-${derJour}`,
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  const resultats = await Promise.all(
+    mois.map(async (m) => {
+      try {
+        const data = await callFFF(
+          `/compets/${cpNo}/phases/${phase}/poules/${poule}/resultat?ma_dat[after]=${m.after}&ma_dat[before]=${m.before}`
+        );
+        const members = data?.['hydra:member'] || [];
+        const matchs = members.filter(
+          (match: any) => match.home?.club?.cl_no === clubId || match.away?.club?.cl_no === clubId
+        );
+        return { mois: m.label, matchs };
+      } catch {
+        return { mois: m.label, matchs: [] };
+      }
+    })
+  );
+
+  return resultats.filter(r => r.matchs.length > 0).reverse(); // Plus récents en premier
+}
+
 /** Récupère toutes les équipes d'un club + logos + engagements (cp_no) */
 export async function getEquipes(clubId: number) {
   return callFFF(`/clubs/${clubId}/equipes.json?filter=`);

@@ -5,7 +5,8 @@ import {
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
   encodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship,
-  type ScrapedMatch, type ScrapedStanding, type FFFCompetition
+  getTousMatchsAvenir, getTousResultats,
+  type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
 import { toast } from 'sonner';
 
@@ -87,6 +88,11 @@ const ChampionnatTab: React.FC<Props> = ({
   const [liveLogos, setLiveLogos] = useState<Record<string, string>>({});
   const [isLoadingLive, setIsLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
+  
+  // Live matches from FFF API
+  const [liveUpcoming, setLiveUpcoming] = useState<FFFMonthGroup[]>([]);
+  const [liveResults, setLiveResults] = useState<FFFMonthGroup[]>([]);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   // Add match form state
   const [matchHome, setMatchHome] = useState('');
   const [matchAway, setMatchAway] = useState('');
@@ -209,6 +215,51 @@ const ChampionnatTab: React.FC<Props> = ({
     return () => { cancelled = true; };
   }, [selectedTeam]);
 
+  // Auto-fetch live matches (upcoming + results) when team changes
+  useEffect(() => {
+    let cancelled = false;
+    const teamMapping: Record<string, { categoryCode: string; code: number }> = {
+      'A': { categoryCode: 'SEM', code: 1 },
+      'B': { categoryCode: 'SEM', code: 2 },
+      'C': { categoryCode: 'SEM', code: 3 },
+    };
+    
+    const mapping = teamMapping[selectedTeam];
+    if (!mapping) {
+      setLiveUpcoming([]);
+      setLiveResults([]);
+      return;
+    }
+
+    const fetchMatches = async () => {
+      setIsLoadingMatches(true);
+      setLiveUpcoming([]);
+      setLiveResults([]);
+      try {
+        const equipesData = await getEquipes(OISEMONT_CL_NO);
+        const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+        const champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+        
+        if (!champParams) return;
+        
+        const [upcoming, results] = await Promise.all([
+          getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
+          getTousResultats(champParams.cpNo, champParams.phase, champParams.poule),
+        ]);
+        if (cancelled) return;
+        setLiveUpcoming(upcoming);
+        setLiveResults(results);
+      } catch (err) {
+        if (!cancelled) console.error('Error fetching live matches:', err);
+      } finally {
+        if (!cancelled) setIsLoadingMatches(false);
+      }
+    };
+    
+    fetchMatches();
+    return () => { cancelled = true; };
+  }, [selectedTeam]);
+
   const handleImportCompetition = async (comp: FFFCompetition) => {
     setSelectedCompetition(comp);
     setIsImportingFFF(true);
@@ -301,22 +352,7 @@ const ChampionnatTab: React.FC<Props> = ({
     setEditingMatch(null);
   };
 
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
   const filteredChampIds = new Set(filteredChampionships.map(c => c.id));
-
-  const isOisemontMatch = (m: Match) =>
-    m.homeTeam.toUpperCase().includes('OISEMONT') || m.awayTeam.toUpperCase().includes('OISEMONT');
-
-  const upcomingMatches = matches
-    .filter(m => !m.played && m.date >= todayStr && filteredChampIds.has(m.championshipId) && isOisemontMatch(m))
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  const recentResults = matches
-    .filter(m => m.played && filteredChampIds.has(m.championshipId) && isOisemontMatch(m))
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -433,111 +469,132 @@ const ChampionnatTab: React.FC<Props> = ({
         )}
       </div>
 
-      {/* Quick overview: upcoming + recent */}
+      {/* Quick overview: upcoming + recent - LIVE from FFF API */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Prochains matchs */}
+        {/* Prochains matchs - live */}
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
             <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
               <Clock size={16} className="text-accent" />
             </div>
             <h3 className="font-semibold text-foreground">Prochains matchs</h3>
-            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full font-medium">{upcomingMatches.length}</span>
           </div>
-          {upcomingMatches.length === 0 ? (
+          {isLoadingMatches ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+              <Loader2 size={20} className="animate-spin" />
+              <span className="text-sm">Chargement des matchs...</span>
+            </div>
+          ) : liveUpcoming.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">Aucun match à venir</p>
           ) : (
             <div className="divide-y divide-border/50">
-              {upcomingMatches.map((m, idx) => {
-                const champ = championships.find(c => c.id === m.championshipId);
-                const matchDate = new Date(m.date);
-                const now = new Date();
-                const diffDays = Math.ceil((matchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                const isImminent = diffDays <= 3;
-                return (
-                  <div key={m.id} className={`px-5 py-4 transition-all ${isImminent ? 'bg-accent/5' : ''} ${idx === 0 ? 'border-l-4 border-l-accent' : ''}`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        {matchDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                      </span>
-                      {isImminent && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full animate-pulse">
-                          {diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                        <span className="text-sm font-bold text-foreground truncate text-right">{m.homeTeam}</span>
-                        <TeamLogo team={m.homeTeam} champId={m.championshipId} size={32} />
-                      </div>
-                      <div className="px-4 py-2 rounded-xl bg-secondary border border-border text-xs font-black text-muted-foreground tracking-widest shrink-0 min-w-[56px] text-center">
-                        VS
-                      </div>
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <TeamLogo team={m.awayTeam} champId={m.championshipId} size={32} />
-                        <span className="text-sm font-bold text-foreground truncate">{m.awayTeam}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-2.5 text-[11px] text-muted-foreground">
-                      <Trophy size={10} />
-                      <span>Journée {m.journee} • {champ?.name}</span>
-                    </div>
+              {liveUpcoming.map((group) => (
+                <div key={group.mois}>
+                  <div className="px-5 py-2.5 bg-secondary/40 border-b border-border/50">
+                    <span className="text-xs font-bold text-accent uppercase tracking-wider">{group.mois}</span>
                   </div>
-                );
-              })}
+                  {group.matchs.map((match: FFFLiveMatch, idx: number) => {
+                    const isHome = match.home?.club?.cl_no === OISEMONT_CL_NO;
+                    const adversaire = isHome ? (match.away?.short_name || match.away?.name) : (match.home?.short_name || match.home?.name);
+                    const logoAdversaire = isHome ? match.away?.club?.logo : match.home?.club?.logo;
+                    const logoOisemont = isHome ? match.home?.club?.logo : match.away?.club?.logo;
+                    const lieu = isHome ? '🏠 Domicile' : '✈️ Extérieur';
+                    const matchDate = match.date ? new Date(match.date) : null;
+                    const now = new Date();
+                    const diffDays = matchDate ? Math.ceil((matchDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+                    const isImminent = diffDays <= 3 && diffDays >= 0;
+                    const ville = match.terrain?.city || '';
+                    
+                    return (
+                      <div key={`${match.date}-${idx}`} className={`px-5 py-4 transition-all ${isImminent ? 'bg-accent/5 border-l-4 border-l-accent' : ''}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            {matchDate?.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            {match.time ? ` • ${match.time}` : ''}
+                          </span>
+                          {isImminent && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-1 rounded-full animate-pulse">
+                              {diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {logoAdversaire && (
+                            <img src={logoAdversaire} alt="" className="w-8 h-8 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-foreground truncate">{lieu} vs {adversaire}</p>
+                            {ville && <p className="text-[11px] text-muted-foreground mt-0.5">📍 {ville}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Derniers résultats */}
+        {/* Derniers résultats - live */}
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
             <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
               <Award size={16} className="text-accent" />
             </div>
             <h3 className="font-semibold text-foreground">Derniers résultats</h3>
-            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-full font-medium">{recentResults.length}</span>
           </div>
-          {recentResults.length === 0 ? (
+          {isLoadingMatches ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+              <Loader2 size={20} className="animate-spin" />
+              <span className="text-sm">Chargement des résultats...</span>
+            </div>
+          ) : liveResults.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-10">Aucun résultat</p>
           ) : (
             <div className="divide-y divide-border/50">
-              {recentResults.map(m => {
-                const isHomeWin = m.homeScore !== null && m.awayScore !== null && m.homeScore > m.awayScore;
-                const isAwayWin = m.homeScore !== null && m.awayScore !== null && m.awayScore > m.homeScore;
-                const isDraw = m.homeScore !== null && m.awayScore !== null && m.homeScore === m.awayScore;
-                return (
-                  <div key={m.id} className="px-5 py-4">
-                    <div className="text-center mb-3">
-                      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-                        {new Date(m.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                        <span className="mx-1.5">•</span>
-                        Journée {m.journee}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
-                        <span className={`text-sm font-bold truncate text-right ${isHomeWin ? 'text-accent' : 'text-foreground'}`}>
-                          {m.homeTeam}
-                        </span>
-                        <TeamLogo team={m.homeTeam} champId={m.championshipId} size={32} />
-                      </div>
-                      <div className={`px-5 py-2 rounded-xl text-base font-black min-w-[72px] text-center tracking-widest shadow-sm ${
-                        isDraw ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'
-                      }`}>
-                        {m.homeScore} - {m.awayScore}
-                      </div>
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <TeamLogo team={m.awayTeam} champId={m.championshipId} size={32} />
-                        <span className={`text-sm font-bold truncate ${isAwayWin ? 'text-accent' : 'text-foreground'}`}>
-                          {m.awayTeam}
-                        </span>
-                      </div>
-                    </div>
+              {liveResults.map((group) => (
+                <div key={group.mois}>
+                  <div className="px-5 py-2.5 bg-secondary/40 border-b border-border/50">
+                    <span className="text-xs font-bold text-accent uppercase tracking-wider">{group.mois}</span>
                   </div>
-                );
-              })}
+                  {group.matchs.map((match: FFFLiveMatch, idx: number) => {
+                    const homeScore = match.home_score ?? null;
+                    const awayScore = match.away_score ?? null;
+                    const isHome = match.home?.club?.cl_no === OISEMONT_CL_NO;
+                    const oisemontScore = isHome ? homeScore : awayScore;
+                    const adversaireScore = isHome ? awayScore : homeScore;
+                    const adversaire = isHome ? (match.away?.short_name || match.away?.name) : (match.home?.short_name || match.home?.name);
+                    const logoAdversaire = isHome ? match.away?.club?.logo : match.home?.club?.logo;
+                    const isWin = oisemontScore !== null && adversaireScore !== null && oisemontScore > adversaireScore;
+                    const isLoss = oisemontScore !== null && adversaireScore !== null && oisemontScore < adversaireScore;
+                    const isDraw = oisemontScore !== null && adversaireScore !== null && oisemontScore === adversaireScore;
+                    const matchDate = match.date ? new Date(match.date) : null;
+                    const lieu = isHome ? '🏠' : '✈️';
+
+                    return (
+                      <div key={`${match.date}-${idx}`} className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          {logoAdversaire && (
+                            <img src={logoAdversaire} alt="" className="w-8 h-8 rounded-full object-cover bg-muted shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-foreground truncate">{lieu} vs {adversaire}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              {matchDate?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                            </p>
+                          </div>
+                          <div className={`px-3 py-1.5 rounded-lg text-sm font-black min-w-[56px] text-center ${
+                            isWin ? 'bg-emerald-500/15 text-emerald-600' : isLoss ? 'bg-red-500/15 text-red-500' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {homeScore} - {awayScore}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           )}
         </div>
