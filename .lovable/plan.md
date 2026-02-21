@@ -1,108 +1,69 @@
 
 
-## Migration du scraping vers l'API FFF + Suppression du double menu
+## Affichage automatique du classement FFF par equipe selectionnee
 
-### Partie 1 : Remplacement du scraping par l'API FFF
+### Ce qui sera fait
 
-#### 1. Creer `src/lib/fffApi.ts`
+Quand l'utilisateur clique sur Eq. A, B ou C, le classement de cette equipe se charge automatiquement depuis l'API FFF et s'affiche directement, sans avoir besoin de creer un championnat au prealable.
 
-Nouveau fichier avec les fonctions d'appel a l'API FFF via le proxy Edge Function :
-- `callFFF(endpoint)` : appel central via `supabase.functions.invoke('fff-proxy')`
-- `getEquipes(clubId)` : recupere les equipes + logos + cp_no
-- `getResultats(cpNo, phase, poule)` : resultats passes
-- `getCalendrier(cpNo, phase, poule)` : prochains matchs
-- `getClassement(cpNo, phase, poule)` : classement
-- `getAllCompetitions(equipes)` : liste toutes les competitions d'un club
+### Modifications
 
-Le `cl_no` d'Oisemont est 3246 (hardcode comme constante).
+#### 1. `src/lib/fffApi.ts`
 
-#### 2. Creer l'Edge Function `supabase/functions/fff-proxy/index.ts`
+- Ajouter `clNo?: number` au type `ScrapedStanding` pour permettre le surlignage
+- Reecrire `mapClassementToStandings` pour utiliser les vrais noms de champs API :
+  - `rang` (pas `rank`)
+  - `point_count`, `total_games_count`, `won_games_count`, `draw_games_count`, `lost_games_count`, `goals_for_count`, `goals_against_count`, `goals_diff`
+  - Extraire `equipe.club.cl_no` dans `clNo`
+- La fonction recevra directement le tableau `hydra:member` (tableau plat d'entrees de classement, pas de journees imbriquees)
+- Corriger aussi `extractTeamLogosFromClassement` pour le meme format plat
+- Ajouter une fonction utilitaire `getTeamChampionship(equipes, categoryCode, code)` qui trouve l'engagement `type === 'CH'` et retourne `{ cpNo, phase, poule }`
 
-Simple proxy qui :
-- Recoit un `{ endpoint }` dans le body
-- Fait `fetch('https://api-dofa.fff.fr/api' + endpoint)` cote serveur
-- Retourne le JSON au front
-- Gere les headers CORS standards
+#### 2. `src/components/dashboard/ChampionnatTab.tsx`
 
-Pas besoin de secret supplementaire (API publique sans cle).
+- Ajouter un state `liveClassement` (tableau de standings) et `isLoadingLive` (boolean)
+- Ajouter un `useEffect` qui se declenche quand `selectedTeam` change :
+  1. Appeler `getEquipes(3246)` (ou reutiliser le cache si deja charge)
+  2. Mapper A → SEM/code 1, B → SEM/code 2, C → SEM/code 3
+  3. Trouver l'engagement `competition.type === 'CH'`
+  4. Appeler `getClassement(cpNo, phase, poule)`
+  5. Extraire `data['hydra:member']` et le passer a `mapClassementToStandings`
+  6. Stocker dans `liveClassement`
+- Afficher le classement live au-dessus de la liste des championnats :
+  - Tableau : Rang, Equipe, Pts, J, G, N, P, Bp, Bc, Diff
+  - Surligner la ligne ou `clNo === 3246` avec `bg-accent/15 border-l-4 border-l-accent`
+  - Afficher un `Loader2` pendant le chargement
+  - Si `hydra:totalItems === 0` ou tableau vide : "Classement non disponible"
+- Corriger aussi `handleImportCompetition` pour extraire `classementData['hydra:member']` avant de le passer a `mapClassementToStandings`
 
-#### 3. Mettre a jour `supabase/config.toml`
+### Mapping equipe selectionnee vers equipe FFF
 
-Ajouter la config `verify_jwt = false` pour la nouvelle fonction `fff-proxy`.
+| Selecteur | category_code | code | Resultat |
+|-----------|--------------|------|----------|
+| Eq. A | SEM | 1 | Seniors D2 (cp_no 443358) |
+| Eq. B | SEM | 2 | Seniors D4 (cp_no 443360) |
+| Eq. C | SEM | 3 | Seniors D6 (cp_no 443362) |
 
-#### 4. Modifier le formulaire de creation de championnat dans `ChampionnatTab.tsx`
+### Mapping des champs API (reference)
 
-Remplacer le champ "URL FFF" par un systeme en 2 etapes :
-1. Au lieu de coller une URL, l'utilisateur choisit parmi les equipes du club (recuperees via `getEquipes(3246)`)
-2. Pour l'equipe selectionnee, on recupere automatiquement ses competitions (via `getAllCompetitions`)
-3. L'utilisateur choisit la competition (championnat)
-4. On importe classement + matchs via `getClassement` et `getResultats`/`getCalendrier`
+| Champ API FFF | Champ ScrapedStanding |
+|---|---|
+| `rang` | `rank` |
+| `equipe.short_name` | `team` |
+| `equipe.club.cl_no` | `clNo` |
+| `point_count` | `points` |
+| `total_games_count` | `played` |
+| `won_games_count` | `won` |
+| `draw_games_count` | `drawn` |
+| `lost_games_count` | `lost` |
+| `goals_for_count` | `goalsFor` |
+| `goals_against_count` | `goalsAgainst` |
+| `goals_diff` | `goalDiff` |
 
-Les donnees stockees en base changent :
-- `fff_url` est remplace par `fff_cp_no` (numero de competition), `fff_phase`, `fff_poule` (stockes dans le champ existant `fff_url` sous forme JSON ou dans de nouvelles colonnes)
-
-Alternative plus simple (sans migration de schema) : on stocke dans `fff_url` une string encodee comme `"cp:443362:1:1"` (cp_no:phase:poule) pour rester compatible avec la colonne existante.
-
-#### 5. Modifier `refreshFromFFF` dans `Dashboard.tsx`
-
-Au lieu d'appeler `scrapeFFFTeams`, appeler les fonctions de `fffApi.ts` :
-- `getClassement(cpNo, phase, poule)` pour le classement
-- `getResultats(cpNo, phase, poule)` pour les matchs joues
-- `getCalendrier(cpNo, phase, poule)` pour les matchs a venir
-
-Transformer les donnees API en format `ScrapedStanding[]` et `ScrapedMatch[]` existants pour garder l'affichage identique.
-
-#### 6. Mettre a jour `auto-refresh-championships`
-
-Remplacer l'appel a `scrape-fff-teams` par un appel direct a l'API FFF via `fff-proxy`, en utilisant le `cpNo/phase/poule` stocke.
-
-#### 7. Supprimer l'ancien systeme de scraping
-
-- Supprimer `supabase/functions/scrape-fff-teams/` (Edge Function)
-- Supprimer `src/lib/api/scrape-fff.ts`
-- Nettoyer les imports dans `ChampionnatTab.tsx` et `Dashboard.tsx`
-
-### Partie 2 : Suppression du double menu (tablette)
-
-Actuellement sur les ecrans larges (`lg+`), il y a :
-- La barre de navigation en haut (top nav, `hidden lg:block`)
-- La barre d'onglets en bas (BottomTabBar, toujours visible)
-
-**Fix :** Supprimer completement la navigation du haut dans `Dashboard.tsx` (le bloc `<nav>` a la ligne 981) et garder uniquement la BottomTabBar pour toutes les tailles d'ecran. La BottomTabBar a deja un rendu optimise pour tablette (`md:flex` avec taille fixe centree).
-
-Cela implique aussi :
-- Retirer `lg:pb-0` du container principal (garder le padding en bas pour toutes les tailles)
-- S'assurer que le header (logo + avatar + deconnexion) reste visible sur toutes les tailles
-
----
-
-### Schema des donnees stockees (sans migration)
-
-On reutilise la colonne `fff_url` existante pour stocker l'identifiant API au format :
-```
-fff-api::{cp_no}::{phase}::{poule}
-```
-Exemple : `fff-api::443362::1::1`
-
-Cela permet de distinguer les anciens URLs de scraping des nouveaux identifiants API.
-
-### Fichiers modifies/crees
+### Fichiers modifies
 
 | Fichier | Action |
-|---------|--------|
-| `src/lib/fffApi.ts` | Creer |
-| `supabase/functions/fff-proxy/index.ts` | Creer |
-| `src/components/dashboard/ChampionnatTab.tsx` | Modifier (formulaire + imports) |
-| `src/pages/Dashboard.tsx` | Modifier (refreshFromFFF + suppression nav + imports) |
-| `supabase/functions/auto-refresh-championships/index.ts` | Modifier |
-| `supabase/functions/scrape-fff-teams/index.ts` | Supprimer |
-| `src/lib/api/scrape-fff.ts` | Supprimer |
-
-### Donnees de l'API FFF utilisees
-
-- **Logo club** : `equipe.club.logo` (URL CDN directe)
-- **Match joue** : `home_score !== null`
-- **Match a venir** : `home_score === null`
-- **Match reporte** : `status_label === "Reporte"`
-- **Classement** : champs `rank`, `pts`, `played`, `won`, `drawn`, `lost`, `goals_for`, `goals_against`, `goal_diff` (mappes vers le format `ScrapedStanding` existant)
+|---|---|
+| `src/lib/fffApi.ts` | Corriger `mapClassementToStandings`, ajouter `clNo`, ajouter `getTeamChampionship` |
+| `src/components/dashboard/ChampionnatTab.tsx` | Ajouter fetch automatique + affichage classement live + surlignage Oisemont |
 
