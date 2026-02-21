@@ -475,61 +475,56 @@ const ChampionnatTab: React.FC<Props> = ({
               <span className="text-sm">{liveError}</span>
             </motion.div>
           ) : liveClassement.length > 0 ? (
-            <motion.div key="table" variants={stagger} initial="hidden" animate="show" className="p-3 sm:p-4 space-y-2">
+            <motion.div key="table" variants={stagger} initial="hidden" animate="show">
+              {/* Table header */}
+              <div className="grid grid-cols-[2rem_1fr_3rem_2.5rem] sm:grid-cols-[2.5rem_1fr_3.5rem_3rem] items-center px-4 py-2.5 border-b border-border/50 bg-secondary/30">
+                <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider"></span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Équipe</span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center">Pts</span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center">J.</span>
+              </div>
               {liveClassement.map((s, i) => {
                 const isOisemont = s.clNo === OISEMONT_CL_NO;
                 const logo = liveLogos[s.team?.toUpperCase()] || null;
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
                 
                 return (
                   <motion.div
                     key={`${s.team}-${i}`}
                     variants={fadeUp}
-                    className={`flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl transition-all ${
+                    className={`grid grid-cols-[2rem_1fr_3rem_2.5rem] sm:grid-cols-[2.5rem_1fr_3.5rem_3rem] items-center px-4 py-3 border-b border-border/20 transition-colors ${
                       isOisemont 
-                        ? 'bg-accent/10 ring-1 ring-accent/30' 
-                        : 'bg-secondary/40 hover:bg-secondary/60'
+                        ? 'bg-accent/10' 
+                        : 'hover:bg-secondary/30'
                     }`}
                   >
                     {/* Rank */}
-                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                      i === 0 ? 'bg-yellow-500/15 text-yellow-600' :
-                      i === 1 ? 'bg-slate-400/15 text-slate-500' :
-                      i === 2 ? 'bg-amber-600/15 text-amber-700' :
-                      'bg-card text-muted-foreground'
+                    <span className={`text-sm sm:text-base font-black ${
+                      isOisemont ? 'text-accent' : 'text-muted-foreground'
                     }`}>
-                      {medal || s.rank}
-                    </div>
+                      {s.rank}
+                    </span>
 
-                    {/* Logo */}
-                    {logo ? (
-                      <img src={logo} alt={s.team} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 ring-2 ring-border/40 bg-card" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                    ) : (
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-card flex items-center justify-center shrink-0 text-xs font-bold text-muted-foreground ring-2 ring-border/40">{s.team?.charAt(0)}</div>
-                    )}
-
-                    {/* Name + Stats row */}
-                    <div className="flex-1 min-w-0">
-                      <span className={`text-[13px] sm:text-sm block ${isOisemont ? 'font-extrabold text-accent' : 'font-semibold text-foreground'}`}>{s.team}</span>
-                      <div className="flex items-center gap-2 mt-0.5 text-[10px] sm:text-[11px] text-muted-foreground">
-                        <span>{s.played}J</span>
-                        <span className="text-accent font-semibold">{s.won}V</span>
-                        <span>{s.drawn}N</span>
-                        <span className="text-destructive">{s.lost}D</span>
-                        <span className={`font-semibold ${s.goalDiff > 0 ? 'text-accent' : s.goalDiff < 0 ? 'text-destructive' : ''}`}>
-                          {s.goalDiff > 0 ? '+' : ''}{s.goalDiff}
-                        </span>
-                      </div>
+                    {/* Logo + Name */}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {logo ? (
+                        <img src={logo} alt={s.team} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0 bg-card" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      ) : (
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 text-[10px] font-bold text-muted-foreground">{s.team?.charAt(0)}</div>
+                      )}
+                      <span className={`text-xs sm:text-sm leading-tight ${isOisemont ? 'font-extrabold text-accent' : 'font-semibold text-foreground'}`}>{s.team}</span>
                     </div>
 
                     {/* Points */}
-                    <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
-                      isOisemont
-                        ? 'bg-accent text-accent-foreground shadow-md shadow-accent/20'
-                        : i < 3 ? 'bg-primary/10 text-primary' : 'bg-card text-foreground border border-border/50'
+                    <span className={`text-center text-sm sm:text-base font-black ${
+                      isOisemont ? 'text-accent' : 'text-foreground'
                     }`}>
                       {s.points}
-                    </div>
+                    </span>
+
+                    {/* Matches played */}
+                    <span className="text-center text-xs sm:text-sm text-muted-foreground font-medium">
+                      {s.played}
+                    </span>
                   </motion.div>
                 );
               })}
