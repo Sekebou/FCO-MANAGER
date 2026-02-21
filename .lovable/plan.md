@@ -1,29 +1,81 @@
 
 
-## Correction des 3 bugs du classement et matchs
+## Correction des logos du classement + affinements visuels
 
-### Bug 1 : Double classement identique (haut + bas)
+### Probleme identifie
+L'endpoint FFF `/classement_journees` ne retourne **pas** les logos des clubs, seulement leur `cl_no`. La fonction `extractTeamLogosFromClassement` cherche un champ `logo` qui n'existe pas dans la reponse, d'ou un dictionnaire vide.
 
-Le classement "live" (API FFF) s'affiche en haut de la page (lignes 402-478). Quand on deplie un championnat stocke en base, un deuxieme classement identique s'affiche dans la section expandable (lignes 644-684). 
+### Plan de correction
 
-**Solution** : Supprimer le classement dans la section expandable du championnat (`getStandings` + son affichage lignes 644-684). Le classement live en haut suffit et est toujours a jour depuis l'API FFF.
+#### 1. Recuperer les logos depuis les resultats (fffApi.ts)
 
-### Bug 2 : Optimiser la lisibilite
+Creer une nouvelle fonction `extractTeamLogosFromMatches` qui extrait les logos depuis les matchs (endpoint `/resultat`) car ceux-ci contiennent `home.club.logo` et `away.club.logo`. Indexer par `cl_no` (nombre) au lieu du nom d'equipe pour un croisement fiable avec le classement.
 
-**Solution** : 
-- Garder uniquement le classement live en haut (deja bien formate avec surlignage Oisemont)
-- Dans la section expandable du championnat, ne garder que les matchs par journee (supprimer le bloc classement redondant)
-- Cela allege la vue et evite la confusion
+Modifier aussi `extractTeamLogosFromClassement` pour indexer par `cl_no` en plus du nom.
 
-### Bug 3 : Prochains matchs / Derniers resultats ne filtre pas par equipe selectionnee
+#### 2. Croiser classement + resultats dans ChampionnatTab.tsx
 
-Actuellement, ces sections filtrent par `filteredChampIds` (championnats stockes en base). Probleme : si on selectionne Eq. C (Seniors D6), les matchs affiches viennent du championnat stocke en base, pas forcement de la bonne equipe.
+Dans le `useEffect` qui charge le classement live (ligne ~172), apres avoir recupere le classement, faire aussi un appel a `getResultats(cpNo, phase, poule)` pour extraire les logos de tous les clubs de la poule. Fusionner les deux sources de logos (classement + resultats) dans `liveLogos`.
 
-**Solution** : Les matchs affiches dans "Prochains matchs" et "Derniers resultats" doivent etre filtres par le `championshipId` correspondant a l'equipe selectionnee. Si un championnat est stocke en base pour cette equipe, utiliser ses matchs. Les matchs affiches proviennent deja de `filteredChampionships` via `filteredChampIds`, donc le filtre `(c.team || 'A') === selectedTeam` devrait fonctionner. Il faut verifier que le champ `team` est bien renseigne lors de la creation du championnat.
+Modifier le type de `liveLogos` pour supporter un index par `cl_no` (number) en plus du nom d'equipe.
 
-### Fichiers modifies
+#### 3. Affichage du logo dans le classement
 
-| Fichier | Modification |
-|---|---|
-| `src/components/dashboard/ChampionnatTab.tsx` | Supprimer le bloc classement dans la section expandable (lignes 644-684), ne garder que le classement live en haut |
+Modifier la logique de recherche du logo dans le rendu du classement : chercher d'abord par `s.clNo` dans le dictionnaire de logos, puis fallback par nom d'equipe.
+
+#### 4. Reduire la section Bilan (V/N/D)
+
+- Passer le chiffre de `text-2xl` a `text-lg`
+- Reduire le padding des cartes de `p-4` a `p-2.5`
+- Reduire les `rounded-2xl` a `rounded-xl`
+- Rendre la section plus compacte et moins imposante visuellement
+
+#### 5. Harmoniser la police de l'onglet Championnat
+
+Verifier et aligner les tailles de texte (`text-sm`, `text-xs`) et les `font-weight` avec les autres onglets du dashboard pour une coherence globale. Supprimer les styles trop gras ou les tailles surdimensionnees specifiques a cet onglet.
+
+---
+
+### Details techniques
+
+**fffApi.ts** — nouvelle fonction :
+```typescript
+export function extractTeamLogosFromResults(resultatsData: any): Record<number, string> {
+  const logos: Record<number, string> = {};
+  const members = Array.isArray(resultatsData) 
+    ? resultatsData 
+    : resultatsData?.['hydra:member'] || [];
+  for (const match of members) {
+    if (match.home?.club?.cl_no && match.home?.club?.logo) {
+      logos[match.home.club.cl_no] = match.home.club.logo;
+    }
+    if (match.away?.club?.cl_no && match.away?.club?.logo) {
+      logos[match.away.club.cl_no] = match.away.club.logo;
+    }
+  }
+  return logos;
+}
+```
+
+**ChampionnatTab.tsx** — modification du useEffect classement :
+```typescript
+// Apres getClassement, ajouter :
+const resultatsData = await getResultats(champParams.cpNo, champParams.phase, champParams.poule);
+const logosByClNo = extractTeamLogosFromResults(resultatsData);
+setLiveLogos(logosByClNo); // Indexe par cl_no maintenant
+```
+
+**ChampionnatTab.tsx** — modification du rendu classement :
+```typescript
+// Chercher le logo par cl_no au lieu du nom
+const logo = s.clNo ? liveLogos[s.clNo] : null;
+```
+
+**ChampionnatTab.tsx** — bilan reduit :
+```
+- text-2xl -> text-lg
+- p-4 -> p-2.5
+- rounded-2xl -> rounded-xl
+- gap-3 -> gap-2
+```
 
