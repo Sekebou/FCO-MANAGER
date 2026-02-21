@@ -628,138 +628,174 @@ const ChampionnatTab: React.FC<Props> = ({
         </AnimatePresence>
       </motion.div>
 
-      {/* ─── Bilan (circles) ─── */}
+      {/* ─── Bilan (glass cards) ─── */}
       {(bilan.v + bilan.n + bilan.d) > 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
-          className="flex items-center justify-center gap-6"
+          className="flex items-center justify-center gap-3"
         >
           {[
-            { val: bilan.v, label: 'Victoires', borderColor: 'border-emerald-500', textColor: 'text-emerald-600' },
-            { val: bilan.n, label: 'Nuls', borderColor: 'border-muted-foreground/40', textColor: 'text-muted-foreground' },
-            { val: bilan.d, label: 'Défaites', borderColor: 'border-red-500', textColor: 'text-red-500' },
+            { val: bilan.v, label: 'Victoires', bg: 'bg-emerald-500/10', dot: 'bg-emerald-500', text: 'text-emerald-500' },
+            { val: bilan.n, label: 'Nuls', bg: 'bg-slate-400/10', dot: 'bg-slate-400', text: 'text-slate-400' },
+            { val: bilan.d, label: 'Défaites', bg: 'bg-red-500/10', dot: 'bg-red-500', text: 'text-red-500' },
           ].map(item => (
-            <div key={item.label} className="flex flex-col items-center gap-1.5">
-              <div className={`w-14 h-14 rounded-full border-[3px] ${item.borderColor} flex items-center justify-center bg-card`}>
-                <span className={`text-lg font-black ${item.textColor}`}>{item.val}</span>
-              </div>
-              <span className={`text-[9px] font-semibold uppercase tracking-wider ${item.textColor}`}>{item.label}</span>
+            <div key={item.label} className={`flex-1 ${item.bg} backdrop-blur-sm rounded-xl px-4 py-3 flex flex-col items-center gap-1`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${item.dot}`} />
+              <span className={`text-xl font-black ${item.text} leading-none`}>{item.val}</span>
+              <span className={`text-[8px] font-bold uppercase tracking-widest ${item.text} opacity-70`}>{item.label}</span>
             </div>
           ))}
         </motion.div>
       )}
 
-      {/* ─── Next Match Hero ─── */}
-      {nextMatch && !isLoadingMatches && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className={`relative bg-card rounded-2xl border shadow-sm overflow-hidden ${
-            isMatchLive(nextMatch.date) ? 'border-red-500/50' : 'border-border/60'
-          }`}
-        >
-          {isMatchLive(nextMatch.date) && (
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-red-400 to-red-500 animate-pulse" />
-          )}
-          <div className="px-5 py-4 border-b border-border/50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Timer size={15} className="text-accent" />
-              <span className="text-xs font-bold text-foreground uppercase tracking-wider">Prochain Match</span>
-            </div>
-            {isMatchLive(nextMatch.date) && (
-              <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-red-500 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                LIVE MATCH
-              </span>
-            )}
-          </div>
-          <div className="px-5 py-6">
-            {/* Teams */}
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="flex flex-col items-center gap-2 flex-1">
-                {nextMatch.home?.club?.logo ? (
-                  <img src={nextMatch.home.club.logo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-border/30" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                ) : <div className="w-14 h-14 rounded-full bg-secondary" />}
-                <span className={`text-xs font-bold text-center leading-tight ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
-                  {nextMatch.home?.short_name || nextMatch.home?.name}
-                </span>
-              </div>
-              <div className="text-xl font-black text-muted-foreground/40">VS</div>
-              <div className="flex flex-col items-center gap-2 flex-1">
-                {nextMatch.away?.club?.logo ? (
-                  <img src={nextMatch.away.club.logo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-border/30" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                ) : <div className="w-14 h-14 rounded-full bg-secondary" />}
-                <span className={`text-xs font-bold text-center leading-tight ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
-                  {nextMatch.away?.short_name || nextMatch.away?.name}
-                </span>
-              </div>
-            </div>
+      {/* ─── Next Match Hero (Premium) ─── */}
+      {nextMatch && !isLoadingMatches && (() => {
+        const live = isMatchLive(nextMatch.date);
+        const odds = generateOdds(
+          nextMatch.home?.short_name || nextMatch.home?.name || '',
+          nextMatch.away?.short_name || nextMatch.away?.name || '',
+          nextMatch.date
+        );
+        return (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className={`relative rounded-2xl overflow-hidden shadow-xl ${
+              live ? 'ring-2 ring-red-500/60' : ''
+            }`}
+          >
+            {/* Dark gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-accent/20" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent" />
 
-            {/* Countdown */}
-            {!isMatchLive(nextMatch.date) && (
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {[
-                  { val: countdown.days, label: 'j' },
-                  { val: countdown.hours, label: 'h' },
-                  { val: countdown.minutes, label: 'm' },
-                  { val: countdown.seconds, label: 's' },
-                ].map(c => (
-                  <div key={c.label} className="bg-secondary rounded-lg px-2.5 py-1.5 text-center min-w-[40px]">
-                    <div className="text-base font-black text-foreground leading-none">{String(c.val).padStart(2, '0')}</div>
-                    <div className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">{c.label}</div>
+            {live && (
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse" />
+            )}
+
+            <div className="relative z-10 px-5 py-5">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 bg-accent/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                    <Timer size={14} className="text-accent" />
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Date & Time */}
-            <p className="text-[11px] text-muted-foreground text-center mb-3">
-              {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
-              {nextMatch.time ? ` • ${nextMatch.time}` : ''}
-            </p>
-
-            {/* Location */}
-            {(() => {
-              const link = buildLocationLink(nextMatch.terrain);
-              const label = [nextMatch.terrain?.name, nextMatch.terrain?.city].filter(Boolean).join(', ');
-              if (!label) return null;
-              return (
-                <div className="flex items-center justify-center gap-1.5 mb-4">
-                  <MapPin size={12} className="text-accent shrink-0" />
-                  {link ? (
-                    <a href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1">
-                      {label} <ExternalLink size={10} />
-                    </a>
-                  ) : (
-                    <span className="text-[11px] text-muted-foreground truncate">{label}</span>
-                  )}
+                  <span className="text-[11px] font-bold text-white/80 uppercase tracking-widest">Prochain Match</span>
                 </div>
-              );
-            })()}
+                {live && (
+                  <span className="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    LIVE
+                  </span>
+                )}
+              </div>
 
-            {/* Bet button */}
-            {currentUser && !isMatchLive(nextMatch.date) && (
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setBetMatch({
-                  homeTeam: nextMatch.home?.short_name || nextMatch.home?.name || '',
-                  awayTeam: nextMatch.away?.short_name || nextMatch.away?.name || '',
-                  matchDate: nextMatch.date,
-                  homeLogo: nextMatch.home?.club?.logo,
-                  awayLogo: nextMatch.away?.club?.logo,
-                })}
-                className="w-full py-2.5 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent/20 hover:brightness-110 transition-all"
-              >
-                <Zap size={14} /> Parier sur ce match
-              </motion.button>
-            )}
-          </div>
-        </motion.div>
-      )}
+              {/* Teams & VS */}
+              <div className="flex items-center justify-center gap-5 mb-5">
+                <div className="flex flex-col items-center gap-2.5 flex-1">
+                  {nextMatch.home?.club?.logo ? (
+                    <img src={nextMatch.home.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-white/20 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm" />}
+                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-white'}`}>
+                    {nextMatch.home?.short_name || nextMatch.home?.name}
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="text-2xl font-black text-white/30" style={{ textShadow: '0 0 20px hsl(var(--accent) / 0.3)' }}>VS</span>
+                </div>
+                <div className="flex flex-col items-center gap-2.5 flex-1">
+                  {nextMatch.away?.club?.logo ? (
+                    <img src={nextMatch.away.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-white/20 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  ) : <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm" />}
+                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-white'}`}>
+                    {nextMatch.away?.short_name || nextMatch.away?.name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Countdown */}
+              {!live && (
+                <div className="flex items-center justify-center gap-1.5 mb-4">
+                  {[
+                    { val: countdown.days, label: 'JOURS' },
+                    { val: countdown.hours, label: 'HEURES' },
+                    { val: countdown.minutes, label: 'MIN' },
+                    { val: countdown.seconds, label: 'SEC' },
+                  ].map((c, i) => (
+                    <React.Fragment key={c.label}>
+                      {i > 0 && <span className="text-lg font-black text-accent/50 animate-pulse mx-0.5">:</span>}
+                      <div className="bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 text-center min-w-[48px] border border-white/5">
+                        <div className="text-lg font-black text-white leading-none">{String(c.val).padStart(2, '0')}</div>
+                        <div className="text-[7px] font-bold text-white/40 uppercase mt-1 tracking-wider">{c.label}</div>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+
+              {/* Date & Time */}
+              <p className="text-[11px] text-white/50 text-center mb-3">
+                {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
+                {nextMatch.time ? ` • ${nextMatch.time}` : ''}
+              </p>
+
+              {/* Bet button with odds preview */}
+              {currentUser && !live && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setBetMatch({
+                    homeTeam: nextMatch.home?.short_name || nextMatch.home?.name || '',
+                    awayTeam: nextMatch.away?.short_name || nextMatch.away?.name || '',
+                    matchDate: nextMatch.date,
+                    homeLogo: nextMatch.home?.club?.logo,
+                    awayLogo: nextMatch.away?.club?.logo,
+                  })}
+                  className="w-full py-3 bg-gradient-to-r from-accent to-accent/80 text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-3 shadow-lg shadow-accent/30 hover:shadow-accent/50 transition-all mb-3"
+                >
+                  <Zap size={15} />
+                  <span>Parier sur ce match</span>
+                </motion.button>
+              )}
+              {currentUser && !live && (
+                <div className="flex items-center justify-center gap-2">
+                  {[
+                    { label: '1', val: odds.home.toFixed(2) },
+                    { label: 'N', val: odds.draw.toFixed(2) },
+                    { label: '2', val: odds.away.toFixed(2) },
+                  ].map(o => (
+                    <div key={o.label} className="flex items-center gap-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-3 py-1.5">
+                      <span className="text-[10px] font-bold text-white/50">{o.label}</span>
+                      <span className="text-[11px] font-black text-accent">{o.val}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Location */}
+              {(() => {
+                const link = buildLocationLink(nextMatch.terrain);
+                const label = [nextMatch.terrain?.name, nextMatch.terrain?.city].filter(Boolean).join(', ');
+                if (!label) return null;
+                return (
+                  <div className="flex items-center justify-center gap-1.5 mt-4 pt-3 border-t border-white/10">
+                    <MapPin size={11} className="text-white/30 shrink-0" />
+                    {link ? (
+                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/40 hover:text-white/60 underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1 transition-colors">
+                        {label} <ExternalLink size={9} />
+                      </a>
+                    ) : (
+                      <span className="text-[10px] text-white/30 truncate">{label}</span>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </motion.div>
+        );
+      })()}
 
       {/* ─── Matches sections ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
@@ -828,19 +864,6 @@ const ChampionnatTab: React.FC<Props> = ({
                               <span className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full">
                                 {diffDays <= 0 ? "Auj." : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
                               </span>
-                            )}
-                            {currentUser && !live && (
-                              <button
-                                onClick={() => setBetMatch({
-                                  homeTeam: homeName,
-                                  awayTeam: awayName,
-                                  matchDate: match.date,
-                                  homeLogo, awayLogo,
-                                })}
-                                className="text-[9px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full hover:bg-accent/20 transition-colors"
-                              >
-                                <Zap size={10} className="inline -mt-0.5" /> Parier
-                              </button>
                             )}
                           </div>
                         </div>
