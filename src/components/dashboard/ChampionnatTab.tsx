@@ -628,23 +628,24 @@ const ChampionnatTab: React.FC<Props> = ({
         </AnimatePresence>
       </motion.div>
 
-      {/* ─── Bilan (glass cards) ─── */}
+      {/* ─── Bilan (cercles minimalistes) ─── */}
       {(bilan.v + bilan.n + bilan.d) > 0 && (
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
-          className="flex items-center justify-center gap-3"
+          className="flex items-center justify-center gap-5"
         >
           {[
-            { val: bilan.v, label: 'Victoires', bg: 'bg-emerald-500/10', dot: 'bg-emerald-500', text: 'text-emerald-500' },
-            { val: bilan.n, label: 'Nuls', bg: 'bg-slate-400/10', dot: 'bg-slate-400', text: 'text-slate-400' },
-            { val: bilan.d, label: 'Défaites', bg: 'bg-red-500/10', dot: 'bg-red-500', text: 'text-red-500' },
+            { val: bilan.v, label: 'V', bg: 'bg-emerald-500/10', text: 'text-emerald-600' },
+            { val: bilan.n, label: 'N', bg: 'bg-slate-400/10', text: 'text-slate-500' },
+            { val: bilan.d, label: 'D', bg: 'bg-red-500/10', text: 'text-red-500' },
           ].map(item => (
-            <div key={item.label} className={`flex-1 ${item.bg} backdrop-blur-sm rounded-xl px-4 py-3 flex flex-col items-center gap-1`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${item.dot}`} />
-              <span className={`text-xl font-black ${item.text} leading-none`}>{item.val}</span>
-              <span className={`text-[8px] font-bold uppercase tracking-widest ${item.text} opacity-70`}>{item.label}</span>
+            <div key={item.label} className="flex flex-col items-center gap-1.5">
+              <div className={`w-14 h-14 rounded-full ${item.bg} flex items-center justify-center`}>
+                <span className={`text-xl font-black ${item.text} leading-none`}>{item.val}</span>
+              </div>
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${item.text}`}>{item.label}</span>
             </div>
           ))}
         </motion.div>
@@ -747,32 +748,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 {nextMatch.time ? ` • ${nextMatch.time}` : ''}
               </p>
 
-              {/* Odds preview with labels */}
-              {currentUser && !live && (
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  {[
-                    { label: '1', teamName: homeName, odd: odds.home, desc: `Victoire de ${homeName}` },
-                    { label: 'N', teamName: 'Nul', odd: odds.draw, desc: 'Match nul' },
-                    { label: '2', teamName: awayName, odd: odds.away, desc: `Victoire de ${awayName}` },
-                  ].map(o => (
-                    <button
-                      key={o.label}
-                      onClick={() => setBetMatch({
-                        homeTeam: homeName,
-                        awayTeam: awayName,
-                        matchDate: nextMatch.date,
-                        homeLogo: nextMatch.home?.club?.logo,
-                        awayLogo: nextMatch.away?.club?.logo,
-                      })}
-                      className="bg-secondary/80 hover:bg-accent/10 border border-border/50 hover:border-accent/30 rounded-xl px-2 py-2.5 text-center transition-all group"
-                    >
-                      <div className="text-lg font-black text-foreground group-hover:text-accent transition-colors">{o.odd.toFixed(2)}</div>
-                      <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider truncate">Cote à {o.odd.toFixed(2)}</div>
-                      <div className="text-[7px] text-muted-foreground/60 truncate mt-0.5">{o.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {/* Bet button */}
               {currentUser && !live && (
@@ -815,6 +790,9 @@ const ChampionnatTab: React.FC<Props> = ({
           </motion.div>
         );
       })()}
+
+      {/* ─── Bet Leaderboard (remonté) ─── */}
+      <BetLeaderboard />
 
       {/* ─── Matches sections ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
@@ -1003,9 +981,6 @@ const ChampionnatTab: React.FC<Props> = ({
         </motion.div>
       </div>
 
-      {/* ─── Bet Leaderboard ─── */}
-      <BetLeaderboard />
-
       {/* ─── Admin bar ─── */}
       {canManage() && filteredChampionships.map(champ => (
         <motion.div 
@@ -1050,17 +1025,6 @@ const ChampionnatTab: React.FC<Props> = ({
         </motion.div>
       ))}
 
-      {filteredChampionships.length === 0 && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-16 bg-card rounded-2xl border border-border/60"
-        >
-          <Trophy size={48} className="mx-auto text-muted-foreground/20 mb-4" />
-          <p className="text-lg font-medium text-muted-foreground">Aucun championnat pour l'équipe {selectedTeam}</p>
-          {canManage() && !teamHasChampionship(selectedTeam) && <p className="text-sm text-muted-foreground mt-1">Créez le championnat de l'équipe {selectedTeam}</p>}
-        </motion.div>
-      )}
 
       {/* ─── Modal: Add Championship ─── */}
       {showAddChamp && (
