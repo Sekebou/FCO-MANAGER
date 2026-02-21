@@ -1,81 +1,161 @@
 
 
-## Correction des logos du classement + affinements visuels
+## Plan : Enrichir le classement, bilan minimaliste, lieu cliquable, prochain match en vedette et systeme de paris
 
-### Probleme identifie
-L'endpoint FFF `/classement_journees` ne retourne **pas** les logos des clubs, seulement leur `cl_no`. La fonction `extractTeamLogosFromClassement` cherche un champ `logo` qui n'existe pas dans la reponse, d'ou un dictionnaire vide.
-
-### Plan de correction
-
-#### 1. Recuperer les logos depuis les resultats (fffApi.ts)
-
-Creer une nouvelle fonction `extractTeamLogosFromMatches` qui extrait les logos depuis les matchs (endpoint `/resultat`) car ceux-ci contiennent `home.club.logo` et `away.club.logo`. Indexer par `cl_no` (nombre) au lieu du nom d'equipe pour un croisement fiable avec le classement.
-
-Modifier aussi `extractTeamLogosFromClassement` pour indexer par `cl_no` en plus du nom.
-
-#### 2. Croiser classement + resultats dans ChampionnatTab.tsx
-
-Dans le `useEffect` qui charge le classement live (ligne ~172), apres avoir recupere le classement, faire aussi un appel a `getResultats(cpNo, phase, poule)` pour extraire les logos de tous les clubs de la poule. Fusionner les deux sources de logos (classement + resultats) dans `liveLogos`.
-
-Modifier le type de `liveLogos` pour supporter un index par `cl_no` (number) en plus du nom d'equipe.
-
-#### 3. Affichage du logo dans le classement
-
-Modifier la logique de recherche du logo dans le rendu du classement : chercher d'abord par `s.clNo` dans le dictionnaire de logos, puis fallback par nom d'equipe.
-
-#### 4. Reduire la section Bilan (V/N/D)
-
-- Passer le chiffre de `text-2xl` a `text-lg`
-- Reduire le padding des cartes de `p-4` a `p-2.5`
-- Reduire les `rounded-2xl` a `rounded-xl`
-- Rendre la section plus compacte et moins imposante visuellement
-
-#### 5. Harmoniser la police de l'onglet Championnat
-
-Verifier et aligner les tailles de texte (`text-sm`, `text-xs`) et les `font-weight` avec les autres onglets du dashboard pour une coherence globale. Supprimer les styles trop gras ou les tailles surdimensionnees specifiques a cet onglet.
+Ce plan couvre 5 grands axes de modifications.
 
 ---
 
-### Details techniques
+### 1. Tableau de classement enrichi (colonnes completes)
 
-**fffApi.ts** — nouvelle fonction :
-```typescript
-export function extractTeamLogosFromResults(resultatsData: any): Record<number, string> {
-  const logos: Record<number, string> = {};
-  const members = Array.isArray(resultatsData) 
-    ? resultatsData 
-    : resultatsData?.['hydra:member'] || [];
-  for (const match of members) {
-    if (match.home?.club?.cl_no && match.home?.club?.logo) {
-      logos[match.home.club.cl_no] = match.home.club.logo;
-    }
-    if (match.away?.club?.cl_no && match.away?.club?.logo) {
-      logos[match.away.club.cl_no] = match.away.club.logo;
-    }
-  }
-  return logos;
-}
-```
+Ajouter toutes les colonnes statistiques au tableau de classement : **G (Gagne), N (Nul), P (Perdu), F (Forfaits), P/Bo (Penalites/Bonus), Bp (Buts pour), Bc (Buts contre), Diff (Difference), Serie en cours**.
 
-**ChampionnatTab.tsx** — modification du useEffect classement :
-```typescript
-// Apres getClassement, ajouter :
-const resultatsData = await getResultats(champParams.cpNo, champParams.phase, champParams.poule);
-const logosByClNo = extractTeamLogosFromResults(resultatsData);
-setLiveLogos(logosByClNo); // Indexe par cl_no maintenant
-```
+**Modifications :**
+- `src/components/dashboard/ChampionnatTab.tsx` : Elargir la grille du classement avec un scroll horizontal pour supporter toutes les colonnes sur mobile
+- `src/lib/fffApi.ts` : Ajouter un champ `series` (ou `streak`) au type `ScrapedStanding` en extrayant la serie en cours depuis les resultats (calculee a partir des derniers matchs)
+- Colonnes affichees : Rang | Logo + Nom | Pts | J | G | N | P | F | P/Bo | Bp | Bc | Diff | Serie
 
-**ChampionnatTab.tsx** — modification du rendu classement :
-```typescript
-// Chercher le logo par cl_no au lieu du nom
-const logo = s.clNo ? liveLogos[s.clNo] : null;
-```
+La serie en cours sera calculee cote client a partir des derniers resultats (ex: "VVN", "DDD") et affichee sous forme de pastilles colorees (vert=V, gris=N, rouge=D).
 
-**ChampionnatTab.tsx** — bilan reduit :
-```
-- text-2xl -> text-lg
-- p-4 -> p-2.5
-- rounded-2xl -> rounded-xl
-- gap-3 -> gap-2
-```
+---
+
+### 2. Bilan en ronds minimalistes
+
+Remplacer les cartes rectangulaires du bilan V/N/D par des **cercles minimalistes** compacts.
+
+**Modifications :**
+- `src/components/dashboard/ChampionnatTab.tsx` : Section bilan redesignee
+- 3 cercles alignes horizontalement : cercle vert (Victoires), cercle gris (Nuls), cercle rouge (Defaites)
+- Chiffre au centre du cercle, label en dessous
+- Style : `w-14 h-14 rounded-full` avec bordure coloree, chiffre `text-lg font-black` au centre
+
+---
+
+### 3. Lieu cliquable pour les prochains matchs
+
+Ajouter un lien Waze/Google Maps propre pour chaque prochain match, avec une icone flat.
+
+**Modifications :**
+- `src/components/dashboard/ChampionnatTab.tsx` : Dans la section "Prochains matchs", modifier l'affichage de la ville/terrain
+- Utiliser le meme pattern que `PresencesTab.tsx` : icone `MapPin` + `ExternalLink`, texte tronque, lien vers `https://waze.com/ul?q=...`
+- Construire l'adresse a partir de `match.terrain?.name` + `match.terrain?.city`
+- Style propre : `text-[11px] text-accent/80 underline truncate`, pas de lien brut visible
+
+---
+
+### 4. Prochain match en vedette avec decompte
+
+Mettre en avant LE prochain match (le plus proche) dans une carte speciale centree, avec un compte a rebours en temps reel.
+
+**Modifications :**
+- `src/components/dashboard/ChampionnatTab.tsx` : Nouvelle section "PROCHAIN MATCH" placee apres le bilan et avant la grille matchs
+- Carte speciale avec :
+  - Logos des 2 equipes, noms complets, "VS" au centre
+  - Decompte en temps reel (jours, heures, minutes, secondes) via `setInterval` chaque seconde
+  - Date et heure du match
+  - Lieu cliquable (meme pattern Waze)
+  - Badge "LIVE MATCH" pulse quand le match est en cours (date du jour)
+- Logique : prendre le premier match de `liveUpcoming` qui est le plus proche
+
+---
+
+### 5. Systeme de paris gratuits avec monnaie virtuelle
+
+Creer un systeme complet de paris sur les matchs avec des points virtuels.
+
+#### 5a. Base de donnees (nouvelles tables)
+
+**Table `user_points`** :
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL)
+- `balance` (integer, DEFAULT 100)
+- `total_won` (integer, DEFAULT 0)
+- `total_bet` (integer, DEFAULT 0)
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+
+RLS : chaque utilisateur peut voir tous les soldes (classement), mais ne peut modifier que le sien.
+
+**Table `bets`** :
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL)
+- `user_name` (text, NOT NULL)
+- `match_date` (text, NOT NULL)
+- `home_team` (text, NOT NULL)
+- `away_team` (text, NOT NULL)
+- `prediction` (text, NOT NULL) — "home", "draw", "away"
+- `odds` (numeric, NOT NULL) — cote entre 1.5 et 5
+- `amount` (integer, NOT NULL) — mise en points
+- `status` (text, DEFAULT 'pending') — "pending", "won", "lost"
+- `payout` (integer, DEFAULT 0)
+- `created_at` (timestamptz)
+- `settled_at` (timestamptz)
+
+RLS : tous les authenticated peuvent voir tous les paris, chaque utilisateur peut inserer ses propres paris, seuls les admins peuvent mettre a jour (pour regler les paris).
+
+**Table `points_transactions`** :
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL)
+- `amount` (integer, NOT NULL) — positif ou negatif
+- `type` (text) — "bet", "win", "bonus"
+- `description` (text)
+- `created_at` (timestamptz)
+
+RLS : chaque utilisateur voit ses propres transactions.
+
+#### 5b. Cotes automatiques aleatoires
+
+Les cotes seront generees cote client lors de l'affichage d'un match :
+- Basees sur un hash deterministe (date + equipes) pour etre stables
+- Plage de 1.5 a 5.0
+- 3 cotes par match : victoire domicile, nul, victoire exterieur
+- La somme des probabilites implicites depasse 100% (marge classique)
+
+#### 5c. Interface de paris
+
+**Modifications :**
+- `src/components/dashboard/ChampionnatTab.tsx` : Ajouter un bouton "Parier" sur la carte du prochain match en vedette et sur chaque match a venir
+- Nouveau composant `src/components/dashboard/BetModal.tsx` :
+  - Affiche les 3 cotes (1 / N / 2)
+  - Slider ou input pour la mise (min 1, max le solde du joueur)
+  - Gain potentiel affiche en temps reel (mise x cote)
+  - Bouton de confirmation
+- Nouveau composant `src/components/dashboard/BetLeaderboard.tsx` :
+  - Classement des meilleurs parieurs par gains totaux
+  - Affiche dans l'onglet Championnats sous les matchs
+
+#### 5d. Animation LIVE MATCH
+
+Quand un match est en cours (date = aujourd'hui) :
+- Badge "LIVE MATCH" avec animation pulse rouge
+- Point rouge clignotant
+- Les paris sur ce match passent en mode "EN COURS" (plus de nouveaux paris possibles)
+- Fond de carte subtil avec animation de bordure
+
+#### 5e. Reglement des paris
+
+- Fait manuellement par les admins via un bouton "Regler les paris" sur les resultats
+- Ou automatiquement quand le score est entre dans les resultats FFF
+- Le gain est calcule : mise x cote, credite au solde du joueur
+- Notification toast pour le gagnant
+
+---
+
+### Resume des fichiers modifies/crees
+
+| Fichier | Action |
+|---------|--------|
+| `src/lib/fffApi.ts` | Ajouter champ `series` au ScrapedStanding |
+| `src/components/dashboard/ChampionnatTab.tsx` | Tableau enrichi, bilan rond, prochain match vedette, lieu cliquable, integration paris |
+| `src/components/dashboard/BetModal.tsx` | Nouveau — Modal de pari |
+| `src/components/dashboard/BetLeaderboard.tsx` | Nouveau — Classement des parieurs |
+| Migration SQL | 3 nouvelles tables : `user_points`, `bets`, `points_transactions` avec RLS |
+
+### Ordre d'implementation
+
+1. Migration SQL (tables + RLS)
+2. `fffApi.ts` (series)
+3. `ChampionnatTab.tsx` (classement enrichi + bilan rond + lieu + prochain match vedette)
+4. `BetModal.tsx` + `BetLeaderboard.tsx` (systeme de paris)
+5. Integration du tout dans ChampionnatTab
 
