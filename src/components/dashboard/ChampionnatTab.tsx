@@ -4,7 +4,7 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 import { 
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
-  encodeFFFApiRef, OISEMONT_CL_NO,
+  encodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship,
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition
 } from '@/lib/fffApi';
 import { toast } from 'sonner';
@@ -82,6 +82,11 @@ const ChampionnatTab: React.FC<Props> = ({
   const [importedTeams, setImportedTeams] = useState<string[]>([]);
   const [refreshingChamp, setRefreshingChamp] = useState<string | null>(null);
 
+  // Live classement from FFF API
+  const [liveClassement, setLiveClassement] = useState<ScrapedStanding[]>([]);
+  const [liveLogos, setLiveLogos] = useState<Record<string, string>>({});
+  const [isLoadingLive, setIsLoadingLive] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
   // Add match form state
   const [matchHome, setMatchHome] = useState('');
   const [matchAway, setMatchAway] = useState('');
@@ -189,6 +194,67 @@ const ChampionnatTab: React.FC<Props> = ({
       })
       .finally(() => setIsLoadingEquipes(false));
   }, [showAddChamp]);
+
+  // Auto-fetch live classement when team changes
+  useEffect(() => {
+    let cancelled = false;
+    const teamMapping: Record<string, { categoryCode: string; code: number }> = {
+      'A': { categoryCode: 'SEM', code: 1 },
+      'B': { categoryCode: 'SEM', code: 2 },
+      'C': { categoryCode: 'SEM', code: 3 },
+    };
+    
+    const mapping = teamMapping[selectedTeam];
+    if (!mapping) {
+      setLiveClassement([]);
+      setLiveLogos({});
+      setLiveError(null);
+      return;
+    }
+
+    const fetchLive = async () => {
+      setIsLoadingLive(true);
+      setLiveError(null);
+      setLiveClassement([]);
+      setLiveLogos({});
+      try {
+        const equipesData = await getEquipes(OISEMONT_CL_NO);
+        const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+        const champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+        
+        if (!champParams) {
+          setLiveError('Aucun championnat trouvé pour cette équipe');
+          return;
+        }
+        
+        const classementData = await getClassement(champParams.cpNo, champParams.phase, champParams.poule);
+        if (cancelled) return;
+        
+        const members = classementData?.['hydra:member'] || classementData;
+        const totalItems = classementData?.['hydra:totalItems'] ?? (Array.isArray(members) ? members.length : 0);
+        
+        if (totalItems === 0) {
+          setLiveError('Classement non disponible');
+          return;
+        }
+        
+        const standings = mapClassementToStandings(members);
+        const logos = extractTeamLogosFromClassement(members);
+        setLiveClassement(standings);
+        setLiveLogos(logos);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Error fetching live classement:', err);
+          setLiveError('Erreur lors du chargement du classement');
+        }
+      } finally {
+        if (!cancelled) setIsLoadingLive(false);
+      }
+    };
+    
+    fetchLive();
+    return () => { cancelled = true; };
+  }, [selectedTeam]);
 
   const handleImportCompetition = async (comp: FFFCompetition) => {
     setSelectedCompetition(comp);
@@ -331,6 +397,84 @@ const ChampionnatTab: React.FC<Props> = ({
             Éq. {team}
           </button>
         ))}
+      </div>
+
+      {/* Live classement from FFF API */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-border bg-secondary/30">
+          <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
+            <BarChart3 size={16} className="text-accent" />
+          </div>
+          <h3 className="font-semibold text-foreground">Classement Éq. {selectedTeam}</h3>
+        </div>
+        {isLoadingLive ? (
+          <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+            <Loader2 size={20} className="animate-spin" />
+            <span className="text-sm">Chargement du classement...</span>
+          </div>
+        ) : liveError ? (
+          <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+            <AlertCircle size={16} />
+            <span className="text-sm">{liveError}</span>
+          </div>
+        ) : liveClassement.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border bg-secondary/40">
+                  <th className="px-2 py-2.5 text-left font-bold text-muted-foreground w-8">#</th>
+                  <th className="px-2 py-2.5 text-left font-bold text-muted-foreground">Équipe</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-foreground w-9">Pts</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">J</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">G</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">N</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-7">P</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-8">Bp</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-8">Bc</th>
+                  <th className="px-2 py-2.5 text-center font-bold text-muted-foreground w-9">Diff</th>
+                </tr>
+              </thead>
+              <tbody>
+                {liveClassement.map((s, i) => {
+                  const isOisemont = s.clNo === OISEMONT_CL_NO;
+                  const logo = liveLogos[s.team?.toUpperCase()] || null;
+                  return (
+                    <tr
+                      key={`${s.team}-${i}`}
+                      className={`border-b border-border/40 transition-colors ${
+                        isOisemont 
+                          ? 'bg-accent/15 border-l-4 border-l-accent font-bold' 
+                          : i % 2 === 0 ? 'bg-card' : 'bg-secondary/20'
+                      }`}
+                    >
+                      <td className={`px-2 py-2.5 font-bold ${i === 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>{s.rank}</td>
+                      <td className="px-2 py-2.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {logo && (
+                            <img src={logo} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 bg-muted" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          )}
+                          <span className={`truncate ${isOisemont ? 'text-accent font-bold' : 'text-foreground'}`}>{s.team}</span>
+                        </div>
+                      </td>
+                      <td className={`px-2 py-2.5 text-center font-black ${isOisemont ? 'text-accent' : 'text-foreground'}`}>{s.points}</td>
+                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.played}</td>
+                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.won}</td>
+                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.drawn}</td>
+                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.lost}</td>
+                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.goalsFor}</td>
+                      <td className="px-2 py-2.5 text-center text-muted-foreground">{s.goalsAgainst}</td>
+                      <td className={`px-2 py-2.5 text-center font-semibold ${s.goalDiff > 0 ? 'text-emerald-600' : s.goalDiff < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                        {s.goalDiff > 0 ? '+' : ''}{s.goalDiff}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-10">Sélectionnez une équipe pour voir le classement</p>
+        )}
       </div>
 
       {/* Quick overview: upcoming + recent */}
