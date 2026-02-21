@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin, ChevronDown } from 'lucide-react';
+import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin, ChevronDown, Coins } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   members: Member[];
@@ -23,6 +24,35 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   const [roleChangeRequest, setRoleChangeRequest] = useState<{ memberId: string; memberName: string; newRole: string } | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
+  const [userPoints, setUserPoints] = useState<Record<string, number>>({});
+  const [lastBetGains, setLastBetGains] = useState<Record<string, { amount: number; desc: string }>>({});
+
+  // Fetch points for all members
+  useEffect(() => {
+    const fetchPoints = async () => {
+      const { data: pointsData } = await supabase.from('user_points').select('user_id, balance');
+      if (pointsData) {
+        const map: Record<string, number> = {};
+        pointsData.forEach(p => { map[p.user_id] = p.balance; });
+        setUserPoints(map);
+      }
+      const { data: txData } = await supabase
+        .from('points_transactions')
+        .select('user_id, amount, description')
+        .eq('type', 'bet')
+        .gt('amount', 0)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (txData) {
+        const gains: Record<string, { amount: number; desc: string }> = {};
+        txData.forEach(tx => {
+          if (!gains[tx.user_id]) gains[tx.user_id] = { amount: tx.amount, desc: tx.description || '' };
+        });
+        setLastBetGains(gains);
+      }
+    };
+    fetchPoints();
+  }, [members]);
 
   const handleRoleChangeConfirm = async () => {
     if (!roleChangeRequest || !confirmPassword) return;
@@ -206,7 +236,20 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                     </div>
                   )}
 
-                  {/* License badge - hidden for photographe */}
+                  {/* Points de pari */}
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 px-2.5 py-1.5 rounded-xl">
+                      <Coins size={13} />
+                      <span className="text-xs font-bold">{userPoints[member.id] ?? 100} pts</span>
+                    </div>
+                    {lastBetGains[member.id] && (
+                      <span className="text-[10px] text-emerald-600 font-semibold truncate">
+                        +{lastBetGains[member.id].amount} {lastBetGains[member.id].desc ? `sur ${lastBetGains[member.id].desc}` : ''}
+                      </span>
+                    )}
+                  </div>
+
+
                   {license && member.role !== 'photographe' && member.role !== 'dirigeant' && (
                     <div className={`relative flex items-center gap-3 p-3 rounded-xl text-xs font-semibold mb-3 overflow-hidden ${
                       license.status === 'active' ? 'bg-accent/10 text-accent border border-accent/20' :

@@ -182,6 +182,12 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 {event.type === 'other' && event.reason && (
                   <p className="text-[11px] text-foreground/70 mt-1 bg-secondary inline-block px-2 py-0.5 rounded-full">{event.reason}</p>
                 )}
+                {/* Points info */}
+                {(event.type === 'match' || event.type === 'training') && (
+                  <p className="text-[10px] text-accent/70 mt-2 flex items-center gap-1">
+                    <span>🎁</span> 5 pts de pari seront ajoutés à votre solde en répondant
+                  </p>
+                )}
                 {/* Presence counters */}
                 <div className="mt-2.5">
                   <div className="flex flex-wrap gap-1.5">
