@@ -1,69 +1,29 @@
 
 
-## Affichage automatique du classement FFF par equipe selectionnee
+## Correction des 3 bugs du classement et matchs
 
-### Ce qui sera fait
+### Bug 1 : Double classement identique (haut + bas)
 
-Quand l'utilisateur clique sur Eq. A, B ou C, le classement de cette equipe se charge automatiquement depuis l'API FFF et s'affiche directement, sans avoir besoin de creer un championnat au prealable.
+Le classement "live" (API FFF) s'affiche en haut de la page (lignes 402-478). Quand on deplie un championnat stocke en base, un deuxieme classement identique s'affiche dans la section expandable (lignes 644-684). 
 
-### Modifications
+**Solution** : Supprimer le classement dans la section expandable du championnat (`getStandings` + son affichage lignes 644-684). Le classement live en haut suffit et est toujours a jour depuis l'API FFF.
 
-#### 1. `src/lib/fffApi.ts`
+### Bug 2 : Optimiser la lisibilite
 
-- Ajouter `clNo?: number` au type `ScrapedStanding` pour permettre le surlignage
-- Reecrire `mapClassementToStandings` pour utiliser les vrais noms de champs API :
-  - `rang` (pas `rank`)
-  - `point_count`, `total_games_count`, `won_games_count`, `draw_games_count`, `lost_games_count`, `goals_for_count`, `goals_against_count`, `goals_diff`
-  - Extraire `equipe.club.cl_no` dans `clNo`
-- La fonction recevra directement le tableau `hydra:member` (tableau plat d'entrees de classement, pas de journees imbriquees)
-- Corriger aussi `extractTeamLogosFromClassement` pour le meme format plat
-- Ajouter une fonction utilitaire `getTeamChampionship(equipes, categoryCode, code)` qui trouve l'engagement `type === 'CH'` et retourne `{ cpNo, phase, poule }`
+**Solution** : 
+- Garder uniquement le classement live en haut (deja bien formate avec surlignage Oisemont)
+- Dans la section expandable du championnat, ne garder que les matchs par journee (supprimer le bloc classement redondant)
+- Cela allege la vue et evite la confusion
 
-#### 2. `src/components/dashboard/ChampionnatTab.tsx`
+### Bug 3 : Prochains matchs / Derniers resultats ne filtre pas par equipe selectionnee
 
-- Ajouter un state `liveClassement` (tableau de standings) et `isLoadingLive` (boolean)
-- Ajouter un `useEffect` qui se declenche quand `selectedTeam` change :
-  1. Appeler `getEquipes(3246)` (ou reutiliser le cache si deja charge)
-  2. Mapper A → SEM/code 1, B → SEM/code 2, C → SEM/code 3
-  3. Trouver l'engagement `competition.type === 'CH'`
-  4. Appeler `getClassement(cpNo, phase, poule)`
-  5. Extraire `data['hydra:member']` et le passer a `mapClassementToStandings`
-  6. Stocker dans `liveClassement`
-- Afficher le classement live au-dessus de la liste des championnats :
-  - Tableau : Rang, Equipe, Pts, J, G, N, P, Bp, Bc, Diff
-  - Surligner la ligne ou `clNo === 3246` avec `bg-accent/15 border-l-4 border-l-accent`
-  - Afficher un `Loader2` pendant le chargement
-  - Si `hydra:totalItems === 0` ou tableau vide : "Classement non disponible"
-- Corriger aussi `handleImportCompetition` pour extraire `classementData['hydra:member']` avant de le passer a `mapClassementToStandings`
+Actuellement, ces sections filtrent par `filteredChampIds` (championnats stockes en base). Probleme : si on selectionne Eq. C (Seniors D6), les matchs affiches viennent du championnat stocke en base, pas forcement de la bonne equipe.
 
-### Mapping equipe selectionnee vers equipe FFF
-
-| Selecteur | category_code | code | Resultat |
-|-----------|--------------|------|----------|
-| Eq. A | SEM | 1 | Seniors D2 (cp_no 443358) |
-| Eq. B | SEM | 2 | Seniors D4 (cp_no 443360) |
-| Eq. C | SEM | 3 | Seniors D6 (cp_no 443362) |
-
-### Mapping des champs API (reference)
-
-| Champ API FFF | Champ ScrapedStanding |
-|---|---|
-| `rang` | `rank` |
-| `equipe.short_name` | `team` |
-| `equipe.club.cl_no` | `clNo` |
-| `point_count` | `points` |
-| `total_games_count` | `played` |
-| `won_games_count` | `won` |
-| `draw_games_count` | `drawn` |
-| `lost_games_count` | `lost` |
-| `goals_for_count` | `goalsFor` |
-| `goals_against_count` | `goalsAgainst` |
-| `goals_diff` | `goalDiff` |
+**Solution** : Les matchs affiches dans "Prochains matchs" et "Derniers resultats" doivent etre filtres par le `championshipId` correspondant a l'equipe selectionnee. Si un championnat est stocke en base pour cette equipe, utiliser ses matchs. Les matchs affiches proviennent deja de `filteredChampionships` via `filteredChampIds`, donc le filtre `(c.team || 'A') === selectedTeam` devrait fonctionner. Il faut verifier que le champ `team` est bien renseigne lors de la creation du championnat.
 
 ### Fichiers modifies
 
-| Fichier | Action |
+| Fichier | Modification |
 |---|---|
-| `src/lib/fffApi.ts` | Corriger `mapClassementToStandings`, ajouter `clNo`, ajouter `getTeamChampionship` |
-| `src/components/dashboard/ChampionnatTab.tsx` | Ajouter fetch automatique + affichage classement live + surlignage Oisemont |
+| `src/components/dashboard/ChampionnatTab.tsx` | Supprimer le bloc classement dans la section expandable (lignes 644-684), ne garder que le classement live en haut |
 
