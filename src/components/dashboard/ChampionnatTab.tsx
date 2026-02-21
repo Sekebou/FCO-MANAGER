@@ -130,54 +130,7 @@ const ChampionnatTab: React.FC<Props> = ({
     );
   };
 
-  const getStandings = (champId: string) => {
-    const champ = championships.find(c => c.id === champId);
-    if (!champ) return [];
-
-    if (champ.fffStandings && champ.fffStandings.length > 0) {
-      return champ.fffStandings.map(s => ({
-        team: s.team,
-        played: s.played,
-        won: s.won,
-        drawn: s.drawn,
-        lost: s.lost,
-        gf: s.goalsFor,
-        ga: s.goalsAgainst,
-        points: s.points,
-        forfeits: s.forfeits,
-        penalties: s.penalties,
-      }));
-    }
-
-    // Fallback: calculate from local matches
-    const champMatches = getChampMatches(champId).filter(m => m.played);
-    const stats: Record<string, { team: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; points: number; forfeits: number; penalties: number }> = {};
-
-    champ.teams.forEach(team => {
-      stats[team] = { team, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, points: 0, forfeits: 0, penalties: 0 };
-    });
-
-    champMatches.forEach(m => {
-      if (m.homeScore === null || m.awayScore === null) return;
-      const home = stats[m.homeTeam];
-      const away = stats[m.awayTeam];
-      if (!home || !away) return;
-
-      home.played++; away.played++;
-      home.gf += m.homeScore; home.ga += m.awayScore;
-      away.gf += m.awayScore; away.ga += m.homeScore;
-
-      if (m.homeScore > m.awayScore) {
-        home.won++; away.lost++; home.points += 3;
-      } else if (m.homeScore < m.awayScore) {
-        away.won++; home.lost++; away.points += 3;
-      } else {
-        home.drawn++; away.drawn++; home.points++; away.points++;
-      }
-    });
-
-    return Object.values(stats).sort((a, b) => b.points - a.points || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
-  };
+  // getStandings removed - live classement from FFF API is used instead
 
   // Load FFF competitions when the modal opens
   useEffect(() => {
@@ -589,7 +542,6 @@ const ChampionnatTab: React.FC<Props> = ({
 
       {/* Championships list */}
       {filteredChampionships.map(champ => {
-        const standings = getStandings(champ.id);
         const champMatches = getChampMatches(champ.id).sort((a, b) => a.journee - b.journee || new Date(a.date).getTime() - new Date(b.date).getTime());
         const isExpanded = expandedChamp === champ.id;
         const journees = [...new Set(champMatches.map(m => m.journee))].sort((a, b) => a - b);
@@ -641,49 +593,6 @@ const ChampionnatTab: React.FC<Props> = ({
 
             {isExpanded && (
               <div className="border-t border-border p-5 space-y-6">
-                {/* Classement */}
-                <div>
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Award size={16} className="text-accent" /> Classement
-                  </h4>
-                  <div className="space-y-1">
-                    <div className="flex items-center px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                      <span className="w-7 shrink-0">#</span>
-                      <span className="flex-1">Équipe</span>
-                      <span className="w-7 text-center">MJ</span>
-                      <span className="w-7 text-center text-emerald-500">V</span>
-                      <span className="w-7 text-center">N</span>
-                      <span className="w-7 text-center text-red-400">D</span>
-                      <span className="w-10 text-center">Diff</span>
-                      <span className="w-9 text-center font-black text-foreground">Pts</span>
-                    </div>
-                    {standings.map((s, i) => (
-                      <div key={s.team} className={`flex items-center px-2 py-2.5 rounded-xl transition-colors ${
-                        i === 0 ? 'bg-yellow-400/10 border border-yellow-400/20' :
-                        i === 1 ? 'bg-secondary/60 border border-border/30' :
-                        i === 2 ? 'bg-amber-600/8 border border-amber-600/15' :
-                        'bg-secondary/30'
-                      }`}>
-                        <span className={`w-7 shrink-0 text-xs font-bold ${
-                          i === 0 ? 'text-yellow-500' : i === 1 ? 'text-muted-foreground' : i === 2 ? 'text-amber-600' : 'text-muted-foreground/60'
-                        }`}>{i + 1}</span>
-                        <div className="flex-1 flex items-center gap-1.5 min-w-0">
-                          <TeamLogo team={s.team} champId={champ.id} size={18} />
-                          <span className="text-xs font-semibold text-foreground truncate">{s.team}</span>
-                        </div>
-                        <span className="w-7 text-center text-xs text-muted-foreground">{s.played}</span>
-                        <span className="w-7 text-center text-xs text-emerald-600 font-semibold">{s.won}</span>
-                        <span className="w-7 text-center text-xs text-muted-foreground">{s.drawn}</span>
-                        <span className="w-7 text-center text-xs text-red-500 font-semibold">{s.lost}</span>
-                        <span className={`w-10 text-center text-xs font-semibold ${s.gf - s.ga > 0 ? 'text-emerald-600' : s.gf - s.ga < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                          {s.gf - s.ga > 0 ? '+' : ''}{s.gf - s.ga}
-                        </span>
-                        <span className={`w-9 text-center text-sm font-black ${i < 3 ? 'text-accent' : 'text-foreground'}`}>{s.points}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Matchs par journée */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
