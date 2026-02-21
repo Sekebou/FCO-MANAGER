@@ -5,6 +5,7 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 import { 
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
+  extractTeamLogosFromResults,
   encodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship,
   getTousMatchsAvenir, getTousResultats,
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
@@ -101,7 +102,7 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Live classement from FFF API
   const [liveClassement, setLiveClassement] = useState<ScrapedStanding[]>([]);
-  const [liveLogos, setLiveLogos] = useState<Record<string, string>>({});
+  const [liveLogos, setLiveLogos] = useState<Record<number, string>>({});
   const [isLoadingLive, setIsLoadingLive] = useState(false);
   const [liveError, setLiveError] = useState<string | null>(null);
   
@@ -212,9 +213,18 @@ const ChampionnatTab: React.FC<Props> = ({
         }
         
         const standings = mapClassementToStandings(members);
-        const logos = extractTeamLogosFromClassement(members);
         setLiveClassement(standings);
-        setLiveLogos(logos);
+        
+        // Fetch logos from results endpoint (classement doesn't include logos)
+        try {
+          const resultatsData = await getResultats(champParams.cpNo, champParams.phase, champParams.poule);
+          if (!cancelled) {
+            const logosByClNo = extractTeamLogosFromResults(resultatsData);
+            setLiveLogos(logosByClNo);
+          }
+        } catch {
+          // Logos are best-effort, don't fail the whole classement
+        }
       } catch (err) {
         if (!cancelled) {
           console.error('Error fetching live classement:', err);
@@ -485,7 +495,7 @@ const ChampionnatTab: React.FC<Props> = ({
               </div>
               {liveClassement.map((s, i) => {
                 const isOisemont = s.clNo === OISEMONT_CL_NO;
-                const logo = liveLogos[s.team?.toUpperCase()] || null;
+                const logo = s.clNo ? (liveLogos[s.clNo] || null) : null;
                 
                 return (
                   <motion.div
@@ -541,28 +551,28 @@ const ChampionnatTab: React.FC<Props> = ({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
-          className="grid grid-cols-3 gap-3"
+          className="grid grid-cols-3 gap-2"
         >
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <TrendingUp size={14} className="text-emerald-600" />
-              <span className="text-2xl font-black text-emerald-600">{bilan.v}</span>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 mb-0.5">
+              <TrendingUp size={12} className="text-emerald-600" />
+              <span className="text-lg font-black text-emerald-600">{bilan.v}</span>
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600/70">Victoires</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-600/70">Victoires</span>
           </div>
-          <div className="bg-secondary border border-border/50 rounded-2xl p-4 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <Minus size={14} className="text-muted-foreground" />
-              <span className="text-2xl font-black text-foreground">{bilan.n}</span>
+          <div className="bg-secondary border border-border/50 rounded-xl p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 mb-0.5">
+              <Minus size={12} className="text-muted-foreground" />
+              <span className="text-lg font-black text-foreground">{bilan.n}</span>
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Nuls</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Nuls</span>
           </div>
-          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <TrendingDown size={14} className="text-red-500" />
-              <span className="text-2xl font-black text-red-500">{bilan.d}</span>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 mb-0.5">
+              <TrendingDown size={12} className="text-red-500" />
+              <span className="text-lg font-black text-red-500">{bilan.d}</span>
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-red-500/70">Défaites</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-red-500/70">Défaites</span>
           </div>
         </motion.div>
       )}

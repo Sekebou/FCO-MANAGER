@@ -296,6 +296,23 @@ export function extractTeamLogosFromEquipes(equipes: any[]): Record<string, stri
   return logos;
 }
 
+/** Extrait les logos depuis les résultats de matchs, indexés par cl_no */
+export function extractTeamLogosFromResults(resultatsData: any): Record<number, string> {
+  const logos: Record<number, string> = {};
+  const members = Array.isArray(resultatsData)
+    ? resultatsData
+    : resultatsData?.['hydra:member'] || [];
+  for (const match of members) {
+    if (match.home?.club?.cl_no && match.home?.club?.logo) {
+      logos[match.home.club.cl_no] = match.home.club.logo;
+    }
+    if (match.away?.club?.cl_no && match.away?.club?.logo) {
+      logos[match.away.club.cl_no] = match.away.club.logo;
+    }
+  }
+  return logos;
+}
+
 /** Extrait les logos depuis les données de classement */
 export function extractTeamLogosFromClassement(classementData: any): Record<string, string> {
   const logos: Record<string, string> = {};
