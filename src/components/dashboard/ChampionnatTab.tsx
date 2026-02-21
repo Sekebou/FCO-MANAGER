@@ -386,35 +386,31 @@ const ChampionnatTab: React.FC<Props> = ({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* ─── Header ─── */}
+      {/* ─── Header (minimaliste) ─── */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }} 
         animate={{ opacity: 1, y: 0 }} 
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-accent to-primary p-5 sm:p-6 text-primary-foreground"
+        className="flex items-center justify-between gap-2"
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--accent)/0.4),transparent_60%)]" />
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-foreground/5 rounded-full blur-2xl" />
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-primary-foreground/15 backdrop-blur-sm rounded-xl flex items-center justify-center border border-primary-foreground/10">
-              <Trophy size={22} />
-            </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">Championnats</h2>
-              <p className="text-xs sm:text-sm text-primary-foreground/70 mt-0.5">Saison 2025-2026 • Équipe {selectedTeam}</p>
-            </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <Trophy className="text-accent" size={18} />
           </div>
-          {canManage() && !teamHasChampionship(selectedTeam) && (
-            <motion.button 
-              whileHover={{ scale: 1.05 }} 
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} 
-              className="flex items-center gap-1.5 bg-primary-foreground/20 backdrop-blur-sm text-primary-foreground px-4 py-2.5 rounded-xl font-semibold hover:bg-primary-foreground/30 transition-all text-xs sm:text-sm border border-primary-foreground/10"
-            >
-              <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
-            </motion.button>
-          )}
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Championnats</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">Saison 2025-2026</p>
+          </div>
         </div>
+        {canManage() && !teamHasChampionship(selectedTeam) && (
+          <motion.button 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }}
+            onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} 
+            className="flex items-center gap-1.5 bg-accent text-accent-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm text-xs sm:text-sm"
+          >
+            <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
+          </motion.button>
+        )}
       </motion.div>
 
       {/* ─── Team selector pills ─── */}
@@ -479,7 +475,7 @@ const ChampionnatTab: React.FC<Props> = ({
               <span className="text-sm">{liveError}</span>
             </motion.div>
           ) : liveClassement.length > 0 ? (
-            <motion.div key="table" variants={stagger} initial="hidden" animate="show" className="divide-y divide-border/30">
+            <motion.div key="table" variants={stagger} initial="hidden" animate="show" className="p-3 sm:p-4 space-y-2">
               {liveClassement.map((s, i) => {
                 const isOisemont = s.clNo === OISEMONT_CL_NO;
                 const logo = liveLogos[s.team?.toUpperCase()] || null;
@@ -489,52 +485,48 @@ const ChampionnatTab: React.FC<Props> = ({
                   <motion.div
                     key={`${s.team}-${i}`}
                     variants={fadeUp}
-                    className={`flex items-center gap-3 px-4 py-3 transition-all ${
+                    className={`flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-3.5 rounded-xl transition-all ${
                       isOisemont 
-                        ? 'bg-accent/8 border-l-[3px] border-l-accent' 
-                        : 'hover:bg-secondary/40'
+                        ? 'bg-accent/10 ring-1 ring-accent/30' 
+                        : 'bg-secondary/40 hover:bg-secondary/60'
                     }`}
                   >
                     {/* Rank */}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
                       i === 0 ? 'bg-yellow-500/15 text-yellow-600' :
                       i === 1 ? 'bg-slate-400/15 text-slate-500' :
                       i === 2 ? 'bg-amber-600/15 text-amber-700' :
-                      'bg-secondary text-muted-foreground'
+                      'bg-card text-muted-foreground'
                     }`}>
                       {medal || s.rank}
                     </div>
 
-                    {/* Logo + Name */}
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {logo ? (
-                        <img src={logo} alt="" className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-border/50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0 text-[10px] font-bold text-muted-foreground">{s.team?.charAt(0)}</div>
-                      )}
-                      <span className={`text-sm truncate ${isOisemont ? 'font-extrabold text-accent' : 'font-medium text-foreground'}`}>{s.team}</span>
-                    </div>
+                    {/* Logo */}
+                    {logo ? (
+                      <img src={logo} alt={s.team} className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 ring-2 ring-border/40 bg-card" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    ) : (
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-card flex items-center justify-center shrink-0 text-xs font-bold text-muted-foreground ring-2 ring-border/40">{s.team?.charAt(0)}</div>
+                    )}
 
-                    {/* Stats */}
-                    <div className="flex items-center gap-2 text-[11px] shrink-0">
-                      <div className="flex items-center gap-0.5">
-                        <span className="text-muted-foreground">{s.played}J</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <span className="text-emerald-600 font-semibold">{s.won}V</span>
+                    {/* Name + Stats row */}
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-[13px] sm:text-sm block ${isOisemont ? 'font-extrabold text-accent' : 'font-semibold text-foreground'}`}>{s.team}</span>
+                      <div className="flex items-center gap-2 mt-0.5 text-[10px] sm:text-[11px] text-muted-foreground">
+                        <span>{s.played}J</span>
+                        <span className="text-accent font-semibold">{s.won}V</span>
                         <span>{s.drawn}N</span>
-                        <span className="text-red-500">{s.lost}D</span>
-                      </div>
-                      <div className={`font-semibold text-[11px] ${s.goalDiff > 0 ? 'text-emerald-600' : s.goalDiff < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                        {s.goalDiff > 0 ? '+' : ''}{s.goalDiff}
+                        <span className="text-destructive">{s.lost}D</span>
+                        <span className={`font-semibold ${s.goalDiff > 0 ? 'text-accent' : s.goalDiff < 0 ? 'text-destructive' : ''}`}>
+                          {s.goalDiff > 0 ? '+' : ''}{s.goalDiff}
+                        </span>
                       </div>
                     </div>
 
                     {/* Points */}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
+                    <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
                       isOisemont
                         ? 'bg-accent text-accent-foreground shadow-md shadow-accent/20'
-                        : i < 3 ? 'bg-primary/10 text-primary' : 'bg-secondary text-foreground'
+                        : i < 3 ? 'bg-primary/10 text-primary' : 'bg-card text-foreground border border-border/50'
                     }`}>
                       {s.points}
                     </div>
