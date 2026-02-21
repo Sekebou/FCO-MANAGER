@@ -1,0 +1,226 @@
+import React, { useState, useEffect } from 'react';
+import { X, TrendingUp, Coins, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface BetModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string;
+  homeLogo?: string | null;
+  awayLogo?: string | null;
+  userId: string;
+  userName: string;
+}
+
+/** Generate deterministic odds from match details */
+function generateOdds(homeTeam: string, awayTeam: string, matchDate: string): { home: number; draw: number; away: number } {
+  let hash = 0;
+  const str = `${homeTeam}-${awayTeam}-${matchDate}`;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const abs = Math.abs(hash);
+  const homeOdd = 1.5 + ((abs % 35) / 10);        // 1.5 - 5.0
+  const drawOdd = 2.0 + (((abs >> 8) % 30) / 10);  // 2.0 - 5.0
+  const awayOdd = 1.5 + (((abs >> 16) % 35) / 10); // 1.5 - 5.0
+  return {
+    home: Math.round(homeOdd * 100) / 100,
+    draw: Math.round(drawOdd * 100) / 100,
+    away: Math.round(awayOdd * 100) / 100,
+  };
+}
+
+export { generateOdds };
+
+const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName }) => {
+  const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
+  const [amount, setAmount] = useState(10);
+  const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const odds = generateOdds(homeTeam, awayTeam, matchDate);
+
+  useEffect(() => {
+    if (!isOpen || !userId) return;
+    const fetchBalance = async () => {
+      const { data } = await supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle();
+      if (data) {
+        setBalance(data.balance);
+      } else {
+        // Create initial points
+        await supabase.from('user_points').insert({ user_id: userId, balance: 100 });
+        setBalance(100);
+      }
+    };
+    fetchBalance();
+  }, [isOpen, userId]);
+
+  const selectedOdd = prediction === 'home' ? odds.home : prediction === 'draw' ? odds.draw : prediction === 'away' ? odds.away : 0;
+  const potentialWin = Math.round(amount * selectedOdd);
+
+  const handleBet = async () => {
+    if (!prediction || amount < 1 || amount > balance) return;
+    setLoading(true);
+    try {
+      // Check existing bet on same match
+      const { data: existing } = await supabase.from('bets')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('match_date', matchDate)
+        .eq('home_team', homeTeam)
+        .eq('away_team', awayTeam)
+        .maybeSingle();
+      
+      if (existing) {
+        toast.error('Tu as déjà parié sur ce match !');
+        setLoading(false);
+        return;
+      }
+
+      // Insert bet
+      const { error: betError } = await supabase.from('bets').insert({
+        user_id: userId,
+        user_name: userName,
+        match_date: matchDate,
+        home_team: homeTeam,
+        away_team: awayTeam,
+        prediction,
+        odds: selectedOdd,
+        amount,
+      });
+      if (betError) throw betError;
+
+      // Deduct points
+      const newBalance = balance - amount;
+      const { error: pointsError } = await supabase.from('user_points')
+        .update({ balance: newBalance, total_bet: balance - newBalance + amount, updated_at: new Date().toISOString() })
+        .eq('user_id', userId);
+      if (pointsError) throw pointsError;
+
+      // Log transaction
+      await supabase.from('points_transactions').insert({
+        user_id: userId,
+        amount: -amount,
+        type: 'bet',
+        description: `Pari: ${homeTeam} vs ${awayTeam} — ${prediction === 'home' ? '1' : prediction === 'draw' ? 'N' : '2'} (cote ${selectedOdd})`,
+      });
+
+      toast.success(`Pari de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors du pari');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm border border-border shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+              <Zap size={20} className="text-accent" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-foreground">Parier</h3>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Coins size={12} /> <span>{balance} pts disponibles</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center">
+            <X size={16} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* Match */}
+          <div className="flex items-center justify-center gap-3">
+            {homeLogo ? <img src={homeLogo} alt="" className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">{homeTeam.charAt(0)}</div>}
+            <span className="text-xs font-black text-muted-foreground">VS</span>
+            {awayLogo ? <img src={awayLogo} alt="" className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">{awayTeam.charAt(0)}</div>}
+          </div>
+
+          {/* Odds buttons */}
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { key: 'home' as const, label: '1', sublabel: homeTeam, odd: odds.home },
+              { key: 'draw' as const, label: 'N', sublabel: 'Nul', odd: odds.draw },
+              { key: 'away' as const, label: '2', sublabel: awayTeam, odd: odds.away },
+            ]).map(o => (
+              <button
+                key={o.key}
+                onClick={() => setPrediction(o.key)}
+                className={`py-3 px-2 rounded-xl border-2 transition-all text-center ${
+                  prediction === o.key
+                    ? 'border-accent bg-accent/10 shadow-sm'
+                    : 'border-border hover:border-accent/30 bg-secondary/50'
+                }`}
+              >
+                <div className="text-lg font-black text-foreground">{o.odd}</div>
+                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">{o.sublabel}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Amount */}
+          {prediction && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mise (pts)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={1}
+                  max={Math.min(balance, 500)}
+                  value={amount}
+                  onChange={e => setAmount(Number(e.target.value))}
+                  className="flex-1 accent-accent"
+                />
+                <div className="w-16 text-center text-lg font-black text-accent bg-accent/10 rounded-xl py-1">
+                  {amount}
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Gain potentiel</span>
+                <span className="font-black text-accent flex items-center gap-1">
+                  <TrendingUp size={12} /> {potentialWin} pts
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 p-5 border-t border-border pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+            Annuler
+          </button>
+          <button
+            onClick={handleBet}
+            disabled={!prediction || amount < 1 || amount > balance || loading}
+            className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
+          >
+            {loading ? 'En cours...' : 'Valider le pari'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default BetModal;

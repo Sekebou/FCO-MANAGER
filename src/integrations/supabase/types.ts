@@ -103,6 +103,54 @@ export type Database = {
           },
         ]
       }
+      bets: {
+        Row: {
+          amount: number
+          away_team: string
+          created_at: string
+          home_team: string
+          id: string
+          match_date: string
+          odds: number
+          payout: number
+          prediction: string
+          settled_at: string | null
+          status: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          amount: number
+          away_team: string
+          created_at?: string
+          home_team: string
+          id?: string
+          match_date: string
+          odds: number
+          payout?: number
+          prediction: string
+          settled_at?: string | null
+          status?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          amount?: number
+          away_team?: string
+          created_at?: string
+          home_team?: string
+          id?: string
+          match_date?: string
+          odds?: number
+          payout?: number
+          prediction?: string
+          settled_at?: string | null
+          status?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       cards: {
         Row: {
           created_at: string
@@ -617,6 +665,33 @@ export type Database = {
         }
         Relationships: []
       }
+      points_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -669,6 +744,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_points: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          total_bet: number
+          total_won: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_bet?: number
+          total_won?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_bet?: number
+          total_won?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
