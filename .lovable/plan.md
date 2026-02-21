@@ -1,61 +1,108 @@
 
-## Correction définitive du classement FFF + Mise à jour automatique hebdomadaire
 
-### Diagnostic précis du bug de parsing
+## Migration du scraping vers l'API FFF + Suppression du double menu
 
-Les logs confirment que le header est bien détecté :
+### Partie 1 : Remplacement du scraping par l'API FFF
+
+#### 1. Creer `src/lib/fffApi.ts`
+
+Nouveau fichier avec les fonctions d'appel a l'API FFF via le proxy Edge Function :
+- `callFFF(endpoint)` : appel central via `supabase.functions.invoke('fff-proxy')`
+- `getEquipes(clubId)` : recupere les equipes + logos + cp_no
+- `getResultats(cpNo, phase, poule)` : resultats passes
+- `getCalendrier(cpNo, phase, poule)` : prochains matchs
+- `getClassement(cpNo, phase, poule)` : classement
+- `getAllCompetitions(equipes)` : liste toutes les competitions d'un club
+
+Le `cl_no` d'Oisemont est 3246 (hardcode comme constante).
+
+#### 2. Creer l'Edge Function `supabase/functions/fff-proxy/index.ts`
+
+Simple proxy qui :
+- Recoit un `{ endpoint }` dans le body
+- Fait `fetch('https://api-dofa.fff.fr/api' + endpoint)` cote serveur
+- Retourne le JSON au front
+- Gere les headers CORS standards
+
+Pas besoin de secret supplementaire (API publique sans cle).
+
+#### 3. Mettre a jour `supabase/config.toml`
+
+Ajouter la config `verify_jwt = false` pour la nouvelle fonction `fff-proxy`.
+
+#### 4. Modifier le formulaire de creation de championnat dans `ChampionnatTab.tsx`
+
+Remplacer le champ "URL FFF" par un systeme en 2 etapes :
+1. Au lieu de coller une URL, l'utilisateur choisit parmi les equipes du club (recuperees via `getEquipes(3246)`)
+2. Pour l'equipe selectionnee, on recupere automatiquement ses competitions (via `getAllCompetitions`)
+3. L'utilisateur choisit la competition (championnat)
+4. On importe classement + matchs via `getClassement` et `getResultats`/`getCalendrier`
+
+Les donnees stockees en base changent :
+- `fff_url` est remplace par `fff_cp_no` (numero de competition), `fff_phase`, `fff_poule` (stockes dans le champ existant `fff_url` sous forme JSON ou dans de nouvelles colonnes)
+
+Alternative plus simple (sans migration de schema) : on stocke dans `fff_url` une string encodee comme `"cp:443362:1:1"` (cp_no:phase:poule) pour rester compatible avec la colonne existante.
+
+#### 5. Modifier `refreshFromFFF` dans `Dashboard.tsx`
+
+Au lieu d'appeler `scrapeFFFTeams`, appeler les fonctions de `fffApi.ts` :
+- `getClassement(cpNo, phase, poule)` pour le classement
+- `getResultats(cpNo, phase, poule)` pour les matchs joues
+- `getCalendrier(cpNo, phase, poule)` pour les matchs a venir
+
+Transformer les donnees API en format `ScrapedStanding[]` et `ScrapedMatch[]` existants pour garder l'affichage identique.
+
+#### 6. Mettre a jour `auto-refresh-championships`
+
+Remplacer l'appel a `scrape-fff-teams` par un appel direct a l'API FFF via `fff-proxy`, en utilisant le `cpNo/phase/poule` stocke.
+
+#### 7. Supprimer l'ancien systeme de scraping
+
+- Supprimer `supabase/functions/scrape-fff-teams/` (Edge Function)
+- Supprimer `src/lib/api/scrape-fff.ts`
+- Nettoyer les imports dans `ChampionnatTab.tsx` et `Dashboard.tsx`
+
+### Partie 2 : Suppression du double menu (tablette)
+
+Actuellement sur les ecrans larges (`lg+`), il y a :
+- La barre de navigation en haut (top nav, `hidden lg:block`)
+- La barre d'onglets en bas (BottomTabBar, toujours visible)
+
+**Fix :** Supprimer completement la navigation du haut dans `Dashboard.tsx` (le bloc `<nav>` a la ligne 981) et garder uniquement la BottomTabBar pour toutes les tailles d'ecran. La BottomTabBar a deja un rendu optimise pour tablette (`md:flex` avec taille fixe centree).
+
+Cela implique aussi :
+- Retirer `lg:pb-0` du container principal (garder le padding en bas pour toutes les tailles)
+- S'assurer que le header (logo + avatar + deconnexion) reste visible sur toutes les tailles
+
+---
+
+### Schema des donnees stockees (sans migration)
+
+On reutilise la colonne `fff_url` existante pour stocker l'identifiant API au format :
 ```
-"Pr.", "Equipe", "Pts", "J.", "G.", "N.", "P.", "F.", "P/Bo.", "Bp.", "Bc.", "Diff."
-→  [0]     [1]    [2]   [3]   [4]   [5]   [6]   [7]     [8]    [9]   [10]   [11]
+fff-api::{cp_no}::{phase}::{poule}
 ```
-Donc `idxPts = 2`, `idxJ = 3`, etc.
+Exemple : `fff-api::443362::1::1`
 
-Mais dans les **lignes de données**, quand on split par `|`, la cellule "Equipe" (qui contient le lien markdown `[![undefined](url) HARONDEL ES](url)`) génère des `|` parasites ou élargit les cellules, ce qui décale tous les indices. Résultat en base de données :
+Cela permet de distinguer les anciens URLs de scraping des nouveaux identifiants API.
 
-```
-HARONDEL ES : rank=1, pts=24, played=8, won=8 → pts OK par hasard
-AMIENS MONTIERES CS : played=13, won=8, pts=0 → incohérent, colonnes mélangées
-OISEMONT FC : rank=8, played=7, won=8 → impossible
-```
+### Fichiers modifies/crees
 
-### Solution de parsing robuste
+| Fichier | Action |
+|---------|--------|
+| `src/lib/fffApi.ts` | Creer |
+| `supabase/functions/fff-proxy/index.ts` | Creer |
+| `src/components/dashboard/ChampionnatTab.tsx` | Modifier (formulaire + imports) |
+| `src/pages/Dashboard.tsx` | Modifier (refreshFromFFF + suppression nav + imports) |
+| `supabase/functions/auto-refresh-championships/index.ts` | Modifier |
+| `supabase/functions/scrape-fff-teams/index.ts` | Supprimer |
+| `src/lib/api/scrape-fff.ts` | Supprimer |
 
-Au lieu d'utiliser des **indices absolus** (qui dépendent de la position du lien équipe dans le split), la nouvelle stratégie :
+### Donnees de l'API FFF utilisees
 
-1. **Extraire la partie numérique de la ligne** : après avoir isolé le nom de l'équipe (via regex), on supprime le bloc lien de la ligne et on ne split que les cellules restantes (toutes numériques ou texte court).
+- **Logo club** : `equipe.club.logo` (URL CDN directe)
+- **Match joue** : `home_score !== null`
+- **Match a venir** : `home_score === null`
+- **Match reporte** : `status_label === "Reporte"`
+- **Classement** : champs `rank`, `pts`, `played`, `won`, `drawn`, `lost`, `goals_for`, `goals_against`, `goal_diff` (mappes vers le format `ScrapedStanding` existant)
 
-2. **Aligner les colonnes numériques** sur les colonnes du header **à partir de la colonne Pts** (index 2 dans le header = index 0 dans les cellules numériques après suppression du bloc rank + lien-equipe).
-
-La stratégie concrète :
-```text
-Ligne raw: | 1 | [![...](logo) HARONDEL ES](url) | 24 | 8 | 8 | 0 | 0 | 0 | 0 | 25 | 1 | 24 | ... |
-
-Étape 1 : extraire rank = cells[0] = "1"
-Étape 2 : extraire teamName via regex
-Étape 3 : supprimer tout jusqu'après le lien équipe, puis re-split
-          → numCells = ["24", "8", "8", "0", "0", "0", "0", "25", "1", "24", ...]
-Étape 4 : aligner sur header à partir de index idxPts (en soustrayant l'offset = idxPts)
-          numCells[0] = Pts, numCells[1] = J, numCells[2] = G, ...
-```
-
-### Mise à jour automatique hebdomadaire
-
-Après le match du dimanche, le classement doit se mettre à jour automatiquement. Stratégie :
-
-- **Cron job pg_cron** : tous les **lundis à 8h00** (heure française = 7h UTC), appel HTTP vers l'edge function `scrape-fff-teams` pour chaque championnat ayant une `fff_url` configurée.
-- La fonction de mise à jour existante (`refreshFromFFF`) sera appelée via une **nouvelle edge function** dédiée (`auto-refresh-championships`) qui :
-  1. Récupère tous les championnats avec une `fff_url` depuis la base
-  2. Pour chacun, appelle `scrape-fff-teams` et met à jour les standings + scores
-
-### Fichiers modifiés
-
-1. **`supabase/functions/scrape-fff-teams/index.ts`** — Réécriture de `extractStandings` avec la nouvelle stratégie de parsing (extraction numérique relative)
-2. **`supabase/functions/auto-refresh-championships/index.ts`** — Nouvelle edge function pour la mise à jour automatique
-3. **Migration SQL** — Activation de `pg_cron` + création du job hebdomadaire (lundi 7h UTC)
-
-### Impact
-
-- Aucune modification de schéma de base de données
-- Les championnats existants avec `fff_url` seront mis à jour automatiquement chaque lundi
-- Les mises à jour manuelles (bouton Refresh) continuent de fonctionner
-- La correction du parsing garantit des points corrects (HARONDEL ES = 24 pts, OISEMONT FC au bon rang)
