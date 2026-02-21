@@ -17,8 +17,8 @@ const BetLeaderboard: React.FC = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      // Get top bettors by total_won
-      const { data: points } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('total_won', { ascending: false }).limit(10);
+      // Get top bettors by total_bet (most active bettors)
+      const { data: points } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('total_bet', { ascending: false }).limit(10);
       if (!points || points.length === 0) { setLoading(false); return; }
 
       // Get names from bets table

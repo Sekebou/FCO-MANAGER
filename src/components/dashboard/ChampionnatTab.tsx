@@ -273,12 +273,23 @@ const ChampionnatTab: React.FC<Props> = ({
         const standings = mapClassementToStandings(members);
         setLiveClassement(standings);
         
-        // Fetch logos from results endpoint
+        // Extract logos from classement itself (by cl_no)
+        if (Array.isArray(members)) {
+          for (const entry of members) {
+            const clNo = entry.equipe?.club?.cl_no;
+            const logo = entry.equipe?.club?.logo;
+            if (clNo && logo) {
+              setLiveLogos(prev => ({ ...prev, [clNo]: logo }));
+            }
+          }
+        }
+        
+        // Also fetch logos from results endpoint as fallback
         try {
           const resultatsData = await getResultats(champParams.cpNo, champParams.phase, champParams.poule);
           if (!cancelled) {
             const logosByClNo = extractTeamLogosFromResults(resultatsData);
-            setLiveLogos(logosByClNo);
+            setLiveLogos(prev => ({ ...prev, ...logosByClNo }));
           }
         } catch {}
       } catch (err) {
@@ -402,6 +413,8 @@ const ChampionnatTab: React.FC<Props> = ({
       teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined, 
       team: champTeam 
     });
+    // Switch to the newly created team's tab
+    setSelectedTeam(champTeam);
     resetForm();
   };
 
@@ -709,7 +722,12 @@ const ChampionnatTab: React.FC<Props> = ({
                   {homeRank && <span className="text-[9px] text-muted-foreground font-medium">{homeRank}e au classement</span>}
                 </div>
                 <div className="relative">
-                  <span className="text-2xl font-black text-muted-foreground/30" style={{ textShadow: '0 0 15px hsl(var(--accent) / 0.2)' }}>VS</span>
+                  <motion.span 
+                    animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="text-2xl font-black text-blue-500"
+                    style={{ textShadow: '0 0 20px hsl(217 91% 60% / 0.5), 0 0 40px hsl(217 91% 60% / 0.2)' }}
+                  >VS</motion.span>
                 </div>
                 <div className="flex flex-col items-center gap-2.5 flex-1">
                   {nextMatch.away?.club?.logo ? (

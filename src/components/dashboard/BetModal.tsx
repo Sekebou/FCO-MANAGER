@@ -207,6 +207,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
                 }`}
               >
                 <div className="text-lg font-black text-foreground">{o.odd}</div>
+                <div className="text-[8px] font-bold uppercase tracking-wider text-accent/60 mb-0.5">Cote</div>
                 <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">{o.sublabel}</div>
               </button>
             ))}
