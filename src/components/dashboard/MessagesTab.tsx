@@ -213,16 +213,28 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
     });
     unreadCount[currentUser.uid] = 0;
     try {
-      const { data: inserted, error } = await supabase.from('conversations').insert({
-        participants: allParticipants, participant_names: participantNames, participant_photos: participantPhotos,
-        participant_roles: participantRoles, type: isGroup ? 'group' : 'private',
-        name: isGroup ? groupName.trim() : null, last_message: null, last_message_at: new Date().toISOString(),
-        created_by: currentUser.uid, unread_count: unreadCount,
-      }).select('id').single();
-      if (error) throw error;
+      const insertPayload = {
+        participants: allParticipants,
+        participant_names: participantNames as any,
+        participant_photos: participantPhotos as any,
+        participant_roles: participantRoles as any,
+        type: isGroup ? 'group' : 'private',
+        name: isGroup ? groupName.trim() : null,
+        last_message: null,
+        last_message_at: new Date().toISOString(),
+        created_by: currentUser.uid,
+        unread_count: unreadCount as any,
+      };
+      console.log('Creating conversation with payload:', JSON.stringify(insertPayload));
+      const { data: inserted, error } = await supabase.from('conversations').insert(insertPayload).select('id').single();
+      if (error) {
+        console.error('Supabase conversation insert error:', error.message, error.details, error.hint, error.code);
+        toast.error(`Erreur: ${error.message}`);
+        return;
+      }
       setActiveConversation({ id: inserted.id, participants: allParticipants, participantNames, participantPhotos, participantRoles, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount });
       setShowNewConvo(false); setSelectedMembers([]); setGroupName(''); setSearchMember('');
-    } catch (err) { console.error('Error creating conversation:', err); toast.error('Erreur lors de la création de la conversation'); }
+    } catch (err: any) { console.error('Error creating conversation:', err); toast.error(`Erreur: ${err?.message || 'Erreur inconnue'}`); }
   };
 
   const toggleMemberSelection = (memberId: string) => setSelectedMembers(prev => prev.includes(memberId) ? prev.filter(id => id !== memberId) : [...prev, memberId]);

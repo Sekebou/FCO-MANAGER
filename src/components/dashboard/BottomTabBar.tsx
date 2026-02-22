@@ -12,7 +12,7 @@ interface Tab {
 
 const allTabs: Tab[] = [
   { id: 'stats', label: 'Stats', icon: TrendingUp },
-  { id: 'championnat', label: 'Classement', icon: Trophy },
+  { id: 'championnat', label: 'Championnat', icon: Trophy },
   { id: 'news', label: 'Actus', icon: Bell },
   { id: 'presences', label: 'Présences', icon: ClipboardCheck, featured: true },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },

@@ -461,7 +461,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                    );
                                  })()}
                               </div>
-                              <div className="flex gap-1.5 shrink-0">
+                              <div className="flex gap-1 shrink-0">
                                 {/* Bouton Convoqué */}
                                 <div className="relative overflow-visible">
                                   <motion.button
@@ -469,13 +469,13 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                     whileTap={{ scale: 0.82 }}
                                     animate={isConvoked ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                     transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-                                    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                                    className={`px-1.5 h-7 rounded-lg flex items-center gap-0.5 text-[10px] font-semibold transition-colors ${
                                       isConvoked
                                         ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30'
                                         : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
                                     }`}
                                   >
-                                    <UserCheck size={12} /> Convoqué
+                                    <UserCheck size={11} /> Oui
                                   </motion.button>
                                   <AnimatePresence>
                                     {isConvoked && (
@@ -494,13 +494,13 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                     whileTap={{ scale: 0.82 }}
                                     animate={isNotConvoked ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                     transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-                                    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                                    className={`px-1.5 h-7 rounded-lg flex items-center gap-0.5 text-[10px] font-semibold transition-colors ${
                                       isNotConvoked
                                         ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30'
                                         : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
                                     }`}
                                   >
-                                    <UserX size={12} /> Non convoqué
+                                    <UserX size={11} /> Non
                                   </motion.button>
                                   <AnimatePresence>
                                     {isNotConvoked && (
