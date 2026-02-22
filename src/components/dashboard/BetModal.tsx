@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, TrendingUp, Coins, Zap } from 'lucide-react';
+import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -238,6 +238,32 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
               </div>
             </motion.div>
           )}
+        </div>
+
+        {/* How to earn points */}
+        <div className="mx-5 mb-3 p-3 bg-secondary/60 rounded-xl border border-border">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Gift size={13} className="text-amber-400" />
+            <span className="text-[11px] font-bold text-foreground">Gagner des points</span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <CalendarCheck size={11} className="text-emerald-400 shrink-0" />
+              <span><b className="text-foreground">+5 pts</b> — Répondre présent ou absent à un événement</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <MessageCircle size={11} className="text-blue-400 shrink-0" />
+              <span><b className="text-foreground">+5 pts</b> — Commenter une actualité</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <Heart size={11} className="text-pink-400 shrink-0" />
+              <span><b className="text-foreground">+1 pt</b> — Liker une actualité</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <Sparkles size={11} className="text-amber-400 shrink-0" />
+              <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien automatique (30/mois)</span>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

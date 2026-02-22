@@ -314,6 +314,34 @@ const Dashboard = () => {
 
     fetchAll();
 
+    // Daily bonus: +1 pt/day (automatic)
+    const awardDailyBonus = async () => {
+      if (!currentUser?.uid) return;
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: existing } = await supabase
+        .from('points_transactions')
+        .select('id')
+        .eq('user_id', currentUser.uid)
+        .eq('type', 'daily')
+        .like('description', `%${today}%`)
+        .maybeSingle();
+      if (existing) return; // already awarded today
+      // Award 1 pt
+      const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
+      if (pts) {
+        await supabase.from('user_points').update({ balance: pts.balance + 1, updated_at: new Date().toISOString() }).eq('id', pts.id);
+      } else {
+        await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 101 });
+      }
+      await supabase.from('points_transactions').insert({
+        user_id: currentUser.uid,
+        amount: 1,
+        type: 'daily',
+        description: `Bonus quotidien ${today}`,
+      });
+    };
+    awardDailyBonus();
+
     // Detect iOS Capacitor (Realtime WebSocket doesn't work reliably on iOS native)
     const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
 
