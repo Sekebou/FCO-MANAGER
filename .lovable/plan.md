@@ -1,98 +1,152 @@
 
 
-## Plan de modernisation : Paris, Points, Presences et Championnats multiples
+## Plan de correction des 7 bugs
 
-### 1. Hero Prochain Match : retirer les cotes, simplifier
+### Bug 1 : Logos manquants dans le classement equipe A
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx`
+**Probleme** : Dans `ChampionnatTab.tsx` (lignes 276-294), les logos sont recuperes depuis le classement (`classement_journees`) puis en fallback depuis `/resultat`. Mais les clubs qui n'ont pas encore joue contre Oisemont n'apparaissent dans aucun de ces deux endpoints.
 
-- Supprimer le bloc "Odds preview with labels" (lignes 750-774) qui affiche les 3 boutons de cotes sous la date
-- Garder uniquement le bouton "Parier sur ce match" qui ouvre la BetModal
-- La BetModal affiche deja les cotes a l'interieur, donc pas de perte de fonctionnalite
+**Correction** : Ajouter aussi un fetch du `/calendrier` en parallele du `/resultat` (ligne 288), puis fusionner les logos des deux sources.
 
-### 2. Bilan V/N/D : cercles minimalistes
+**Fichier** : `src/components/dashboard/ChampionnatTab.tsx` (lignes 287-294)
+- Remplacer le fetch simple de resultats par un `Promise.all` resultats + calendrier
+- Fusionner les logos des deux sources dans `liveLogos`
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx` (lignes 631-651)
+### Bug 2 : Points de presence ajoutes en double
 
-- Remplacer les "glass cards" actuelles par de vrais cercles minimalistes :
-  - `w-14 h-14 rounded-full` avec fond subtil colore (`bg-emerald-500/10`, `bg-slate-400/10`, `bg-red-500/10`)
-  - Chiffre au centre en gras, label dessous
-  - Pas de bordure epaisse, juste le fond colore leger dans un cercle
+**Probleme** : Dans `Dashboard.tsx` (lignes 463-484), la logique verifie `hadPreviousResponse` mais quand on retire sa reponse (toggle off) puis re-repond, `hadPreviousResponse` est `false` car la cle a ete supprimee, donc les 5 pts sont re-donnes. De plus, retirer sa reponse ne retire pas les points.
 
-### 3. Remonter le classement parieurs
+**Correction** : Traquer les bonus deja accordes en verifiant dans `points_transactions` si un bonus `presence` existe deja pour cet evenement et cet utilisateur. Si le joueur retire sa reponse, deduire les 5 pts.
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx`
+**Fichier** : `src/pages/Dashboard.tsx` (lignes 459-485)
+- Avant de donner des points, verifier avec une query `points_transactions` si une transaction `presence` pour cet `eventId` existe deja pour le user
+- Si le joueur retire sa reponse (toggle off = delete), chercher la transaction et deduire 5 pts du solde
+- Mettre la description a `Présence : [eventId]` pour pouvoir la retrouver
 
-- Deplacer `<BetLeaderboard />` (ligne 1007) juste apres le Hero prochain match (apres ligne 817), avant les sections "Prochains matchs" et "Derniers resultats"
+### Bug 3 : Scroll en bas quand on switch d'onglet
 
-### 4. Retirer le bloc "Aucun championnat pour l'equipe X"
+**Probleme** : Dans `Dashboard.tsx` ligne 1064, `<div key={activeTab}>` re-render le contenu mais le scroll de la page reste a sa position actuelle.
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx` (lignes 1053-1063)
+**Correction** : Ajouter un `window.scrollTo(0, 0)` dans le `handleTabChange` function (ligne 184).
 
-- Supprimer ce bloc completement. Le classement live, matchs et resultats se chargent deja dynamiquement via l'API FFF
+**Fichier** : `src/pages/Dashboard.tsx` (ligne 184)
+- `const handleTabChange = (tab: string) => { window.scrollTo(0, 0); setActiveTab(tab); };`
 
-### 5. Points dans Membres et profil
+### Bug 4 : Renommer "Classement" en "Championnat"
 
-**Fichier** : `src/components/dashboard/MembersTab.tsx`
+**Probleme** : Le tab s'appelle deja "Championnat" dans le tableau `tabs` (ligne 136). Ce bug semble deja corrige. Verification necessaire dans `BottomTabBar.tsx` au cas ou le label y est different.
 
-- Ajouter une ligne dans chaque carte membre affichant le solde de points de pari (query `user_points` par `user_id`)
-- Afficher aussi le dernier gain : "+X gagne sur le match Y" (query `points_transactions` derniere entree de type `bet` avec amount positif)
-- Afficher sous forme d'un badge `Coins` avec le solde
+**Fichier** : `src/components/dashboard/BottomTabBar.tsx` - verifier et corriger si besoin
 
-### 6. Gain de 5 pts a la presence
+### Bug 5 : Bouton "Convoque" qui empiete sur le nom (iPhone 12)
 
-**Fichier** : `src/pages/Dashboard.tsx` (fonction `togglePresence`, lignes 443-452)
+**Probleme** : Dans `PresencesTab.tsx` (lignes 438-463), le layout `flex items-center justify-between gap-2` ne gere pas bien les noms longs sur petit ecran car les boutons convoque/non-convoque prennent trop de place.
 
-- Quand un joueur clique "Present" ou "Absent" (et qu'il n'avait pas deja repondu a cet evenement), ajouter 5 points a son solde `user_points`
-- Inserer une transaction dans `points_transactions` avec type `presence` et description "Presence repondue : [nom evenement]"
-- Eviter le doublon : ne pas redonner 5pts si le joueur change sa reponse (verifier si une presence existait deja)
+**Correction** : 
+- Ajouter `min-w-0` et `overflow-hidden` au conteneur du nom
+- Reduire la taille des boutons sur mobile : `text-[10px] px-1.5 h-7` au lieu de `text-[11px] px-2.5 h-8`
+- Utiliser `truncate` sur le nom pour eviter le debordement
 
-**Fichier** : `src/components/dashboard/PresencesTab.tsx`
+**Fichier** : `src/components/dashboard/PresencesTab.tsx` (lignes 464-510)
 
-- Ajouter un message informatif sous chaque evenement : "5 pts de pari seront ajoutes a votre solde" (petit texte discret)
+### Bug 6 : Erreur lors de la creation de conversation
 
-### 7. Ajout de championnats par les admins (multi-onglets)
+**Probleme** : Dans `MessagesTab.tsx` (lignes 196-226), `createConversation` insere dans `conversations` avec `created_by: currentUser.uid`. La RLS policy pour INSERT exige `auth.uid() = ANY (participants)`. Le probleme pourrait venir du fait que le user n'est pas correctement authentifie via Supabase Auth, ou que le `participants` array n'est pas correctement formate.
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx`
+**Correction** : 
+- Ajouter un meilleur log d'erreur pour identifier la cause exacte
+- S'assurer que `allParticipants` est un array de strings UUID valides
+- Ajouter un catch plus explicite avec le message d'erreur Supabase
 
-La fonctionnalite existe deja : le bouton "Nouveau" (ligne 490-498) permet aux admins d'ajouter un championnat avec selection d'equipe (A, B, C). Les onglets equipe en haut servent de selecteur. Actuellement, le bouton n'apparait que si l'equipe selectionnee n'a pas encore de championnat (`!teamHasChampionship(selectedTeam)`).
+**Fichier** : `src/components/dashboard/MessagesTab.tsx` (lignes 215-225)
+- Remplacer `if (error) throw error;` par un log detaille de l'erreur
+- Verifier que `error.message` contient des infos RLS et ajuster le toast
 
-Le systeme actuel fonctionne deja comme demande :
-- Chaque equipe (A, B, C) a son onglet en haut
-- Un admin peut ajouter un championnat par equipe
-- Chaque onglet affiche son propre classement, prochain match et derniers resultats
+### Bug 7 : Visibilite des points dans le profil
 
-Pas de modifications necessaires ici, le systeme est deja en place.
+**Probleme** : Le `HeaderPoints` (lignes 158-172) affiche juste un petit chiffre `Coins size={9}` qui n'est pas comprehensible.
+
+**Correction** : 
+- Agrandir l'affichage : icone plus grande, label "Points" explicite
+- Ajouter un fond discret pour que ca ressemble a un badge lisible
+- Format : `[Coins icon] 105 pts`
+
+**Fichier** : `src/pages/Dashboard.tsx` (lignes 167-171)
 
 ### Resume des fichiers modifies
 
-| Fichier | Modifications |
-|---------|--------------|
-| `src/components/dashboard/ChampionnatTab.tsx` | Retirer cotes du hero, bilan en cercles, remonter leaderboard, retirer bloc "aucun championnat" |
-| `src/components/dashboard/BetModal.tsx` | Aucune modification (les cotes sont deja affichees dans le modal) |
-| `src/components/dashboard/MembersTab.tsx` | Ajouter solde de points et dernier gain par membre |
-| `src/pages/Dashboard.tsx` | Ajouter logique +5pts dans `togglePresence` |
-| `src/components/dashboard/PresencesTab.tsx` | Ajouter message "5 pts de pari seront ajoutes" |
+| Fichier | Bug |
+|---------|-----|
+| `src/components/dashboard/ChampionnatTab.tsx` | #1 Logos manquants |
+| `src/pages/Dashboard.tsx` | #2 Points en double, #3 Scroll, #7 Visibilite points |
+| `src/components/dashboard/PresencesTab.tsx` | #5 Bouton convoque iPhone |
+| `src/components/dashboard/MessagesTab.tsx` | #6 Erreur creation conversation |
+| `src/components/dashboard/BottomTabBar.tsx` | #4 Verification renommage |
 
 ### Details techniques
 
-**Logique des 5 pts (Dashboard.tsx)** :
+**Fix logos (ChampionnatTab.tsx)** :
+
+```text
+// Lignes 287-294 : remplacer le try/catch resultats par :
+try {
+  const [resultatsData, calendrierData] = await Promise.all([
+    getResultats(champParams.cpNo, champParams.phase, champParams.poule),
+    getCalendrier(champParams.cpNo, champParams.phase, champParams.poule),
+  ]);
+  const logosResultats = extractTeamLogosFromResults(resultatsData);
+  const logosCalendrier = extractTeamLogosFromResults(calendrierData);
+  setLiveLogos(prev => ({ ...prev, ...logosResultats, ...logosCalendrier }));
+} catch {}
+```
+
+**Fix points presence (Dashboard.tsx)** :
 
 ```text
 togglePresence():
-  1. Verifier si presences[playerId] existe deja (= deja repondu)
-  2. Si non (premiere reponse) :
-     - Upsert user_points : balance += 5
-     - Insert points_transactions : { amount: +5, type: 'presence', description: '...' }
-     - Toast: "+5 pts de pari ajoutes !"
-  3. Si oui (changement de reponse) : pas de bonus supplementaire
+  // Quand on RETIRE sa reponse (toggle off) :
+  if (currentPresences[playerId] === status) {
+    delete currentPresences[playerId];
+    // Verifier si on avait donne des points pour cet event
+    const { data: existingTx } = await supabase
+      .from('points_transactions')
+      .select('id')
+      .eq('user_id', currentUser.uid)
+      .eq('type', 'presence')
+      .like('description', `%${eventId}%`)
+      .maybeSingle();
+    if (existingTx) {
+      // Retirer les 5 pts
+      const { data: pts } = await supabase.from('user_points')
+        .select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
+      if (pts) await supabase.from('user_points')
+        .update({ balance: pts.balance - 5 }).eq('id', pts.id);
+      await supabase.from('points_transactions')
+        .delete().eq('id', existingTx.id);  // Besoin de RLS DELETE
+      toast.info('-5 pts retirés');
+    }
+  } else {
+    // Quand on AJOUTE une reponse :
+    // Verifier si deja recompense pour cet event
+    const { data: alreadyRewarded } = await supabase
+      .from('points_transactions')
+      .select('id')
+      .eq('user_id', currentUser.uid)
+      .eq('type', 'presence')
+      .like('description', `%${eventId}%`)
+      .maybeSingle();
+    if (!alreadyRewarded) {
+      // Donner 5 pts (logique existante)
+    }
+  }
 ```
 
-**Affichage points dans MembersTab** :
+**Note** : Il faudra ajouter une RLS policy DELETE sur `points_transactions` pour permettre aux users de supprimer leurs propres transactions, sinon utiliser un update a amount=-5 comme alternative.
 
-```text
-- Fetch user_points pour tous les membres au mount
-- Pour chaque membre, afficher un badge Coins avec le solde
-- Fetch la derniere transaction positive de type 'bet' pour afficher "+X sur match Y"
+**Migration SQL necessaire** :
+```sql
+CREATE POLICY "Users can delete own transactions"
+  ON public.points_transactions FOR DELETE
+  USING (auth.uid() = user_id);
 ```
 
