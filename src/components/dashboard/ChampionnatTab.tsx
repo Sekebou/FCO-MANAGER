@@ -284,12 +284,16 @@ const ChampionnatTab: React.FC<Props> = ({
           }
         }
         
-        // Also fetch logos from results endpoint as fallback
+        // Also fetch logos from results AND calendar endpoints for full coverage
         try {
-          const resultatsData = await getResultats(champParams.cpNo, champParams.phase, champParams.poule);
+          const [resultatsData, calendrierData] = await Promise.all([
+            getResultats(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
+            getCalendrier(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
+          ]);
           if (!cancelled) {
-            const logosByClNo = extractTeamLogosFromResults(resultatsData);
-            setLiveLogos(prev => ({ ...prev, ...logosByClNo }));
+            const logosResultats = resultatsData ? extractTeamLogosFromResults(resultatsData) : {};
+            const logosCalendrier = calendrierData ? extractTeamLogosFromResults(calendrierData) : {};
+            setLiveLogos(prev => ({ ...prev, ...logosResultats, ...logosCalendrier }));
           }
         } catch {}
       } catch (err) {

@@ -165,8 +165,10 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
   }, [userId]);
   if (pts === null) return null;
   return (
-    <span className="flex items-center gap-0.5 text-amber-400/80 ml-1">
-      <Coins size={9} /> {pts}
+    <span className="inline-flex items-center gap-1 bg-amber-500/15 border border-amber-500/25 rounded-full px-2.5 py-0.5 ml-1">
+      <Coins size={13} className="text-amber-400" />
+      <span className="text-xs font-bold text-amber-400">{pts}</span>
+      <span className="text-[10px] font-medium text-amber-400/70">pts</span>
     </span>
   );
 };
@@ -181,7 +183,7 @@ const Dashboard = () => {
     return urlParams.get('tab') || 'presences';
   });
 
-  const handleTabChange = (tab: string) => setActiveTab(tab);
+  const handleTabChange = (tab: string) => { window.scrollTo(0, 0); setActiveTab(tab); };
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -460,26 +462,40 @@ const Dashboard = () => {
     if (!canManageOwnPresence(playerId)) { toast.warning('Vous ne pouvez gérer que votre propre présence'); return; }
     const event = events.find(e => e.id === eventId);
     const currentPresences = { ...(event?.presences || {}) };
-    const hadPreviousResponse = currentPresences[playerId] !== undefined;
-    if (currentPresences[playerId] === status) delete currentPresences[playerId];
+    const isToggleOff = currentPresences[playerId] === status;
+    if (isToggleOff) delete currentPresences[playerId];
     else currentPresences[playerId] = status;
     setEvents(prev => prev.map(e => e.id === eventId ? { ...e, presences: currentPresences } : e));
     const { error } = await supabase.from('events').update({ presences: currentPresences }).eq('id', eventId);
     if (error) { toast.error('Erreur: ' + error.message); return; }
 
-    // Award 5 points for first presence response (match or training only)
-    if (!hadPreviousResponse && currentUser && (event?.type === 'match' || event?.type === 'training')) {
+    // Points logic for presence (match or training only)
+    if (currentUser && (event?.type === 'match' || event?.type === 'training')) {
+      const txDesc = `Présence:${eventId}`;
       try {
-        // Upsert user_points
-        const { data: existing } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
-        if (existing) {
-          await supabase.from('user_points').update({ balance: existing.balance + 5, updated_at: new Date().toISOString() }).eq('id', existing.id);
+        if (isToggleOff) {
+          // Remove points if toggling off
+          const { data: existingTx } = await supabase.from('points_transactions').select('id').eq('user_id', currentUser.uid).eq('type', 'presence').eq('description', txDesc).maybeSingle();
+          if (existingTx) {
+            const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
+            if (pts) await supabase.from('user_points').update({ balance: Math.max(0, pts.balance - 5), updated_at: new Date().toISOString() }).eq('id', pts.id);
+            await supabase.from('points_transactions').delete().eq('id', existingTx.id);
+            toast.info('-5 pts retirés');
+          }
         } else {
-          await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 105 });
+          // Award points only if not already rewarded for this event
+          const { data: alreadyRewarded } = await supabase.from('points_transactions').select('id').eq('user_id', currentUser.uid).eq('type', 'presence').eq('description', txDesc).maybeSingle();
+          if (!alreadyRewarded) {
+            const { data: existing } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
+            if (existing) {
+              await supabase.from('user_points').update({ balance: existing.balance + 5, updated_at: new Date().toISOString() }).eq('id', existing.id);
+            } else {
+              await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 105 });
+            }
+            await supabase.from('points_transactions').insert({ user_id: currentUser.uid, amount: 5, type: 'presence', description: txDesc });
+            toast.success('+5 pts de pari ajoutés !', { icon: '🎉' });
+          }
         }
-        // Insert transaction
-        await supabase.from('points_transactions').insert({ user_id: currentUser.uid, amount: 5, type: 'presence', description: `Présence répondue : ${event?.title || 'Événement'}` });
-        toast.success('+5 pts de pari ajoutés !', { icon: '🎉' });
       } catch (err) { console.warn('Points award error:', err); }
     }
   };
