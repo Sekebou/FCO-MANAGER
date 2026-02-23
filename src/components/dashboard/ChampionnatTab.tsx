@@ -1092,48 +1092,57 @@ const ChampionnatTab: React.FC<Props> = ({
       </div>
 
       {/* ─── Admin bar ─── */}
-      {canManage() && filteredChampionships.map(champ => (
-        <motion.div 
-          key={champ.id} 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }}
-          className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden"
-        >
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
-                <Trophy size={16} className="text-accent" />
+      {canManage() && filteredChampionships.length > 0 && (
+        <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+          {filteredChampionships.map(champ => (
+            <motion.div 
+              key={champ.id} 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }}
+              className="bg-card rounded-xl border border-border/60 shadow-sm"
+            >
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Trophy size={14} className="text-accent shrink-0" />
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-bold text-foreground truncate">{champ.name}</h3>
+                    <p className="text-[10px] text-muted-foreground">{champ.season} • Équipe {champ.team || 'A'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
+                    <span
+                      onClick={async () => {
+                        setRefreshingChamp(champ.id);
+                        try {
+                          const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
+                          setRefreshResult({ ...result, champName: champ.name });
+                        } finally {
+                          setRefreshingChamp(null);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all cursor-pointer"
+                      title="Mettre à jour depuis la FFF"
+                    >
+                      <RefreshCw size={14} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
+                    </span>
+                  )}
+                  <span 
+                    onClick={() => {
+                      if (window.confirm(`Supprimer le championnat "${champ.name}" ?`)) {
+                        onDeleteChampionship(champ.id);
+                      }
+                    }} 
+                    className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all cursor-pointer"
+                  >
+                    <Trash2 size={14} />
+                  </span>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">{champ.name}</h3>
-                <p className="text-[11px] text-muted-foreground">{champ.season} • Éq. {champ.team || 'A'}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
-                <span
-                  onClick={async () => {
-                    setRefreshingChamp(champ.id);
-                    try {
-                      const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
-                      setRefreshResult({ ...result, champName: champ.name });
-                    } finally {
-                      setRefreshingChamp(null);
-                    }
-                  }}
-                  className="p-2 rounded-lg hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all cursor-pointer"
-                  title="Mettre à jour depuis la FFF"
-                >
-                  <RefreshCw size={16} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
-                </span>
-              )}
-              <span onClick={() => onDeleteChampionship(champ.id)} className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all cursor-pointer">
-                <Trash2 size={16} />
-              </span>
-            </div>
-          </div>
-        </motion.div>
-      ))}
+            </motion.div>
+          ))}
+        </div>
+      )}
 
 
       {/* ─── Modal: Add Championship ─── */}
@@ -1168,7 +1177,7 @@ const ChampionnatTab: React.FC<Props> = ({
                       type="button"
                       onClick={() => { setChampTeam(team); setCustomTeamName(''); }}
                       disabled={teamHasChampionship(team)}
-                      className={`flex-1 min-w-[60px] py-3 rounded-xl text-sm font-bold transition-all ${
+                      className={`px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                         champTeam === team
                           ? 'bg-accent text-accent-foreground shadow-sm'
                           : teamHasChampionship(team)
@@ -1176,14 +1185,14 @@ const ChampionnatTab: React.FC<Props> = ({
                             : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
                       }`}
                     >
-                      {BASE_TEAMS.includes(team) ? `Éq. ${team}` : team}
+                      {BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}
                       {teamHasChampionship(team) && ' ✓'}
                     </button>
                   ))}
                   <button
                     type="button"
                     onClick={() => setChampTeam('__new__')}
-                    className={`min-w-[60px] py-3 rounded-xl text-sm font-bold transition-all ${
+                    className={`px-3 sm:px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
                       champTeam === '__new__'
                         ? 'bg-accent text-accent-foreground shadow-sm'
                         : 'bg-secondary text-muted-foreground hover:bg-secondary/80 border-2 border-dashed border-border'
