@@ -67,6 +67,7 @@ interface BottomTabBarProps {
 }
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [featuredJustActivated, setFeaturedJustActivated] = useState(false);
   const prevActiveTab = useRef(activeTab);
@@ -75,11 +76,20 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
     setTimeout(() => setMounted(true), 50);
   }, []);
 
-  // Compute the translate offset for mobile: show exactly 4 tabs
-  const activeIndex = allTabs.findIndex(t => t.id === activeTab);
-  const startIndex = Math.max(0, Math.min(activeIndex - 1, allTabs.length - 4));
-  // Each tab is 25% of viewport, so offset = startIndex * 25%
-  const translateX = -(startIndex * 25);
+  // Auto-scroll to active tab
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const activeBtn = container.querySelector(`[data-tab="${activeTab}"]`) as HTMLElement;
+    if (activeBtn) {
+      const containerRect = container.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      const scrollLeft = container.scrollLeft;
+      const btnCenter = btnRect.left - containerRect.left + scrollLeft + btnRect.width / 2;
+      const targetScroll = btnCenter - containerRect.width / 2;
+      container.scrollTo({ left: targetScroll, behavior: mounted ? 'smooth' : 'auto' });
+    }
+  }, [activeTab, mounted]);
 
   // One-shot animation when featured tab is activated
   useEffect(() => {
@@ -115,15 +125,12 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
         }}
       />
 
-      {/* Mobile : 4 onglets visibles, transform contrôlé */}
-      <div className="relative md:hidden overflow-hidden">
+      {/* Mobile : scroll horizontal libre */}
+      <div className="relative md:hidden">
         <div
-          className="flex items-center pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-0"
-          style={{
-            width: `${(allTabs.length / 4) * 100}%`,
-            transform: `translateX(${translateX}%)`,
-            transition: mounted ? 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-          }}
+          ref={scrollRef}
+          className="flex items-center overflow-x-auto scrollbar-hide px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] gap-0"
+          style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {allTabs.map((tab) => {
             const Icon = tab.icon;
@@ -136,8 +143,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   key={tab.id}
                   data-tab={tab.id}
                   onClick={() => handleTap(tab.id)}
-                  className="relative flex flex-col items-center justify-center shrink-0 outline-none select-none py-1"
-                  style={{ WebkitTapHighlightColor: 'transparent', width: `${100 / allTabs.length}%` }}
+                  className="relative flex flex-col items-center justify-center min-w-[5rem] shrink-0 outline-none select-none py-1"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <motion.div
                     animate={isActive
@@ -197,8 +204,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 key={tab.id}
                 data-tab={tab.id}
                 onClick={() => handleTap(tab.id)}
-                className={cn('relative flex flex-col items-center justify-center pt-1.5 pb-1 shrink-0 outline-none select-none')}
-                style={{ WebkitTapHighlightColor: 'transparent', width: `${100 / allTabs.length}%` }}
+                className={cn('relative flex flex-col items-center justify-center pt-1.5 pb-1 min-w-[4rem] shrink-0 outline-none select-none')}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <motion.div
                   initial={false}
