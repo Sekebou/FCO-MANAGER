@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Sparkles
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.png';
 import { toast } from 'sonner';
@@ -1122,14 +1122,17 @@ const Dashboard = () => {
 
       {/* Welcome Banner */}
       <motion.div 
-        initial={{ opacity: 0, x: -8 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.15, duration: 0.35 }}
-        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-3 pb-0"
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-4 pb-1"
       >
-        <p className="text-[13px] text-muted-foreground font-medium tracking-tight">
-          Bonjour <span className="font-bold text-foreground">{currentUser?.name?.split(' ')[0]}</span> 🏟️
-        </p>
+        <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl px-4 py-2.5 shadow-sm">
+          <Sparkles size={16} className="text-accent shrink-0" />
+          <p className="text-sm font-medium text-foreground">
+            Bienvenue, <span className="font-bold bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">{currentUser?.name?.split(' ')[0]}</span>
+          </p>
+        </div>
       </motion.div>
 
       {/* Content */}

@@ -552,50 +552,28 @@ const ChampionnatTab: React.FC<Props> = ({
         )}
       </motion.div>
 
-      {/* ─── Team selector pills ─── */}
+      {/* ─── Team selector ─── */}
       <motion.div 
         initial={{ opacity: 0, y: 8 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.08 }}
-        className="flex items-center gap-1.5 p-1.5 bg-secondary/60 backdrop-blur-sm rounded-2xl border border-border/50"
+        className="relative"
       >
-        {BASE_TEAMS.map(team => (
-          <motion.button
-            key={team}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setSelectedTeam(team)}
-            className={`relative px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${
-              selectedTeam === team
-                ? 'text-accent-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+        <div className="flex items-center gap-1.5 bg-secondary/60 backdrop-blur-sm rounded-xl border border-border/50 p-1">
+          <select
+            value={selectedTeam}
+            onChange={e => setSelectedTeam(e.target.value)}
+            className="w-full appearance-none bg-accent text-accent-foreground text-xs font-bold rounded-lg px-3 py-2 outline-none cursor-pointer"
+            style={{ fontSize: '16px' }}
           >
-            {selectedTeam === team && (
-              <motion.div
-                layoutId="team-pill"
-                className="absolute inset-0 bg-accent rounded-xl shadow-lg shadow-accent/25"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10">Équipe {team}</span>
-          </motion.button>
-        ))}
-        {customTeams.length > 0 && (
-          <div className="relative ml-auto">
-            <select
-              value={BASE_TEAMS.includes(selectedTeam) ? '' : selectedTeam}
-              onChange={e => { if (e.target.value) setSelectedTeam(e.target.value); }}
-              className="appearance-none bg-secondary text-foreground text-sm font-bold rounded-xl pl-3 pr-7 py-2.5 border border-border/50 outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer"
-              style={{ fontSize: '16px' }}
-            >
-              <option value="" disabled>Autres…</option>
-              {customTeams.map(team => (
-                <option key={team} value={team}>{team}</option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          </div>
-        )}
+            {allTeamOptions.map(team => (
+              <option key={team} value={team}>
+                {BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-accent-foreground pointer-events-none" />
+        </div>
       </motion.div>
 
       {/* Delete tab confirmation */}
