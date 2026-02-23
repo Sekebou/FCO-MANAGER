@@ -66,10 +66,13 @@ const Auth = () => {
       localStorage.setItem('currentUser', JSON.stringify(appUser));
       setCurrentUser(appUser as any);
 
-      const fullName = profile.name || profile.username || "joueur";
-      const firstName = fullName.split(' ')[0];
-      // TEMPORAIRE: toujours afficher bienvenue + tuto pour la vidéo
-      sessionStorage.setItem('showWelcome', firstName);
+      // Show welcome + tutorial only on first login (welcome_seen = false/null)
+      if (!profile.welcome_seen) {
+        const fullName = profile.name || profile.username || "joueur";
+        const firstName = fullName.split(' ')[0];
+        sessionStorage.setItem('showWelcome', firstName);
+        await supabase.from('profiles').update({ welcome_seen: true }).eq('id', user.id);
+      }
 
       navigate("/");
     } catch (err: any) {
