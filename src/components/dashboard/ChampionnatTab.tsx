@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users, MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink, Zap, Timer } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users, MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink, Zap, Timer, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import { 
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
   extractTeamLogosFromResults,
-  encodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship,
+  encodeFFFApiRef, decodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship,
   getTousMatchsAvenir, getTousResultats,
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
@@ -47,6 +47,7 @@ interface Props {
   canUpdateChampionnat: () => boolean | undefined;
   onAddChampionship: (data: { name: string; season: string; teams: string[]; fffUrl?: string; matches?: ScrapedMatch[]; standings?: ScrapedStanding[]; teamLogos?: Record<string, string>; team?: string }) => void;
   onDeleteChampionship: (id: string) => void;
+  onUpdateChampionship?: (id: string, updates: { team?: string }) => void;
   onAddMatch: (data: Omit<Match, 'id'>) => void;
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
   onDeleteMatch: (id: string) => void;
@@ -84,6 +85,7 @@ const ChampionnatTab: React.FC<Props> = ({
   canUpdateChampionnat,
   onAddChampionship,
   onDeleteChampionship,
+  onUpdateChampionship,
   onAddMatch,
   onUpdateMatchScore,
   onDeleteMatch,
@@ -95,6 +97,9 @@ const ChampionnatTab: React.FC<Props> = ({
   const allTeamOptions = [...BASE_TEAMS, ...customTeams];
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
   const [customTeamName, setCustomTeamName] = useState('');
+  const [editingTab, setEditingTab] = useState<string | null>(null);
+  const [editTabName, setEditTabName] = useState('');
+  const [deletingTab, setDeletingTab] = useState<string | null>(null);
   const [showAddChamp, setShowAddChamp] = useState(false);
   const [showAddMatch, setShowAddMatch] = useState<string | null>(null);
   const [expandedChamp, setExpandedChamp] = useState<string | null>(championships[0]?.id || null);
@@ -240,13 +245,21 @@ const ChampionnatTab: React.FC<Props> = ({
     };
     
     const mapping = teamMapping[selectedTeam];
+    
+    // For custom teams, try to decode fffUrl from the championship
+    let customParams: { cpNo: number; phase: number; poule: number } | null = null;
     if (!mapping) {
-      // Custom team — no FFF API mapping
-      setLiveClassement([]);
-      setLiveLogos({});
-      setLiveError('Pas de classement FFF pour cette équipe');
-      setIsLoadingLive(false);
-      return;
+      const customChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffUrl);
+      if (customChamp?.fffUrl) {
+        customParams = decodeFFFApiRef(customChamp.fffUrl);
+      }
+      if (!customParams) {
+        setLiveClassement([]);
+        setLiveLogos({});
+        setLiveError('Pas de classement FFF pour cette équipe');
+        setIsLoadingLive(false);
+        return;
+      }
     }
 
     const fetchLive = async () => {
@@ -255,9 +268,13 @@ const ChampionnatTab: React.FC<Props> = ({
       setLiveClassement([]);
       setLiveLogos({});
       try {
-        const equipesData = await getEquipes(OISEMONT_CL_NO);
-        const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
-        const champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+        let champParams: { cpNo: number; phase: number; poule: number } | null = customParams;
+        
+        if (!champParams && mapping) {
+          const equipesData = await getEquipes(OISEMONT_CL_NO);
+          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+        }
         
         if (!champParams) {
           setLiveError('Aucun championnat trouvé pour cette équipe');
@@ -325,11 +342,19 @@ const ChampionnatTab: React.FC<Props> = ({
     };
     
     const mapping = teamMapping[selectedTeam];
+    
+    // For custom teams, try to decode fffUrl from the championship
+    let customParams: { cpNo: number; phase: number; poule: number } | null = null;
     if (!mapping) {
-      // Custom team — no FFF API
-      setLiveUpcoming([]);
-      setLiveResults([]);
-      return;
+      const customChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffUrl);
+      if (customChamp?.fffUrl) {
+        customParams = decodeFFFApiRef(customChamp.fffUrl);
+      }
+      if (!customParams) {
+        setLiveUpcoming([]);
+        setLiveResults([]);
+        return;
+      }
     }
 
     const fetchMatches = async () => {
@@ -337,9 +362,13 @@ const ChampionnatTab: React.FC<Props> = ({
       setLiveUpcoming([]);
       setLiveResults([]);
       try {
-        const equipesData = await getEquipes(OISEMONT_CL_NO);
-        const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
-        const champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+        let champParams: { cpNo: number; phase: number; poule: number } | null = customParams;
+        
+        if (!champParams && mapping) {
+          const equipesData = await getEquipes(OISEMONT_CL_NO);
+          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+        }
         
         if (!champParams) return;
         
@@ -528,30 +557,81 @@ const ChampionnatTab: React.FC<Props> = ({
         initial={{ opacity: 0, y: 8 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.08 }}
-        className="flex items-center gap-2 p-1.5 bg-secondary/60 backdrop-blur-sm rounded-2xl border border-border/50"
+        className="flex items-center gap-1.5 p-1.5 bg-secondary/60 backdrop-blur-sm rounded-2xl border border-border/50 overflow-x-auto"
       >
-        {allTeamOptions.map(team => (
-          <motion.button
-            key={team}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setSelectedTeam(team)}
-            className={`relative flex-1 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors min-w-0 ${
-              selectedTeam === team
-                ? 'text-accent-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {selectedTeam === team && (
-              <motion.div
-                layoutId="team-pill"
-                className="absolute inset-0 bg-accent rounded-xl shadow-lg shadow-accent/25"
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-            <span className="relative z-10 truncate">{BASE_TEAMS.includes(team) ? `Éq. ${team}` : team}</span>
-          </motion.button>
-        ))}
+        {allTeamOptions.map(team => {
+          const isCustom = !BASE_TEAMS.includes(team);
+          const isEditing = editingTab === team;
+          return (
+            <div key={team} className="relative flex items-center shrink-0">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { if (!isEditing) setSelectedTeam(team); }}
+                className={`relative px-3 py-2.5 rounded-xl text-sm font-bold transition-colors min-w-0 ${
+                  selectedTeam === team
+                    ? 'text-accent-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {selectedTeam === team && (
+                  <motion.div
+                    layoutId="team-pill"
+                    className="absolute inset-0 bg-accent rounded-xl shadow-lg shadow-accent/25"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                {isEditing ? (
+                  <input
+                    autoFocus
+                    value={editTabName}
+                    onChange={e => setEditTabName(e.target.value)}
+                    onBlur={() => {
+                      if (editTabName.trim() && editTabName.trim() !== team && onUpdateChampionship) {
+                        const champsToUpdate = championships.filter(c => (c.team || 'A') === team);
+                        champsToUpdate.forEach(c => onUpdateChampionship(c.id, { team: editTabName.trim() }));
+                        setSelectedTeam(editTabName.trim());
+                      }
+                      setEditingTab(null);
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    className="relative z-10 bg-transparent border-b border-accent-foreground/50 text-center w-16 outline-none text-sm font-bold"
+                    style={{ fontSize: '16px' }}
+                  />
+                ) : (
+                  <span className="relative z-10 truncate">{BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}</span>
+                )}
+              </motion.button>
+              {isCustom && canManage() && selectedTeam === team && !isEditing && (
+                <div className="flex items-center gap-0.5 relative z-10 -ml-1">
+                  <button onClick={() => { setEditingTab(team); setEditTabName(team); }} className="w-5 h-5 rounded-full flex items-center justify-center text-accent-foreground/60 hover:text-accent-foreground transition-colors">
+                    <Pencil size={10} />
+                  </button>
+                  <button onClick={() => setDeletingTab(team)} className="w-5 h-5 rounded-full flex items-center justify-center text-destructive/60 hover:text-destructive transition-colors">
+                    <X size={11} />
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </motion.div>
+
+      {/* Delete tab confirmation */}
+      {deletingTab && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-destructive font-medium">Supprimer l'onglet « {deletingTab} » et ses championnats ?</span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setDeletingTab(null)} className="text-xs px-3 py-1.5 rounded-lg bg-secondary text-foreground">Annuler</button>
+            <button onClick={() => {
+              const champsToDelete = championships.filter(c => (c.team || 'A') === deletingTab);
+              champsToDelete.forEach(c => onDeleteChampionship(c.id));
+              setDeletingTab(null);
+              if (selectedTeam === deletingTab) setSelectedTeam('A');
+              toast.success(`Onglet "${deletingTab}" supprimé`);
+            }} className="text-xs px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground font-medium">Supprimer</button>
+          </div>
+        </motion.div>
+      )}
 
       {/* ─── Live classement (enriched) ─── */}
       <motion.div 
