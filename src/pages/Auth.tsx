@@ -111,7 +111,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="h-screen flex relative overflow-hidden">
+    <div className="h-[100dvh] flex relative overflow-hidden">
       {/* Decorative side - blue club */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-primary overflow-hidden">
         {/* Animated gradient blobs */}
@@ -176,21 +176,21 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background relative overflow-hidden h-screen">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-12 bg-background relative overflow-hidden h-[100dvh]">
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
         <div className="w-full max-w-[420px] relative z-10">
           {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-10 animate-[fadeSlideUp_0.6s_ease-out_both]">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-4 border border-primary/20 shadow-lg shadow-primary/10">
-              <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
+          <div className="lg:hidden text-center mb-6 animate-[fadeSlideUp_0.6s_ease-out_both]">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-3 border border-primary/20 shadow-lg shadow-primary/10">
+              <img src={clubLogo} alt="FCO Logo" className="w-11 h-11 object-contain" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
+            <h1 className="text-2xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
           </div>
 
           {/* Header */}
-          <div className="mb-8 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
+          <div className="mb-5 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
             <h2 className="text-2xl font-bold text-foreground">Connexion</h2>
             <p className="text-muted-foreground text-sm mt-1">Application officielle du Football Club d'Oisemont</p>
           </div>
@@ -264,8 +264,8 @@ const Auth = () => {
             )}
           </div>
 
-          {/* Features description (mobile) */}
-          <div className="lg:hidden mt-6 space-y-2.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
+          {/* Features description (mobile) - hidden on small screens to fit */}
+          <div className="hidden sm:block lg:hidden mt-4 space-y-2 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
             {[
               { Icon: Users, text: "Gestion des effectifs et convocations" },
               { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
@@ -273,19 +273,21 @@ const Auth = () => {
             ].map((feat) => (
               <div
                 key={feat.text}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-secondary/60 border border-border/50"
               >
-                <feat.Icon size={18} className="text-primary/60 shrink-0" />
-                <span className="text-sm font-medium text-muted-foreground">{feat.text}</span>
+                <feat.Icon size={16} className="text-primary/60 shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground">{feat.text}</span>
               </div>
             ))}
-            <p className="text-xs text-muted-foreground/60 font-medium text-center pt-1">
-              Football Club d'Oisemont
-            </p>
           </div>
 
+          {/* Club name mobile */}
+          <p className="lg:hidden text-xs text-muted-foreground/60 font-medium text-center mt-4">
+            Football Club d'Oisemont
+          </p>
+
           {/* Status */}
-          <div className="mt-6 flex justify-center animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
+          <div className="mt-4 flex justify-center animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-success/20 bg-success/5">
               <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
               <p className="text-[11px] text-success/70 font-medium">Connecté au serveur</p>
