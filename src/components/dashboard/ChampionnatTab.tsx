@@ -574,7 +574,7 @@ const ChampionnatTab: React.FC<Props> = ({
                   : "text-muted-foreground hover:bg-secondary"
               )}
             >
-              Éq. {team}
+              Équipe {team}
             </button>
           ))}
 
