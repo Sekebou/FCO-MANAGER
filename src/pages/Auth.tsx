@@ -208,10 +208,10 @@ const Auth = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
-                  <div className={`relative rounded-xl transition-all duration-300 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}>
-                    <Mail className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <Mail className={`shrink-0 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
-                      className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
                       placeholder="votre@email.com" required />
                   </div>
                 </div>
@@ -229,10 +229,10 @@ const Auth = () => {
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
-                  <div className={`relative rounded-xl transition-all duration-300 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}>
-                    <Mail className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <Mail className={`shrink-0 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
-                      className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
                       placeholder="votre@email.com" required />
                   </div>
                 </div>
@@ -242,10 +242,10 @@ const Auth = () => {
                     <button type="button" onClick={() => { setForgotMode(true); setError(""); }}
                       className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">Mot de passe oublié ?</button>
                   </div>
-                  <div className={`relative rounded-xl transition-all duration-300 ${focused === "password" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5" : ""}`}>
-                    <Lock className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${focused === "password" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "password" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <Lock className={`shrink-0 transition-colors duration-200 ${focused === "password" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                     <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused("password")} onBlur={() => setFocused(null)}
-                      className="w-full pl-11 pr-4 py-3.5 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 transition-all outline-none text-sm"
+                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
                       placeholder="••••••••" required />
                   </div>
                 </div>
