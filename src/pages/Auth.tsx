@@ -26,7 +26,7 @@ const Auth = () => {
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password,
+        password
       });
       if (signInError) {
         if (signInError.message.includes('Invalid login credentials')) {
@@ -38,11 +38,11 @@ const Auth = () => {
       const user = data.user;
       if (!user) throw new Error('Erreur de connexion');
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const { data: profile, error: profileError } = await supabase.
+      from('profiles').
+      select('*').
+      eq('id', user.id).
+      single();
 
       if (profileError || !profile) {
         throw new Error("Profil utilisateur introuvable. Contactez l'administrateur.");
@@ -61,7 +61,7 @@ const Auth = () => {
         username: profile.username || '',
         playerId: profile.player_id || undefined,
         photoURL: profile.photo_url || null,
-        team: profile.team || undefined,
+        team: profile.team || undefined
       };
       localStorage.setItem('currentUser', JSON.stringify(appUser));
       setCurrentUser(appUser as any);
@@ -98,7 +98,7 @@ const Auth = () => {
     setResetLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${getWebOrigin()}/auth`,
+        redirectTo: `${getWebOrigin()}/auth`
       });
       if (error) throw error;
       toast.success("Email envoyé ! Vérifiez aussi vos spams / courriers indésirables.", { duration: 6000 });
@@ -129,9 +129,9 @@ const Auth = () => {
           className="absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
-            backgroundSize: "32px 32px",
-          }}
-        />
+            backgroundSize: "32px 32px"
+          }} />
+
 
         <div className="relative z-10 px-16 max-w-lg flex flex-col items-center text-center">
           <div className="inline-flex items-center justify-center w-36 h-36 bg-white/15 backdrop-blur-md rounded-3xl mb-8 border border-white/25 shadow-xl shadow-black/10 animate-[fadeSlideUp_0.8s_ease-out_both] hover:scale-105 hover:bg-white/20 transition-all duration-500">
@@ -151,19 +151,19 @@ const Auth = () => {
 
           <div className="space-y-3 w-full">
             {[
-              { Icon: Users, text: "Gestion des effectifs et convocations" },
-              { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
-              { Icon: Calendar, text: "Calendrier et événements du club" },
-            ].map((feat, i) => (
-              <div
-                key={feat.text}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] backdrop-blur-sm hover:bg-white/[0.1] hover:border-white/[0.15] transition-all duration-300 cursor-default animate-[fadeSlideUp_0.6s_ease-out_both]"
-                style={{ animationDelay: `${0.4 + i * 0.12}s` }}
-              >
+            { Icon: Users, text: "Gestion des effectifs et convocations" },
+            { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
+            { Icon: Calendar, text: "Calendrier et événements du club" }].
+            map((feat, i) =>
+            <div
+              key={feat.text}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.06] border border-white/[0.08] backdrop-blur-sm hover:bg-white/[0.1] hover:border-white/[0.15] transition-all duration-300 cursor-default animate-[fadeSlideUp_0.6s_ease-out_both]"
+              style={{ animationDelay: `${0.4 + i * 0.12}s` }}>
+
                 <feat.Icon size={18} className="text-white/50 shrink-0" />
                 <span className="text-sm font-medium text-white/60">{feat.text}</span>
               </div>
-            ))}
+            )}
 
 
           </div>
@@ -196,10 +196,10 @@ const Auth = () => {
 
           {/* Form card */}
           <div className="bg-card rounded-2xl p-5 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
-            {forgotMode ? (
-              <form onSubmit={handleForgotPassword} className="space-y-5">
-                <button type="button" onClick={() => { setForgotMode(false); setError(""); }}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
+            {forgotMode ?
+            <form onSubmit={handleForgotPassword} className="space-y-5">
+                <button type="button" onClick={() => {setForgotMode(false);setError("");}}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
                   <ArrowLeft size={16} /> Retour
                 </button>
                 <div>
@@ -211,73 +211,73 @@ const Auth = () => {
                   <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                     <Mail className={`shrink-0 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
-                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                      placeholder="votre@email.com" required />
+                  className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                  placeholder="votre@email.com" required />
                   </div>
                 </div>
-                {error && (
-                  <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                {error &&
+              <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
                     <Shield size={16} className="shrink-0" /> {error}
                   </div>
-                )}
+              }
                 <button type="submit" disabled={resetLoading}
-                  className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  {resetLoading ? (<><Loader2 className="animate-spin" size={20} /> Envoi...</>) : (<>Envoyer le lien <Mail size={18} /></>)}
+              className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {resetLoading ? <><Loader2 className="animate-spin" size={20} /> Envoi...</> : <>Envoyer le lien <Mail size={18} /></>}
                 </button>
-              </form>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              </form> :
+
+            <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
                   <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "email" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                     <Mail className={`shrink-0 transition-colors duration-200 ${focused === "email" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)}
-                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                      placeholder="votre@email.com" required />
+                  className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                  placeholder="votre@email.com" required />
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mot de passe</label>
-                    <button type="button" onClick={() => { setForgotMode(true); setError(""); }}
-                      className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">Mot de passe oublié ?</button>
+                    <button type="button" onClick={() => {setForgotMode(true);setError("");}}
+                  className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">Mot de passe oublié ?</button>
                   </div>
                   <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "password" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                     <Lock className={`shrink-0 transition-colors duration-200 ${focused === "password" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                     <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused("password")} onBlur={() => setFocused(null)}
-                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                      placeholder="••••••••" required />
+                  className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                  placeholder="••••••••" required />
                   </div>
                 </div>
-                {error && (
-                  <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                {error &&
+              <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
                     <Shield size={16} className="shrink-0" /> {error}
                   </div>
-                )}
+              }
                 <button type="submit" disabled={loading}
-                  className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : (<>Se connecter <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" /></>)}
+              className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <>Se connecter <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" /></>}
                   {loading && "Connexion..."}
                 </button>
               </form>
-            )}
+            }
           </div>
 
           {/* Features description (mobile) - hidden on small screens to fit */}
           <div className="lg:hidden mt-3 space-y-1.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
             {[
-              { Icon: Users, text: "Gestion des effectifs et convocations" },
-              { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
-              { Icon: Calendar, text: "Calendrier et événements du club" },
-            ].map((feat) => (
-              <div
-                key={feat.text}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-secondary/60 border border-border/50"
-              >
+            { Icon: Users, text: "Gestion des effectifs et convocations" },
+            { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
+            { Icon: Calendar, text: "Calendrier et événements du club" }].
+            map((feat) =>
+            <div
+              key={feat.text}
+              className="items-center gap-2.5 py-2 rounded-lg bg-secondary/60 border border-border/50 flex flex-row px-[12px]">
+
                 <feat.Icon size={14} className="text-primary/60 shrink-0" />
                 <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{feat.text}</span>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Club name + Status */}
@@ -285,13 +285,13 @@ const Auth = () => {
             <p className="lg:hidden text-[10px] text-muted-foreground/50 font-medium">Football Club d'Oisemont</p>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-success/20 bg-success/5">
               <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-              <p className="text-[10px] text-success/70 font-medium">Connecté au serveur</p>
+              <p className="text-[10px] text-success/70 font-medium">Connecté au serveur local </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Auth;
