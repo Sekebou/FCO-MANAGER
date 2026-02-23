@@ -201,38 +201,46 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
       const existing = conversations.find(c => c.type === 'private' && c.participants.length === 2 && c.participants.includes(selectedMembers[0]));
       if (existing) { setActiveConversation(existing); setShowNewConvo(false); setSelectedMembers([]); setGroupName(''); setSearchMember(''); return; }
     }
-    const allParticipants = [currentUser.uid, ...selectedMembers];
-    const participantNames: Record<string, string> = { [currentUser.uid]: currentUser.name };
-    const participantPhotos: Record<string, string | null> = { [currentUser.uid]: currentUser.photoURL || null };
-    const participantRoles: Record<string, string> = { [currentUser.uid]: currentUser.role };
-    const unreadCount: Record<string, number> = {};
-    selectedMembers.forEach(mid => {
-      const member = members.find(m => m.id === mid);
-      if (member) { participantNames[mid] = member.name; participantPhotos[mid] = member.photoURL || null; participantRoles[mid] = member.role; }
-      unreadCount[mid] = 0;
-    });
-    unreadCount[currentUser.uid] = 0;
     try {
+      // Ensure Supabase auth session is active (required for RLS)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Session expirée, veuillez vous reconnecter');
+        return;
+      }
+      // Use the auth user id to satisfy RLS policy (auth.uid() = ANY(participants))
+      const authUserId = session.user.id;
+      const allParticipantsAuth = [authUserId, ...selectedMembers.filter(id => id !== authUserId)];
+      const participantNamesAuth: Record<string, string> = { [authUserId]: currentUser.name };
+      const participantPhotosAuth: Record<string, string | null> = { [authUserId]: currentUser.photoURL || null };
+      const participantRolesAuth: Record<string, string> = { [authUserId]: currentUser.role };
+      const unreadCountAuth: Record<string, number> = { [authUserId]: 0 };
+      selectedMembers.forEach(mid => {
+        if (mid === authUserId) return;
+        const member = members.find(m => m.id === mid);
+        if (member) { participantNamesAuth[mid] = member.name; participantPhotosAuth[mid] = member.photoURL || null; participantRolesAuth[mid] = member.role; }
+        unreadCountAuth[mid] = 0;
+      });
       const insertPayload = {
-        participants: allParticipants,
-        participant_names: participantNames as any,
-        participant_photos: participantPhotos as any,
-        participant_roles: participantRoles as any,
+        participants: allParticipantsAuth,
+        participant_names: participantNamesAuth as any,
+        participant_photos: participantPhotosAuth as any,
+        participant_roles: participantRolesAuth as any,
         type: isGroup ? 'group' : 'private',
         name: isGroup ? groupName.trim() : null,
         last_message: null,
         last_message_at: new Date().toISOString(),
-        created_by: currentUser.uid,
-        unread_count: unreadCount as any,
+        created_by: authUserId,
+        unread_count: unreadCountAuth as any,
       };
-      console.log('Creating conversation with payload:', JSON.stringify(insertPayload));
+      console.log('Creating conversation with auth uid:', authUserId);
       const { data: inserted, error } = await supabase.from('conversations').insert(insertPayload).select('id').single();
       if (error) {
         console.error('Supabase conversation insert error:', error.message, error.details, error.hint, error.code);
         toast.error(`Erreur: ${error.message}`);
         return;
       }
-      setActiveConversation({ id: inserted.id, participants: allParticipants, participantNames, participantPhotos, participantRoles, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount });
+      setActiveConversation({ id: inserted.id, participants: allParticipantsAuth, participantNames: participantNamesAuth, participantPhotos: participantPhotosAuth, participantRoles: participantRolesAuth, type: isGroup ? 'group' : 'private', name: isGroup ? groupName.trim() : undefined, unreadCount: unreadCountAuth });
       setShowNewConvo(false); setSelectedMembers([]); setGroupName(''); setSearchMember('');
     } catch (err: any) { console.error('Error creating conversation:', err); toast.error(`Erreur: ${err?.message || 'Erreur inconnue'}`); }
   };

@@ -90,8 +90,11 @@ const ChampionnatTab: React.FC<Props> = ({
   onRefreshFromFFF,
 }) => {
   const { currentUser } = useAuth();
-  const TEAM_OPTIONS = ['A', 'B', 'C'] as const;
+  const BASE_TEAMS = ['A', 'B', 'C'];
+  const customTeams = [...new Set(championships.map(c => c.team || 'A').filter(t => !BASE_TEAMS.includes(t)))].sort();
+  const allTeamOptions = [...BASE_TEAMS, ...customTeams];
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
+  const [customTeamName, setCustomTeamName] = useState('');
   const [showAddChamp, setShowAddChamp] = useState(false);
   const [showAddMatch, setShowAddMatch] = useState<string | null>(null);
   const [expandedChamp, setExpandedChamp] = useState<string | null>(championships[0]?.id || null);
@@ -238,9 +241,11 @@ const ChampionnatTab: React.FC<Props> = ({
     
     const mapping = teamMapping[selectedTeam];
     if (!mapping) {
+      // Custom team — no FFF API mapping
       setLiveClassement([]);
       setLiveLogos({});
-      setLiveError(null);
+      setLiveError('Pas de classement FFF pour cette équipe');
+      setIsLoadingLive(false);
       return;
     }
 
@@ -321,6 +326,7 @@ const ChampionnatTab: React.FC<Props> = ({
     
     const mapping = teamMapping[selectedTeam];
     if (!mapping) {
+      // Custom team — no FFF API
       setLiveUpcoming([]);
       setLiveResults([]);
       return;
@@ -401,9 +407,11 @@ const ChampionnatTab: React.FC<Props> = ({
 
   const handleAddChamp = () => {
     if (!champName.trim()) return;
+    const finalTeam = champTeam === '__new__' ? customTeamName.trim() : champTeam;
+    if (!finalTeam) { toast.error('Entrez un nom d\'équipe'); return; }
     const teams = importedTeams.length > 0 ? importedTeams : [];
     if (teams.length < 2) { toast.warning('Importez une compétition FFF avec au moins 2 équipes'); return; }
-    if (teamHasChampionship(champTeam)) { toast.error(`L'équipe ${champTeam} a déjà un championnat`); return; }
+    if (teamHasChampionship(finalTeam)) { toast.error(`L'équipe ${finalTeam} a déjà un championnat`); return; }
     
     const fffUrl = selectedCompetition 
       ? encodeFFFApiRef(selectedCompetition.cpNo, selectedCompetition.phase, selectedCompetition.poule)
@@ -415,16 +423,16 @@ const ChampionnatTab: React.FC<Props> = ({
       matches: importedMatches.length > 0 ? importedMatches : undefined, 
       standings: importedStandings.length > 0 ? importedStandings : undefined, 
       teamLogos: Object.keys(importedLogos).length > 0 ? importedLogos : undefined, 
-      team: champTeam 
+      team: finalTeam 
     });
     // Switch to the newly created team's tab
-    setSelectedTeam(champTeam);
+    setSelectedTeam(finalTeam);
     resetForm();
   };
 
   const resetForm = () => {
     setChampName(''); setImportedMatches([]); setImportedStandings([]); setImportedLogos({}); 
-    setImportedTeams([]); setChampTeam('A'); setSelectedCompetition(null); setShowAddChamp(false);
+    setImportedTeams([]); setChampTeam('A'); setCustomTeamName(''); setSelectedCompetition(null); setShowAddChamp(false);
   };
 
   const handleAddMatch = (champId: string) => {
@@ -522,12 +530,12 @@ const ChampionnatTab: React.FC<Props> = ({
         transition={{ delay: 0.08 }}
         className="flex items-center gap-2 p-1.5 bg-secondary/60 backdrop-blur-sm rounded-2xl border border-border/50"
       >
-        {TEAM_OPTIONS.map(team => (
+        {allTeamOptions.map(team => (
           <motion.button
             key={team}
             whileTap={{ scale: 0.95 }}
             onClick={() => setSelectedTeam(team)}
-            className={`relative flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+            className={`relative flex-1 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors min-w-0 ${
               selectedTeam === team
                 ? 'text-accent-foreground'
                 : 'text-muted-foreground hover:text-foreground'
@@ -540,7 +548,7 @@ const ChampionnatTab: React.FC<Props> = ({
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
-            <span className="relative z-10">Équipe {team}</span>
+            <span className="relative z-10 truncate">{BASE_TEAMS.includes(team) ? `Éq. ${team}` : team}</span>
           </motion.button>
         ))}
       </motion.div>
@@ -1073,14 +1081,14 @@ const ChampionnatTab: React.FC<Props> = ({
               {/* Team selector */}
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
-                <div className="flex gap-2">
-                  {TEAM_OPTIONS.map(team => (
+                <div className="flex gap-2 flex-wrap">
+                  {allTeamOptions.map(team => (
                     <button
                       key={team}
                       type="button"
-                      onClick={() => setChampTeam(team)}
+                      onClick={() => { setChampTeam(team); setCustomTeamName(''); }}
                       disabled={teamHasChampionship(team)}
-                      className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
+                      className={`flex-1 min-w-[60px] py-3 rounded-xl text-sm font-bold transition-all ${
                         champTeam === team
                           ? 'bg-accent text-accent-foreground shadow-sm'
                           : teamHasChampionship(team)
@@ -1088,11 +1096,30 @@ const ChampionnatTab: React.FC<Props> = ({
                             : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
                       }`}
                     >
-                      Équipe {team}
+                      {BASE_TEAMS.includes(team) ? `Éq. ${team}` : team}
                       {teamHasChampionship(team) && ' ✓'}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setChampTeam('__new__')}
+                    className={`min-w-[60px] py-3 rounded-xl text-sm font-bold transition-all ${
+                      champTeam === '__new__'
+                        ? 'bg-accent text-accent-foreground shadow-sm'
+                        : 'bg-secondary text-muted-foreground hover:bg-secondary/80 border-2 border-dashed border-border'
+                    }`}
+                  >
+                    + Autre
+                  </button>
                 </div>
+                {champTeam === '__new__' && (
+                  <input
+                    value={customTeamName}
+                    onChange={e => setCustomTeamName(e.target.value)}
+                    placeholder="Nom de l'équipe (ex: U18, Vétérans)"
+                    className="w-full mt-2 px-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all"
+                  />
+                )}
               </div>
 
               {/* FFF Competition selector */}

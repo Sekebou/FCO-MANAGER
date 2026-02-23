@@ -1053,47 +1053,47 @@ const Dashboard = () => {
       {/* Header */}
       <header className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${headerVisible ? 'top-0 translate-y-0' : 'top-0 -translate-y-full'}`}>
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
-          <div className="flex justify-between items-center h-16 lg:h-20">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-12 h-12 sm:w-13 sm:h-13 lg:w-14 lg:h-14 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15">
-                  <img src={clubLogo} alt="FCO Logo" className="w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 object-contain drop-shadow-md" />
+          <div className="flex justify-between items-center h-16 lg:h-20 overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
+              <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15 shrink-0">
+                  <img src={clubLogo} alt="FCO Logo" className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 object-contain drop-shadow-md" />
                 </div>
-                <h1 className="text-base sm:text-lg lg:text-xl font-bold text-primary-foreground leading-tight">FCO Manager</h1>
+                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-primary-foreground leading-tight whitespace-nowrap">FCO Manager</h1>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setShowAvatarModal(true)} className="flex items-center gap-2.5 sm:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl hover:bg-white/10 transition-all group">
-                <div className="relative">
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden ring-2 ring-white/20 group-hover:ring-accent transition-all">
-                    {currentUser?.photoURL ? <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full object-cover" /> : <span className="text-[10px] sm:text-xs font-bold text-primary-foreground">{currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>}
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+              <button onClick={() => setShowAvatarModal(true)} className="flex items-center gap-1.5 sm:gap-2.5 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-xl hover:bg-white/10 transition-all group">
+                <div className="relative shrink-0">
+                  <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/15 flex items-center justify-center overflow-hidden ring-2 ring-white/20 group-hover:ring-accent transition-all">
+                    {currentUser?.photoURL ? <img src={currentUser.photoURL} alt="Avatar" className="w-full h-full object-cover" /> : <span className="text-[9px] sm:text-xs font-bold text-primary-foreground">{currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}</span>}
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-success rounded-full border-2 border-primary" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-3 sm:h-3 bg-success rounded-full border-2 border-primary" />
                 </div>
-                <div className="hidden min-[414px]:block text-left">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm font-semibold text-primary-foreground leading-tight">
+                <div className="hidden min-[414px]:block text-left min-w-0 max-w-[120px] sm:max-w-[160px]">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] sm:text-sm font-semibold text-primary-foreground leading-tight truncate">
                       <span className="sm:hidden">{currentUser?.name?.split(' ')[0]}</span>
                       <span className="hidden sm:inline">{currentUser?.name}</span>
                     </span>
-                    {currentUser?.role === 'admin+' && <svg className="w-4 h-4 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
+                    {currentUser?.role === 'admin+' && <svg className="w-3.5 h-3.5 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
-                    {currentUser?.role === 'admin+' ? <><Shield size={10} className="text-accent" /><span>Super Admin</span></> :
-                     currentUser?.role === 'admin' ? <><Shield size={10} /><span>Administrateur</span></> :
-                     currentUser?.role === 'entraineur' ? <><Dumbbell size={10} /><span>Entraîneur</span></> :
-                     currentUser?.role === 'photographe' ? <><Camera size={10} /><span>Photographe</span></> :
-                     currentUser?.role === 'dirigeant' ? <><Briefcase size={10} /><span>Dirigeant</span></> :
-                     <><UserCircle size={10} /><span>Joueur</span></>}
+                  <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
+                    {currentUser?.role === 'admin+' ? <><Shield size={9} className="text-accent shrink-0" /><span className="truncate">Super Admin</span></> :
+                     currentUser?.role === 'admin' ? <><Shield size={9} className="shrink-0" /><span className="truncate">Admin</span></> :
+                     currentUser?.role === 'entraineur' ? <><Dumbbell size={9} className="shrink-0" /><span className="truncate">Entraîneur</span></> :
+                     currentUser?.role === 'photographe' ? <><Camera size={9} className="shrink-0" /><span className="truncate">Photo</span></> :
+                     currentUser?.role === 'dirigeant' ? <><Briefcase size={9} className="shrink-0" /><span className="truncate">Dirigeant</span></> :
+                     <><UserCircle size={9} className="shrink-0" /><span className="truncate">Joueur</span></>}
                     <HeaderPoints userId={currentUser?.uid} />
                   </div>
                 </div>
               </button>
               <NotificationBell />
-              <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all" title="Changer mot de passe">
+              <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Changer mot de passe">
                 <Lock size={14} className="sm:hidden" /><Lock size={16} className="hidden sm:block" />
               </button>
-              <button onClick={handleLogout} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-destructive/20 flex items-center justify-center text-primary-foreground/50 hover:text-destructive transition-all" title="Déconnexion">
+              <button onClick={handleLogout} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-destructive/20 flex items-center justify-center text-primary-foreground/50 hover:text-destructive transition-all shrink-0" title="Déconnexion">
                 <LogOut size={14} className="sm:hidden" /><LogOut size={16} className="hidden sm:block" />
               </button>
             </div>

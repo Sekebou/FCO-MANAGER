@@ -104,6 +104,15 @@
     font-size: 16px !important;
     touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Force no-zoom on focus for iOS Safari 16+ */
+  input:focus, select:focus, textarea:focus, [contenteditable]:focus {
+    font-size: 16px !important;
+    transform: scale(1);
+    -webkit-transform: scale(1);
   }
 
   /* Disable all pinch-to-zoom and double-tap zoom globally */
@@ -111,6 +120,8 @@
     touch-action: manipulation;
     -ms-touch-action: manipulation;
     -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     overscroll-behavior: none;
   }
 
@@ -118,6 +129,11 @@
   body {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
+  }
+
+  /* Force all interactive elements to use manipulation touch-action */
+  button, a, [role="button"], label {
+    touch-action: manipulation;
   }
 }
 
