@@ -265,7 +265,7 @@ const Auth = () => {
           </div>
 
           {/* Features description (mobile) - hidden on small screens to fit */}
-          <div className="hidden sm:block lg:hidden mt-4 space-y-2 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
+          <div className="lg:hidden mt-4 space-y-2 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
             {[
               { Icon: Users, text: "Gestion des effectifs et convocations" },
               { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
