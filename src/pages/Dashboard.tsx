@@ -1122,14 +1122,17 @@ const Dashboard = () => {
 
       {/* Welcome Banner */}
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-3 pb-0"
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-4 pb-1"
       >
-        <p className="text-xs text-muted-foreground">
-          👋 Bienvenue, <span className="font-semibold text-foreground">{currentUser?.name?.split(' ')[0]}</span>
-        </p>
+        <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl px-4 py-2.5 shadow-sm">
+          <span className="text-base">👋</span>
+          <p className="text-sm font-medium text-foreground">
+            Bienvenue, <span className="font-bold bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">{currentUser?.name?.split(' ')[0]}</span>
+          </p>
+        </div>
       </motion.div>
 
       {/* Content */}
