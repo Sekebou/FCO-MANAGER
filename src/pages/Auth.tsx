@@ -264,22 +264,24 @@ const Auth = () => {
             )}
           </div>
 
-          {/* Quick test accounts */}
-          <div className="mt-4 space-y-2 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
-            <p className="text-xs text-muted-foreground text-center font-medium">Connexion rapide (démo)</p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: '🛡️ Admin', email: 'admin@fco.test', password: 'Admin123!' },
-                { label: '⚽ Joueur', email: 'lucas.martin@fco.test', password: 'Demo1234!' },
-                { label: '📷 Photographe', email: 'julie.blanc@fco.test', password: 'Demo1234!' },
-                { label: '🤵 Dirigeant', email: 'philippe.garnier@fco.test', password: 'Demo1234!' },
-              ].map((acc) => (
-                <button key={acc.email} type="button" onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
-                  className="px-2 py-1.5 text-[10px] font-medium rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-foreground transition-all truncate">
-                  {acc.label}
-                </button>
-              ))}
-            </div>
+          {/* Features description (mobile) */}
+          <div className="lg:hidden mt-6 space-y-2.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
+            {[
+              { Icon: Users, text: "Gestion des présences" },
+              { Icon: TrendingUp, text: "Suivi des performances" },
+              { Icon: Calendar, text: "Calendrier des événements" },
+            ].map((feat, i) => (
+              <div
+                key={feat.text}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50"
+              >
+                <feat.Icon size={18} className="text-primary/60 shrink-0" />
+                <span className="text-sm font-medium text-muted-foreground">{feat.text}</span>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground/60 font-medium text-center pt-1">
+              … et bien d'autres fonctionnalités
+            </p>
           </div>
 
           {/* Status */}

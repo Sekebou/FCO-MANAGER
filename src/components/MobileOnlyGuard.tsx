@@ -1,11 +1,38 @@
 import { ReactNode } from "react";
-import { Smartphone } from "lucide-react";
+import { Monitor, Download } from "lucide-react";
+import clubLogo from "@/assets/logo.png";
 
-const isMobileDevice = () => {
-  if (typeof navigator === "undefined") return true;
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+/**
+ * Detects if running inside a Capacitor native app.
+ */
+const isCapacitorNative = () => {
+  try {
+    return !!(window as any).Capacitor?.isNativePlatform?.();
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Detects if the device is a mobile or tablet (by user agent).
+ */
+const isMobileOrTablet = () => {
+  if (typeof navigator === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Tablet|PlayBook|Silk/i.test(
     navigator.userAgent
-  );
+  ) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent)); // iPad detection
+};
+
+/**
+ * Access rules:
+ * - Desktop browser → ALLOWED
+ * - Capacitor native app (iOS/Android) → ALLOWED
+ * - Mobile/tablet browser → BLOCKED
+ */
+const isAllowed = () => {
+  if (isCapacitorNative()) return true;
+  if (isMobileOrTablet()) return false;
+  return true; // desktop
 };
 
 interface MobileOnlyGuardProps {
@@ -13,27 +40,31 @@ interface MobileOnlyGuardProps {
 }
 
 const MobileOnlyGuard = ({ children }: MobileOnlyGuardProps) => {
-  if (isMobileDevice()) {
+  if (isAllowed()) {
     return <>{children}</>;
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center">
       <div className="bg-card border border-border rounded-2xl p-8 max-w-md shadow-lg">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <Smartphone className="h-8 w-8 text-primary" />
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
+          <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-3">
-          Application mobile uniquement
+        <h1 className="text-2xl font-bold text-foreground mb-2 uppercase tracking-wide">
+          FCO Manager
         </h1>
-        <p className="text-muted-foreground mb-6">
-          Cette application est disponible exclusivement sur mobile.
-          Téléchargez l'application sur votre smartphone pour y accéder.
+        <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
+          Cette application n'est pas accessible depuis un navigateur mobile ou tablette.
+          Veuillez utiliser l'application native ou un ordinateur.
         </p>
-        <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2 justify-center">
-            <Smartphone className="h-4 w-4" />
-            <span>Disponible sur iOS et Android</span>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50">
+            <Download className="h-4 w-4 text-primary/60 shrink-0" />
+            <span>Téléchargez l'app sur iOS ou Android</span>
+          </div>
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50">
+            <Monitor className="h-4 w-4 text-primary/60 shrink-0" />
+            <span>Ou connectez-vous depuis un ordinateur</span>
           </div>
         </div>
       </div>
