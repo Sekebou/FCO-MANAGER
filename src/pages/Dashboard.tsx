@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWebOrigin } from '@/lib/getWebOrigin';
 import { sendInvitationEmail, sendEventEmail } from '@/lib/emailjs';
@@ -172,7 +173,7 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
         <Coins size={12} className="text-amber-400" />
         <span className="text-[10px] font-bold text-amber-400">{pts}</span>
       </button>
-      {showInfo && (
+      {showInfo && createPortal(
         <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => setShowInfo(false)}>
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -230,7 +231,8 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
               </button>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
