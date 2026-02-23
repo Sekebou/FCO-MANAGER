@@ -165,7 +165,7 @@ const Auth = () => {
               </div>
             ))}
             <p className="text-xs text-white/30 font-medium pt-1 animate-[fadeSlideUp_0.6s_ease-out_both]" style={{ animationDelay: "0.76s" }}>
-              Allez Oisemont ! 💙
+              Football Club d'Oisemont
             </p>
           </div>
 
@@ -280,7 +280,7 @@ const Auth = () => {
               </div>
             ))}
             <p className="text-xs text-muted-foreground/60 font-medium text-center pt-1">
-              Allez Oisemont ! 💙
+              Football Club d'Oisemont
             </p>
           </div>
 
