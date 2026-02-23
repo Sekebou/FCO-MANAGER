@@ -54,22 +54,33 @@ const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; bg: 
 
 interface RoleBadgeProps {
   role?: string;
+  displayRole?: string;
+  /** true when the actual role is admin but displayRole overrides the visual */
+  isAdminWithDisplayRole?: boolean;
   size?: 'sm' | 'md';
   compact?: boolean;
 }
 
-const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = 'sm', compact = false }) => {
+const RoleBadge: React.FC<RoleBadgeProps> = ({ role, displayRole, isAdminWithDisplayRole, size = 'sm', compact = false }) => {
   if (!role) return null;
-  const config = ROLE_CONFIG[role];
+
+  // Use displayRole for visuals if provided, but keep admin indicator
+  const visualRole = displayRole && ROLE_CONFIG[displayRole] ? displayRole : role;
+  const showAdminIndicator = isAdminWithDisplayRole || (displayRole && displayRole !== role && (role === 'admin' || role === 'admin+'));
+
+  const config = ROLE_CONFIG[visualRole];
   if (!config) return null;
   const Icon = config.icon;
 
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border font-bold tracking-wide uppercase ${config.bg} ${config.text} ${config.border} ${config.glow} ${
       compact ? 'px-1.5 py-0.5 text-[8px]' : size === 'sm' ? 'px-2.5 py-1 text-[9px]' : 'px-3 py-1 text-[10px]'
-    }`} title={config.label}>
+    }`} title={showAdminIndicator ? `${config.label} (droits admin)` : config.label}>
       <Icon size={compact ? 10 : size === 'sm' ? 11 : 13} strokeWidth={2.5} />
       {!compact && config.label}
+      {showAdminIndicator && (
+        <Shield size={compact ? 8 : size === 'sm' ? 9 : 10} strokeWidth={2.5} className="text-blue-500 ml-0.5 opacity-70" />
+      )}
     </span>
   );
 };

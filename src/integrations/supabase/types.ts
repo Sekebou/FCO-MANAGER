@@ -695,6 +695,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          display_role: string | null
           email: string
           id: string
           license_expiry: string | null
@@ -709,6 +710,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          display_role?: string | null
           email: string
           id: string
           license_expiry?: string | null
@@ -723,6 +725,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          display_role?: string | null
           email?: string
           id?: string
           license_expiry?: string | null
