@@ -100,7 +100,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
                   <option value="dirigeant">Dirigeant</option>
                   <option value="photographe">Photographe</option>
                   <option value="admin">Administrateur</option>
-                  {isSuperAdmin && <option value="admin+">Admin+</option>}
+                  
                 </select>
               </div>
             ) : (

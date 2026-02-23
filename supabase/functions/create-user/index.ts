@@ -29,6 +29,9 @@ Deno.serve(async (req) => {
 
     const { email, password, name, role, position, licenseExpiry, team } = await req.json()
 
+    // Block admin+ creation from the app
+    if (role === 'admin+') throw new Error('Création de compte admin+ interdite')
+
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email, password, email_confirm: true
     })
