@@ -164,9 +164,8 @@ const Auth = () => {
                 <span className="text-sm font-medium text-white/60">{feat.text}</span>
               </div>
             ))}
-            <p className="text-xs text-white/30 font-medium pt-1 animate-[fadeSlideUp_0.6s_ease-out_both]" style={{ animationDelay: "0.76s" }}>
-              Football Club d'Oisemont
-            </p>
+
+
           </div>
 
           <p className="mt-10 text-[11px] uppercase tracking-[0.2em] text-white/20 font-semibold animate-[fadeSlideUp_0.6s_ease-out_0.8s_both]">
