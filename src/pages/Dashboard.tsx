@@ -165,10 +165,9 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
   }, [userId]);
   if (pts === null) return null;
   return (
-    <span className="inline-flex items-center gap-1 bg-amber-500/15 border border-amber-500/25 rounded-full px-2.5 py-0.5 ml-1">
-      <Coins size={13} className="text-amber-400" />
-      <span className="text-xs font-bold text-amber-400">{pts}</span>
-      <span className="text-[10px] font-medium text-amber-400/70">pts</span>
+    <span className="inline-flex items-center gap-0.5 bg-amber-500/15 border border-amber-500/25 rounded-lg px-1.5 py-1">
+      <Coins size={12} className="text-amber-400" />
+      <span className="text-[10px] font-bold text-amber-400">{pts}</span>
     </span>
   );
 };
@@ -911,6 +910,12 @@ const Dashboard = () => {
     });
   };
 
+  const updateChampionship = async (id: string, updates: { team?: string }) => {
+    try {
+      await supabase.from('championships').update(updates).eq('id', id);
+    } catch (err: any) { toast.error('Erreur: ' + err.message); }
+  };
+
   const addChampMatch = async (data: Omit<Match, 'id'>) => {
     if (!canManage()) return;
     try {
@@ -1085,10 +1090,10 @@ const Dashboard = () => {
                      currentUser?.role === 'photographe' ? <><Camera size={9} className="shrink-0" /><span className="truncate">Photo</span></> :
                      currentUser?.role === 'dirigeant' ? <><Briefcase size={9} className="shrink-0" /><span className="truncate">Dirigeant</span></> :
                      <><UserCircle size={9} className="shrink-0" /><span className="truncate">Joueur</span></>}
-                    <HeaderPoints userId={currentUser?.uid} />
                   </div>
                 </div>
               </button>
+              <HeaderPoints userId={currentUser?.uid} />
               <NotificationBell />
               <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Changer mot de passe">
                 <Lock size={14} className="sm:hidden" /><Lock size={16} className="hidden sm:block" />
@@ -1161,7 +1166,7 @@ const Dashboard = () => {
             />
           )}
           {activeTab === 'stats' && <StatsTab players={visiblePlayersForStats} events={events} cards={cards} attendanceRecords={attendanceRecords} members={visibleMembers} currentUser={currentUser} canManage={canManage} updatePlayerStats={updatePlayerStats} deletePlayer={deletePlayer} getPlayerCards={getPlayerCards} deleteCard={deleteCard} onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }} />}
-          {activeTab === 'championnat' && <ChampionnatTab championships={championships} matches={champMatches} currentUserRole={currentUser?.role} canManage={canManage} canUpdateChampionnat={canUpdateChampionnat} onAddChampionship={addChampionship} onDeleteChampionship={deleteChampionship} onAddMatch={addChampMatch} onUpdateMatchScore={updateMatchScore} onDeleteMatch={deleteChampMatch} onRefreshFromFFF={refreshFromFFF} />}
+          {activeTab === 'championnat' && <ChampionnatTab championships={championships} matches={champMatches} currentUserRole={currentUser?.role} canManage={canManage} canUpdateChampionnat={canUpdateChampionnat} onAddChampionship={addChampionship} onDeleteChampionship={deleteChampionship} onUpdateChampionship={updateChampionship} onAddMatch={addChampMatch} onUpdateMatchScore={updateMatchScore} onDeleteMatch={deleteChampMatch} onRefreshFromFFF={refreshFromFFF} />}
           {activeTab === 'news' && <NewsTab news={news} comments={newsComments} members={members} currentUser={currentUser} canManage={canManage} canCreateNews={canCreateNews} deleteNews={deleteNews} toggleLike={toggleLike} addComment={addComment} deleteComment={deleteComment} onAddNews={() => setShowAddNews(true)} />}
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryTab albums={albums} photos={galleryPhotos} currentUser={currentUser} canManagePhotos={canManagePhotos} onCreateAlbum={createAlbum} onDeleteAlbum={deleteAlbum} onUploadPhotos={uploadPhotos} onDeletePhoto={deletePhoto} />}
