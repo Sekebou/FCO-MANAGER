@@ -1,134 +1,121 @@
 
 
-## Plan de correction - 6 bugs
+## Plan de correction - 3 bugs
 
-### Bug 1 : Zoom automatique sur les champs de saisie (iOS/Android)
+### Bug 1 : Supprimer / Modifier le nom des onglets championnat
 
-Le viewport meta est deja configure avec `maximum-scale=1.0, user-scalable=no` et le CSS force `font-size: 16px !important` sur les inputs. Cependant, certains navigateurs mobiles (Safari iOS 16+) ignorent `maximum-scale` dans certains cas.
+Actuellement, les onglets personnalises sont crees mais ne peuvent etre ni supprimes ni renommes. Il faut ajouter :
 
-**Correction** :
-- Ajouter dans `index.css` une regle CSS supplementaire pour empecher le zoom sur focus avec `@supports` et un meta viewport renforce
-- Ajouter `touch-action: manipulation` sur tous les elements interactifs (boutons, liens)
-- Forcer `transform: scale(1)` sur les inputs au focus pour contrer le zoom Safari
+**Suppression d'un onglet** : Un bouton "X" visible en mode admin a cote de chaque onglet personnalise (pas A, B, C) dans le selecteur de pilules. La suppression efface aussi le championnat associe dans la base.
 
-**Fichier** : `src/index.css`
+**Modification du nom** : Un appui long (ou bouton edit) sur un onglet personnalise ouvre un petit input inline pour renommer. Le `team` est mis a jour dans la table `championships`.
 
-### Bug 2 : Header qui deborde sur grands ecrans mobiles (iPhone 16 Pro Max, S24 Ultra)
+**Affichage du nom complet** : Remplacer `Eq. A` par `Equipe A`, `Eq. B` par `Equipe B`, etc. dans les pilules (ligne 551). Pour les onglets personnalises, afficher le nom complet directement.
 
-Sur la capture, on voit que les icones (cadenas, deconnexion) sont poussees a droite hors ecran. Le probleme vient du fait que le header n'a pas de `overflow-hidden` et que le contenu (nom + role + badge points + icones) depasse la largeur.
+**Fichier** : `src/components/dashboard/ChampionnatTab.tsx`
+- Ligne 551 : changer `Eq. ${team}` en `Equipe ${team}` pour les base teams
+- Ajouter un state `editingTab` et `editTabName` pour le renommage inline
+- Ajouter un bouton X pour supprimer les onglets personnalises (avec confirmation)
+- Ajouter une prop `onUpdateChampionship` au composant pour mettre a jour le `team` dans la base
 
-**Correction** :
-- Ajouter `overflow-hidden` sur le header container
-- Ajouter `min-w-0` et `shrink` sur le bloc profil pour qu'il se compresse
-- Limiter la largeur du badge HeaderPoints avec `max-w-fit shrink-0`
-- S'assurer que le bloc right-side a `shrink-0` sur les icones et `min-w-0` sur le texte
+**Fichier** : `src/pages/Dashboard.tsx`
+- Ajouter la fonction `updateChampionship` qui met a jour le champ `team` dans la table `championships`
+- Passer cette fonction en prop a `ChampionnatTab`
 
-**Fichier** : `src/pages/Dashboard.tsx` (lignes 1054-1099)
+### Bug 2 : Pas de classement/matchs pour les equipes personnalisees
 
-### Bug 3 : Griser/fermer les presences pour les evenements passes
+Quand on cree un onglet personnalise (ex: U18), les `useEffect` aux lignes 234-316 et 318-362 ne fetching pas les donnees car `teamMapping` ne contient que A, B, C. Pour les equipes custom, les donnees FFF ont ete importees lors de la creation (via `handleImportCompetition`), mais le live classement/matchs ne s'affiche pas car le code les ignore.
 
-Actuellement, `PresencesTab.tsx` filtre les evenements ou `date >= new Date()` (ligne 50), donc les evenements passes ne s'affichent pas du tout. Mais le filtre compare la date sans heure, donc un evenement du jour passe peut rester visible.
+**Correction** : Pour les equipes custom, au lieu de hardcoder le mapping `teamMapping`, chercher le `fffUrl` du championnat associe a cette equipe et utiliser ses parametres (`cpNo`, `phase`, `poule`) pour fetcher les donnees live.
 
-**Correction** :
-- Ajouter une condition `isPastEvent` basee sur la date de l'evenement
-- Si l'evenement est passe, afficher les boutons present/absent en mode desactive (grises) avec un label "Evenement passe"
-- Garder l'affichage des reponses deja enregistrees mais empecher de nouvelles modifications
+**Fichier** : `src/components/dashboard/ChampionnatTab.tsx`
+- Lignes 236-250 : au lieu de retourner une erreur quand `mapping` est null, chercher dans `filteredChampionships` le championnat de l'equipe custom et decoder son `fffUrl` pour obtenir les params API
+- Lignes 321-333 : meme chose pour les matchs live
+- Ajouter un import de `decodeFFFApiRef` (ou parser le `fffUrl` directement) dans `fffApi.ts` si pas deja present
 
-**Fichier** : `src/components/dashboard/PresencesTab.tsx`
+**Fichier** : `src/lib/fffApi.ts`
+- Verifier si une fonction `decodeFFFApiRef` existe, sinon la creer pour extraire `cpNo`, `phase`, `poule` depuis l'URL encodee
 
-### Bug 4 : Erreur lors de la creation de conversation privee
+### Bug 3 : Header - les points prennent trop de place sur mobile
 
-La RLS policy INSERT a `with_check: (auth.uid() = ANY (participants))`. Le code met `currentUser.uid` dans `allParticipants`. Le probleme peut venir de :
-1. L'utilisateur n'est pas authentifie via Supabase Auth (utilise localStorage uniquement)
-2. Le type `participants` est un array de `uuid` mais on envoie des strings
+Le badge `HeaderPoints` (ligne 1088) est affiche dans la ligne du role, ce qui compresse le nom/prenom sur petit et grand ecrans.
 
-**Correction** :
-- Verifier que la session Supabase est active avant de creer la conversation
-- Ajouter un `await supabase.auth.getUser()` pour confirmer l'authentification
-- Si pas de session, afficher un message d'erreur plus clair
-- Logger l'erreur exacte pour diagnostic
+**Correction** : Deplacer le badge de points en dehors du bloc profil. L'afficher comme une petite icone discrete a cote des boutons d'action (NotificationBell, Lock, LogOut). Sur mobile, afficher uniquement le chiffre avec l'icone, sans le mot "pts".
 
-**Fichier** : `src/components/dashboard/MessagesTab.tsx` (lignes 196-237)
-
-### Bug 5 : Onglets dynamiques dans Championnat (au-dela de A, B, C)
-
-Actuellement `TEAM_OPTIONS` est `['A', 'B', 'C']` en dur (ligne 93). L'utilisateur veut pouvoir creer des onglets supplementaires (ex: U18, Veterans).
-
-**Correction** :
-- Rendre `TEAM_OPTIONS` dynamique : combiner les valeurs par defaut `['A', 'B', 'C']` avec les valeurs `team` uniques presentes dans les championnats existants
-- Dans le formulaire d'ajout, ajouter un champ "Nouvelle equipe" qui permet de saisir un nom d'equipe personnalise (ex: "U18")
-- Quand l'utilisateur choisit "Nouveau", afficher un input texte pour le nom de l'onglet
-- Le nouvel onglet apparait automatiquement dans le selecteur de pilules
-- Pour les equipes personnalisees, ne pas faire de mapping vers l'API FFF (pas de `teamMapping`) : elles utiliseront uniquement les donnees importees manuellement ou via URL FFF
-
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx` (lignes 93, 316-320, 402-420, 518-546)
-
-### Bug 6 : Visibilite du zoom CSS renforcee
-
-Ajout de regles supplementaires dans le CSS pour bloquer tout zoom residuel sur iOS.
-
-**Fichier** : `src/index.css`
-
----
+**Fichier** : `src/pages/Dashboard.tsx`
+- Ligne 1088 : retirer `<HeaderPoints>` du bloc role
+- Ligne 1092 : inserer `<HeaderPoints>` dans le bloc des boutons d'action (entre le profil et NotificationBell)
+- Simplifier le style : icone Coins + chiffre seulement, taille compacte `w-7 h-7`
+- Retirer `px-2.5 py-0.5 ml-1` et les labels "pts" pour gagner de la place
 
 ### Resume des fichiers a modifier
 
 | Fichier | Corrections |
 |---------|-------------|
-| `src/index.css` | Anti-zoom renforce |
-| `src/pages/Dashboard.tsx` | Header overflow, layout large screens |
-| `src/components/dashboard/PresencesTab.tsx` | Griser evenements passes |
-| `src/components/dashboard/MessagesTab.tsx` | Fix creation conversation |
-| `src/components/dashboard/ChampionnatTab.tsx` | Onglets dynamiques |
+| `src/components/dashboard/ChampionnatTab.tsx` | Renommage/suppression onglets, nom complet, live data equipes custom |
+| `src/pages/Dashboard.tsx` | Header points deplaces, prop updateChampionship |
+| `src/lib/fffApi.ts` | Fonction decodeFFFApiRef si necessaire |
 
 ### Details techniques
 
-**Header fix (Dashboard.tsx)** :
+**Affichage onglets (ChampionnatTab.tsx ligne 551)** :
 ```text
-// Le container header doit etre overflow-hidden
-<div className="flex justify-between items-center h-16 lg:h-20 overflow-hidden">
-  // Le bloc gauche doit shrink
-  <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
-  // Le bloc droit doit aussi ne pas deborder
-  <div className="flex items-center gap-1 shrink-0">
-  // Le profil doit avoir min-w-0
-  <div className="hidden min-[414px]:block text-left min-w-0 max-w-[140px]">
+// Avant :
+<span>{BASE_TEAMS.includes(team) ? `Éq. ${team}` : team}</span>
+
+// Apres :
+<span>{BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}</span>
 ```
 
-**Onglets dynamiques (ChampionnatTab.tsx)** :
+**Renommage inline** :
 ```text
-// Remplacer const TEAM_OPTIONS = ['A', 'B', 'C'] par :
-const baseTeams = ['A', 'B', 'C'];
-const customTeams = [...new Set(championships.map(c => c.team || 'A').filter(t => !baseTeams.includes(t)))];
-const allTeamOptions = [...baseTeams, ...customTeams];
+// Double-tap ou bouton edit sur un onglet custom
+const [editingTab, setEditingTab] = useState<string | null>(null);
+const [editTabName, setEditTabName] = useState('');
 
-// Dans le formulaire, ajouter un input pour "Nouvelle equipe" :
-// Si champTeam === '__new__', afficher un input texte
-// Le teamMapping dans useEffect ne fait rien pour les equipes non-ABC
+// Dans le pill, si editingTab === team :
+<input value={editTabName} onChange={...} onBlur={saveTabName} className="..." />
+// Sinon afficher le nom normalement
 ```
 
-**Presences passees (PresencesTab.tsx)** :
+**Suppression onglet** :
 ```text
-// Changer le filtre pour inclure les evenements passes recents (7 jours)
-const now = new Date();
-const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-const allRelevantEvents = events
-  .filter(e => new Date(e.date) >= sevenDaysAgo)
-  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-// Pour chaque event, ajouter isPast
-const isPastEvent = new Date(event.date) < now;
-// Si isPast, griser les boutons et afficher "Evenement termine"
+// Bouton X a cote du nom dans le pill (seulement pour custom teams et admins)
+// onClick -> confirm modal -> onDeleteChampionship(champId)
 ```
 
-**Conversation fix (MessagesTab.tsx)** :
+**Live data equipes custom (lignes 236-250)** :
 ```text
-// Avant l'insert, verifier la session
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) {
-  toast.error('Session expirée, veuillez vous reconnecter');
-  return;
+const mapping = teamMapping[selectedTeam];
+if (!mapping) {
+  // Chercher le championnat custom et son fffUrl
+  const customChamp = filteredChampionships[0];
+  if (customChamp?.fffUrl) {
+    const params = decodeFFFApiRef(customChamp.fffUrl);
+    // Utiliser params.cpNo, params.phase, params.poule pour fetcher
+  } else {
+    setLiveError('Pas de classement FFF');
+  }
 }
-// Utiliser session.user.id au lieu de currentUser.uid
-const allParticipants = [session.user.id, ...selectedMembers];
 ```
+
+**Header points (Dashboard.tsx)** :
+```text
+// Deplacer HeaderPoints hors du bloc profil
+// Le mettre comme un petit badge compact dans la zone des boutons
+<div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+  <HeaderPoints userId={currentUser?.uid} />  // ICI, compact
+  <NotificationBell />
+  <button ...Lock... />
+  <button ...LogOut... />
+</div>
+```
+
+**HeaderPoints simplifie** :
+```text
+<span className="inline-flex items-center gap-0.5 bg-amber-500/15 rounded-lg px-1.5 py-1">
+  <Coins size={12} className="text-amber-400" />
+  <span className="text-[10px] font-bold text-amber-400">{pts}</span>
+</span>
+```
+
