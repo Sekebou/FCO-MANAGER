@@ -1122,20 +1122,14 @@ const Dashboard = () => {
 
       {/* Welcome Banner */}
       <motion.div 
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-4 pb-1"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-3 pb-0"
       >
-        <div className="flex items-center gap-3">
-          <span className="text-xl">👋</span>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground">
-              Bienvenue, {currentUser?.name?.split(' ')[0]}
-            </h2>
-            <p className="text-xs text-muted-foreground">FCO Manager — Saison 2025-2026</p>
-          </div>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          👋 Bienvenue, <span className="font-semibold text-foreground">{currentUser?.name?.split(' ')[0]}</span>
+        </p>
       </motion.div>
 
       {/* Content */}
