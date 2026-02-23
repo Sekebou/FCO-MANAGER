@@ -1,121 +1,84 @@
 
 
-## Plan de correction - 3 bugs
+## Plan de correction - 4 points
 
-### Bug 1 : Supprimer / Modifier le nom des onglets championnat
+### 1. Optimiser le "+ Autre" dans le formulaire d'ajout de championnat
 
-Actuellement, les onglets personnalises sont crees mais ne peuvent etre ni supprimes ni renommes. Il faut ajouter :
+Actuellement, les boutons d'equipe (Eq. A, Eq. B, Eq. C, + Autre) utilisent `flex-1 min-w-[60px]` ce qui les rend trop larges et serres quand il y a des equipes custom en plus. 
 
-**Suppression d'un onglet** : Un bouton "X" visible en mode admin a cote de chaque onglet personnalise (pas A, B, C) dans le selecteur de pilules. La suppression efface aussi le championnat associe dans la base.
+**Corrections dans `ChampionnatTab.tsx`** :
+- Changer le layout du selecteur d'equipe : utiliser `flex-wrap gap-2` avec des boutons a taille `auto` (`px-4`) au lieu de `flex-1`
+- Reduire le padding des boutons pour qu'ils tiennent mieux sur petits ecrans
+- Afficher "Équipe A" au lieu de "Éq. A" dans le formulaire (ligne 1179)
 
-**Modification du nom** : Un appui long (ou bouton edit) sur un onglet personnalise ouvre un petit input inline pour renommer. Le `team` est mis a jour dans la table `championships`.
+### 2. Optimiser la suppression de championnat et l'affichage admin
 
-**Affichage du nom complet** : Remplacer `Eq. A` par `Equipe A`, `Eq. B` par `Equipe B`, etc. dans les pilules (ligne 551). Pour les onglets personnalises, afficher le nom complet directement.
+La barre admin (lignes 1094-1136) affiche chaque championnat dans une carte separee. Si plusieurs championnats existent, ils ne sont pas tous visibles car les cartes sont affichees verticalement sans scroll.
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx`
-- Ligne 551 : changer `Eq. ${team}` en `Equipe ${team}` pour les base teams
-- Ajouter un state `editingTab` et `editTabName` pour le renommage inline
-- Ajouter un bouton X pour supprimer les onglets personnalises (avec confirmation)
-- Ajouter une prop `onUpdateChampionship` au composant pour mettre a jour le `team` dans la base
+**Corrections dans `ChampionnatTab.tsx`** :
+- Rendre les cartes admin plus compactes : reduire le padding, utiliser une mise en page horizontale plus dense
+- Ajouter une confirmation avant la suppression (actuellement `onDeleteChampionship` est appele directement au clic)
+- Changer "Éq." en "Équipe" dans la description des cartes (ligne 1109)
 
-**Fichier** : `src/pages/Dashboard.tsx`
-- Ajouter la fonction `updateChampionship` qui met a jour le champ `team` dans la table `championships`
-- Passer cette fonction en prop a `ChampionnatTab`
+### 3. Actualisation automatique apres ajout de championnat
 
-### Bug 2 : Pas de classement/matchs pour les equipes personnalisees
+Le probleme : `addChampionship` dans `Dashboard.tsx` insere le championnat en base mais ne met pas a jour le state local immediatement. La mise a jour depend du realtime subscription, qui peut avoir un delai ou ne pas etre active sur cette table.
 
-Quand on cree un onglet personnalise (ex: U18), les `useEffect` aux lignes 234-316 et 318-362 ne fetching pas les donnees car `teamMapping` ne contient que A, B, C. Pour les equipes custom, les donnees FFF ont ete importees lors de la creation (via `handleImportCompetition`), mais le live classement/matchs ne s'affiche pas car le code les ignore.
+**Corrections dans `Dashboard.tsx` (fonction `addChampionship`, lignes 825-843)** :
+- Apres l'insert reussi, refetcher immediatement les championnats et les matchs depuis la base : `supabase.from('championships').select('*')` puis `setChampionships(...)` et idem pour `championship_matches`
+- Cela garantit une actualisation instantanee sans dependre du realtime
 
-**Correction** : Pour les equipes custom, au lieu de hardcoder le mapping `teamMapping`, chercher le `fffUrl` du championnat associe a cette equipe et utiliser ses parametres (`cpNo`, `phase`, `poule`) pour fetcher les donnees live.
+### 4. Ajouter un message "Bienvenue, X" sous le header
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx`
-- Lignes 236-250 : au lieu de retourner une erreur quand `mapping` est null, chercher dans `filteredChampionships` le championnat de l'equipe custom et decoder son `fffUrl` pour obtenir les params API
-- Lignes 321-333 : meme chose pour les matchs live
-- Ajouter un import de `decodeFFFApiRef` (ou parser le `fffUrl` directement) dans `fffApi.ts` si pas deja present
+Un message de bienvenue moderne et discret sous le header, affichant le prenom de l'utilisateur connecte.
 
-**Fichier** : `src/lib/fffApi.ts`
-- Verifier si une fonction `decodeFFFApiRef` existe, sinon la creer pour extraire `cpNo`, `phase`, `poule` depuis l'URL encodee
-
-### Bug 3 : Header - les points prennent trop de place sur mobile
-
-Le badge `HeaderPoints` (ligne 1088) est affiche dans la ligne du role, ce qui compresse le nom/prenom sur petit et grand ecrans.
-
-**Correction** : Deplacer le badge de points en dehors du bloc profil. L'afficher comme une petite icone discrete a cote des boutons d'action (NotificationBell, Lock, LogOut). Sur mobile, afficher uniquement le chiffre avec l'icone, sans le mot "pts".
-
-**Fichier** : `src/pages/Dashboard.tsx`
-- Ligne 1088 : retirer `<HeaderPoints>` du bloc role
-- Ligne 1092 : inserer `<HeaderPoints>` dans le bloc des boutons d'action (entre le profil et NotificationBell)
-- Simplifier le style : icone Coins + chiffre seulement, taille compacte `w-7 h-7`
-- Retirer `px-2.5 py-0.5 ml-1` et les labels "pts" pour gagner de la place
+**Corrections dans `Dashboard.tsx` (apres la balise `</header>`, vers ligne 1107)** :
+- Ajouter un composant `WelcomeBanner` compact entre le header et le content principal
+- Design : fond subtil avec un gradient, icone de salutation, texte "Bienvenue, [Prenom]" avec une animation d'entree en fondu
+- Le message s'affiche uniquement lors du premier chargement (pas a chaque changement d'onglet), visible en haut de la page
 
 ### Resume des fichiers a modifier
 
 | Fichier | Corrections |
 |---------|-------------|
-| `src/components/dashboard/ChampionnatTab.tsx` | Renommage/suppression onglets, nom complet, live data equipes custom |
-| `src/pages/Dashboard.tsx` | Header points deplaces, prop updateChampionship |
-| `src/lib/fffApi.ts` | Fonction decodeFFFApiRef si necessaire |
+| `src/components/dashboard/ChampionnatTab.tsx` | Layout "+ Autre" optimise, suppression avec confirmation, labels complets |
+| `src/pages/Dashboard.tsx` | Refetch apres ajout championnat, ajout "Bienvenue X" |
 
 ### Details techniques
 
-**Affichage onglets (ChampionnatTab.tsx ligne 551)** :
-```text
-// Avant :
-<span>{BASE_TEAMS.includes(team) ? `Éq. ${team}` : team}</span>
+**Layout equipes dans formulaire (ChampionnatTab.tsx lignes 1164-1194)** :
+- Remplacer `flex-1 min-w-[60px]` par `px-3 sm:px-4` sur les boutons pour un sizing auto
+- Garder `flex flex-wrap gap-2` sur le container
 
-// Apres :
-<span>{BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}</span>
+**Refetch immediat (Dashboard.tsx lignes 825-843)** :
+```text
+// Apres l'insert reussi, ajouter :
+const { data: updatedChamps } = await supabase.from('championships').select('*');
+if (updatedChamps) setChampionships(updatedChamps.map(mapChamp));
+const { data: updatedMatches } = await supabase.from('championship_matches').select('*');
+if (updatedMatches) setChampMatches(updatedMatches.map(mapMatch));
+toast.success('Championnat ajouté !');
 ```
 
-**Renommage inline** :
+**Bienvenue banner (Dashboard.tsx apres ligne 1107)** :
 ```text
-// Double-tap ou bouton edit sur un onglet custom
-const [editingTab, setEditingTab] = useState<string | null>(null);
-const [editTabName, setEditTabName] = useState('');
-
-// Dans le pill, si editingTab === team :
-<input value={editTabName} onChange={...} onBlur={saveTabName} className="..." />
-// Sinon afficher le nom normalement
+<motion.div 
+  initial={{ opacity: 0, y: -10 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-4 pb-1"
+>
+  <div className="flex items-center gap-3">
+    <span className="text-xl">👋</span>
+    <div>
+      <h2 className="text-base sm:text-lg font-bold text-foreground">
+        Bienvenue, {currentUser?.name?.split(' ')[0]}
+      </h2>
+      <p className="text-xs text-muted-foreground">FCO Manager — Saison 2025-2026</p>
+    </div>
+  </div>
+</motion.div>
 ```
 
-**Suppression onglet** :
-```text
-// Bouton X a cote du nom dans le pill (seulement pour custom teams et admins)
-// onClick -> confirm modal -> onDeleteChampionship(champId)
-```
-
-**Live data equipes custom (lignes 236-250)** :
-```text
-const mapping = teamMapping[selectedTeam];
-if (!mapping) {
-  // Chercher le championnat custom et son fffUrl
-  const customChamp = filteredChampionships[0];
-  if (customChamp?.fffUrl) {
-    const params = decodeFFFApiRef(customChamp.fffUrl);
-    // Utiliser params.cpNo, params.phase, params.poule pour fetcher
-  } else {
-    setLiveError('Pas de classement FFF');
-  }
-}
-```
-
-**Header points (Dashboard.tsx)** :
-```text
-// Deplacer HeaderPoints hors du bloc profil
-// Le mettre comme un petit badge compact dans la zone des boutons
-<div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-  <HeaderPoints userId={currentUser?.uid} />  // ICI, compact
-  <NotificationBell />
-  <button ...Lock... />
-  <button ...LogOut... />
-</div>
-```
-
-**HeaderPoints simplifie** :
-```text
-<span className="inline-flex items-center gap-0.5 bg-amber-500/15 rounded-lg px-1.5 py-1">
-  <Coins size={12} className="text-amber-400" />
-  <span className="text-[10px] font-bold text-amber-400">{pts}</span>
-</span>
-```
+**Suppression avec confirmation (ChampionnatTab.tsx ligne 1130)** :
+- Envelopper le `onDeleteChampionship` dans un `window.confirm()` ou utiliser le state `deletingTab` existant adapte aux championnats individuels
 
