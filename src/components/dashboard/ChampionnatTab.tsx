@@ -557,63 +557,45 @@ const ChampionnatTab: React.FC<Props> = ({
         initial={{ opacity: 0, y: 8 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.08 }}
-        className="flex items-center gap-1.5 p-1.5 bg-secondary/60 backdrop-blur-sm rounded-2xl border border-border/50 overflow-x-auto"
+        className="flex items-center gap-1.5 p-1.5 bg-secondary/60 backdrop-blur-sm rounded-2xl border border-border/50"
       >
-        {allTeamOptions.map(team => {
-          const isCustom = !BASE_TEAMS.includes(team);
-          const isEditing = editingTab === team;
-          return (
-            <div key={team} className="relative flex items-center shrink-0">
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={() => { if (!isEditing) setSelectedTeam(team); }}
-                className={`relative px-3 py-2.5 rounded-xl text-sm font-bold transition-colors min-w-0 ${
-                  selectedTeam === team
-                    ? 'text-accent-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {selectedTeam === team && (
-                  <motion.div
-                    layoutId="team-pill"
-                    className="absolute inset-0 bg-accent rounded-xl shadow-lg shadow-accent/25"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-                {isEditing ? (
-                  <input
-                    autoFocus
-                    value={editTabName}
-                    onChange={e => setEditTabName(e.target.value)}
-                    onBlur={() => {
-                      if (editTabName.trim() && editTabName.trim() !== team && onUpdateChampionship) {
-                        const champsToUpdate = championships.filter(c => (c.team || 'A') === team);
-                        champsToUpdate.forEach(c => onUpdateChampionship(c.id, { team: editTabName.trim() }));
-                        setSelectedTeam(editTabName.trim());
-                      }
-                      setEditingTab(null);
-                    }}
-                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                    className="relative z-10 bg-transparent border-b border-accent-foreground/50 text-center w-16 outline-none text-sm font-bold"
-                    style={{ fontSize: '16px' }}
-                  />
-                ) : (
-                  <span className="relative z-10 truncate">{BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}</span>
-                )}
-              </motion.button>
-              {isCustom && canManage() && selectedTeam === team && !isEditing && (
-                <div className="flex items-center gap-0.5 relative z-10 -ml-1">
-                  <button onClick={() => { setEditingTab(team); setEditTabName(team); }} className="w-5 h-5 rounded-full flex items-center justify-center text-accent-foreground/60 hover:text-accent-foreground transition-colors">
-                    <Pencil size={10} />
-                  </button>
-                  <button onClick={() => setDeletingTab(team)} className="w-5 h-5 rounded-full flex items-center justify-center text-destructive/60 hover:text-destructive transition-colors">
-                    <X size={11} />
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {BASE_TEAMS.map(team => (
+          <motion.button
+            key={team}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setSelectedTeam(team)}
+            className={`relative px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+              selectedTeam === team
+                ? 'text-accent-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {selectedTeam === team && (
+              <motion.div
+                layoutId="team-pill"
+                className="absolute inset-0 bg-accent rounded-xl shadow-lg shadow-accent/25"
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="relative z-10">Équipe {team}</span>
+          </motion.button>
+        ))}
+        {customTeams.length > 0 && (
+          <div className="relative ml-auto">
+            <select
+              value={BASE_TEAMS.includes(selectedTeam) ? '' : selectedTeam}
+              onChange={e => { if (e.target.value) setSelectedTeam(e.target.value); }}
+              className="appearance-none bg-secondary text-foreground text-sm font-bold rounded-xl pl-3 pr-7 py-2.5 border border-border/50 outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer"
+              style={{ fontSize: '16px' }}
+            >
+              <option value="" disabled>Autres…</option>
+              {customTeams.map(team => (
+                <option key={team} value={team}>{team}</option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          </div>
+        )}
       </motion.div>
 
       {/* Delete tab confirmation */}
@@ -1091,56 +1073,95 @@ const ChampionnatTab: React.FC<Props> = ({
         </motion.div>
       </div>
 
-      {/* ─── Admin bar ─── */}
+      {/* ─── Admin actions inside content ─── */}
       {canManage() && filteredChampionships.length > 0 && (
-        <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+        <div className="flex items-center gap-2 flex-wrap">
           {filteredChampionships.map(champ => (
-            <motion.div 
-              key={champ.id} 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }}
-              className="bg-card rounded-xl border border-border/60 shadow-sm"
-            >
-              <div className="flex items-center justify-between px-3 py-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Trophy size={14} className="text-accent shrink-0" />
-                  <div className="min-w-0">
-                    <h3 className="text-xs font-bold text-foreground truncate">{champ.name}</h3>
-                    <p className="text-[10px] text-muted-foreground">{champ.season} • Équipe {champ.team || 'A'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
-                    <span
-                      onClick={async () => {
-                        setRefreshingChamp(champ.id);
-                        try {
-                          const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
-                          setRefreshResult({ ...result, champName: champ.name });
-                        } finally {
-                          setRefreshingChamp(null);
-                        }
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-accent/20 text-muted-foreground hover:text-accent transition-all cursor-pointer"
-                      title="Mettre à jour depuis la FFF"
-                    >
-                      <RefreshCw size={14} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
-                    </span>
-                  )}
-                  <span 
-                    onClick={() => {
-                      if (window.confirm(`Supprimer le championnat "${champ.name}" ?`)) {
-                        onDeleteChampionship(champ.id);
-                      }
-                    }} 
-                    className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all cursor-pointer"
+            <div key={champ.id} className="flex items-center gap-1">
+              {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
+                <button
+                  onClick={async () => {
+                    setRefreshingChamp(champ.id);
+                    try {
+                      const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
+                      setRefreshResult({ ...result, champName: champ.name });
+                    } finally {
+                      setRefreshingChamp(null);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-medium hover:bg-accent/20 transition-all"
+                >
+                  <RefreshCw size={12} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
+                  Actualiser
+                </button>
+              )}
+              {!BASE_TEAMS.includes(selectedTeam) && (
+                <>
+                  <button
+                    onClick={() => { setEditingTab(selectedTeam); setEditTabName(selectedTeam); }}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-xs font-medium hover:bg-secondary/80 transition-all"
                   >
-                    <Trash2 size={14} />
-                  </span>
-                </div>
-              </div>
-            </motion.div>
+                    <Pencil size={11} /> Renommer
+                  </button>
+                  <button
+                    onClick={() => setDeletingTab(selectedTeam)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-all"
+                  >
+                    <Trash2 size={11} /> Supprimer
+                  </button>
+                </>
+              )}
+              {BASE_TEAMS.includes(selectedTeam) && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Supprimer le championnat "${champ.name}" ?`)) {
+                      onDeleteChampionship(champ.id);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-all"
+                >
+                  <Trash2 size={11} /> Supprimer
+                </button>
+              )}
+            </div>
           ))}
+        </div>
+      )}
+
+      {/* Rename inline for custom team */}
+      {editingTab && !BASE_TEAMS.includes(editingTab) && (
+        <div className="flex items-center gap-2 bg-secondary/60 rounded-xl px-3 py-2 border border-border/50">
+          <input
+            autoFocus
+            value={editTabName}
+            onChange={e => setEditTabName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                if (editTabName.trim() && editTabName.trim() !== editingTab && onUpdateChampionship) {
+                  const champsToUpdate = championships.filter(c => (c.team || 'A') === editingTab);
+                  champsToUpdate.forEach(c => onUpdateChampionship(c.id, { team: editTabName.trim() }));
+                  setSelectedTeam(editTabName.trim());
+                }
+                setEditingTab(null);
+              }
+              if (e.key === 'Escape') setEditingTab(null);
+            }}
+            placeholder="Nouveau nom"
+            className="flex-1 bg-transparent text-sm font-bold text-foreground outline-none"
+            style={{ fontSize: '16px' }}
+          />
+          <button
+            onClick={() => {
+              if (editTabName.trim() && editTabName.trim() !== editingTab && onUpdateChampionship) {
+                const champsToUpdate = championships.filter(c => (c.team || 'A') === editingTab);
+                champsToUpdate.forEach(c => onUpdateChampionship(c.id, { team: editTabName.trim() }));
+                setSelectedTeam(editTabName.trim());
+              }
+              setEditingTab(null);
+            }}
+            className="px-3 py-1 rounded-lg bg-accent text-accent-foreground text-xs font-bold"
+          >OK</button>
+          <button onClick={() => setEditingTab(null)} className="px-2 py-1 rounded-lg text-muted-foreground text-xs">Annuler</button>
         </div>
       )}
 
