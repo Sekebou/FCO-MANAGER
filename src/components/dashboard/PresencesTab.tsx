@@ -45,10 +45,27 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
   const [expandedPlayers, setExpandedPlayers] = useState<Record<string, boolean>>({});
   const [expandedConvocationsEdit, setExpandedConvocationsEdit] = useState<Record<string, boolean>>({});
 
-  // All events visible to everyone (no team filtering)
+  // All events: upcoming + recently passed (7 days)
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const upcomingEvents = events
-    .filter(e => new Date(e.date) >= new Date())
+    .filter(e => new Date(e.date) >= sevenDaysAgo)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const isEventPast = (event: Event) => {
+    const eventDate = new Date(event.date);
+    // If event has time, combine date+time for precise comparison
+    if (event.time) {
+      const [h, m] = event.time.split(':').map(Number);
+      eventDate.setHours(h || 0, m || 0);
+      // Add 2h buffer for match/training duration
+      eventDate.setHours(eventDate.getHours() + 2);
+    } else {
+      // No time: consider past at end of day
+      eventDate.setHours(23, 59, 59);
+    }
+    return eventDate < now;
+  };
 
   // All players participate in all events
   const getPlayersForEvent = (_event: Event) => {
@@ -204,6 +221,14 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 </div>
               </div>
 
+              {/* Past event banner */}
+              {isEventPast(event) && (
+                <div className="mb-3 flex items-center gap-2 bg-muted/60 border border-border rounded-xl px-3 py-2">
+                  <Clock size={14} className="text-muted-foreground shrink-0" />
+                  <span className="text-xs font-semibold text-muted-foreground">Événement terminé — les réponses sont verrouillées</span>
+                </div>
+              )}
+
               {/* Presences list — masquée en mode convocation et après publication des convocations */}
               {!isConvocationMode && !event.convocationsPublished && (
               <div className="space-y-1.5">
@@ -241,7 +266,8 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                 {/* Bouton Présent */}
                                 <div className="relative overflow-visible">
                                   <motion.button
-                                    onClick={() => togglePresence(event.id, player.id, 'present')}
+                                    onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'present')}
+                                    disabled={isEventPast(event)}
                                     whileTap={{ scale: 0.82 }}
                                     animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                     transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
@@ -267,8 +293,9 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                                 {/* Bouton Absent */}
                                 <div className="relative overflow-visible">
                                   <motion.button
-                                    onClick={() => togglePresence(event.id, player.id, 'absent')}
-                                    whileTap={{ scale: 0.82 }}
+                                    onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'absent')}
+                                    disabled={isEventPast(event)}
+                                    whileTap={isEventPast(event) ? {} : { scale: 0.82 }}
                                     animate={status === 'absent' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                     transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
                                     className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
