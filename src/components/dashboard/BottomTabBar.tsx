@@ -236,8 +236,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
         </div>
       </div>
 
-      {/* Tablette (md → lg) : tous les onglets visibles, centrés, taille fixe */}
-      <div className="relative hidden md:flex items-center justify-center gap-1 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      {/* Desktop (md+) : tous les onglets visibles, centrés, agrandis */}
+      <div className="relative hidden md:flex items-center justify-center gap-2 lg:gap-3 px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {allTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -249,7 +249,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                 key={tab.id}
                 data-tab={tab.id}
                 onClick={() => handleTap(tab.id)}
-                className="relative flex flex-col items-center justify-center w-20 outline-none select-none py-1"
+                className="relative flex flex-col items-center justify-center w-24 lg:w-28 outline-none select-none py-1.5"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <motion.div
@@ -257,11 +257,11 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   transition={{ duration: isActive ? 1.8 : 3, repeat: Infinity, ease: 'easeInOut' }}
                   className="absolute rounded-2xl pointer-events-none"
                   style={{
-                    inset: '-6px',
+                    inset: '-8px',
                     background: isActive
                       ? 'radial-gradient(ellipse at center, hsl(var(--accent) / 0.55) 0%, transparent 70%)'
                       : 'radial-gradient(ellipse at center, hsl(var(--primary) / 0.3) 0%, transparent 70%)',
-                    filter: 'blur(6px)',
+                    filter: 'blur(8px)',
                   }}
                 />
                 <motion.div
@@ -269,8 +269,8 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   animate={featuredJustActivated ? { scale: [1, 1.22, 0.94, 1.06, 1], transition: { duration: 0.55 } } : { scale: 1 }}
                   className="relative flex items-center justify-center rounded-2xl"
                   style={{
-                    width: isActive ? '3.75rem' : '3.25rem',
-                    height: isActive ? '3.25rem' : '2.75rem',
+                    width: isActive ? '4.25rem' : '3.75rem',
+                    height: isActive ? '3.75rem' : '3.25rem',
                     background: isActive
                       ? 'linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent) / 0.8))'
                       : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.85))',
@@ -280,9 +280,9 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                     transition: 'width 0.3s ease, height 0.3s ease',
                   }}
                 >
-                  <AnimatedIcon icon={Icon} isActive={isActive} size={isActive ? 24 : 21} strokeWidth={2.5} className={cn('relative z-10', isActive ? 'text-accent-foreground' : 'text-primary-foreground')} />
+                  <AnimatedIcon icon={Icon} isActive={isActive} size={isActive ? 28 : 24} strokeWidth={2.5} className={cn('relative z-10', isActive ? 'text-accent-foreground' : 'text-primary-foreground')} />
                 </motion.div>
-                <span className={cn('text-[10px] leading-none mt-1.5 tracking-tight whitespace-nowrap', isActive ? 'font-extrabold text-accent' : 'font-semibold text-muted-foreground/70')}>
+                <span className={cn('text-xs leading-none mt-2 tracking-tight whitespace-nowrap', isActive ? 'font-extrabold text-accent' : 'font-semibold text-muted-foreground/70')}>
                   {tab.label}
                 </span>
               </button>
@@ -294,30 +294,30 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
               key={tab.id}
               data-tab={tab.id}
               onClick={() => handleTap(tab.id)}
-              className="relative flex flex-col items-center justify-center w-20 pt-1.5 pb-1 outline-none select-none"
+              className="relative flex flex-col items-center justify-center w-24 lg:w-28 pt-2 pb-1.5 outline-none select-none"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <motion.div
                 initial={false}
-                animate={{ width: isActive ? 28 : 0, opacity: isActive ? 1 : 0 }}
+                animate={{ width: isActive ? 32 : 0, opacity: isActive ? 1 : 0 }}
                 transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                className="absolute top-0 left-1/2 -translate-x-1/2 h-[2.5px] rounded-full bg-accent"
+                className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] rounded-full bg-accent"
               />
               <motion.div
                 initial={false}
-                animate={{ width: isActive ? 56 : 36, backgroundColor: isActive ? 'hsl(var(--accent) / 0.12)' : 'transparent' }}
+                animate={{ width: isActive ? 64 : 40, backgroundColor: isActive ? 'hsl(var(--accent) / 0.12)' : 'transparent' }}
                 transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                className="relative flex items-center justify-center rounded-2xl h-9"
+                className="relative flex items-center justify-center rounded-2xl h-10"
               >
                 <AnimatedIcon
                   icon={Icon}
                   isActive={isActive}
-                  size={isActive ? 21 : 22}
+                  size={isActive ? 24 : 23}
                   strokeWidth={isActive ? 2.4 : 1.6}
                   className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')}
                 />
               </motion.div>
-              <span className={cn('text-[10px] leading-none mt-1 tracking-tight whitespace-nowrap', isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45')}>
+              <span className={cn('text-xs leading-none mt-1.5 tracking-tight whitespace-nowrap', isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45')}>
                 {tab.label}
               </span>
             </button>
