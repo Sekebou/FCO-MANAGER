@@ -1,152 +1,134 @@
 
 
-## Plan de correction des 7 bugs
+## Plan de correction - 6 bugs
 
-### Bug 1 : Logos manquants dans le classement equipe A
+### Bug 1 : Zoom automatique sur les champs de saisie (iOS/Android)
 
-**Probleme** : Dans `ChampionnatTab.tsx` (lignes 276-294), les logos sont recuperes depuis le classement (`classement_journees`) puis en fallback depuis `/resultat`. Mais les clubs qui n'ont pas encore joue contre Oisemont n'apparaissent dans aucun de ces deux endpoints.
+Le viewport meta est deja configure avec `maximum-scale=1.0, user-scalable=no` et le CSS force `font-size: 16px !important` sur les inputs. Cependant, certains navigateurs mobiles (Safari iOS 16+) ignorent `maximum-scale` dans certains cas.
 
-**Correction** : Ajouter aussi un fetch du `/calendrier` en parallele du `/resultat` (ligne 288), puis fusionner les logos des deux sources.
+**Correction** :
+- Ajouter dans `index.css` une regle CSS supplementaire pour empecher le zoom sur focus avec `@supports` et un meta viewport renforce
+- Ajouter `touch-action: manipulation` sur tous les elements interactifs (boutons, liens)
+- Forcer `transform: scale(1)` sur les inputs au focus pour contrer le zoom Safari
 
-**Fichier** : `src/components/dashboard/ChampionnatTab.tsx` (lignes 287-294)
-- Remplacer le fetch simple de resultats par un `Promise.all` resultats + calendrier
-- Fusionner les logos des deux sources dans `liveLogos`
+**Fichier** : `src/index.css`
 
-### Bug 2 : Points de presence ajoutes en double
+### Bug 2 : Header qui deborde sur grands ecrans mobiles (iPhone 16 Pro Max, S24 Ultra)
 
-**Probleme** : Dans `Dashboard.tsx` (lignes 463-484), la logique verifie `hadPreviousResponse` mais quand on retire sa reponse (toggle off) puis re-repond, `hadPreviousResponse` est `false` car la cle a ete supprimee, donc les 5 pts sont re-donnes. De plus, retirer sa reponse ne retire pas les points.
+Sur la capture, on voit que les icones (cadenas, deconnexion) sont poussees a droite hors ecran. Le probleme vient du fait que le header n'a pas de `overflow-hidden` et que le contenu (nom + role + badge points + icones) depasse la largeur.
 
-**Correction** : Traquer les bonus deja accordes en verifiant dans `points_transactions` si un bonus `presence` existe deja pour cet evenement et cet utilisateur. Si le joueur retire sa reponse, deduire les 5 pts.
+**Correction** :
+- Ajouter `overflow-hidden` sur le header container
+- Ajouter `min-w-0` et `shrink` sur le bloc profil pour qu'il se compresse
+- Limiter la largeur du badge HeaderPoints avec `max-w-fit shrink-0`
+- S'assurer que le bloc right-side a `shrink-0` sur les icones et `min-w-0` sur le texte
 
-**Fichier** : `src/pages/Dashboard.tsx` (lignes 459-485)
-- Avant de donner des points, verifier avec une query `points_transactions` si une transaction `presence` pour cet `eventId` existe deja pour le user
-- Si le joueur retire sa reponse (toggle off = delete), chercher la transaction et deduire 5 pts du solde
-- Mettre la description a `Présence : [eventId]` pour pouvoir la retrouver
+**Fichier** : `src/pages/Dashboard.tsx` (lignes 1054-1099)
 
-### Bug 3 : Scroll en bas quand on switch d'onglet
+### Bug 3 : Griser/fermer les presences pour les evenements passes
 
-**Probleme** : Dans `Dashboard.tsx` ligne 1064, `<div key={activeTab}>` re-render le contenu mais le scroll de la page reste a sa position actuelle.
+Actuellement, `PresencesTab.tsx` filtre les evenements ou `date >= new Date()` (ligne 50), donc les evenements passes ne s'affichent pas du tout. Mais le filtre compare la date sans heure, donc un evenement du jour passe peut rester visible.
 
-**Correction** : Ajouter un `window.scrollTo(0, 0)` dans le `handleTabChange` function (ligne 184).
+**Correction** :
+- Ajouter une condition `isPastEvent` basee sur la date de l'evenement
+- Si l'evenement est passe, afficher les boutons present/absent en mode desactive (grises) avec un label "Evenement passe"
+- Garder l'affichage des reponses deja enregistrees mais empecher de nouvelles modifications
 
-**Fichier** : `src/pages/Dashboard.tsx` (ligne 184)
-- `const handleTabChange = (tab: string) => { window.scrollTo(0, 0); setActiveTab(tab); };`
+**Fichier** : `src/components/dashboard/PresencesTab.tsx`
 
-### Bug 4 : Renommer "Classement" en "Championnat"
+### Bug 4 : Erreur lors de la creation de conversation privee
 
-**Probleme** : Le tab s'appelle deja "Championnat" dans le tableau `tabs` (ligne 136). Ce bug semble deja corrige. Verification necessaire dans `BottomTabBar.tsx` au cas ou le label y est different.
+La RLS policy INSERT a `with_check: (auth.uid() = ANY (participants))`. Le code met `currentUser.uid` dans `allParticipants`. Le probleme peut venir de :
+1. L'utilisateur n'est pas authentifie via Supabase Auth (utilise localStorage uniquement)
+2. Le type `participants` est un array de `uuid` mais on envoie des strings
 
-**Fichier** : `src/components/dashboard/BottomTabBar.tsx` - verifier et corriger si besoin
+**Correction** :
+- Verifier que la session Supabase est active avant de creer la conversation
+- Ajouter un `await supabase.auth.getUser()` pour confirmer l'authentification
+- Si pas de session, afficher un message d'erreur plus clair
+- Logger l'erreur exacte pour diagnostic
 
-### Bug 5 : Bouton "Convoque" qui empiete sur le nom (iPhone 12)
+**Fichier** : `src/components/dashboard/MessagesTab.tsx` (lignes 196-237)
 
-**Probleme** : Dans `PresencesTab.tsx` (lignes 438-463), le layout `flex items-center justify-between gap-2` ne gere pas bien les noms longs sur petit ecran car les boutons convoque/non-convoque prennent trop de place.
+### Bug 5 : Onglets dynamiques dans Championnat (au-dela de A, B, C)
 
-**Correction** : 
-- Ajouter `min-w-0` et `overflow-hidden` au conteneur du nom
-- Reduire la taille des boutons sur mobile : `text-[10px] px-1.5 h-7` au lieu de `text-[11px] px-2.5 h-8`
-- Utiliser `truncate` sur le nom pour eviter le debordement
+Actuellement `TEAM_OPTIONS` est `['A', 'B', 'C']` en dur (ligne 93). L'utilisateur veut pouvoir creer des onglets supplementaires (ex: U18, Veterans).
 
-**Fichier** : `src/components/dashboard/PresencesTab.tsx` (lignes 464-510)
+**Correction** :
+- Rendre `TEAM_OPTIONS` dynamique : combiner les valeurs par defaut `['A', 'B', 'C']` avec les valeurs `team` uniques presentes dans les championnats existants
+- Dans le formulaire d'ajout, ajouter un champ "Nouvelle equipe" qui permet de saisir un nom d'equipe personnalise (ex: "U18")
+- Quand l'utilisateur choisit "Nouveau", afficher un input texte pour le nom de l'onglet
+- Le nouvel onglet apparait automatiquement dans le selecteur de pilules
+- Pour les equipes personnalisees, ne pas faire de mapping vers l'API FFF (pas de `teamMapping`) : elles utiliseront uniquement les donnees importees manuellement ou via URL FFF
 
-### Bug 6 : Erreur lors de la creation de conversation
+**Fichier** : `src/components/dashboard/ChampionnatTab.tsx` (lignes 93, 316-320, 402-420, 518-546)
 
-**Probleme** : Dans `MessagesTab.tsx` (lignes 196-226), `createConversation` insere dans `conversations` avec `created_by: currentUser.uid`. La RLS policy pour INSERT exige `auth.uid() = ANY (participants)`. Le probleme pourrait venir du fait que le user n'est pas correctement authentifie via Supabase Auth, ou que le `participants` array n'est pas correctement formate.
+### Bug 6 : Visibilite du zoom CSS renforcee
 
-**Correction** : 
-- Ajouter un meilleur log d'erreur pour identifier la cause exacte
-- S'assurer que `allParticipants` est un array de strings UUID valides
-- Ajouter un catch plus explicite avec le message d'erreur Supabase
+Ajout de regles supplementaires dans le CSS pour bloquer tout zoom residuel sur iOS.
 
-**Fichier** : `src/components/dashboard/MessagesTab.tsx` (lignes 215-225)
-- Remplacer `if (error) throw error;` par un log detaille de l'erreur
-- Verifier que `error.message` contient des infos RLS et ajuster le toast
+**Fichier** : `src/index.css`
 
-### Bug 7 : Visibilite des points dans le profil
+---
 
-**Probleme** : Le `HeaderPoints` (lignes 158-172) affiche juste un petit chiffre `Coins size={9}` qui n'est pas comprehensible.
+### Resume des fichiers a modifier
 
-**Correction** : 
-- Agrandir l'affichage : icone plus grande, label "Points" explicite
-- Ajouter un fond discret pour que ca ressemble a un badge lisible
-- Format : `[Coins icon] 105 pts`
-
-**Fichier** : `src/pages/Dashboard.tsx` (lignes 167-171)
-
-### Resume des fichiers modifies
-
-| Fichier | Bug |
-|---------|-----|
-| `src/components/dashboard/ChampionnatTab.tsx` | #1 Logos manquants |
-| `src/pages/Dashboard.tsx` | #2 Points en double, #3 Scroll, #7 Visibilite points |
-| `src/components/dashboard/PresencesTab.tsx` | #5 Bouton convoque iPhone |
-| `src/components/dashboard/MessagesTab.tsx` | #6 Erreur creation conversation |
-| `src/components/dashboard/BottomTabBar.tsx` | #4 Verification renommage |
+| Fichier | Corrections |
+|---------|-------------|
+| `src/index.css` | Anti-zoom renforce |
+| `src/pages/Dashboard.tsx` | Header overflow, layout large screens |
+| `src/components/dashboard/PresencesTab.tsx` | Griser evenements passes |
+| `src/components/dashboard/MessagesTab.tsx` | Fix creation conversation |
+| `src/components/dashboard/ChampionnatTab.tsx` | Onglets dynamiques |
 
 ### Details techniques
 
-**Fix logos (ChampionnatTab.tsx)** :
-
+**Header fix (Dashboard.tsx)** :
 ```text
-// Lignes 287-294 : remplacer le try/catch resultats par :
-try {
-  const [resultatsData, calendrierData] = await Promise.all([
-    getResultats(champParams.cpNo, champParams.phase, champParams.poule),
-    getCalendrier(champParams.cpNo, champParams.phase, champParams.poule),
-  ]);
-  const logosResultats = extractTeamLogosFromResults(resultatsData);
-  const logosCalendrier = extractTeamLogosFromResults(calendrierData);
-  setLiveLogos(prev => ({ ...prev, ...logosResultats, ...logosCalendrier }));
-} catch {}
+// Le container header doit etre overflow-hidden
+<div className="flex justify-between items-center h-16 lg:h-20 overflow-hidden">
+  // Le bloc gauche doit shrink
+  <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
+  // Le bloc droit doit aussi ne pas deborder
+  <div className="flex items-center gap-1 shrink-0">
+  // Le profil doit avoir min-w-0
+  <div className="hidden min-[414px]:block text-left min-w-0 max-w-[140px]">
 ```
 
-**Fix points presence (Dashboard.tsx)** :
-
+**Onglets dynamiques (ChampionnatTab.tsx)** :
 ```text
-togglePresence():
-  // Quand on RETIRE sa reponse (toggle off) :
-  if (currentPresences[playerId] === status) {
-    delete currentPresences[playerId];
-    // Verifier si on avait donne des points pour cet event
-    const { data: existingTx } = await supabase
-      .from('points_transactions')
-      .select('id')
-      .eq('user_id', currentUser.uid)
-      .eq('type', 'presence')
-      .like('description', `%${eventId}%`)
-      .maybeSingle();
-    if (existingTx) {
-      // Retirer les 5 pts
-      const { data: pts } = await supabase.from('user_points')
-        .select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
-      if (pts) await supabase.from('user_points')
-        .update({ balance: pts.balance - 5 }).eq('id', pts.id);
-      await supabase.from('points_transactions')
-        .delete().eq('id', existingTx.id);  // Besoin de RLS DELETE
-      toast.info('-5 pts retirés');
-    }
-  } else {
-    // Quand on AJOUTE une reponse :
-    // Verifier si deja recompense pour cet event
-    const { data: alreadyRewarded } = await supabase
-      .from('points_transactions')
-      .select('id')
-      .eq('user_id', currentUser.uid)
-      .eq('type', 'presence')
-      .like('description', `%${eventId}%`)
-      .maybeSingle();
-    if (!alreadyRewarded) {
-      // Donner 5 pts (logique existante)
-    }
-  }
+// Remplacer const TEAM_OPTIONS = ['A', 'B', 'C'] par :
+const baseTeams = ['A', 'B', 'C'];
+const customTeams = [...new Set(championships.map(c => c.team || 'A').filter(t => !baseTeams.includes(t)))];
+const allTeamOptions = [...baseTeams, ...customTeams];
+
+// Dans le formulaire, ajouter un input pour "Nouvelle equipe" :
+// Si champTeam === '__new__', afficher un input texte
+// Le teamMapping dans useEffect ne fait rien pour les equipes non-ABC
 ```
 
-**Note** : Il faudra ajouter une RLS policy DELETE sur `points_transactions` pour permettre aux users de supprimer leurs propres transactions, sinon utiliser un update a amount=-5 comme alternative.
+**Presences passees (PresencesTab.tsx)** :
+```text
+// Changer le filtre pour inclure les evenements passes recents (7 jours)
+const now = new Date();
+const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+const allRelevantEvents = events
+  .filter(e => new Date(e.date) >= sevenDaysAgo)
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-**Migration SQL necessaire** :
-```sql
-CREATE POLICY "Users can delete own transactions"
-  ON public.points_transactions FOR DELETE
-  USING (auth.uid() = user_id);
+// Pour chaque event, ajouter isPast
+const isPastEvent = new Date(event.date) < now;
+// Si isPast, griser les boutons et afficher "Evenement termine"
 ```
 
+**Conversation fix (MessagesTab.tsx)** :
+```text
+// Avant l'insert, verifier la session
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) {
+  toast.error('Session expirée, veuillez vous reconnecter');
+  return;
+}
+// Utiliser session.user.id au lieu de currentUser.uid
+const allParticipants = [session.user.id, ...selectedMembers];
+```
