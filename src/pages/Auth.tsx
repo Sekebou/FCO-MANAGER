@@ -144,16 +144,16 @@ const Auth = () => {
           </h1>
 
           <p className="text-white/35 text-lg leading-relaxed animate-[fadeSlideUp_0.8s_ease-out_0.2s_both]">
-            Gérez votre équipe, suivez les présences et les performances de vos joueurs en un seul endroit.
+            Application officielle du Football Club Oisemontais. Restez connecté à la vie du club, suivez l'actualité et vivez chaque moment de la saison.
           </p>
 
           <div className="mt-8 mb-8 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[fadeSlideUp_0.8s_ease-out_0.3s_both]" />
 
           <div className="space-y-3 w-full">
             {[
-              { Icon: Users, text: "Gestion des présences" },
-              { Icon: TrendingUp, text: "Suivi des performances" },
-              { Icon: Calendar, text: "Calendrier des événements" },
+              { Icon: Users, text: "Toute l'équipe réunie" },
+              { Icon: TrendingUp, text: "L'actualité du club en direct" },
+              { Icon: Calendar, text: "Ne manquez aucun événement" },
             ].map((feat, i) => (
               <div
                 key={feat.text}
@@ -165,7 +165,7 @@ const Auth = () => {
               </div>
             ))}
             <p className="text-xs text-white/30 font-medium pt-1 animate-[fadeSlideUp_0.6s_ease-out_both]" style={{ animationDelay: "0.76s" }}>
-              … et bien d'autres fonctionnalités
+              Allez Oisemont ! 💙
             </p>
           </div>
 
@@ -192,7 +192,7 @@ const Auth = () => {
           {/* Header */}
           <div className="mb-8 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
             <h2 className="text-2xl font-bold text-foreground">Connexion</h2>
-            <p className="text-muted-foreground text-sm mt-1">Accédez à votre espace de gestion</p>
+            <p className="text-muted-foreground text-sm mt-1">Application officielle du FC Oisemontais</p>
           </div>
 
           {/* Form card */}
@@ -267,10 +267,10 @@ const Auth = () => {
           {/* Features description (mobile) */}
           <div className="lg:hidden mt-6 space-y-2.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
             {[
-              { Icon: Users, text: "Gestion des présences" },
-              { Icon: TrendingUp, text: "Suivi des performances" },
-              { Icon: Calendar, text: "Calendrier des événements" },
-            ].map((feat, i) => (
+              { Icon: Users, text: "Toute l'équipe réunie" },
+              { Icon: TrendingUp, text: "L'actualité du club en direct" },
+              { Icon: Calendar, text: "Ne manquez aucun événement" },
+            ].map((feat) => (
               <div
                 key={feat.text}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50"
@@ -280,7 +280,7 @@ const Auth = () => {
               </div>
             ))}
             <p className="text-xs text-muted-foreground/60 font-medium text-center pt-1">
-              … et bien d'autres fonctionnalités
+              Allez Oisemont ! 💙
             </p>
           </div>
 
