@@ -1,105 +1,56 @@
 
 
-## Optimisation Cloud + Admin Actions en haut
+## Optimisation de la barre de navigation mobile
 
-### Probleme actuel de performance
+### Objectif
 
-Le championnat est **tres gourmand** en requetes. A chaque changement d'equipe, voici ce qui se passe :
+Afficher exactement **4 onglets visibles** a la fois sur mobile, sans qu'on voie le debut ou la fin des onglets voisins. Quand on change d'onglet, le scroll se repositionne pour garder **2 onglets a gauche et 2 a droite** de la zone visible.
 
-- **useEffect 1** (classement) : `getEquipes()` + `getClassement()` + `getResultats()` + `getCalendrier()` = **4 appels**
-- **useEffect 2** (matchs) : `getEquipes()` **encore** (doublon !) + `getTousMatchsAvenir()` (1 appel par mois jusqu'en juin = ~4-5 appels) + `getTousResultats()` (1 appel par mois depuis septembre = ~5-6 appels)
-- **Total par changement d'equipe : ~15-20+ appels edge function**
+### Ce qui change
 
-Chaque appel edge function = 1 invocation cloud facturee.
+**Fichier : `src/components/dashboard/BottomTabBar.tsx`**
 
----
+1. **Largeur fixe des onglets** : chaque onglet prendra exactement **25% de la largeur** du conteneur, ce qui garantit que 4 onglets sont visibles a la fois, ni plus ni moins.
 
-### 1. Cache en memoire pour les appels FFF API
+2. **Masquer le debordement** : remplacer le scroll libre (`overflow-x-auto`) par un conteneur qui cache les onglets hors champ (`overflow: hidden` gere par JS). Aucun bout d'onglet ne depasse.
 
-**Fichier : `src/lib/fffApi.ts`**
+3. **Scroll intelligent au changement d'onglet** : quand on clique sur un onglet, le conteneur se repositionne pour centrer la vue autour de l'onglet actif. Concretement :
+   - Si l'onglet actif est le 1er ou 2e, on montre les onglets 1-4
+   - Si l'onglet actif est le 7e ou 8e, on montre les onglets 5-8
+   - Sinon, on centre l'onglet actif avec 2 voisins de chaque cote (on montre un groupe de 4 parmi lequel l'actif est en position 2 ou 3)
 
-Ajouter un cache simple en memoire avec TTL de 5 minutes dans `callFFF()` :
+4. **Animation fluide** : le deplacement utilise `scrollTo({ behavior: 'smooth' })` ou un `transform: translateX()` anime pour une transition naturelle entre les groupes.
 
-```text
-const cache = new Map<string, { data: any; ts: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 min
+5. **Pas de scroll manuel** : l'utilisateur ne peut plus scroller librement la barre, c'est le clic sur un onglet qui declenche le repositionnement.
 
-async function callFFF(endpoint: string) {
-  const cached = cache.get(endpoint);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+### Comportement detaille
 
-  const { data, error } = await supabase.functions.invoke(...);
-  if (error) throw error;
-  cache.set(endpoint, { data, ts: Date.now() });
-  return data;
-}
-```
+Avec les 8 onglets [Stats, Championnat, Actus, Presences, Calendrier, Galerie, Membres, Discussions] :
 
-Cela reduit drastiquement les appels : si on revient sur Equipe A apres avoir regarde B, tout est en cache.
+| Onglet actif | Onglets visibles |
+|---|---|
+| Stats (1) | Stats, Championnat, Actus, Presences |
+| Championnat (2) | Stats, Championnat, Actus, Presences |
+| Actus (3) | Championnat, Actus, Presences, Calendrier |
+| Presences (4) | Actus, Presences, Calendrier, Galerie |
+| Calendrier (5) | Presences, Calendrier, Galerie, Membres |
+| Galerie (6) | Calendrier, Galerie, Membres, Discussions |
+| Membres (7) | Calendrier, Galerie, Membres, Discussions |
+| Discussions (8) | Calendrier, Galerie, Membres, Discussions |
 
-### 2. Fusionner les deux useEffect et dedupliquer getEquipes
+Regle : l'onglet actif est toujours en position 2 ou 3 dans le groupe visible (jamais tout au bord), sauf aux extremites.
 
-**Fichier : `src/components/dashboard/ChampionnatTab.tsx`**
+### Ce qui ne change PAS
 
-Fusionner les deux `useEffect` (lignes 242-336 et 338-394) qui se declenchent tous les deux sur `[selectedTeam]` en un seul. L'appel `getEquipes()` ne sera fait qu'une seule fois au lieu de deux.
-
-Resultat : **-1 appel getEquipes par changement d'equipe** (economie directe).
-
-### 3. Deplacer les actions admin en haut du classement (icones)
-
-**Fichier : `src/components/dashboard/ChampionnatTab.tsx`**
-
-Deplacer les boutons admin dans le header du classement (ligne 642-653), a droite du titre, sous forme d'icones compactes sans texte :
-
-- `RefreshCw` (actualiser) - uniquement si fffUrl existe
-- `Pencil` (renommer) - uniquement pour les equipes custom
-- `Trash2` (supprimer)
-
-Supprimer le bloc admin actions en bas (lignes 1093-1146).
-
-Le header du classement passera de :
-
-```text
-[BarChart3 icon] Classement          [loader si loading]
-                 Equipe A - Live FFF
-```
-
-a :
-
-```text
-[BarChart3 icon] Classement          [RefreshCw] [Pencil] [Trash2]
-                 Equipe A - Live FFF
-```
-
-Les icones seront petites (14px), discretes (text-muted-foreground), avec hover colore.
-
----
-
-### Resume des fichiers
-
-| Fichier | Modification |
-|---------|-------------|
-| `src/lib/fffApi.ts` | Ajout cache memoire TTL 5min dans callFFF |
-| `src/components/dashboard/ChampionnatTab.tsx` | Fusion des 2 useEffect + admin icons dans header classement |
+- Taille, couleurs, icones, animations des onglets
+- Le style du fond (glassmorphism, bordure)
+- L'onglet "featured" (Presences) garde son style special
+- La version tablette (md+) reste identique (tous les onglets visibles)
 
 ### Details techniques
 
-**Cache (fffApi.ts)** :
-- Map simple `endpoint -> { data, ts }`
-- TTL 5 minutes, pas de persistence (reset au rechargement de page)
-- Aucun impact sur le refresh manuel (le bouton RefreshCw pourra appeler une fonction `clearFFFCache()` exportee avant de re-fetcher)
-
-**Fusion useEffect (ChampionnatTab.tsx)** :
-- Un seul `useEffect` sur `[selectedTeam]` qui fait :
-  1. Resoudre `champParams` (via mapping ou decodeFFFApiRef) - 1 seul appel getEquipes
-  2. En parallele : getClassement + getTousMatchsAvenir + getTousResultats + getResultats/getCalendrier pour logos
-- Les logos supplementaires restent en `catch(() => null)` pour ne pas bloquer
-
-**Admin icons (ChampionnatTab.tsx)** :
-- Dans le header du bloc classement (ligne 642-653), ajouter les icones a droite
-- RefreshCw : `text-accent hover:text-accent/80`, spin pendant le refresh
-- Pencil : `text-muted-foreground hover:text-foreground`
-- Trash2 : `text-muted-foreground hover:text-destructive`
-- Supprimer le bloc `{/* Admin actions inside content */}` (lignes 1093-1146)
-- Garder le bloc rename inline et delete confirmation tels quels
+- Remplacer `overflow-x-auto` par `overflow-hidden` sur le conteneur mobile
+- Chaque bouton passe de `min-w-[4rem]/min-w-[5rem]` a `w-1/4 shrink-0` (25% exact)
+- Calculer l'offset de scroll : `const startIndex = Math.max(0, Math.min(activeIndex - 1, totalTabs - 4))` puis `scrollTo(startIndex * tabWidth)`
+- Transition smooth via CSS `scroll-behavior: smooth` ou `transform` anime
 
