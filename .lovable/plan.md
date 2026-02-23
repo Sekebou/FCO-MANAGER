@@ -1,84 +1,79 @@
 
 
-## Plan de correction - 4 points
+## Corrections - Sélecteur d'équipe et Welcome
 
-### 1. Optimiser le "+ Autre" dans le formulaire d'ajout de championnat
+### 1. Sélecteur d'équipe : pills A/B/C + dropdown pour les autres
 
-Actuellement, les boutons d'equipe (Eq. A, Eq. B, Eq. C, + Autre) utilisent `flex-1 min-w-[60px]` ce qui les rend trop larges et serres quand il y a des equipes custom en plus. 
+Remplacer le `<select>` unique par deux éléments côte à côte sur une seule ligne :
 
-**Corrections dans `ChampionnatTab.tsx`** :
-- Changer le layout du selecteur d'equipe : utiliser `flex-wrap gap-2` avec des boutons a taille `auto` (`px-4`) au lieu de `flex-1`
-- Reduire le padding des boutons pour qu'ils tiennent mieux sur petits ecrans
-- Afficher "Équipe A" au lieu de "Éq. A" dans le formulaire (ligne 1179)
+- **3 pills compactes** pour Équipe A, B, C (toujours visibles, style bouton actif/inactif)
+- **Un dropdown moderne** (Select de Radix/shadcn) qui apparait uniquement si des équipes custom existent, avec le label "Autres" et une icône ChevronDown
 
-### 2. Optimiser la suppression de championnat et l'affichage admin
+Layout : `flex items-center gap-2` avec les 3 pills à gauche et le dropdown à droite.
 
-La barre admin (lignes 1094-1136) affiche chaque championnat dans une carte separee. Si plusieurs championnats existent, ils ne sont pas tous visibles car les cartes sont affichees verticalement sans scroll.
+**Fichier : `src/components/dashboard/ChampionnatTab.tsx` (lignes 555-577)**
 
-**Corrections dans `ChampionnatTab.tsx`** :
-- Rendre les cartes admin plus compactes : reduire le padding, utiliser une mise en page horizontale plus dense
-- Ajouter une confirmation avant la suppression (actuellement `onDeleteChampionship` est appele directement au clic)
-- Changer "Éq." en "Équipe" dans la description des cartes (ligne 1109)
+Remplacer le bloc `<select>` par :
 
-### 3. Actualisation automatique apres ajout de championnat
+```text
+<div className="flex items-center gap-1.5">
+  {/* Pills A B C */}
+  {BASE_TEAMS.map(team => (
+    <button
+      key={team}
+      onClick={() => setSelectedTeam(team)}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+        selectedTeam === team
+          ? "bg-accent text-accent-foreground shadow-sm"
+          : "text-muted-foreground hover:bg-secondary"
+      )}
+    >
+      Éq. {team}
+    </button>
+  ))}
 
-Le probleme : `addChampionship` dans `Dashboard.tsx` insere le championnat en base mais ne met pas a jour le state local immediatement. La mise a jour depend du realtime subscription, qui peut avoir un delai ou ne pas etre active sur cette table.
+  {/* Dropdown pour les customs s'il y en a */}
+  {customTeams.length > 0 && (
+    <Popover>
+      <PopoverTrigger>
+        bouton "Autres" avec ChevronDown
+      </PopoverTrigger>
+      <PopoverContent>
+        liste des équipes custom
+      </PopoverContent>
+    </Popover>
+  )}
+</div>
+```
 
-**Corrections dans `Dashboard.tsx` (fonction `addChampionship`, lignes 825-843)** :
-- Apres l'insert reussi, refetcher immediatement les championnats et les matchs depuis la base : `supabase.from('championships').select('*')` puis `setChampionships(...)` et idem pour `championship_matches`
-- Cela garantit une actualisation instantanee sans dependre du realtime
+- "Éq. A", "Éq. B", "Éq. C" en labels courts pour tenir sur une ligne
+- Si l'équipe sélectionnée est custom, le bouton "Autres" affiche le nom de l'équipe custom à la place
 
-### 4. Ajouter un message "Bienvenue, X" sous le header
+### 2. Welcome banner : icône Lucide native
 
-Un message de bienvenue moderne et discret sous le header, affichant le prenom de l'utilisateur connecte.
+Remplacer `Sparkles` par `Hand` (lucide-react) pour un rendu plus "app native" style salut.
 
-**Corrections dans `Dashboard.tsx` (apres la balise `</header>`, vers ligne 1107)** :
-- Ajouter un composant `WelcomeBanner` compact entre le header et le content principal
-- Design : fond subtil avec un gradient, icone de salutation, texte "Bienvenue, [Prenom]" avec une animation d'entree en fondu
-- Le message s'affiche uniquement lors du premier chargement (pas a chaque changement d'onglet), visible en haut de la page
+**Fichier : `src/pages/Dashboard.tsx` (ligne 1131)**
 
-### Resume des fichiers a modifier
+- Importer `Hand` depuis lucide-react
+- Remplacer `<Sparkles size={16} .../>` par `<Hand size={16} className="text-accent shrink-0" />`
 
-| Fichier | Corrections |
+### Résumé des fichiers
+
+| Fichier | Modification |
 |---------|-------------|
-| `src/components/dashboard/ChampionnatTab.tsx` | Layout "+ Autre" optimise, suppression avec confirmation, labels complets |
-| `src/pages/Dashboard.tsx` | Refetch apres ajout championnat, ajout "Bienvenue X" |
+| `src/components/dashboard/ChampionnatTab.tsx` | Pills A/B/C + Popover dropdown pour les customs |
+| `src/pages/Dashboard.tsx` | Remplacer Sparkles par Hand |
 
-### Details techniques
+### Détails techniques
 
-**Layout equipes dans formulaire (ChampionnatTab.tsx lignes 1164-1194)** :
-- Remplacer `flex-1 min-w-[60px]` par `px-3 sm:px-4` sur les boutons pour un sizing auto
-- Garder `flex flex-wrap gap-2` sur le container
+**Pills (ChampionnatTab.tsx)** :
+- Utiliser le composant `Popover` / `PopoverTrigger` / `PopoverContent` de shadcn pour le dropdown "Autres"
+- Le Popover aura un fond opaque (`bg-popover`), un `z-50`, et des items cliquables
+- Chaque item custom dans le popover sera un bouton qui appelle `setSelectedTeam(team)` et ferme le popover
+- Si l'équipe sélectionnée est custom, le bouton trigger affiche le nom au lieu de "Autres"
+- Le container global garde `bg-secondary/60 backdrop-blur-sm rounded-xl border border-border/50 p-1`
 
-**Refetch immediat (Dashboard.tsx lignes 825-843)** :
-```text
-// Apres l'insert reussi, ajouter :
-const { data: updatedChamps } = await supabase.from('championships').select('*');
-if (updatedChamps) setChampionships(updatedChamps.map(mapChamp));
-const { data: updatedMatches } = await supabase.from('championship_matches').select('*');
-if (updatedMatches) setChampMatches(updatedMatches.map(mapMatch));
-toast.success('Championnat ajouté !');
-```
-
-**Bienvenue banner (Dashboard.tsx apres ligne 1107)** :
-```text
-<motion.div 
-  initial={{ opacity: 0, y: -10 }}
-  animate={{ opacity: 1, y: 0 }}
-  className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-4 pb-1"
->
-  <div className="flex items-center gap-3">
-    <span className="text-xl">👋</span>
-    <div>
-      <h2 className="text-base sm:text-lg font-bold text-foreground">
-        Bienvenue, {currentUser?.name?.split(' ')[0]}
-      </h2>
-      <p className="text-xs text-muted-foreground">FCO Manager — Saison 2025-2026</p>
-    </div>
-  </div>
-</motion.div>
-```
-
-**Suppression avec confirmation (ChampionnatTab.tsx ligne 1130)** :
-- Envelopper le `onDeleteChampionship` dans un `window.confirm()` ou utiliser le state `deletingTab` existant adapte aux championnats individuels
-
+**Welcome (Dashboard.tsx)** :
+- Simplement remplacer l'icône, aucun changement de structure
