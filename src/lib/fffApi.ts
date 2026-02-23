@@ -3,11 +3,24 @@ import { supabase } from '@/integrations/supabase/client';
 export const OISEMONT_CL_NO = 3246;
 export const OISEMONT_AFFILIATION = 508456;
 
+// In-memory cache with 5min TTL to reduce cloud edge function invocations
+const fffCache = new Map<string, { data: any; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/** Clear the FFF API cache (e.g. before a manual refresh) */
+export function clearFFFCache() {
+  fffCache.clear();
+}
+
 async function callFFF(endpoint: string) {
+  const cached = fffCache.get(endpoint);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
   const { data, error } = await supabase.functions.invoke('fff-proxy', {
     body: { endpoint },
   });
   if (error) throw error;
+  fffCache.set(endpoint, { data, ts: Date.now() });
   return data;
 }
 

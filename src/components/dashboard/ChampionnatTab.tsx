@@ -9,7 +9,7 @@ import {
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
   extractTeamLogosFromResults,
   encodeFFFApiRef, decodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship,
-  getTousMatchsAvenir, getTousResultats,
+  getTousMatchsAvenir, getTousResultats, clearFFFCache,
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
 import { toast } from 'sonner';
@@ -238,7 +238,7 @@ const ChampionnatTab: React.FC<Props> = ({
       .finally(() => setIsLoadingEquipes(false));
   }, [showAddChamp]);
 
-  // Auto-fetch live classement when team changes
+  // Auto-fetch live classement AND matches when team changes (merged single useEffect)
   useEffect(() => {
     let cancelled = false;
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
@@ -261,16 +261,24 @@ const ChampionnatTab: React.FC<Props> = ({
         setLiveLogos({});
         setLiveError('Pas de classement FFF pour cette équipe');
         setIsLoadingLive(false);
+        setLiveUpcoming([]);
+        setLiveResults([]);
+        setIsLoadingMatches(false);
         return;
       }
     }
 
-    const fetchLive = async () => {
+    const fetchAll = async () => {
       setIsLoadingLive(true);
+      setIsLoadingMatches(true);
       setLiveError(null);
       setLiveClassement([]);
       setLiveLogos({});
+      setLiveUpcoming([]);
+      setLiveResults([]);
+      
       try {
+        // Resolve champParams once (single getEquipes call instead of two)
         let champParams: { cpNo: number; phase: number; poule: number } | null = customParams;
         
         if (!champParams && mapping) {
@@ -284,112 +292,66 @@ const ChampionnatTab: React.FC<Props> = ({
           return;
         }
         
-        const classementData = await getClassement(champParams.cpNo, champParams.phase, champParams.poule);
+        // Fetch classement + matches in parallel
+        const [classementData, upcoming, results] = await Promise.all([
+          getClassement(champParams.cpNo, champParams.phase, champParams.poule),
+          getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
+          getTousResultats(champParams.cpNo, champParams.phase, champParams.poule),
+        ]);
         if (cancelled) return;
         
+        // Process classement
         const members = classementData?.['hydra:member'] || classementData;
         const totalItems = classementData?.['hydra:totalItems'] ?? (Array.isArray(members) ? members.length : 0);
         
         if (totalItems === 0) {
           setLiveError('Classement non disponible');
-          return;
-        }
-        
-        const standings = mapClassementToStandings(members);
-        setLiveClassement(standings);
-        
-        // Extract logos from classement itself (by cl_no)
-        if (Array.isArray(members)) {
-          for (const entry of members) {
-            const clNo = entry.equipe?.club?.cl_no;
-            const logo = entry.equipe?.club?.logo;
-            if (clNo && logo) {
-              setLiveLogos(prev => ({ ...prev, [clNo]: logo }));
+        } else {
+          const standings = mapClassementToStandings(members);
+          setLiveClassement(standings);
+          
+          // Extract logos from classement itself
+          if (Array.isArray(members)) {
+            const logosFromClassement: Record<number, string> = {};
+            for (const entry of members) {
+              const clNo = entry.equipe?.club?.cl_no;
+              const logo = entry.equipe?.club?.logo;
+              if (clNo && logo) logosFromClassement[clNo] = logo;
             }
+            setLiveLogos(logosFromClassement);
           }
+          
+          // Also fetch logos from results AND calendar endpoints for full coverage
+          try {
+            const [resultatsData, calendrierData] = await Promise.all([
+              getResultats(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
+              getCalendrier(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
+            ]);
+            if (!cancelled) {
+              const logosResultats = resultatsData ? extractTeamLogosFromResults(resultatsData) : {};
+              const logosCalendrier = calendrierData ? extractTeamLogosFromResults(calendrierData) : {};
+              setLiveLogos(prev => ({ ...prev, ...logosResultats, ...logosCalendrier }));
+            }
+          } catch {}
         }
         
-        // Also fetch logos from results AND calendar endpoints for full coverage
-        try {
-          const [resultatsData, calendrierData] = await Promise.all([
-            getResultats(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
-            getCalendrier(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
-          ]);
-          if (!cancelled) {
-            const logosResultats = resultatsData ? extractTeamLogosFromResults(resultatsData) : {};
-            const logosCalendrier = calendrierData ? extractTeamLogosFromResults(calendrierData) : {};
-            setLiveLogos(prev => ({ ...prev, ...logosResultats, ...logosCalendrier }));
-          }
-        } catch {}
-      } catch (err) {
-        if (!cancelled) {
-          console.error('Error fetching live classement:', err);
-          setLiveError('Erreur lors du chargement du classement');
-        }
-      } finally {
-        if (!cancelled) setIsLoadingLive(false);
-      }
-    };
-    
-    fetchLive();
-    return () => { cancelled = true; };
-  }, [selectedTeam]);
-
-  // Auto-fetch live matches when team changes
-  useEffect(() => {
-    let cancelled = false;
-    const teamMapping: Record<string, { categoryCode: string; code: number }> = {
-      'A': { categoryCode: 'SEM', code: 1 },
-      'B': { categoryCode: 'SEM', code: 2 },
-      'C': { categoryCode: 'SEM', code: 3 },
-    };
-    
-    const mapping = teamMapping[selectedTeam];
-    
-    // For custom teams, try to decode fffUrl from the championship
-    let customParams: { cpNo: number; phase: number; poule: number } | null = null;
-    if (!mapping) {
-      const customChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffUrl);
-      if (customChamp?.fffUrl) {
-        customParams = decodeFFFApiRef(customChamp.fffUrl);
-      }
-      if (!customParams) {
-        setLiveUpcoming([]);
-        setLiveResults([]);
-        return;
-      }
-    }
-
-    const fetchMatches = async () => {
-      setIsLoadingMatches(true);
-      setLiveUpcoming([]);
-      setLiveResults([]);
-      try {
-        let champParams: { cpNo: number; phase: number; poule: number } | null = customParams;
-        
-        if (!champParams && mapping) {
-          const equipesData = await getEquipes(OISEMONT_CL_NO);
-          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
-          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
-        }
-        
-        if (!champParams) return;
-        
-        const [upcoming, results] = await Promise.all([
-          getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
-          getTousResultats(champParams.cpNo, champParams.phase, champParams.poule),
-        ]);
-        if (cancelled) return;
+        // Process matches
         setLiveUpcoming(upcoming);
         setLiveResults(results);
       } catch (err) {
-        if (!cancelled) console.error('Error fetching live matches:', err);
+        if (!cancelled) {
+          console.error('Error fetching live data:', err);
+          setLiveError('Erreur lors du chargement');
+        }
       } finally {
-        if (!cancelled) setIsLoadingMatches(false);
+        if (!cancelled) {
+          setIsLoadingLive(false);
+          setIsLoadingMatches(false);
+        }
       }
     };
     
-    fetchMatches();
+    fetchAll();
     return () => { cancelled = true; };
   }, [selectedTeam]);
 
@@ -649,7 +611,64 @@ const ChampionnatTab: React.FC<Props> = ({
               <p className="text-[11px] text-muted-foreground">Équipe {selectedTeam} — Live FFF</p>
             </div>
           </div>
-          {isLoadingLive && <Loader2 size={16} className="text-accent animate-spin" />}
+          <div className="flex items-center gap-1.5">
+            {isLoadingLive && <Loader2 size={16} className="text-accent animate-spin" />}
+            {canManage() && filteredChampionships.length > 0 && (() => {
+              const champ = filteredChampionships[0];
+              return (
+                <>
+                  {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
+                    <button
+                      onClick={async () => {
+                        clearFFFCache();
+                        setRefreshingChamp(champ.id);
+                        try {
+                          const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
+                          setRefreshResult({ ...result, champName: champ.name });
+                        } finally {
+                          setRefreshingChamp(null);
+                        }
+                      }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-accent hover:bg-accent/10 transition-all"
+                      title="Actualiser"
+                    >
+                      <RefreshCw size={14} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
+                    </button>
+                  )}
+                  {!BASE_TEAMS.includes(selectedTeam) && (
+                    <button
+                      onClick={() => { setEditingTab(selectedTeam); setEditTabName(selectedTeam); }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                      title="Renommer"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  )}
+                  {!BASE_TEAMS.includes(selectedTeam) ? (
+                    <button
+                      onClick={() => setDeletingTab(selectedTeam)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Supprimer le championnat "${champ.name}" ?`)) {
+                          onDeleteChampionship(champ.id);
+                        }
+                      }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </>
+              );
+            })()}
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
@@ -1089,99 +1108,6 @@ const ChampionnatTab: React.FC<Props> = ({
           )}
         </motion.div>
       </div>
-
-      {/* ─── Admin actions inside content ─── */}
-      {canManage() && filteredChampionships.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {filteredChampionships.map(champ => (
-            <div key={champ.id} className="flex items-center gap-1">
-              {canUpdateChampionnat() && champ.fffUrl && onRefreshFromFFF && (
-                <button
-                  onClick={async () => {
-                    setRefreshingChamp(champ.id);
-                    try {
-                      const result = await onRefreshFromFFF(champ.id, champ.fffUrl!);
-                      setRefreshResult({ ...result, champName: champ.name });
-                    } finally {
-                      setRefreshingChamp(null);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-medium hover:bg-accent/20 transition-all"
-                >
-                  <RefreshCw size={12} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
-                  Actualiser
-                </button>
-              )}
-              {!BASE_TEAMS.includes(selectedTeam) && (
-                <>
-                  <button
-                    onClick={() => { setEditingTab(selectedTeam); setEditTabName(selectedTeam); }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary text-muted-foreground text-xs font-medium hover:bg-secondary/80 transition-all"
-                  >
-                    <Pencil size={11} /> Renommer
-                  </button>
-                  <button
-                    onClick={() => setDeletingTab(selectedTeam)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-all"
-                  >
-                    <Trash2 size={11} /> Supprimer
-                  </button>
-                </>
-              )}
-              {BASE_TEAMS.includes(selectedTeam) && (
-                <button
-                  onClick={() => {
-                    if (window.confirm(`Supprimer le championnat "${champ.name}" ?`)) {
-                      onDeleteChampionship(champ.id);
-                    }
-                  }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive text-xs font-medium hover:bg-destructive/20 transition-all"
-                >
-                  <Trash2 size={11} /> Supprimer
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Rename inline for custom team */}
-      {editingTab && !BASE_TEAMS.includes(editingTab) && (
-        <div className="flex items-center gap-2 bg-secondary/60 rounded-xl px-3 py-2 border border-border/50">
-          <input
-            autoFocus
-            value={editTabName}
-            onChange={e => setEditTabName(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                if (editTabName.trim() && editTabName.trim() !== editingTab && onUpdateChampionship) {
-                  const champsToUpdate = championships.filter(c => (c.team || 'A') === editingTab);
-                  champsToUpdate.forEach(c => onUpdateChampionship(c.id, { team: editTabName.trim() }));
-                  setSelectedTeam(editTabName.trim());
-                }
-                setEditingTab(null);
-              }
-              if (e.key === 'Escape') setEditingTab(null);
-            }}
-            placeholder="Nouveau nom"
-            className="flex-1 bg-transparent text-sm font-bold text-foreground outline-none"
-            style={{ fontSize: '16px' }}
-          />
-          <button
-            onClick={() => {
-              if (editTabName.trim() && editTabName.trim() !== editingTab && onUpdateChampionship) {
-                const champsToUpdate = championships.filter(c => (c.team || 'A') === editingTab);
-                champsToUpdate.forEach(c => onUpdateChampionship(c.id, { team: editTabName.trim() }));
-                setSelectedTeam(editTabName.trim());
-              }
-              setEditingTab(null);
-            }}
-            className="px-3 py-1 rounded-lg bg-accent text-accent-foreground text-xs font-bold"
-          >OK</button>
-          <button onClick={() => setEditingTab(null)} className="px-2 py-1 rounded-lg text-muted-foreground text-xs">Annuler</button>
-        </div>
-      )}
-
 
       {/* ─── Modal: Add Championship ─── */}
       {showAddChamp && (
