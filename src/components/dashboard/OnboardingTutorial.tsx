@@ -4,7 +4,7 @@ import {
   Users, TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, 
   ChevronRight, ChevronLeft, X, Smartphone, Hand, Rocket,
   ClipboardCheck, BarChart3, Newspaper, PenLine, CalendarPlus,
-  Images, FolderPlus, UserCog, Zap, ArrowDown
+  Images, FolderPlus, UserCog, Zap, ArrowDown, Coins, Target
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,7 +33,7 @@ const allSteps: TutorialStep[] = [
     icon: Smartphone,
     title: 'Navigue facilement',
     subtitle: 'La barre de navigation',
-    description: 'En bas de l\'écran, 7 onglets sont disponibles. Glisse horizontalement pour les explorer.',
+    description: 'En bas de l\'écran, plusieurs onglets sont disponibles. Tu peux glisser vers la gauche ou la droite pour tous les découvrir.',
     highlight: 'bottom-tab-bar',
     color: 'bg-violet-500/15',
     iconColor: 'text-violet-500',
@@ -151,6 +151,22 @@ const allSteps: TutorialStep[] = [
     roles: ['admin', 'admin_plus'],
     color: 'bg-teal-500/15',
     iconColor: 'text-teal-500',
+  },
+  {
+    icon: Coins,
+    title: 'Accumule des points',
+    subtitle: 'Système de récompenses',
+    description: 'Pour gagner des points il suffit de : répondre présent/absent (+5 pts), commenter une actu (+5 pts), liker (+1 pt) et te connecter chaque jour (+1 pt).',
+    color: 'bg-amber-500/15',
+    iconColor: 'text-amber-500',
+  },
+  {
+    icon: Target,
+    title: 'Parie sur les matchs',
+    subtitle: 'Paris sportifs virtuels',
+    description: 'Utilise tes points pour parier sur le prochain match du championnat. Choisis le résultat, mise tes points et tente de grimper au classement !',
+    color: 'bg-emerald-500/15',
+    iconColor: 'text-emerald-500',
   },
   {
     icon: Rocket,

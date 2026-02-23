@@ -76,23 +76,27 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
   const [amount, setAmount] = useState(10);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [activeBetsCount, setActiveBetsCount] = useState(0);
 
   const odds = generateOdds(homeTeam, awayTeam, matchDate);
 
   useEffect(() => {
     if (!isOpen || !userId) return;
-    const fetchBalance = async () => {
-      const { data } = await supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle();
-      if (data) {
-        setBalance(data.balance);
+    const fetchData = async () => {
+      const [{ data: pointsData }, { data: betsData }] = await Promise.all([
+        supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle(),
+        supabase.from('bets').select('id').eq('home_team', homeTeam).eq('away_team', awayTeam).eq('match_date', matchDate).eq('status', 'pending'),
+      ]);
+      if (pointsData) {
+        setBalance(pointsData.balance);
       } else {
-        // Create initial points
         await supabase.from('user_points').insert({ user_id: userId, balance: 100 });
         setBalance(100);
       }
+      setActiveBetsCount(betsData?.length || 0);
     };
-    fetchBalance();
-  }, [isOpen, userId]);
+    fetchData();
+  }, [isOpen, userId, homeTeam, awayTeam, matchDate]);
 
   const selectedOdd = prediction === 'home' ? odds.home : prediction === 'draw' ? odds.draw : prediction === 'away' ? odds.away : 0;
   const potentialWin = Math.round(amount * selectedOdd);
@@ -267,17 +271,25 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-5 border-t border-border pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
-            Annuler
-          </button>
-          <button
-            onClick={handleBet}
-            disabled={!prediction || amount < 1 || amount > balance || loading}
-            className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
-          >
-            {loading ? 'En cours...' : 'Valider le pari'}
-          </button>
+        <div className="p-5 border-t border-border pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-3">
+          {activeBetsCount > 0 && (
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <Zap size={12} className="text-accent" />
+              <span><b className="text-foreground">{activeBetsCount}</b> pari{activeBetsCount > 1 ? 's' : ''} en cours sur ce match</span>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+              Annuler
+            </button>
+            <button
+              onClick={handleBet}
+              disabled={!prediction || amount < 1 || amount > balance || loading}
+              className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
+            >
+              {loading ? 'En cours...' : 'Valider le pari'}
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>

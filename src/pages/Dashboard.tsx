@@ -158,6 +158,7 @@ const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url
 // Small component showing points in header
 const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
   const [pts, setPts] = useState<number | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   useEffect(() => {
     if (!userId) return;
     supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle().then(({ data }) => {
@@ -166,10 +167,72 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
   }, [userId]);
   if (pts === null) return null;
   return (
-    <span className="inline-flex items-center gap-0.5 bg-amber-500/15 border border-amber-500/25 rounded-lg px-1.5 py-1">
-      <Coins size={12} className="text-amber-400" />
-      <span className="text-[10px] font-bold text-amber-400">{pts}</span>
-    </span>
+    <>
+      <button onClick={() => setShowInfo(true)} className="inline-flex items-center gap-0.5 bg-amber-500/15 border border-amber-500/25 rounded-lg px-1.5 py-1 hover:bg-amber-500/25 transition-all">
+        <Coins size={12} className="text-amber-400" />
+        <span className="text-[10px] font-bold text-amber-400">{pts}</span>
+      </button>
+      {showInfo && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={() => setShowInfo(false)}>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm border border-border shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-500/15 rounded-xl flex items-center justify-center">
+                  <Coins size={20} className="text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Tes Points</h3>
+                  <p className="text-xs text-muted-foreground">{pts} pts disponibles</p>
+                </div>
+              </div>
+              <button onClick={() => setShowInfo(false)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center">
+                <X size={16} className="text-muted-foreground" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="bg-secondary/60 rounded-xl p-4 border border-border">
+                <p className="text-sm text-foreground font-semibold mb-2">À quoi servent les points ?</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Les points sont une monnaie virtuelle du club. Tu peux les utiliser pour <b className="text-foreground">parier sur les matchs</b> du championnat et tenter de grimper au classement des parieurs !
+                </p>
+              </div>
+              <div className="space-y-2.5">
+                <p className="text-xs font-bold text-foreground uppercase tracking-wider">Comment en gagner ?</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                  <span><b className="text-foreground">+5 pts</b> — Répondre présent ou absent</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <MessageCircle size={13} className="text-blue-400 shrink-0" />
+                  <span><b className="text-foreground">+5 pts</b> — Commenter une actualité</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Bell size={13} className="text-pink-400 shrink-0" />
+                  <span><b className="text-foreground">+1 pt</b> — Liker une actualité</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Coins size={13} className="text-amber-400 shrink-0" />
+                  <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien automatique</span>
+                </div>
+              </div>
+              <div className="bg-accent/10 rounded-xl p-3 border border-accent/20">
+                <p className="text-xs text-accent font-semibold">💡 Astuce : Sois actif dans le club pour accumuler des points et parier gros sur les matchs !</p>
+              </div>
+            </div>
+            <div className="p-5 pt-0">
+              <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-accent/20">
+                Compris !
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </>
   );
 };
 
