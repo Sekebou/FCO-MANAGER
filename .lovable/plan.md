@@ -1,79 +1,105 @@
 
 
-## Corrections - Sélecteur d'équipe et Welcome
+## Optimisation Cloud + Admin Actions en haut
 
-### 1. Sélecteur d'équipe : pills A/B/C + dropdown pour les autres
+### Probleme actuel de performance
 
-Remplacer le `<select>` unique par deux éléments côte à côte sur une seule ligne :
+Le championnat est **tres gourmand** en requetes. A chaque changement d'equipe, voici ce qui se passe :
 
-- **3 pills compactes** pour Équipe A, B, C (toujours visibles, style bouton actif/inactif)
-- **Un dropdown moderne** (Select de Radix/shadcn) qui apparait uniquement si des équipes custom existent, avec le label "Autres" et une icône ChevronDown
+- **useEffect 1** (classement) : `getEquipes()` + `getClassement()` + `getResultats()` + `getCalendrier()` = **4 appels**
+- **useEffect 2** (matchs) : `getEquipes()` **encore** (doublon !) + `getTousMatchsAvenir()` (1 appel par mois jusqu'en juin = ~4-5 appels) + `getTousResultats()` (1 appel par mois depuis septembre = ~5-6 appels)
+- **Total par changement d'equipe : ~15-20+ appels edge function**
 
-Layout : `flex items-center gap-2` avec les 3 pills à gauche et le dropdown à droite.
+Chaque appel edge function = 1 invocation cloud facturee.
 
-**Fichier : `src/components/dashboard/ChampionnatTab.tsx` (lignes 555-577)**
+---
 
-Remplacer le bloc `<select>` par :
+### 1. Cache en memoire pour les appels FFF API
+
+**Fichier : `src/lib/fffApi.ts`**
+
+Ajouter un cache simple en memoire avec TTL de 5 minutes dans `callFFF()` :
 
 ```text
-<div className="flex items-center gap-1.5">
-  {/* Pills A B C */}
-  {BASE_TEAMS.map(team => (
-    <button
-      key={team}
-      onClick={() => setSelectedTeam(team)}
-      className={cn(
-        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
-        selectedTeam === team
-          ? "bg-accent text-accent-foreground shadow-sm"
-          : "text-muted-foreground hover:bg-secondary"
-      )}
-    >
-      Éq. {team}
-    </button>
-  ))}
+const cache = new Map<string, { data: any; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 min
 
-  {/* Dropdown pour les customs s'il y en a */}
-  {customTeams.length > 0 && (
-    <Popover>
-      <PopoverTrigger>
-        bouton "Autres" avec ChevronDown
-      </PopoverTrigger>
-      <PopoverContent>
-        liste des équipes custom
-      </PopoverContent>
-    </Popover>
-  )}
-</div>
+async function callFFF(endpoint: string) {
+  const cached = cache.get(endpoint);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data;
+
+  const { data, error } = await supabase.functions.invoke(...);
+  if (error) throw error;
+  cache.set(endpoint, { data, ts: Date.now() });
+  return data;
+}
 ```
 
-- "Éq. A", "Éq. B", "Éq. C" en labels courts pour tenir sur une ligne
-- Si l'équipe sélectionnée est custom, le bouton "Autres" affiche le nom de l'équipe custom à la place
+Cela reduit drastiquement les appels : si on revient sur Equipe A apres avoir regarde B, tout est en cache.
 
-### 2. Welcome banner : icône Lucide native
+### 2. Fusionner les deux useEffect et dedupliquer getEquipes
 
-Remplacer `Sparkles` par `Hand` (lucide-react) pour un rendu plus "app native" style salut.
+**Fichier : `src/components/dashboard/ChampionnatTab.tsx`**
 
-**Fichier : `src/pages/Dashboard.tsx` (ligne 1131)**
+Fusionner les deux `useEffect` (lignes 242-336 et 338-394) qui se declenchent tous les deux sur `[selectedTeam]` en un seul. L'appel `getEquipes()` ne sera fait qu'une seule fois au lieu de deux.
 
-- Importer `Hand` depuis lucide-react
-- Remplacer `<Sparkles size={16} .../>` par `<Hand size={16} className="text-accent shrink-0" />`
+Resultat : **-1 appel getEquipes par changement d'equipe** (economie directe).
 
-### Résumé des fichiers
+### 3. Deplacer les actions admin en haut du classement (icones)
+
+**Fichier : `src/components/dashboard/ChampionnatTab.tsx`**
+
+Deplacer les boutons admin dans le header du classement (ligne 642-653), a droite du titre, sous forme d'icones compactes sans texte :
+
+- `RefreshCw` (actualiser) - uniquement si fffUrl existe
+- `Pencil` (renommer) - uniquement pour les equipes custom
+- `Trash2` (supprimer)
+
+Supprimer le bloc admin actions en bas (lignes 1093-1146).
+
+Le header du classement passera de :
+
+```text
+[BarChart3 icon] Classement          [loader si loading]
+                 Equipe A - Live FFF
+```
+
+a :
+
+```text
+[BarChart3 icon] Classement          [RefreshCw] [Pencil] [Trash2]
+                 Equipe A - Live FFF
+```
+
+Les icones seront petites (14px), discretes (text-muted-foreground), avec hover colore.
+
+---
+
+### Resume des fichiers
 
 | Fichier | Modification |
 |---------|-------------|
-| `src/components/dashboard/ChampionnatTab.tsx` | Pills A/B/C + Popover dropdown pour les customs |
-| `src/pages/Dashboard.tsx` | Remplacer Sparkles par Hand |
+| `src/lib/fffApi.ts` | Ajout cache memoire TTL 5min dans callFFF |
+| `src/components/dashboard/ChampionnatTab.tsx` | Fusion des 2 useEffect + admin icons dans header classement |
 
-### Détails techniques
+### Details techniques
 
-**Pills (ChampionnatTab.tsx)** :
-- Utiliser le composant `Popover` / `PopoverTrigger` / `PopoverContent` de shadcn pour le dropdown "Autres"
-- Le Popover aura un fond opaque (`bg-popover`), un `z-50`, et des items cliquables
-- Chaque item custom dans le popover sera un bouton qui appelle `setSelectedTeam(team)` et ferme le popover
-- Si l'équipe sélectionnée est custom, le bouton trigger affiche le nom au lieu de "Autres"
-- Le container global garde `bg-secondary/60 backdrop-blur-sm rounded-xl border border-border/50 p-1`
+**Cache (fffApi.ts)** :
+- Map simple `endpoint -> { data, ts }`
+- TTL 5 minutes, pas de persistence (reset au rechargement de page)
+- Aucun impact sur le refresh manuel (le bouton RefreshCw pourra appeler une fonction `clearFFFCache()` exportee avant de re-fetcher)
 
-**Welcome (Dashboard.tsx)** :
-- Simplement remplacer l'icône, aucun changement de structure
+**Fusion useEffect (ChampionnatTab.tsx)** :
+- Un seul `useEffect` sur `[selectedTeam]` qui fait :
+  1. Resoudre `champParams` (via mapping ou decodeFFFApiRef) - 1 seul appel getEquipes
+  2. En parallele : getClassement + getTousMatchsAvenir + getTousResultats + getResultats/getCalendrier pour logos
+- Les logos supplementaires restent en `catch(() => null)` pour ne pas bloquer
+
+**Admin icons (ChampionnatTab.tsx)** :
+- Dans le header du bloc classement (ligne 642-653), ajouter les icones a droite
+- RefreshCw : `text-accent hover:text-accent/80`, spin pendant le refresh
+- Pencil : `text-muted-foreground hover:text-foreground`
+- Trash2 : `text-muted-foreground hover:text-destructive`
+- Supprimer le bloc `{/* Admin actions inside content */}` (lignes 1093-1146)
+- Garder le bloc rename inline et delete confirmation tels quels
+
