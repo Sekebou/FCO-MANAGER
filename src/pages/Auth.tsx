@@ -111,7 +111,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
+    <div className="h-screen flex relative overflow-hidden">
       {/* Decorative side - blue club */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-primary overflow-hidden">
         {/* Animated gradient blobs */}
@@ -176,7 +176,7 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background relative overflow-hidden">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background relative overflow-hidden h-screen">
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
