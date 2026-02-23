@@ -192,7 +192,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                     par {event.createdByName}
                     {(() => {
                       const creator = members.find(m => m.id === event.createdBy);
-                      return creator ? <RoleBadge role={creator.role} compact /> : null;
+                      return creator ? <RoleBadge role={creator.role} displayRole={creator.displayRole} compact /> : null;
                     })()}
                   </p>
                 )}

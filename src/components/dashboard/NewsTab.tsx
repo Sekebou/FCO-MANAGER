@@ -92,7 +92,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                       <span className="text-xs font-medium text-accent">{item.author}</span>
                       {(() => {
                         const authorMember = members.find(m => m.id === item.authorId);
-                        return authorMember ? <RoleBadge role={authorMember.role} /> : null;
+                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} /> : null;
                       })()}
                       <span className="text-xs text-muted-foreground">•</span>
                       <span className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
@@ -147,7 +147,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                                 <span className="text-xs font-semibold text-foreground">{comment.authorName}</span>
                                 {(() => {
                                   const commentMember = members.find(m => m.id === comment.authorUid);
-                                  return commentMember ? <RoleBadge role={commentMember.role} /> : null;
+                                  return commentMember ? <RoleBadge role={commentMember.role} displayRole={commentMember.displayRole} /> : null;
                                 })()}
                               </div>
                               <p className="text-sm text-foreground/80 mt-0.5">{comment.content}</p>

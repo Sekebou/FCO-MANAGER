@@ -41,7 +41,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
                   {event.createdByName}
                   {(() => {
                     const creator = members.find(m => m.id === event.createdBy);
-                    return creator ? <RoleBadge role={creator.role} compact /> : null;
+                    return creator ? <RoleBadge role={creator.role} displayRole={creator.displayRole} compact /> : null;
                   })()}
                 </span>
               )}

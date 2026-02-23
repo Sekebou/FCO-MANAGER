@@ -3,6 +3,7 @@ import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin, ChevronDown, Coins } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Props {
   members: Member[];
@@ -68,10 +69,13 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     }
   };
 
-  const getRoleLabel = (role: string) => {
+  const getRoleLabel = (role: string, displayRole?: string) => {
+    const effectiveRole = displayRole || role;
     const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', dirigeant: 'Dirigeant', admin: 'Administrateur', 'admin+': 'Administrateur' };
-    return labels[role] || role;
+    return labels[effectiveRole] || effectiveRole;
   };
+
+  const getEffectiveDisplayRole = (member: Member) => member.displayRole || member.role;
 
   const getLicenseStatus = (expiryDate: string) => {
     const now = new Date();
@@ -149,8 +153,10 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             const licenseDate = member.licenseExpiry || player?.licenseExpiry;
             const license = licenseDate ? getLicenseStatus(licenseDate) : null;
             const playerCards = player ? getPlayerCards(player.id) : [];
-            const config = roleConfig[member.role] || roleConfig.joueur;
+            const effectiveRole = getEffectiveDisplayRole(member);
+            const config = roleConfig[effectiveRole] || roleConfig.joueur;
             const RoleIcon = config.icon;
+            const hasDisplayRole = member.displayRole && member.displayRole !== member.role && (member.role === 'admin' || member.role === 'admin+');
 
             return (
               <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in flex flex-col">
@@ -171,6 +177,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                       <h3 className="font-bold text-sm sm:text-base text-foreground truncate">{member.name}</h3>
                       <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider bg-${config.color}/10 text-${config.color}`}>
                         {config.label}
+                        {hasDisplayRole && <Shield size={9} className="text-blue-500 opacity-70" />}
                       </span>
                     </div>
                   </div>
@@ -372,6 +379,34 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           </div>
                         );
                       })()}
+
+                      {/* Display role selector - admin+ only, for admin members */}
+                      {currentUser?.role === 'admin+' && member.role === 'admin' && (
+                        <div className="flex items-center gap-2">
+                          <Dumbbell size={13} className="text-muted-foreground shrink-0" />
+                          <div className="relative flex-1 inline-flex items-center bg-secondary border border-border rounded-xl px-3 py-2 gap-2 cursor-pointer">
+                            <span className="text-xs font-medium text-foreground flex-1">
+                              Affichage : {member.displayRole ? getRoleLabel(member.displayRole) : 'Par défaut (Admin)'}
+                            </span>
+                            <ChevronDown size={13} className="text-muted-foreground shrink-0 pointer-events-none" />
+                            <select
+                              value={member.displayRole || ''}
+                              onChange={async (e) => {
+                                const newDisplayRole = e.target.value || null;
+                                const { error } = await supabase.from('profiles').update({ display_role: newDisplayRole } as any).eq('id', member.id);
+                                if (error) { toast.error('Erreur: ' + error.message); return; }
+                                toast.success(`Affichage mis à jour : ${newDisplayRole ? getRoleLabel(newDisplayRole) : 'Admin'}`);
+                              }}
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                              style={{ fontSize: '16px' }}
+                            >
+                              <option value="">Par défaut (Admin)</option>
+                              <option value="entraineur">Entraîneur</option>
+                              <option value="dirigeant">Dirigeant</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="flex gap-2">
                         <button
