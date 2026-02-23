@@ -182,21 +182,21 @@ const Auth = () => {
 
         <div className="w-full max-w-[420px] relative z-10">
           {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-6 animate-[fadeSlideUp_0.6s_ease-out_both]">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-primary/10 rounded-2xl mb-3 border border-primary/20 shadow-lg shadow-primary/10">
-              <img src={clubLogo} alt="FCO Logo" className="w-18 h-18 object-contain" />
+          <div className="lg:hidden text-center mb-4 animate-[fadeSlideUp_0.6s_ease-out_both]">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
+              <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
           </div>
 
           {/* Header */}
-          <div className="mb-5 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
-            <h2 className="text-2xl font-bold text-foreground">Connexion</h2>
-            <p className="text-muted-foreground text-sm mt-1">Application officielle du Football Club d'Oisemont</p>
+          <div className="mb-4 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
+            <h2 className="text-xl font-bold text-foreground">Connexion</h2>
+            <p className="text-muted-foreground text-xs mt-0.5">Application officielle du Football Club d'Oisemont</p>
           </div>
 
           {/* Form card */}
-          <div className="bg-card rounded-2xl p-6 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
+          <div className="bg-card rounded-2xl p-5 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
             {forgotMode ? (
               <form onSubmit={handleForgotPassword} className="space-y-5">
                 <button type="button" onClick={() => { setForgotMode(false); setError(""); }}
@@ -265,32 +265,28 @@ const Auth = () => {
           </div>
 
           {/* Features description (mobile) - hidden on small screens to fit */}
-          <div className="lg:hidden mt-4 space-y-2 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
+          <div className="lg:hidden mt-3 space-y-1.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
             {[
-              { Icon: Users, text: "Gestion des effectifs et convocations" },
-              { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
-              { Icon: Calendar, text: "Calendrier et événements du club" },
+              { Icon: Users, text: "Effectifs et convocations" },
+              { Icon: TrendingUp, text: "Résultats en temps réel" },
+              { Icon: Calendar, text: "Calendrier du club" },
             ].map((feat) => (
               <div
                 key={feat.text}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-secondary/60 border border-border/50"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-secondary/60 border border-border/50"
               >
-                <feat.Icon size={16} className="text-primary/60 shrink-0" />
+                <feat.Icon size={14} className="text-primary/60 shrink-0" />
                 <span className="text-xs font-medium text-muted-foreground">{feat.text}</span>
               </div>
             ))}
           </div>
 
-          {/* Club name mobile */}
-          <p className="lg:hidden text-xs text-muted-foreground/60 font-medium text-center mt-4">
-            Football Club d'Oisemont
-          </p>
-
-          {/* Status */}
-          <div className="mt-4 flex justify-center animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-success/20 bg-success/5">
+          {/* Club name + Status */}
+          <div className="mt-3 flex flex-col items-center gap-2 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
+            <p className="lg:hidden text-[10px] text-muted-foreground/50 font-medium">Football Club d'Oisemont</p>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-success/20 bg-success/5">
               <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-              <p className="text-[11px] text-success/70 font-medium">Connecté au serveur</p>
+              <p className="text-[10px] text-success/70 font-medium">Connecté au serveur</p>
             </div>
           </div>
         </div>
