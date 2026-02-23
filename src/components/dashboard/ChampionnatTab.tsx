@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users, MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink, Zap, Timer, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import { 
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
@@ -100,6 +102,7 @@ const ChampionnatTab: React.FC<Props> = ({
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [editTabName, setEditTabName] = useState('');
   const [deletingTab, setDeletingTab] = useState<string | null>(null);
+  const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
   const [showAddChamp, setShowAddChamp] = useState(false);
   const [showAddMatch, setShowAddMatch] = useState<string | null>(null);
   const [expandedChamp, setExpandedChamp] = useState<string | null>(championships[0]?.id || null);
@@ -557,22 +560,58 @@ const ChampionnatTab: React.FC<Props> = ({
         initial={{ opacity: 0, y: 8 }} 
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.08 }}
-        className="relative"
       >
         <div className="flex items-center gap-1.5 bg-secondary/60 backdrop-blur-sm rounded-xl border border-border/50 p-1">
-          <select
-            value={selectedTeam}
-            onChange={e => setSelectedTeam(e.target.value)}
-            className="w-full appearance-none bg-accent text-accent-foreground text-xs font-bold rounded-lg px-3 py-2 outline-none cursor-pointer"
-            style={{ fontSize: '16px' }}
-          >
-            {allTeamOptions.map(team => (
-              <option key={team} value={team}>
-                {BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-accent-foreground pointer-events-none" />
+          {/* Pills A B C */}
+          {BASE_TEAMS.map(team => (
+            <button
+              key={team}
+              onClick={() => setSelectedTeam(team)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap",
+                selectedTeam === team
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-secondary"
+              )}
+            >
+              Éq. {team}
+            </button>
+          ))}
+
+          {/* Dropdown pour les customs */}
+          {customTeams.length > 0 && (
+            <Popover open={customPopoverOpen} onOpenChange={setCustomPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap",
+                    !BASE_TEAMS.includes(selectedTeam)
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-secondary"
+                  )}
+                >
+                  {!BASE_TEAMS.includes(selectedTeam) ? selectedTeam : "Autres"}
+                  <ChevronDown size={12} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-40 p-1 bg-popover border border-border shadow-lg rounded-xl z-50">
+                {customTeams.map(team => (
+                  <button
+                    key={team}
+                    onClick={() => { setSelectedTeam(team); setCustomPopoverOpen(false); }}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                      selectedTeam === team
+                        ? "bg-accent text-accent-foreground"
+                        : "text-foreground hover:bg-secondary"
+                    )}
+                  >
+                    {team}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </motion.div>
 
