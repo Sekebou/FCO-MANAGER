@@ -839,6 +839,20 @@ const Dashboard = () => {
         }));
         await supabase.from('championship_matches').insert(rows);
       }
+      // Refetch immédiat pour actualisation sans attendre le realtime
+      const { data: updatedChamps } = await supabase.from('championships').select('*');
+      if (updatedChamps) setChampionships(updatedChamps.map(c => ({
+        id: c.id, name: c.name, season: c.season, teams: c.teams || [],
+        team: c.team || 'A', fffUrl: c.fff_url || undefined,
+        fffStandings: (c.fff_standings as any) || [], teamLogos: (c.team_logos as any) || {},
+        createdAt: c.created_at,
+      })));
+      const { data: updatedMatches } = await supabase.from('championship_matches').select('*');
+      if (updatedMatches) setChampMatches(updatedMatches.map(m => ({
+        id: m.id, championshipId: m.championship_id, homeTeam: m.home_team, awayTeam: m.away_team,
+        homeScore: m.home_score, awayScore: m.away_score, date: m.date, journee: m.journee, played: m.played ?? false,
+      })));
+      toast.success('Championnat ajouté !');
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
@@ -1106,7 +1120,23 @@ const Dashboard = () => {
         </div>
       </header>
 
-
+      {/* Welcome Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-4 pb-1"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xl">👋</span>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-foreground">
+              Bienvenue, {currentUser?.name?.split(' ')[0]}
+            </h2>
+            <p className="text-xs text-muted-foreground">FCO Manager — Saison 2025-2026</p>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Content */}
       <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
