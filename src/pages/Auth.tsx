@@ -184,7 +184,7 @@ const Auth = () => {
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-4 animate-[fadeSlideUp_0.6s_ease-out_both]">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
-              <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
+              <img src={clubLogo} alt="FCO Logo" className="w-[70px] h-[70px] object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
           </div>
