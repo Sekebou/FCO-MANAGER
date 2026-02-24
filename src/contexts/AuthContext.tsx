@@ -6,6 +6,7 @@ export interface AppUser {
   uid: string;
   email: string;
   role: string;
+  displayRole?: string;
   name: string;
   username?: string;
   playerId?: string;
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             uid: userId,
             email,
             role: profile.role,
+            displayRole: profile.display_role || undefined,
             name: profile.name,
             username: profile.username || '',
             playerId: profile.player_id || undefined,

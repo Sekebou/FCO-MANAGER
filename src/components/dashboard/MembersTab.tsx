@@ -393,7 +393,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                               value={member.displayRole || ''}
                               onChange={async (e) => {
                                 const newDisplayRole = e.target.value || null;
-                                const { error } = await supabase.from('profiles').update({ display_role: newDisplayRole } as any).eq('id', member.id);
+                                const { error } = await supabase.from('profiles').update({ display_role: newDisplayRole }).eq('id', member.id);
                                 if (error) { toast.error('Erreur: ' + error.message); return; }
                                 toast.success(`Affichage mis à jour : ${newDisplayRole ? getRoleLabel(newDisplayRole) : 'Admin'}`);
                               }}

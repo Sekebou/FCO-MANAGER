@@ -353,7 +353,7 @@ const ChampionnatTab: React.FC<Props> = ({
     
     fetchAll();
     return () => { cancelled = true; };
-  }, [selectedTeam]);
+  }, [selectedTeam, championships.length]);
 
   const handleImportCompetition = async (comp: FFFCompetition) => {
     setSelectedCompetition(comp);
