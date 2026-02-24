@@ -1155,15 +1155,12 @@ const Dashboard = () => {
                   </div>
                   <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-3 sm:h-3 bg-success rounded-full border-2 border-primary" />
                 </div>
-                <div className="hidden min-[414px]:block text-left min-w-0 max-w-[120px] sm:max-w-[160px]">
+                <div className="hidden lg:block text-left min-w-0 max-w-[160px]">
                   <div className="flex items-center gap-1">
-                    <span className="text-[11px] sm:text-sm font-semibold text-primary-foreground leading-tight truncate">
-                      <span className="sm:hidden">{currentUser?.name?.split(' ')[0]}</span>
-                      <span className="hidden sm:inline">{currentUser?.name}</span>
-                    </span>
+                    <span className="text-sm font-semibold text-primary-foreground leading-tight truncate">{currentUser?.name}</span>
                     {currentUser?.role === 'admin+' && <svg className="w-3.5 h-3.5 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
                   </div>
-                  <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
+                  <div className="flex items-center gap-1 text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
                     {(() => {
                       const visualRole = currentUser?.displayRole || currentUser?.role;
                       const isAdminWithDisplay = currentUser?.displayRole && (currentUser?.role === 'admin' || currentUser?.role === 'admin+') && currentUser?.displayRole !== currentUser?.role;
