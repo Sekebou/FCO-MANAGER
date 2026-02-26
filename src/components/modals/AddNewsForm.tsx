@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, FileText, Megaphone } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -7,6 +8,7 @@ interface Props {
 }
 
 const AddNewsForm = ({ onSubmit, onClose }: Props) => {
+  useBodyScrollLock();
   const [formData, setFormData] = useState({ title: '', content: '' });
 
   return (

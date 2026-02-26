@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { toast } from 'sonner';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial }: Props) => {
+  useBodyScrollLock();
   const licenseRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(currentUser.photoURL || null);

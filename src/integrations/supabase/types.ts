@@ -402,6 +402,7 @@ export type Database = {
           created_by: string | null
           created_by_name: string | null
           date: string
+          duration: number | null
           id: string
           location: string | null
           presences: Json | null
@@ -419,6 +420,7 @@ export type Database = {
           created_by?: string | null
           created_by_name?: string | null
           date: string
+          duration?: number | null
           id?: string
           location?: string | null
           presences?: Json | null
@@ -436,6 +438,7 @@ export type Database = {
           created_by?: string | null
           created_by_name?: string | null
           date?: string
+          duration?: number | null
           id?: string
           location?: string | null
           presences?: Json | null
