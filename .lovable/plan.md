@@ -1,56 +1,122 @@
 
 
-## Optimisation de la barre de navigation mobile
+## Plan de corrections et améliorations
 
-### Objectif
+### Problemes identifies et solutions
 
-Afficher exactement **4 onglets visibles** a la fois sur mobile, sans qu'on voie le debut ou la fin des onglets voisins. Quand on change d'onglet, le scroll se repositionne pour garder **2 onglets a gauche et 2 a droite** de la zone visible.
+---
 
-### Ce qui change
+### 1. Blocage du scroll arriere-plan quand un modal est ouvert
 
-**Fichier : `src/components/dashboard/BottomTabBar.tsx`**
+**Probleme** : Quand un modal (AddEventForm, ConfirmModal, etc.) est ouvert avec le fond flou, on peut encore scroller le contenu derriere.
 
-1. **Largeur fixe des onglets** : chaque onglet prendra exactement **25% de la largeur** du conteneur, ce qui garantit que 4 onglets sont visibles a la fois, ni plus ni moins.
+**Solution** : Ajouter un `useEffect` dans chaque composant modal (ou un hook partage) qui applique `document.body.style.overflow = 'hidden'` a l'ouverture et le restaure a la fermeture. Les modaux concernes :
+- `ConfirmModal.tsx`
+- `AddEventForm.tsx`
+- `AddPlayerForm.tsx`
+- `AddNewsForm.tsx`
+- `AddCardForm.tsx`
+- `ChangePasswordForm.tsx`
+- `AdminResetPasswordForm.tsx`
+- `AvatarModal.tsx`
+- `InvitePlayerForm.tsx`
 
-2. **Masquer le debordement** : remplacer le scroll libre (`overflow-x-auto`) par un conteneur qui cache les onglets hors champ (`overflow: hidden` gere par JS). Aucun bout d'onglet ne depasse.
+Approche : creer un hook `useBodyScrollLock()` appele dans chaque modal, ou ajouter directement le `useEffect` dans chaque fichier.
 
-3. **Scroll intelligent au changement d'onglet** : quand on clique sur un onglet, le conteneur se repositionne pour centrer la vue autour de l'onglet actif. Concretement :
-   - Si l'onglet actif est le 1er ou 2e, on montre les onglets 1-4
-   - Si l'onglet actif est le 7e ou 8e, on montre les onglets 5-8
-   - Sinon, on centre l'onglet actif avec 2 voisins de chaque cote (on montre un groupe de 4 parmi lequel l'actif est en position 2 ou 3)
+---
 
-4. **Animation fluide** : le deplacement utilise `scrollTo({ behavior: 'smooth' })` ou un `transform: translateX()` anime pour une transition naturelle entre les groupes.
+### 2. Retirer la gestion des convocations pour les entrainements
 
-5. **Pas de scroll manuel** : l'utilisateur ne peut plus scroller librement la barre, c'est le clic sur un onglet qui declenche le repositionnement.
+**Probleme** : La section convocations est actuellement affichee uniquement pour `event.type === 'match'` (ligne 324 de PresencesTab), donc c'est deja le cas. Cependant, il faut aussi verifier qu'aucun bouton convocation n'apparait pour les entrainements dans la vue detail.
 
-### Comportement detaille
+**Verification** : Le code a la ligne 324 filtre deja `event.type === 'match'`. Aucun changement necessaire ici, c'est deja correct.
 
-Avec les 8 onglets [Stats, Championnat, Actus, Presences, Calendrier, Galerie, Membres, Discussions] :
+---
 
-| Onglet actif | Onglets visibles |
-|---|---|
-| Stats (1) | Stats, Championnat, Actus, Presences |
-| Championnat (2) | Stats, Championnat, Actus, Presences |
-| Actus (3) | Championnat, Actus, Presences, Calendrier |
-| Presences (4) | Actus, Presences, Calendrier, Galerie |
-| Calendrier (5) | Presences, Calendrier, Galerie, Membres |
-| Galerie (6) | Calendrier, Galerie, Membres, Discussions |
-| Membres (7) | Calendrier, Galerie, Membres, Discussions |
-| Discussions (8) | Calendrier, Galerie, Membres, Discussions |
+### 3. Optimiser la suppression (rendu instantane)
 
-Regle : l'onglet actif est toujours en position 2 ou 3 dans le groupe visible (jamais tout au bord), sauf aux extremites.
+**Probleme** : Quand on supprime un evenement, il y a un delai de 1-2 secondes car la suppression attend la reponse du serveur avant de mettre a jour l'UI.
 
-### Ce qui ne change PAS
+**Solution** : Appliquer un "optimistic delete" dans `deleteEvent` (Dashboard.tsx) : retirer l'evenement du state local immediatement dans le `onConfirm` du ConfirmModal AVANT l'appel Supabase, puis restaurer en cas d'erreur. Meme approche pour les autres suppressions si necessaire.
 
-- Taille, couleurs, icones, animations des onglets
-- Le style du fond (glassmorphism, bordure)
-- L'onglet "featured" (Presences) garde son style special
-- La version tablette (md+) reste identique (tous les onglets visibles)
+---
 
-### Details techniques
+### 4. Deplacer le bouton delete sur la carte compacte (liste)
 
-- Remplacer `overflow-x-auto` par `overflow-hidden` sur le conteneur mobile
-- Chaque bouton passe de `min-w-[4rem]/min-w-[5rem]` a `w-1/4 shrink-0` (25% exact)
-- Calculer l'offset de scroll : `const startIndex = Math.max(0, Math.min(activeIndex - 1, totalTabs - 4))` puis `scrollTo(startIndex * tabWidth)`
-- Transition smooth via CSS `scroll-behavior: smooth` ou `transform` anime
+**Probleme** : Le bouton supprimer est actuellement dans la vue detail de l'evenement (ligne 145-148 de PresencesTab). L'utilisateur souhaite le voir directement sur les cartes dans la vue liste.
+
+**Solution** : 
+- Retirer le bouton Trash2 de la vue detail (lignes 144-148)
+- Ajouter un bouton Trash2 sur chaque carte dans la vue liste (apres ligne 601), visible uniquement si `canDeleteEvent(event)` est vrai
+- Utiliser `e.stopPropagation()` pour eviter d'ouvrir la carte en cliquant sur supprimer
+
+---
+
+### 5. Creation assistee de matchs via API FFF
+
+**Probleme** : Quand on cree un match, on veut pouvoir choisir l'equipe (recuperable via API FFF), puis selectionner un match de la liste pour pre-remplir automatiquement adversaire, lieu (domicile/exterieur) et titre (X vs Y), avec possibilite de remplir manuellement.
+
+**Solution** dans `AddEventForm.tsx` :
+- Quand `type === 'match'`, ajouter un toggle/section "Importer depuis FFF" (optionnel)
+- Appeler `getEquipes(OISEMONT_CL_NO)` pour lister les equipes du club
+- Selector d'equipe (A, B, C...)
+- Une fois l'equipe choisie, appeler `getAllCompetitions()` + `getCalendrier()` pour lister les prochains matchs
+- Selector de match pre-remplissant : titre (Home vs Away), lieu (domicile/exterieur deduisant si `home.club.cl_no === OISEMONT_CL_NO`), date et heure
+- Garder la possibilite d'ignorer l'import et remplir manuellement
+
+---
+
+### 6. Vue detail enrichie pour les entrainements
+
+**Probleme** : Quand on ouvre un entrainement, on veut voir une presentation structuree avec : date en toutes lettres, heure, duree de la seance, et lieu.
+
+**Solution** dans `PresencesTab.tsx` vue detail :
+- Quand `event.type === 'training'`, afficher un bloc structure avec :
+  - Date formatee : "mercredi 25 fevrier 2026"
+  - Heure : "19:00"
+  - Duree : "90 minutes — Duree de la seance"
+  - Lieu : "Terrain synthetique" avec icone MapPin
+- Ajouter un champ `duration` au formulaire AddEventForm (visible pour entrainement)
+
+**Migration DB** : Ajouter la colonne `duration` (integer, nullable) a la table `events`.
+
+---
+
+### 7. Optimisation des conversations/messages (plus natif)
+
+**Probleme** : Les conversations pourraient etre plus fluides et natives.
+
+**Ameliorations dans MessagesTab.tsx** :
+- Ajouter `document.body.style.overflow = 'hidden'` quand une conversation est ouverte (pour empecher le scroll de la page derriere)
+- Ameliorer les transitions entre vues (liste → conversation → creation) avec des animations plus douces
+- S'assurer que le delete de conversation dans la liste utilise un swipe ou une confirmation plus native
+
+---
+
+### Ordre d'implementation
+
+1. Hook `useBodyScrollLock` + application a tous les modaux
+2. Optimistic delete pour les evenements
+3. Bouton delete sur carte compacte + retrait de la vue detail
+4. Migration DB : colonne `duration` sur events
+5. Vue detail enrichie entrainement (date, heure, duree, lieu)
+6. Formulaire creation match assiste FFF (equipe, selection match, pre-remplissage)
+7. Amelioration messagerie (scroll lock, animations)
+
+### Fichiers modifies
+
+- `src/hooks/useBodyScrollLock.ts` (nouveau)
+- `src/components/modals/ConfirmModal.tsx`
+- `src/components/modals/AddEventForm.tsx` (scroll lock + FFF integration)
+- `src/components/modals/AddPlayerForm.tsx` (scroll lock)
+- `src/components/modals/AddNewsForm.tsx` (scroll lock)
+- `src/components/modals/AddCardForm.tsx` (scroll lock)
+- `src/components/modals/ChangePasswordForm.tsx` (scroll lock)
+- `src/components/modals/AdminResetPasswordForm.tsx` (scroll lock)
+- `src/components/modals/AvatarModal.tsx` (scroll lock)
+- `src/components/modals/InvitePlayerForm.tsx` (scroll lock)
+- `src/components/dashboard/PresencesTab.tsx` (delete sur carte, vue detail entrainement, retrait convocations detail)
+- `src/pages/Dashboard.tsx` (optimistic delete, interface Event + duration)
+- `src/components/dashboard/MessagesTab.tsx` (scroll lock, animations)
+- Migration SQL : `ALTER TABLE events ADD COLUMN duration integer DEFAULT NULL`
 
