@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Globe, ChevronDown, Clock } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { getEquipes, getAllCompetitions, getCalendrier, OISEMONT_CL_NO, type FFFCompetition } from '@/lib/fffApi';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -10,7 +12,18 @@ interface Props {
   isDirigeant?: boolean;
 }
 
+interface FFFMatchOption {
+  label: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  isHome: boolean;
+}
+
 const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
+  useBodyScrollLock();
+
   const [formData, setFormData] = useState({
     title: '',
     date: '',
@@ -20,8 +33,77 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     reason: '',
     time: '',
     location: '',
+    duration: '' as string,
   });
   const [locationValid, setLocationValid] = useState(false);
+
+  // FFF import state
+  const [useFFimport, setUseFFFImport] = useState(false);
+  const [fffEquipes, setFffEquipes] = useState<any[]>([]);
+  const [fffCompetitions, setFffCompetitions] = useState<FFFCompetition[]>([]);
+  const [selectedEquipe, setSelectedEquipe] = useState<string>('');
+  const [selectedCompetition, setSelectedCompetition] = useState<string>('');
+  const [fffMatches, setFffMatches] = useState<FFFMatchOption[]>([]);
+  const [loadingEquipes, setLoadingEquipes] = useState(false);
+  const [loadingMatches, setLoadingMatches] = useState(false);
+
+  // Load equipes when FFF import enabled
+  useEffect(() => {
+    if (!useFFimport || fffEquipes.length > 0) return;
+    setLoadingEquipes(true);
+    getEquipes(OISEMONT_CL_NO).then(data => {
+      const equipes = Array.isArray(data) ? data : data?.['hydra:member'] || [];
+      setFffEquipes(equipes);
+      const comps = getAllCompetitions(equipes);
+      setFffCompetitions(comps);
+    }).catch(() => {}).finally(() => setLoadingEquipes(false));
+  }, [useFFimport]);
+
+  // Load matches when competition selected
+  useEffect(() => {
+    if (!selectedCompetition) { setFffMatches([]); return; }
+    const comp = fffCompetitions.find(c => `${c.cpNo}-${c.phase}-${c.poule}` === selectedCompetition);
+    if (!comp) return;
+    setLoadingMatches(true);
+    getCalendrier(comp.cpNo, comp.phase, comp.poule).then(data => {
+      const members = Array.isArray(data) ? data : data?.['hydra:member'] || [];
+      const options: FFFMatchOption[] = members
+        .filter((m: any) => m.home && m.away)
+        .map((m: any) => {
+          const isHome = m.home?.club?.cl_no === OISEMONT_CL_NO;
+          const homeN = m.home?.short_name || m.home?.name || '';
+          const awayN = m.away?.short_name || m.away?.name || '';
+          const matchDate = m.date ? new Date(m.date) : null;
+          const terrain = m.terrain;
+          let loc = '';
+          if (terrain) loc = [terrain.name, terrain.city].filter(Boolean).join(', ');
+
+          return {
+            label: `${homeN} vs ${awayN}${matchDate ? ` — ${matchDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}`,
+            title: `${homeN} vs ${awayN}`,
+            date: matchDate ? matchDate.toISOString().split('T')[0] : '',
+            time: matchDate ? matchDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+            location: loc || (isHome ? 'Domicile' : 'Extérieur'),
+            isHome,
+          };
+        });
+      setFffMatches(options);
+    }).catch(() => {}).finally(() => setLoadingMatches(false));
+  }, [selectedCompetition, fffCompetitions]);
+
+  const handleFFFMatchSelect = (match: FFFMatchOption) => {
+    setFormData(prev => ({
+      ...prev,
+      title: match.title,
+      date: match.date,
+      time: match.time,
+      location: match.location,
+    }));
+    setLocationValid(true);
+  };
+
+  // Group competitions by equipe
+  const equipeNames = [...new Set(fffCompetitions.map(c => c.equipe))];
 
   const allTypeOptions = [
     { value: 'match', label: 'Match', shortLabel: 'Match', icon: <Swords className="w-3.5 h-3.5" />, color: 'bg-accent/10 border-accent/30 text-accent' },
@@ -31,8 +113,6 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
   const typeOptions = isDirigeant ? allTypeOptions.filter(o => o.value === 'training') : allTypeOptions;
 
-  // Location is required only for match
-  const needsLocation = formData.type === 'match';
   const isFormValid = formData.title && formData.date;
 
   return (
@@ -53,23 +133,6 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
         {/* Body */}
         <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
-          <div className="relative">
-            <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
-          </div>
-
-          <NativeDatePicker
-            value={formData.date}
-            onChange={(date) => setFormData({ ...formData, date })}
-            min={new Date().toISOString().split('T')[0]}
-          />
-
-          {/* Time picker */}
-          <NativeTimePicker
-            value={formData.time}
-            onChange={(time) => setFormData({ ...formData, time })}
-          />
-
           {/* Type selector */}
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
@@ -89,19 +152,129 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           </div>
 
-          {/* Location autocomplete - only for match */}
+          {/* FFF Import toggle - only for match */}
           {formData.type === 'match' && (
             <div className="animate-fade-in">
-              <LocationAutocomplete
-                value={formData.location}
-                onChange={(location) => setFormData({ ...formData, location })}
-                onValidSelection={setLocationValid}
-              />
-              {!locationValid && (
-                <p className="text-[11px] text-muted-foreground mt-1">📍 Sélectionne une adresse dans les suggestions</p>
+              <button
+                type="button"
+                onClick={() => setUseFFFImport(!useFFimport)}
+                className={`w-full flex items-center justify-between py-2.5 px-3 rounded-xl text-xs font-semibold border-2 transition-all ${
+                  useFFimport ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                }`}
+              >
+                <span className="flex items-center gap-1.5"><Globe size={14} /> Importer depuis la FFF</span>
+                <ChevronDown size={14} className={`transition-transform ${useFFimport ? 'rotate-180' : ''}`} />
+              </button>
+
+              {useFFimport && (
+                <div className="mt-3 space-y-3 p-3 bg-primary/5 rounded-xl border border-primary/10 animate-fade-in">
+                  {loadingEquipes ? (
+                    <p className="text-xs text-muted-foreground text-center py-2">Chargement des équipes…</p>
+                  ) : (
+                    <>
+                      {/* Equipe selector */}
+                      <div>
+                        <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Équipe</label>
+                        <select
+                          className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none"
+                          value={selectedEquipe}
+                          onChange={(e) => { setSelectedEquipe(e.target.value); setSelectedCompetition(''); }}
+                        >
+                          <option value="">-- Choisir une équipe --</option>
+                          {equipeNames.map(name => (
+                            <option key={name} value={name}>{name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Competition selector */}
+                      {selectedEquipe && (
+                        <div>
+                          <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Compétition</label>
+                          <select
+                            className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none"
+                            value={selectedCompetition}
+                            onChange={(e) => setSelectedCompetition(e.target.value)}
+                          >
+                            <option value="">-- Choisir --</option>
+                            {fffCompetitions.filter(c => c.equipe === selectedEquipe).map(c => (
+                              <option key={`${c.cpNo}-${c.phase}-${c.poule}`} value={`${c.cpNo}-${c.phase}-${c.poule}`}>{c.competitionName}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Match list */}
+                      {loadingMatches && <p className="text-xs text-muted-foreground text-center py-2">Chargement des matchs…</p>}
+                      {!loadingMatches && fffMatches.length > 0 && (
+                        <div className="max-h-40 overflow-y-auto space-y-1">
+                          {fffMatches.map((m, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => handleFFFMatchSelect(m)}
+                              className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 transition-all text-foreground flex items-center justify-between gap-2"
+                            >
+                              <span className="truncate font-medium">{m.label}</span>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${m.isHome ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                                {m.isHome ? 'DOM' : 'EXT'}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {!loadingMatches && selectedCompetition && fffMatches.length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-1">Aucun match trouvé</p>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
             </div>
           )}
+
+          <div className="relative">
+            <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+          </div>
+
+          <NativeDatePicker
+            value={formData.date}
+            onChange={(date) => setFormData({ ...formData, date })}
+            min={new Date().toISOString().split('T')[0]}
+          />
+
+          {/* Time picker */}
+          <NativeTimePicker
+            value={formData.time}
+            onChange={(time) => setFormData({ ...formData, time })}
+          />
+
+          {/* Duration - for training */}
+          {formData.type === 'training' && (
+            <div className="animate-fade-in">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Durée (minutes)</label>
+              <div className="relative">
+                <Clock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="number"
+                  placeholder="90"
+                  min="15"
+                  max="300"
+                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Location autocomplete */}
+          <LocationAutocomplete
+            value={formData.location}
+            onChange={(location) => setFormData({ ...formData, location })}
+            onValidSelection={setLocationValid}
+          />
 
           {/* Recurrence selector - hidden for match (always ponctuel) */}
           {formData.type !== 'match' && (
@@ -170,7 +343,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             Annuler
           </button>
           <button
-            onClick={() => onSubmit(formData)}
+            onClick={() => onSubmit({ ...formData, duration: formData.duration ? parseInt(formData.duration, 10) : undefined })}
             disabled={!isFormValid}
             className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
           >

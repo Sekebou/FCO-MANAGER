@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Player } from '@/pages/Dashboard';
 import { X, AlertCircle, Calendar, MessageSquare } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { toast } from 'sonner';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) => {
+  useBodyScrollLock();
   const [formData, setFormData] = useState({
     playerId: selectedPlayerId || '', type: 'yellow', reason: '', date: new Date().toISOString().split('T')[0], suspendedUntil: ''
   });

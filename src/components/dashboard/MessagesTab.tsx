@@ -134,6 +134,15 @@ const MessagesTab: React.FC<Props> = ({ currentUser, members }) => {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // Lock body scroll when conversation or new convo view is open
+  useEffect(() => {
+    if (activeConversation || showNewConvo) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = original; };
+    }
+  }, [activeConversation, showNewConvo]);
+
   const getConversationName = (convo: Conversation) => { if (convo.type === 'group') return convo.name || 'Groupe'; const oid = convo.participants.find(id => id !== currentUser?.uid); return oid ? (convo.participantNames?.[oid] || 'Utilisateur') : 'Conversation'; };
   const getConversationPhoto = (convo: Conversation) => { if (convo.type === 'group') return null; const oid = convo.participants.find(id => id !== currentUser?.uid); return oid ? convo.participantPhotos?.[oid] : null; };
   const getConversationRole = (convo: Conversation) => { if (convo.type === 'group') return null; const oid = convo.participants.find(id => id !== currentUser?.uid); return oid ? convo.participantRoles?.[oid] : null; };

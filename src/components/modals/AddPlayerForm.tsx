@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, MapPin, Calendar, Mail, Lock, UserPlus, Shield } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import type { AppUser } from '@/contexts/AuthContext';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
+  useBodyScrollLock();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
   const isSuperAdmin = currentUser?.role === 'admin+';
   const isCoach = currentUser?.role === 'entraineur';

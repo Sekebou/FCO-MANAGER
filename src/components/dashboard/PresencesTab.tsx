@@ -141,11 +141,6 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
               }`}>
                 {event.type === 'match' ? 'Match' : event.type === 'training' ? 'Entraînement' : 'Autre'}
               </span>
-              {canDeleteEvent(event) && (
-                <button onClick={() => { deleteEvent(event.id); setSelectedEventId(null); }} className="text-destructive hover:bg-destructive/10 p-1 rounded-lg transition-all">
-                  <Trash2 size={14} />
-                </button>
-              )}
             </div>
           </div>
 
@@ -159,6 +154,41 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 <span className="text-xs text-accent/80 underline underline-offset-2 truncate group-active:text-accent">{event.location}</span>
                 <ExternalLink size={10} className="shrink-0 text-accent/50" />
               </a>
+            </div>
+          )}
+
+          {/* Enriched training detail */}
+          {event.type === 'training' && (
+            <div className="mt-4 space-y-2.5 bg-secondary/40 rounded-xl p-3.5 border border-border/50">
+              <div className="flex items-center gap-2.5">
+                <Calendar size={14} className="text-primary shrink-0" />
+                <span className="text-sm font-medium text-foreground capitalize">
+                  {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+              {event.time && (
+                <div className="flex items-center gap-2.5">
+                  <Clock size={14} className="text-primary shrink-0" />
+                  <span className="text-sm font-medium text-foreground">{event.time}</span>
+                </div>
+              )}
+              {event.duration && (
+                <div className="flex items-center gap-2.5">
+                  <Dumbbell size={14} className="text-purple-500 shrink-0" />
+                  <div>
+                    <span className="text-sm font-medium text-foreground">{event.duration} minutes</span>
+                    <span className="text-xs text-muted-foreground ml-1.5">— Durée de la séance</span>
+                  </div>
+                </div>
+              )}
+              {event.location && (
+                <div className="flex items-center gap-2.5">
+                  <MapPin size={14} className="text-accent shrink-0" />
+                  <a href={`https://waze.com/ul?q=${encodeURIComponent(event.location)}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-accent/80 underline underline-offset-2">
+                    {event.location}
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
@@ -552,55 +582,64 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
             const isPast = isEventPast(event);
 
             return (
-              <motion.button
-                key={event.id}
-                onClick={() => setSelectedEventId(event.id)}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full text-left bg-card border border-border rounded-2xl p-3.5 shadow-sm hover:shadow-md transition-all active:bg-secondary/30 ${isPast ? 'opacity-60' : ''}`}
-              >
-                <div className="flex items-center gap-3">
-                  {/* Icon */}
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    event.type === 'match' ? 'bg-accent/15' : event.type === 'training' ? 'bg-purple-100' : 'bg-muted'
-                  }`}>
-                    {event.type === 'match' ? <Trophy size={20} className="text-accent" /> : event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
-                  </div>
+              <div key={event.id} className={`relative w-full text-left bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all ${isPast ? 'opacity-60' : ''}`}>
+                <motion.button
+                  onClick={() => setSelectedEventId(event.id)}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full text-left p-3.5 active:bg-secondary/30"
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Icon */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      event.type === 'match' ? 'bg-accent/15' : event.type === 'training' ? 'bg-purple-100' : 'bg-muted'
+                    }`}>
+                      {event.type === 'match' ? <Trophy size={20} className="text-accent" /> : event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
+                    </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
-                      {event.type === 'match' && (
-                        <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full shrink-0">Match</span>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
+                        {event.type === 'match' && (
+                          <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full shrink-0">Match</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        {event.time && ` • ${event.time}`}
+                      </p>
+                      {event.location && (
+                        <p className="text-[11px] text-muted-foreground/70 mt-0.5 flex items-center gap-1 truncate">
+                          <MapPin size={10} className="shrink-0" /> {event.location}
+                        </p>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                      {event.time && ` • ${event.time}`}
-                    </p>
-                    {event.location && (
-                      <p className="text-[11px] text-muted-foreground/70 mt-0.5 flex items-center gap-1 truncate">
-                        <MapPin size={10} className="shrink-0" /> {event.location}
-                      </p>
-                    )}
-                  </div>
 
-                  {/* Right side: counters */}
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
-                        <Check size={10} /> {presentCount}
-                      </span>
-                      <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
-                        <X size={10} /> {absentCount}
-                      </span>
+                    {/* Right side: counters */}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
+                          <Check size={10} /> {presentCount}
+                        </span>
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
+                          <X size={10} /> {absentCount}
+                        </span>
+                      </div>
+                      {isPast && (
+                        <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">Terminé</span>
+                      )}
                     </div>
-                    {isPast && (
-                      <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">Terminé</span>
-                    )}
                   </div>
-                </div>
-              </motion.button>
+                </motion.button>
+                {canDeleteEvent(event) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg text-destructive/50 hover:text-destructive hover:bg-destructive/10 transition-all z-10"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>

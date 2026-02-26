@@ -79,6 +79,7 @@ export interface Event {
   createdAt?: string;
   time?: string;
   location?: string;
+  duration?: number;
 }
 
 export interface NewsItem {
@@ -146,7 +147,7 @@ const tabs = [
 // ---- Supabase helpers: map DB snake_case → app camelCase ----
 const mapPlayer = (r: any): Player => ({ id: r.id, name: r.name, position: r.position || 'Non défini', matches: r.matches ?? 0, goals: r.goals ?? 0, assists: r.assists ?? 0, licenseExpiry: r.license_expiry || undefined });
 const sortPlayersStable = (list: Player[]) => [...list].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
-const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location });
+const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location, duration: r.duration ?? undefined });
 const mapNews = (r: any): NewsItem => ({ id: r.id, title: r.title, content: r.content, author: r.author, authorId: r.author_id, date: r.date, likes: r.likes || [] });
 const mapMember = (r: any): Member => ({ id: r.id, name: r.name, email: r.email, role: r.role, displayRole: r.display_role || undefined, playerId: r.player_id, photoURL: r.photo_url, createdAt: r.created_at, username: r.username, licenseExpiry: r.license_expiry });
 const mapCard = (r: any): Card => ({ id: r.id, playerId: r.player_id, type: r.type as any, reason: r.reason, date: r.date, suspendedUntil: r.suspended_until });
@@ -706,6 +707,7 @@ const Dashboard = () => {
             created_by: currentUser?.uid || '', created_by_name: currentUser?.name || '',
             time: eventData.time || null, location: eventData.location || null,
             team: eventData.team || null, reason: eventData.reason || null,
+            duration: eventData.duration || null,
           });
 
           // Only send notifications for match and training
@@ -763,6 +765,8 @@ const Dashboard = () => {
       title: 'Supprimer cet événement ?',
       message: 'Les données de présence seront archivées avant la suppression.',
       onConfirm: async () => {
+        // Optimistic delete: remove from UI immediately
+        setEvents(prev => prev.filter(e => e.id !== eventId));
         try {
           if (event && event.presences) {
             const records = Object.entries(event.presences)
@@ -774,7 +778,11 @@ const Dashboard = () => {
             if (records.length > 0) await supabase.from('attendance_records').insert(records);
           }
           await supabase.from('events').delete().eq('id', eventId);
-        } catch (err: any) { toast.error('Erreur: ' + err.message); }
+        } catch (err: any) {
+          // Restore on error
+          if (event) setEvents(prev => [event, ...prev]);
+          toast.error('Erreur: ' + err.message);
+        }
       }
     });
   };

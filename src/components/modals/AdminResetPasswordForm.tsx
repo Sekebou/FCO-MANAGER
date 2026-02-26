@@ -3,6 +3,7 @@ import { getWebOrigin } from '@/lib/getWebOrigin';
 import { supabase } from '@/integrations/supabase/client';
 import type { Member } from '@/pages/Dashboard';
 import { Lock, Loader2 } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { toast } from 'sonner';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const AdminResetPasswordForm = ({ member, onClose }: Props) => {
+  useBodyScrollLock();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 

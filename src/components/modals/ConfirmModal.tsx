@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface Props {
   title: string;
@@ -13,6 +14,7 @@ interface Props {
 
 const ConfirmModal = ({ title, message, confirmLabel = 'Supprimer', cancelLabel = 'Annuler', variant = 'danger', onConfirm, onClose }: Props) => {
   const isDanger = variant === 'danger';
+  useBodyScrollLock();
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onClick={onClose}>

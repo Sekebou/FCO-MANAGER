@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar, Share2 } from 'lucide-react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import type { AppUser } from '@/contexts/AuthContext';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
+  useBodyScrollLock();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
   const isSuperAdmin = currentUser?.role === 'admin+';
 
