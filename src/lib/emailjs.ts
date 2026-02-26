@@ -1,11 +1,11 @@
-import emailjs from '@emailjs/browser';
+import emailjs from "@emailjs/browser";
 
-const SERVICE_ID = 'service_7wmhc61';
-const PUBLIC_KEY = 'YAIU3poHgOd6cG6PI';
+const SERVICE_ID = "service_aqfeamh";
+const PUBLIC_KEY = "YAIU3poHgOd6cG6PI";
 
 // Template IDs
-const TEMPLATE_INVITATION = 'template_p3ig9nv';
-const TEMPLATE_EVENT = 'template_m28qlzo';
+const TEMPLATE_INVITATION = "template_p3ig9nv";
+const TEMPLATE_EVENT = "template_m28qlzo";
 
 emailjs.init(PUBLIC_KEY);
 
