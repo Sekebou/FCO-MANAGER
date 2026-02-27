@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Globe, ChevronDown, Clock, MapPin } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Globe, ChevronDown, Clock, MapPin, Home } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { getEquipes, getAllCompetitions, getCalendrier, OISEMONT_CL_NO, type FFFCompetition } from '@/lib/fffApi';
+import { getEquipes, getAllCompetitions, getTousMatchsAvenir, OISEMONT_CL_NO, type FFFCompetition, type FFFMonthGroup } from '@/lib/fffApi';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -19,6 +19,11 @@ interface FFFMatchOption {
   time: string;
   location: string;
   isHome: boolean;
+  homeLogo?: string;
+  awayLogo?: string;
+  homeName: string;
+  awayName: string;
+  month: string;
 }
 
 const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
@@ -36,6 +41,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     duration: '' as string,
   });
   const [locationValid, setLocationValid] = useState(false);
+  const [trainingLocationChoice, setTrainingLocationChoice] = useState<'stade' | 'salle' | 'autre' | null>(null);
 
   // FFF import state
   const [useFFimport, setUseFFFImport] = useState(false);
@@ -43,7 +49,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
   const [fffCompetitions, setFffCompetitions] = useState<FFFCompetition[]>([]);
   const [selectedEquipe, setSelectedEquipe] = useState<string>('');
   const [selectedCompetition, setSelectedCompetition] = useState<string>('');
-  const [fffMatches, setFffMatches] = useState<FFFMatchOption[]>([]);
+  const [fffMatchesByMonth, setFffMatchesByMonth] = useState<FFFMatchOption[]>([]);
   const [loadingEquipes, setLoadingEquipes] = useState(false);
   const [loadingMatches, setLoadingMatches] = useState(false);
 
@@ -59,47 +65,47 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     }).catch(() => {}).finally(() => setLoadingEquipes(false));
   }, [useFFimport]);
 
-  // Load matches when competition selected
+  // Load matches when competition selected — use getTousMatchsAvenir
   useEffect(() => {
-    if (!selectedCompetition) { setFffMatches([]); return; }
+    if (!selectedCompetition) { setFffMatchesByMonth([]); return; }
     const comp = fffCompetitions.find(c => `${c.cpNo}-${c.phase}-${c.poule}` === selectedCompetition);
     if (!comp) return;
     setLoadingMatches(true);
-    getCalendrier(comp.cpNo, comp.phase, comp.poule).then(data => {
-      const members = Array.isArray(data) ? data : data?.['hydra:member'] || [];
+    getTousMatchsAvenir(comp.cpNo, comp.phase, comp.poule).then((monthGroups: FFFMonthGroup[]) => {
       const now = new Date();
-      const options: FFFMatchOption[] = members
-        .filter((m: any) => {
-          if (!m.home || !m.away) return false;
-          // Only show matches involving Oisemont
-          const isOisemont = m.home?.club?.cl_no === OISEMONT_CL_NO || m.away?.club?.cl_no === OISEMONT_CL_NO;
-          if (!isOisemont) return false;
-          // Only show unplayed future matches
+      const options: FFFMatchOption[] = [];
+      for (const group of monthGroups) {
+        for (const m of group.matchs) {
+          if (!m.home || !m.away) continue;
+          // Skip played matches
           const hasScore = m.home_score !== null && m.home_score !== undefined && m.away_score !== null && m.away_score !== undefined;
-          if (hasScore) return false;
+          if (hasScore) continue;
           const matchDate = m.date ? new Date(m.date) : null;
-          if (matchDate && matchDate < new Date(now.getFullYear(), now.getMonth(), 1)) return false;
-          return true;
-        })
-        .map((m: any) => {
+          if (matchDate && matchDate < now) continue;
+
           const isHome = m.home?.club?.cl_no === OISEMONT_CL_NO;
           const homeN = m.home?.short_name || m.home?.name || '';
           const awayN = m.away?.short_name || m.away?.name || '';
-          const matchDate = m.date ? new Date(m.date) : null;
           const terrain = m.terrain;
           let loc = '';
           if (terrain) loc = [terrain.name, terrain.city].filter(Boolean).join(', ');
 
-          return {
-            label: `${homeN} vs ${awayN}${matchDate ? ` — ${matchDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}`,
+          options.push({
+            label: `${homeN} vs ${awayN}`,
             title: `${homeN} vs ${awayN}`,
             date: matchDate ? matchDate.toISOString().split('T')[0] : '',
             time: matchDate ? matchDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
             location: loc || (isHome ? 'Domicile' : 'Extérieur'),
             isHome,
-          };
-        });
-      setFffMatches(options);
+            homeLogo: m.home?.club?.logo,
+            awayLogo: m.away?.club?.logo,
+            homeName: homeN,
+            awayName: awayN,
+            month: group.mois,
+          });
+        }
+      }
+      setFffMatchesByMonth(options);
     }).catch(() => {}).finally(() => setLoadingMatches(false));
   }, [selectedCompetition, fffCompetitions]);
 
@@ -113,6 +119,13 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     }));
     setLocationValid(true);
   };
+
+  // Group matches by month for display
+  const matchesByMonth = fffMatchesByMonth.reduce<Record<string, FFFMatchOption[]>>((acc, m) => {
+    if (!acc[m.month]) acc[m.month] = [];
+    acc[m.month].push(m);
+    return acc;
+  }, {});
 
   // Group competitions by equipe
   const equipeNames = [...new Set(fffCompetitions.map(c => c.equipe))];
@@ -148,17 +161,20 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           {/* Type selector */}
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               {typeOptions.map(opt => (
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setFormData({ ...formData, type: opt.value, ...(opt.value === 'match' ? { recurrence: 'ponctuel' } : {}), ...(opt.value !== 'match' ? { location: '' } : {}) })}
-                  className={`py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-semibold border-2 transition-all whitespace-nowrap ${
+                  onClick={() => {
+                    setFormData({ ...formData, type: opt.value, ...(opt.value === 'match' ? { recurrence: 'ponctuel' } : {}), ...(opt.value !== 'match' ? { location: '' } : {}) });
+                    if (opt.value !== 'training') setTrainingLocationChoice(null);
+                  }}
+                  className={`py-2 px-1.5 rounded-xl text-[10px] min-[380px]:text-[11px] sm:text-xs font-semibold border-2 transition-all overflow-hidden ${
                     formData.type === opt.value ? opt.color + ' scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1">{opt.icon} <span className="hidden min-[380px]:inline">{opt.label}</span><span className="min-[380px]:hidden">{opt.shortLabel}</span></span>
+                  <span className="inline-flex items-center gap-1 truncate">{opt.icon} <span className="truncate">{opt.label}</span></span>
                 </button>
               ))}
             </div>
@@ -216,27 +232,51 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                         </div>
                       )}
 
-                      {/* Match list */}
+                      {/* Match list grouped by month */}
                       {loadingMatches && <p className="text-xs text-muted-foreground text-center py-2">Chargement des matchs…</p>}
-                      {!loadingMatches && fffMatches.length > 0 && (
-                        <div className="max-h-40 overflow-y-auto space-y-1">
-                          {fffMatches.map((m, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => handleFFFMatchSelect(m)}
-                              className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 transition-all text-foreground flex items-center justify-between gap-2"
-                            >
-                              <span className="truncate font-medium">{m.label}</span>
-                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${m.isHome ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
-                                {m.isHome ? 'DOM' : 'EXT'}
-                              </span>
-                            </button>
+                      {!loadingMatches && Object.keys(matchesByMonth).length > 0 && (
+                        <div className="max-h-52 overflow-y-auto space-y-2">
+                          {Object.entries(matchesByMonth).map(([month, matches]) => (
+                            <div key={month}>
+                              <p className="text-[10px] font-bold text-primary uppercase tracking-wider px-1 py-1 sticky top-0 bg-primary/5 rounded capitalize">{month}</p>
+                              <div className="space-y-0.5 mt-0.5">
+                                {matches.map((m, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => handleFFFMatchSelect(m)}
+                                    className="w-full text-left px-2 py-2 rounded-lg text-xs hover:bg-primary/10 transition-all text-foreground flex items-center gap-2"
+                                  >
+                                    {/* Home logo */}
+                                    {m.homeLogo ? (
+                                      <img src={m.homeLogo} alt="" className="w-5 h-5 rounded-full object-contain shrink-0" />
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-full bg-muted shrink-0" />
+                                    )}
+                                    <span className="truncate font-medium flex-1">
+                                      {m.homeName} <span className="font-black text-accent">vs</span> {m.awayName}
+                                    </span>
+                                    {/* Away logo */}
+                                    {m.awayLogo ? (
+                                      <img src={m.awayLogo} alt="" className="w-5 h-5 rounded-full object-contain shrink-0" />
+                                    ) : (
+                                      <div className="w-5 h-5 rounded-full bg-muted shrink-0" />
+                                    )}
+                                    <span className="text-[9px] text-muted-foreground shrink-0 ml-1">
+                                      {m.date ? new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}
+                                    </span>
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${m.isHome ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                                      {m.isHome ? 'DOM' : 'EXT'}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
-                      {!loadingMatches && selectedCompetition && fffMatches.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-1">Aucun match trouvé</p>
+                      {!loadingMatches && selectedCompetition && Object.keys(matchesByMonth).length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-1">Aucun match à venir</p>
                       )}
                     </>
                   )}
@@ -281,36 +321,48 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
-          {/* Predefined locations for training */}
+          {/* Training location quick-select */}
           {formData.type === 'training' && (
             <div className="animate-fade-in">
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Lieu rapide</label>
-              <div className="flex gap-2 flex-wrap">
-                {[
-                  { label: 'Stade Oisemont', value: 'Stade municipal, Oisemont' },
-                  { label: 'Salle intérieure', value: 'Salle des sports, Oisemont' },
-                ].map(loc => (
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Lieu</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  { key: 'stade' as const, label: 'Stade', value: 'Stade municipal, Oisemont' },
+                  { key: 'salle' as const, label: 'Salle', value: 'Salle des sports, Oisemont' },
+                  { key: 'autre' as const, label: 'Autre', value: '' },
+                ]).map(loc => (
                   <button
-                    key={loc.value}
+                    key={loc.key}
                     type="button"
-                    onClick={() => { setFormData(prev => ({ ...prev, location: loc.value })); setLocationValid(true); }}
-                    className={`px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${
-                      formData.location === loc.value ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                    onClick={() => {
+                      setTrainingLocationChoice(loc.key);
+                      if (loc.key !== 'autre') {
+                        setFormData(prev => ({ ...prev, location: loc.value }));
+                        setLocationValid(true);
+                      } else {
+                        setFormData(prev => ({ ...prev, location: '' }));
+                        setLocationValid(false);
+                      }
+                    }}
+                    className={`px-2 py-2 rounded-xl text-[11px] font-semibold border-2 transition-all truncate ${
+                      trainingLocationChoice === loc.key ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
                     }`}
                   >
-                    <MapPin className="inline w-3 h-3 mr-1" />{loc.label}
+                    <MapPin className="inline w-3 h-3 mr-0.5" />{loc.label}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Location autocomplete */}
-          <LocationAutocomplete
-            value={formData.location}
-            onChange={(location) => setFormData({ ...formData, location })}
-            onValidSelection={setLocationValid}
-          />
+          {/* Location autocomplete - shown for match always, for training only when "Autre", for other always */}
+          {(formData.type === 'match' || formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre')) && (
+            <LocationAutocomplete
+              value={formData.location}
+              onChange={(location) => setFormData({ ...formData, location })}
+              onValidSelection={setLocationValid}
+            />
+          )}
 
           {/* Recurrence selector - hidden for match (always ponctuel) */}
           {formData.type !== 'match' && (

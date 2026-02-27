@@ -648,22 +648,22 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                 {!isPast && currentUser?.playerId && (() => {
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
-                    <div className="flex items-center gap-1.5 px-3.5 pb-2.5 -mt-1">
+                    <div className="flex items-center gap-1 px-3.5 pb-2 -mt-1">
                       <button
                         onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
-                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                        className={`flex items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[10px] font-bold transition-all ${
                           myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
                         }`}
                       >
-                        <Check size={11} /> Présent
+                        <Check size={10} /> <span className="hidden min-[340px]:inline">Présent</span>
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
-                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                        className={`flex items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[10px] font-bold transition-all ${
                           myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
                         }`}
                       >
-                        <X size={11} /> Absent
+                        <X size={10} /> <span className="hidden min-[340px]:inline">Absent</span>
                       </button>
                     </div>
                   );
