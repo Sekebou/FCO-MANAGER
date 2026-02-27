@@ -246,7 +246,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                       <h3 className="font-bold text-sm sm:text-base text-foreground">{player.name}</h3>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] sm:text-xs font-medium text-muted-foreground px-1.5 sm:px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
-                        {(() => { const m = members.find(mb => mb.playerId === player.id); return m ? <RoleBadge role={m.role} displayRole={m.displayRole} size="sm" compact /> : null; })()}
+                        {(() => { const m = members.find(mb => mb.playerId === player.id); return m ? <RoleBadge role={m.role} displayRole={m.displayRole} size="sm" /> : null; })()}
                       </div>
                     </div>
                   </div>
