@@ -202,7 +202,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
               </div>
               <div className="flex flex-col items-center shrink-0">
                 <span className="text-2xl font-black text-accent">VS</span>
-                <span className="text-[9px] text-muted-foreground font-medium mt-0.5">{matchDate}</span>
+                <span className="text-[9px] text-muted-foreground font-medium mt-0.5">{new Date(matchDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
               </div>
               <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
                 {awayLogo ? (
@@ -245,6 +245,9 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
                         <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-foreground"/></svg>
                       </motion.div>
                     )}
+                    <span className={`text-[9px] font-semibold uppercase tracking-wide ${selected ? 'text-accent/70' : 'text-muted-foreground/60'}`}>
+                      Cote
+                    </span>
                     <span className={`text-2xl font-black ${selected ? 'text-accent' : 'text-foreground'}`}>
                       {o.odd}
                     </span>
