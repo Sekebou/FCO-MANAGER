@@ -405,8 +405,15 @@ const ChampionnatTab: React.FC<Props> = ({
 
   const handleAddChamp = () => {
     if (!champName.trim()) return;
-    const finalTeam = champTeam === '__new__' ? customTeamName.trim() : champTeam;
-    if (!finalTeam) { toast.error('Entrez un nom d\'équipe'); return; }
+    // For admin+, use team selector; for others, auto-create a tab with the championship name
+    let finalTeam: string;
+    if (currentUserRole === 'admin+') {
+      finalTeam = champTeam === '__new__' ? customTeamName.trim() : champTeam;
+      if (!finalTeam) { toast.error('Entrez un nom d\'équipe'); return; }
+    } else {
+      // Auto-generate a unique team name from the championship name
+      finalTeam = champName.trim();
+    }
     const teams = importedTeams.length > 0 ? importedTeams : [];
     if (teams.length < 2) { toast.warning('Importez une compétition FFF avec au moins 2 équipes'); return; }
     if (teamHasChampionship(finalTeam)) { toast.error(`L'équipe ${finalTeam} a déjà un championnat`); return; }
@@ -510,20 +517,31 @@ const ChampionnatTab: React.FC<Props> = ({
           </div>
         </div>
         {canManage() && (
-          <motion.button 
-            whileHover={!teamHasChampionship(selectedTeam) ? { scale: 1.05 } : {}} 
-            whileTap={!teamHasChampionship(selectedTeam) ? { scale: 0.95 } : {}}
-            onClick={() => { if (!teamHasChampionship(selectedTeam)) { setChampTeam(selectedTeam); setShowAddChamp(true); } }} 
-            disabled={teamHasChampionship(selectedTeam)}
-            className={cn(
-              "flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm",
-              teamHasChampionship(selectedTeam)
-                ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                : "bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
-            )}
-          >
-            <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
-          </motion.button>
+          currentUserRole === 'admin+' ? (
+            <motion.button 
+              whileHover={!teamHasChampionship(selectedTeam) ? { scale: 1.05 } : {}} 
+              whileTap={!teamHasChampionship(selectedTeam) ? { scale: 0.95 } : {}}
+              onClick={() => { if (!teamHasChampionship(selectedTeam)) { setChampTeam(selectedTeam); setShowAddChamp(true); } }} 
+              disabled={teamHasChampionship(selectedTeam)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm",
+                teamHasChampionship(selectedTeam)
+                  ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                  : "bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
+              )}
+            >
+              <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
+            </motion.button>
+          ) : (
+            <motion.button 
+              whileHover={{ scale: 1.05 }} 
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { setShowAddChamp(true); }} 
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
+            >
+              <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
+            </motion.button>
+          )
         )}
       </motion.div>
 
