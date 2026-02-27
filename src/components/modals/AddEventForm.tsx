@@ -45,6 +45,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
   const [locationValid, setLocationValid] = useState(false);
   const [trainingLocationChoice, setTrainingLocationChoice] = useState<'stade' | 'salle' | 'autre' | null>(null);
 
+  // Match creation mode: 'auto' (FFF) or 'manual'
+  const [matchMode, setMatchMode] = useState<'auto' | 'manual' | null>(null);
+
   // FFF import state
   const [useFFimport, setUseFFFImport] = useState(false);
   const [fffEquipes, setFffEquipes] = useState<any[]>([]);
@@ -55,9 +58,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
   const [loadingEquipes, setLoadingEquipes] = useState(false);
   const [loadingMatches, setLoadingMatches] = useState(false);
 
-  // Load equipes when FFF import enabled
+  // Load equipes when auto mode selected
   useEffect(() => {
-    if (!useFFimport || fffEquipes.length > 0) return;
+    if (matchMode !== 'auto' || fffEquipes.length > 0) return;
     setLoadingEquipes(true);
     getEquipes(OISEMONT_CL_NO).then(data => {
       const equipes = Array.isArray(data) ? data : data?.['hydra:member'] || [];
@@ -65,7 +68,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
       const comps = getAllCompetitions(equipes);
       setFffCompetitions(comps);
     }).catch(() => {}).finally(() => setLoadingEquipes(false));
-  }, [useFFimport]);
+  }, [matchMode]);
 
   // Load matches when competition selected — use getTousMatchsAvenir
   useEffect(() => {
@@ -202,6 +205,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                   type="button"
                   onClick={() => {
                     setFormData({ ...formData, type: opt.value, ...(opt.value === 'match' ? { recurrence: 'ponctuel' } : {}), ...(opt.value !== 'match' ? { location: '' } : {}) });
+                    if (opt.value === 'match') setMatchMode(null);
                     if (opt.value !== 'training') setTrainingLocationChoice(null);
                   }}
                   className={`py-2 px-1.5 rounded-xl text-[10px] min-[380px]:text-[11px] sm:text-xs font-semibold border-2 transition-all overflow-hidden ${
@@ -215,10 +219,45 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           </div>
 
           {/* FFF Import toggle - only for match */}
-          {formData.type === 'match' && (
+          {formData.type === 'match' && !matchMode && (
+            <div className="animate-fade-in space-y-2">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mode de création</label>
+              <button
+                type="button"
+                onClick={() => setMatchMode('auto')}
+                className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-transparent bg-accent/5 hover:border-accent/30 transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 group-hover:bg-accent/20 transition-colors">
+                  <Globe size={18} className="text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground">Automatique</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider bg-accent/15 text-accent px-1.5 py-0.5 rounded-full">Recommandé</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Importer depuis la FFF — date, heure, stade, logos</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMatchMode('manual')}
+                className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-transparent bg-secondary hover:border-border transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-muted/80 transition-colors">
+                  <Pencil size={18} className="text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-bold text-foreground">Manuel</span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Saisir toutes les infos manuellement</p>
+                </div>
+              </button>
+            </div>
+          )}
+
+          {/* Match AUTO mode: FFF import */}
+          {formData.type === 'match' && matchMode === 'auto' && (
             <div className="animate-fade-in">
               {fffMatchSelected ? (
-                /* After selection: show summary + "Modifier" button */
                 <div className="p-3 bg-accent/5 rounded-xl border border-accent/20 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-accent flex items-center gap-1.5"><Globe size={14} /> Match importé FFF</span>
@@ -233,118 +272,123 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                   )}
                 </div>
               ) : (
-                /* FFF import toggle + selection */
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setUseFFFImport(!useFFimport)}
-                    className={`w-full flex items-center justify-between py-2.5 px-3 rounded-xl text-xs font-semibold border-2 transition-all ${
-                      useFFimport ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5"><Globe size={14} /> Importer depuis la FFF</span>
-                    <ChevronDown size={14} className={`transition-transform ${useFFimport ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {useFFimport && (
-                    <div className="mt-3 space-y-3 p-3 bg-primary/5 rounded-xl border border-primary/10 animate-fade-in">
-                      {loadingEquipes ? (
-                        <p className="text-xs text-muted-foreground text-center py-2">Chargement des équipes…</p>
-                      ) : (
-                        <>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-accent flex items-center gap-1.5"><Globe size={14} /> Import FFF</span>
+                    <button type="button" onClick={() => setMatchMode(null)} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">← Retour</button>
+                  </div>
+                  <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 space-y-3">
+                    {loadingEquipes ? (
+                      <p className="text-xs text-muted-foreground text-center py-2">Chargement des équipes…</p>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Équipe</label>
+                          <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedEquipe} onChange={(e) => { setSelectedEquipe(e.target.value); setSelectedCompetition(''); }}>
+                            <option value="">-- Choisir une équipe --</option>
+                            {equipeNames.map(name => <option key={name} value={name}>{name}</option>)}
+                          </select>
+                        </div>
+                        {selectedEquipe && (
                           <div>
-                            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Équipe</label>
-                            <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedEquipe} onChange={(e) => { setSelectedEquipe(e.target.value); setSelectedCompetition(''); }}>
-                              <option value="">-- Choisir une équipe --</option>
-                              {equipeNames.map(name => <option key={name} value={name}>{name}</option>)}
+                            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Compétition</label>
+                            <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedCompetition} onChange={(e) => setSelectedCompetition(e.target.value)}>
+                              <option value="">-- Choisir --</option>
+                              {fffCompetitions.filter(c => c.equipe === selectedEquipe).map(c => (
+                                <option key={`${c.cpNo}-${c.phase}-${c.poule}`} value={`${c.cpNo}-${c.phase}-${c.poule}`}>{c.competitionName}</option>
+                              ))}
                             </select>
                           </div>
-                          {selectedEquipe && (
-                            <div>
-                              <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Compétition</label>
-                              <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedCompetition} onChange={(e) => setSelectedCompetition(e.target.value)}>
-                                <option value="">-- Choisir --</option>
-                                {fffCompetitions.filter(c => c.equipe === selectedEquipe).map(c => (
-                                  <option key={`${c.cpNo}-${c.phase}-${c.poule}`} value={`${c.cpNo}-${c.phase}-${c.poule}`}>{c.competitionName}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                          {loadingMatches && <p className="text-xs text-muted-foreground text-center py-2">Chargement des matchs…</p>}
-                          {!loadingMatches && Object.keys(matchesByMonth).length > 0 && (
-                            <div className="max-h-52 overflow-y-auto space-y-2">
-                              {Object.entries(matchesByMonth).map(([month, matches]) => (
-                                <div key={month}>
-                                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider px-1 py-1 sticky top-0 bg-primary/5 rounded capitalize">{month}</p>
-                                  <div className="space-y-0.5 mt-0.5">
-                                    {matches.map((m, i) => (
-                                      <button key={i} type="button" onClick={() => handleFFFMatchSelect(m)} className="w-full text-left px-2 py-2 rounded-lg text-xs hover:bg-primary/10 transition-all text-foreground flex items-center gap-2">
-                                        {m.homeLogo ? <img src={m.homeLogo} alt="" className="w-5 h-5 rounded-full object-contain shrink-0" /> : <div className="w-5 h-5 rounded-full bg-muted shrink-0" />}
-                                        <span className="truncate font-medium flex-1">{m.homeName} <span className="font-black text-accent">vs</span> {m.awayName}</span>
-                                        {m.awayLogo ? <img src={m.awayLogo} alt="" className="w-5 h-5 rounded-full object-contain shrink-0" /> : <div className="w-5 h-5 rounded-full bg-muted shrink-0" />}
-                                        <span className="text-[9px] text-muted-foreground shrink-0 ml-1">{m.date ? new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}</span>
-                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${m.isHome ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>{m.isHome ? 'DOM' : 'EXT'}</span>
-                                      </button>
-                                    ))}
-                                  </div>
+                        )}
+                        {loadingMatches && <p className="text-xs text-muted-foreground text-center py-2">Chargement des matchs…</p>}
+                        {!loadingMatches && Object.keys(matchesByMonth).length > 0 && (
+                          <div className="max-h-52 overflow-y-auto space-y-2">
+                            {Object.entries(matchesByMonth).map(([month, matches]) => (
+                              <div key={month}>
+                                <p className="text-[10px] font-bold text-primary uppercase tracking-wider px-1 py-1 sticky top-0 bg-primary/5 rounded capitalize">{month}</p>
+                                <div className="space-y-0.5 mt-0.5">
+                                  {matches.map((m, i) => (
+                                    <button key={i} type="button" onClick={() => handleFFFMatchSelect(m)} className="w-full text-left px-2 py-2 rounded-lg text-xs hover:bg-primary/10 transition-all text-foreground flex items-center gap-2">
+                                      {m.homeLogo ? <img src={m.homeLogo} alt="" className="w-5 h-5 rounded-full object-contain shrink-0" /> : <div className="w-5 h-5 rounded-full bg-muted shrink-0" />}
+                                      <span className="truncate font-medium flex-1">{m.homeName} <span className="font-black text-accent">vs</span> {m.awayName}</span>
+                                      {m.awayLogo ? <img src={m.awayLogo} alt="" className="w-5 h-5 rounded-full object-contain shrink-0" /> : <div className="w-5 h-5 rounded-full bg-muted shrink-0" />}
+                                      <span className="text-[9px] text-muted-foreground shrink-0 ml-1">{m.date ? new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : ''}</span>
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${m.isHome ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>{m.isHome ? 'DOM' : 'EXT'}</span>
+                                    </button>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                          {!loadingMatches && selectedCompetition && Object.keys(matchesByMonth).length === 0 && (
-                            <p className="text-xs text-muted-foreground text-center py-1">Aucun match à venir</p>
-                          )}
-                        </>
-                      )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {!loadingMatches && selectedCompetition && Object.keys(matchesByMonth).length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-1">Aucun match à venir</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Custom title toggle after FFF selection */}
+              {fffMatchSelected && (
+                <div className="mt-2 animate-fade-in">
+                  {showCustomTitle ? (
+                    <div className="space-y-1.5">
+                      <div className="relative">
+                        <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <input type="text" placeholder="Titre personnalisé (optionnel)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                      </div>
+                      <button type="button" onClick={() => setShowCustomTitle(false)} className="text-[10px] text-muted-foreground hover:text-foreground underline">Annuler</button>
                     </div>
+                  ) : (
+                    <button type="button" onClick={() => setShowCustomTitle(true)} className="text-[10px] text-muted-foreground hover:text-foreground underline flex items-center gap-1">
+                      <Pencil size={10} /> Modifier le titre
+                    </button>
                   )}
-                </>
+                </div>
               )}
             </div>
           )}
 
-          {/* Title: for match type, only show input field (not for FFF selected, unless toggled) */}
-          {formData.type === 'match' && fffMatchSelected ? (
-            <div className="animate-fade-in">
-              {showCustomTitle ? (
-                <div className="space-y-1.5">
-                  <div className="relative">
-                    <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input type="text" placeholder="Titre personnalisé (optionnel)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
-                  </div>
-                  <button type="button" onClick={() => { setShowCustomTitle(false); }} className="text-[10px] text-muted-foreground hover:text-foreground underline">
-                    Annuler
-                  </button>
-                </div>
-              ) : (
-                <button type="button" onClick={() => setShowCustomTitle(true)} className="text-[10px] text-muted-foreground hover:text-foreground underline flex items-center gap-1">
-                  <Pencil size={10} /> Modifier le titre de l'événement
-                </button>
-              )}
+          {/* Match MANUAL mode: all fields visible */}
+          {formData.type === 'match' && matchMode === 'manual' && (
+            <div className="animate-fade-in space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><Pencil size={12} /> Saisie manuelle</span>
+                <button type="button" onClick={() => setMatchMode(null)} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">← Retour</button>
+              </div>
+              <div className="relative">
+                <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="text" placeholder="Titre (ex: Oisemont FC vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+              </div>
             </div>
-          ) : formData.type !== 'match' ? (
+          )}
+
+          {/* Title for non-match types */}
+          {formData.type !== 'match' && (
             <div className="relative">
               <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input type="text" placeholder="Titre (ex: Entraînement du mardi)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
             </div>
-          ) : (
-            <div className="relative">
-              <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
-            </div>
           )}
 
-          <NativeDatePicker
-            value={formData.date}
-            onChange={(date) => setFormData({ ...formData, date })}
-            min={new Date().toISOString().split('T')[0]}
-          />
+          {/* Hide date/time when match mode not yet chosen */}
+          {(formData.type !== 'match' || matchMode !== null) && (
+            <>
+              <NativeDatePicker
+                value={formData.date}
+                onChange={(date) => setFormData({ ...formData, date })}
+                min={new Date().toISOString().split('T')[0]}
+              />
 
-          {/* Time picker */}
-          <NativeTimePicker
-            value={formData.time}
-            onChange={(time) => setFormData({ ...formData, time })}
-          />
+              {/* Time picker */}
+              <NativeTimePicker
+                value={formData.time}
+                onChange={(time) => setFormData({ ...formData, time })}
+              />
+            </>
+          )}
 
           {/* Duration - for training */}
           {formData.type === 'training' && (
@@ -399,15 +443,15 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
-          {/* Location autocomplete - for match: only if no location or admin override; for training: only "Autre"; for other: always */}
-          {(formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && (!formData.location || showLocationOverride))) && (
+          {/* Location autocomplete - for match manual or auto override; for training: only "Autre"; for other: always */}
+          {(formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && matchMode !== null && (!formData.location || showLocationOverride))) && (
             <LocationAutocomplete
               value={formData.location}
               onChange={(location) => setFormData({ ...formData, location })}
               onValidSelection={setLocationValid}
             />
           )}
-          {formData.type === 'match' && formData.location && !showLocationOverride && (
+          {formData.type === 'match' && matchMode !== null && formData.location && !showLocationOverride && (
             <button type="button" onClick={() => setShowLocationOverride(true)} className="text-[10px] text-muted-foreground hover:text-foreground underline">
               Modifier le stade
             </button>
