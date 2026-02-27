@@ -31,6 +31,7 @@ interface Props {
   onAddEvent: () => void;
   onUpdateConvocations: (eventId: string, convocations: Record<string, Convocation>) => void;
   onSendConvocationNotif?: (event: Event, convocations: Record<string, Convocation>) => void;
+  onResetHeader?: () => void;
 }
 
 const CONVOCATION_STATUSES = [
@@ -38,7 +39,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif }: Props) => {
+const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif, onResetHeader }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
@@ -139,7 +140,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       <div className="space-y-4 animate-fade-in">
         {/* Back button */}
         <button
-          onClick={() => { setSelectedEventId(null); setConvocationMode(null); }}
+          onClick={() => { setSelectedEventId(null); setConvocationMode(null); window.scrollTo(0, 0); onResetHeader?.(); }}
           className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
         >
           <ArrowLeft size={16} /> Retour aux événements
