@@ -509,12 +509,18 @@ const ChampionnatTab: React.FC<Props> = ({
             <p className="text-xs text-muted-foreground">Saison 2025-2026</p>
           </div>
         </div>
-        {canManage() && !teamHasChampionship(selectedTeam) && (
+        {canManage() && (
           <motion.button 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }}
-            onClick={() => { setChampTeam(selectedTeam); setShowAddChamp(true); }} 
-            className="flex items-center gap-1.5 bg-accent text-accent-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium hover:bg-accent/90 transition-all shadow-sm text-xs sm:text-sm"
+            whileHover={!teamHasChampionship(selectedTeam) ? { scale: 1.05 } : {}} 
+            whileTap={!teamHasChampionship(selectedTeam) ? { scale: 0.95 } : {}}
+            onClick={() => { if (!teamHasChampionship(selectedTeam)) { setChampTeam(selectedTeam); setShowAddChamp(true); } }} 
+            disabled={teamHasChampionship(selectedTeam)}
+            className={cn(
+              "flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm",
+              teamHasChampionship(selectedTeam)
+                ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                : "bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
+            )}
           >
             <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
           </motion.button>
