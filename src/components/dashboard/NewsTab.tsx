@@ -83,23 +83,25 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
 
           return (
             <div key={item.id} className="bg-card border border-border rounded-2xl overflow-hidden animate-fade-in">
-              {/* Header */}
-              <div className="px-4 pt-4 pb-3">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      {(() => {
-                        const authorMember = members.find(m => m.id === item.authorId);
-                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} size="sm" compact /> : null;
-                      })()}
-                      <span className="text-xs font-semibold text-foreground truncate">{item.author}</span>
-                      <span className="text-muted-foreground/40">·</span>
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
-                        <Calendar size={10} className="opacity-60" />
-                        {new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-[15px] sm:text-base text-foreground leading-snug">{item.title}</h3>
+              {/* Header meta */}
+              <div className="px-4 pt-4 pb-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {(() => {
+                      const authorMember = members.find(m => m.id === item.authorId);
+                      if (!authorMember) return null;
+                      const config: Record<string, string> = { 'admin+': 'text-amber-500', admin: 'text-blue-500', entraineur: 'text-purple-500', dirigeant: 'text-emerald-500', photographe: 'text-pink-500', joueur: 'text-muted-foreground' };
+                      const visualRole = authorMember.displayRole || authorMember.role;
+                      const labels: Record<string, string> = { 'admin+': 'Super Admin', admin: 'Admin', entraineur: 'Entraîneur', dirigeant: 'Dirigeant', photographe: 'Photographe', joueur: 'Joueur' };
+                      return <span className={`text-[10px] font-bold uppercase tracking-wider ${config[visualRole] || 'text-muted-foreground'}`}>{labels[visualRole] || visualRole}</span>;
+                    })()}
+                    <span className="text-muted-foreground/30">·</span>
+                    <span className="text-[11px] font-medium text-muted-foreground truncate">{item.author}</span>
+                    <span className="text-muted-foreground/30">·</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 shrink-0">
+                      <Calendar size={9} />
+                      {new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </span>
                   </div>
                   {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || ((currentUser?.role === 'entraineur' || currentUser?.role === 'dirigeant') && item.authorId === currentUser?.uid)) && (
                     <button onClick={() => deleteNews(item.id)} className="w-7 h-7 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all shrink-0">
@@ -108,9 +110,14 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                   )}
                 </div>
               </div>
+              {/* Title */}
+              <div className="px-4 pb-2">
+                <h3 className="font-extrabold text-[15px] sm:text-base text-foreground leading-snug">{item.title}</h3>
+                <div className="mt-2 h-px bg-gradient-to-r from-accent/40 via-accent/10 to-transparent" />
+              </div>
               {/* Body */}
-              <div className="px-4 pb-4">
-                <p className="text-foreground/75 text-sm leading-relaxed">{item.content}</p>
+              <div className="px-4 pb-4 pt-1">
+                <p className="text-foreground/70 text-[13px] leading-relaxed">{item.content}</p>
               </div>
 
               {/* Actions bar */}
