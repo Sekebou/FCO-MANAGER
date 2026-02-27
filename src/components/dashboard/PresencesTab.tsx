@@ -673,11 +673,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
                   </div>
                 )}
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: Math.min(idx * 0.15, 0.6), ease: [0.25, 0.46, 0.45, 0.94] }}
-                whileTap={{ scale: 0.98 }}
+              <div
                 className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
                 {/* Main clickable area */}
@@ -691,24 +687,18 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       {/* Date + time row */}
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-1.5">
-                          <motion.span
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.4, duration: 0.5 }}
+                          <span
                             className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full"
-                          >Match</motion.span>
+                          >Match</span>
                           <span className="text-[11px] font-medium text-muted-foreground capitalize">
                             {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           {event.time && (
-                            <motion.span
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              transition={{ delay: 0.6, type: 'spring', stiffness: 300, damping: 18 }}
+                            <span
                               className="text-sm font-black text-accent-foreground bg-accent px-2.5 py-0.5 rounded-lg shadow-sm shadow-accent/30"
-                            >{event.time}</motion.span>
+                            >{event.time}</span>
                           )}
                           <ChevronRight size={16} className="text-muted-foreground/40" />
                         </div>
@@ -717,10 +707,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       {/* Teams row with logos */}
                       <div className="flex items-center justify-center gap-4 py-2">
                         {/* Home team */}
-                        <motion.div
-                          initial={{ x: -40, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.3, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+                        <div
                           className="flex flex-col items-center gap-1.5 flex-1 min-w-0"
                         >
                           {matchInfo.homeLogo ? (
@@ -731,23 +718,17 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </div>
                           )}
                           <span className="text-xs font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
-                        </motion.div>
+                        </div>
 
                         {/* VS */}
-                        <motion.div
-                          initial={{ scale: 0, rotate: -25 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ delay: 0.55, type: 'spring', stiffness: 400, damping: 14 }}
+                        <div
                           className="flex flex-col items-center shrink-0"
                         >
                           <span className="text-2xl font-black text-accent drop-shadow-sm">VS</span>
-                        </motion.div>
+                        </div>
 
                         {/* Away team */}
-                        <motion.div
-                          initial={{ x: 40, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.3, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
+                        <div
                           className="flex flex-col items-center gap-1.5 flex-1 min-w-0"
                         >
                           {matchInfo.awayLogo ? (
@@ -758,14 +739,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </div>
                           )}
                           <span className="text-xs font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.awayName}</span>
-                        </motion.div>
+                        </div>
                       </div>
 
                       {/* Location + counters row */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4, duration: 0.3 }}
+                      <div
                         className="flex flex-col gap-1.5 mt-2.5 pt-2 border-t border-border/50"
                       >
                         <div className="flex items-center justify-between">
@@ -795,7 +773,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </span>
                           </div>
                         )}
-                      </motion.div>
+                      </div>
                     </div>
                   ) : (
                     /* Training / Other card — compact layout */
@@ -926,7 +904,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     <Trash2 size={13} />
                   </button>
                 )}
-              </motion.div>
+              </div>
               </React.Fragment>
             );
           })}
