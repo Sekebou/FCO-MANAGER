@@ -606,6 +606,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             const presences = event.presences || {};
             const presentCount = Object.values(presences).filter(p => p === 'present').length;
             const absentCount = Object.values(presences).filter(p => p === 'absent').length;
+            const pendingCount = players.length - presentCount - absentCount;
             const isPast = isEventPast(event);
             const matchInfo = getMatchLogos(event);
             const isMatch = !!matchInfo;
@@ -686,6 +687,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
                             <X size={10} /> {absentCount}
                           </span>
+                          {pendingCount > 0 && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
+                              <Clock size={10} /> {pendingCount}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -724,6 +730,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
                               <X size={10} /> {absentCount}
                             </span>
+                            {pendingCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
+                                <Clock size={10} /> {pendingCount}
+                              </span>
+                            )}
                           </div>
                           <ChevronRight size={16} className="text-muted-foreground/40" />
                         </div>
@@ -733,8 +744,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
                   {/* "Tap for details" hint */}
                   {!isPast && (
-                    <div className="px-3.5 pb-1 -mt-0.5">
-                      <p className="text-[9px] text-muted-foreground/50 text-center">Appuie pour voir les détails →</p>
+                  <div className="px-3.5 pb-1.5 mt-1">
+                      <p className="text-[9px] text-muted-foreground/50 text-center">Appuyez pour voir plus de détails sur l'événement</p>
                     </div>
                   )}
                   {isPast && (
@@ -751,22 +762,24 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
                     <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
-                      <button
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
                         className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
                           myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
                         }`}
                       >
                         <Check size={12} /> Présent
-                      </button>
-                      <button
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
                         onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
                         className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
                           myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
                         }`}
                       >
                         <X size={12} /> Absent
-                      </button>
+                      </motion.button>
                     </div>
                   );
                 })()}
