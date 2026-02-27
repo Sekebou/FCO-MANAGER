@@ -92,7 +92,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                       <span className="text-xs font-semibold text-accent truncate max-w-[120px] sm:max-w-none">{item.author}</span>
                       {(() => {
                         const authorMember = members.find(m => m.id === item.authorId);
-                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} size="sm" compact /> : null;
+                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} size="sm" /> : null;
                       })()}
                       <span className="text-[10px] text-muted-foreground/60">•</span>
                       <span className="text-[11px] text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
