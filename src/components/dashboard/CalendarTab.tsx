@@ -21,7 +21,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
   const past = sorted.filter(e => e.date < todayStr);
   const future = sorted.filter(e => e.date >= todayStr);
 
-  const nextMatch = future.find(e => e.type === 'match');
+  const nextEvent = future[0] || null;
 
   const EventCard = ({ event, isPast, highlight }: { event: Event; isPast?: boolean; highlight?: boolean }) => {
     return (
@@ -38,7 +38,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-accent">Prochain match</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-accent">Prochain événement</span>
           </div>
         )}
         <div className="flex justify-between items-start gap-2">
@@ -97,25 +97,25 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
         <h2 className="text-lg sm:text-xl font-bold text-foreground">Calendrier</h2>
       </div>
 
-      {/* Prochain match en premier, plus gros */}
-      {nextMatch && (
+      {/* Prochain événement en premier, plus gros */}
+      {nextEvent && (
         <div>
-          <EventCard event={nextMatch} highlight />
+          <EventCard event={nextEvent} highlight />
         </div>
       )}
 
       {/* Séparateur */}
-      {nextMatch && future.filter(e => e.id !== nextMatch.id).length > 0 && (
+      {nextEvent && future.filter(e => e.id !== nextEvent.id).length > 0 && (
         <div className="h-px bg-border/60" />
       )}
 
       <div>
         <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wider">À venir</h3>
-        {future.filter(e => e.id !== nextMatch?.id).length === 0 ? (
+        {future.filter(e => e.id !== nextEvent?.id).length === 0 ? (
           <p className="text-muted-foreground italic text-sm">Aucun autre événement planifié</p>
         ) : (
           <div className="space-y-2">
-            {future.filter(e => e.id !== nextMatch?.id).map((e, i, arr) => (
+            {future.filter(e => e.id !== nextEvent?.id).map((e, i, arr) => (
               <React.Fragment key={e.id}>
                 <EventCard event={e} />
                 {i < arr.length - 1 && <div className="h-px bg-border/30 mx-2" />}
