@@ -16,26 +16,38 @@ interface Props {
 }
 
 const CalendarTab = ({ events, members, currentUser }: Props) => {
+  const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
   const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const past = sorted.filter(e => new Date(e.date) < new Date());
-  const future = sorted.filter(e => new Date(e.date) >= new Date());
+  const past = sorted.filter(e => e.date < todayStr);
+  const future = sorted.filter(e => e.date >= todayStr);
 
-  const EventCard = ({ event, isPast }: { event: Event; isPast?: boolean }) => {
-    const teamLabel = null;
+  const nextMatch = future.find(e => e.type === 'match');
+
+  const EventCard = ({ event, isPast, highlight }: { event: Event; isPast?: boolean; highlight?: boolean }) => {
     return (
-      <div className={`border-l-4 p-3 sm:p-4 rounded-r-xl ${isPast ? 'border-border bg-muted/50' : 'border-accent bg-accent/5'} ${!isPast ? 'shadow-sm' : ''}`}>
+      <div className={`border-l-4 p-3 sm:p-4 rounded-r-xl transition-all ${
+        highlight
+          ? 'border-accent bg-accent/10 shadow-md ring-1 ring-accent/20 scale-[1.01]'
+          : isPast
+            ? 'border-border bg-muted/50'
+            : 'border-accent/50 bg-accent/5 shadow-sm'
+      }`}>
+        {highlight && (
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-accent">Prochain match</span>
+          </div>
+        )}
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} truncate`}>{event.title}</h4>
-              {teamLabel && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider shrink-0">
-                  {teamLabel}
-                </span>
-              )}
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 space-y-0.5">
-              <span className="block">{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+              <span className="block">{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}{event.time ? ` à ${event.time}` : ''}</span>
               {event.createdByName && (
                 <span className="flex items-center gap-1 text-muted-foreground/60 text-[11px]">
                   {event.createdByName}
@@ -91,7 +103,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
           <p className="text-muted-foreground italic text-sm">Aucun événement planifié</p>
         ) : (
           <div className="space-y-3">
-            {future.map(e => <EventCard key={e.id} event={e} />)}
+            {future.map(e => <EventCard key={e.id} event={e} highlight={nextMatch?.id === e.id} />)}
           </div>
         )}
       </div>
