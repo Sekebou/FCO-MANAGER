@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Sparkles, Home, Minus, Plane, Trophy, ChevronRight } from 'lucide-react';
+import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Sparkles, Trophy, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -215,45 +215,33 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
             </div>
           </div>
 
-          {/* Pronostic selection — 1 N 2 */}
+          {/* Pronostic — qui va gagner ? */}
           <div>
-            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Votre pronostic</label>
-            <div className="grid grid-cols-3 gap-2">
+            <label className="block text-xs font-bold text-foreground mb-2">Qui va gagner ?</label>
+            <div className="flex flex-col gap-2">
               {([
-                { key: 'home' as const, code: '1', label: homeTeam, odd: odds.home, Icon: Home, color: 'text-blue-500' },
-                { key: 'draw' as const, code: 'N', label: 'Match nul', odd: odds.draw, Icon: Minus, color: 'text-amber-500' },
-                { key: 'away' as const, code: '2', label: awayTeam, odd: odds.away, Icon: Plane, color: 'text-red-500' },
+                { key: 'home' as const, label: homeTeam, odd: odds.home },
+                { key: 'draw' as const, label: 'Match nul', odd: odds.draw },
+                { key: 'away' as const, label: awayTeam, odd: odds.away },
               ]).map(o => {
                 const selected = prediction === o.key;
                 return (
                   <motion.button
                     key={o.key}
-                    whileTap={{ scale: 0.93 }}
-                    animate={selected ? { scale: [1, 1.05, 1] } : {}}
-                    transition={{ duration: 0.3 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setPrediction(o.key)}
-                    className={`relative rounded-2xl border-2 transition-all overflow-hidden ${
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${
                       selected
-                        ? 'border-accent bg-accent/10 shadow-md shadow-accent/15'
+                        ? 'border-accent bg-accent/10'
                         : 'border-border bg-card hover:border-accent/30'
                     }`}
                   >
-                    {/* Top section: icon + code + odd */}
-                    <div className="pt-3 pb-2 px-2 flex flex-col items-center gap-1">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selected ? 'bg-accent/20' : 'bg-secondary'}`}>
-                        <o.Icon size={16} className={selected ? 'text-accent' : o.color} />
-                      </div>
-                      <span className={`text-xs font-black ${selected ? 'text-accent' : 'text-muted-foreground'}`}>{o.code}</span>
-                      <span className="text-xl font-black text-foreground">{o.odd}</span>
-                    </div>
-                    {/* Bottom section: team name */}
-                    <div className={`px-2 py-1.5 border-t text-center ${
-                      selected ? 'bg-accent/5 border-accent/20' : 'bg-secondary/50 border-border/50'
-                    }`}>
-                      <span className="text-[9px] font-semibold text-muted-foreground leading-tight line-clamp-1">
-                        {o.key === 'draw' ? 'Match nul' : `Victoire`}
-                      </span>
-                    </div>
+                    <span className={`text-sm font-bold truncate ${selected ? 'text-accent' : 'text-foreground'}`}>
+                      {o.label}
+                    </span>
+                    <span className={`text-base font-black ml-3 shrink-0 ${selected ? 'text-accent' : 'text-muted-foreground'}`}>
+                      {o.odd}
+                    </span>
                   </motion.button>
                 );
               })}
