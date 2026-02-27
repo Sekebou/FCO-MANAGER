@@ -48,9 +48,9 @@ const Auth = () => {
         throw new Error("Profil utilisateur introuvable. Contactez l'administrateur.");
       }
 
-      // Session token
+      // Session token — stored in separate secure table
       const sessionToken = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      await supabase.from('profiles').update({ session_token: sessionToken }).eq('id', user.id);
+      await supabase.from('user_sessions').upsert({ user_id: user.id, session_token: sessionToken, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
       localStorage.setItem('sessionToken', sessionToken);
 
       const appUser = {

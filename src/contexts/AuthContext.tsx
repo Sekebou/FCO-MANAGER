@@ -73,12 +73,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             supabase.removeChannel(profileChannelRef.current);
           }
           profileChannelRef.current = supabase
-            .channel(`profile-session-${userId}`)
+            .channel(`session-${userId}`)
             .on('postgres_changes', {
               event: 'UPDATE',
               schema: 'public',
-              table: 'profiles',
-              filter: `id=eq.${userId}`,
+              table: 'user_sessions',
+              filter: `user_id=eq.${userId}`,
             }, (payload: any) => {
               if (!isMounted || loginGraceRef.current) return;
               const newToken = payload.new?.session_token;
