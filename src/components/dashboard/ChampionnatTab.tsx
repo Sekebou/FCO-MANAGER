@@ -1137,7 +1137,8 @@ const ChampionnatTab: React.FC<Props> = ({
             </div>
 
             <div className="p-5 space-y-4 overflow-y-auto flex-1">
-              {/* Team selector */}
+              {/* Team selector — admin+ only */}
+              {currentUserRole === 'admin+' ? (
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
                 <div className="flex gap-2 flex-wrap">
@@ -1180,6 +1181,11 @@ const ChampionnatTab: React.FC<Props> = ({
                   />
                 )}
               </div>
+              ) : (
+                <div className="px-3 py-2.5 bg-secondary/50 rounded-xl text-sm text-muted-foreground">
+                  Équipe : <span className="font-bold text-foreground">Équipe {champTeam}</span>
+                </div>
+              )}
 
               {/* FFF Competition selector */}
               <div>
