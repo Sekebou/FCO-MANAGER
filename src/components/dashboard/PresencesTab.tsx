@@ -614,9 +614,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             return (
               <motion.div
                 key={event.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: Math.min(upcomingEvents.indexOf(event) * 0.08, 0.4), ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ duration: 0.7, delay: Math.min(upcomingEvents.indexOf(event) * 0.15, 0.6), ease: [0.25, 0.46, 0.45, 0.94] }}
                 whileTap={{ scale: 0.98 }}
                 className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md'}`}
               >
@@ -634,7 +634,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           <motion.span
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.2, duration: 0.3 }}
+                            transition={{ delay: 0.4, duration: 0.5 }}
                             className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full"
                           >Match</motion.span>
                           <span className="text-[11px] font-medium text-muted-foreground capitalize">
@@ -646,7 +646,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             <motion.span
                               initial={{ scale: 0, opacity: 0 }}
                               animate={{ scale: 1, opacity: 1 }}
-                              transition={{ delay: 0.35, type: 'spring', stiffness: 400, damping: 15 }}
+                              transition={{ delay: 0.6, type: 'spring', stiffness: 300, damping: 18 }}
                               className="text-sm font-black text-accent-foreground bg-accent px-2.5 py-0.5 rounded-lg shadow-sm shadow-accent/30"
                             >{event.time}</motion.span>
                           )}
@@ -658,9 +658,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       <div className="flex items-center justify-center gap-3">
                         {/* Home team */}
                         <motion.div
-                          initial={{ x: -30, opacity: 0 }}
+                          initial={{ x: -40, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.15, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+                          transition={{ delay: 0.3, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
                           className="flex flex-col items-center gap-1 flex-1 min-w-0"
                         >
                           {matchInfo.homeLogo ? (
@@ -675,9 +675,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
                         {/* VS */}
                         <motion.div
-                          initial={{ scale: 0, rotate: -20 }}
+                          initial={{ scale: 0, rotate: -25 }}
                           animate={{ scale: 1, rotate: 0 }}
-                          transition={{ delay: 0.3, type: 'spring', stiffness: 500, damping: 12 }}
+                          transition={{ delay: 0.55, type: 'spring', stiffness: 400, damping: 14 }}
                           className="flex flex-col items-center shrink-0"
                         >
                           <span className="text-xl font-black text-accent drop-shadow-sm">VS</span>
@@ -685,9 +685,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
                         {/* Away team */}
                         <motion.div
-                          initial={{ x: 30, opacity: 0 }}
+                          initial={{ x: 40, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.15, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+                          transition={{ delay: 0.3, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
                           className="flex flex-col items-center gap-1 flex-1 min-w-0"
                         >
                           {matchInfo.awayLogo ? (

@@ -95,8 +95,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           // Extract time: prefer FFF separate `time` field, else parse raw date string
           let timeStr = '';
           if (m.time && typeof m.time === 'string') {
-            // FFF sometimes returns "15:00" or "15:00:00" directly
-            const tm = m.time.match(/(\d{2}:\d{2})/);
+            // FFF returns time as "15H00" or "15:00" or "15:00:00"
+            const normalized = m.time.replace(/[Hh]/, ':');
+            const tm = normalized.match(/(\d{2}:\d{2})/);
             if (tm) timeStr = tm[1];
           }
           if (!timeStr && m.date) {
