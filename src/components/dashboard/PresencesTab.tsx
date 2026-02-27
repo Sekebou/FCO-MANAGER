@@ -733,29 +733,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       </motion.div>
                     </div>
                   ) : (
-                    /* Training / Other card — compact modern layout */
-                    <div className="p-4 sm:p-5">
-                      <div className="flex items-center gap-3">
-                        {/* Left: icon + time block */}
-                        <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 ${
+                    /* Training / Other card — compact layout */
+                    <div className="px-3.5 py-3 sm:px-4 sm:py-3.5">
+                      <div className="flex items-center gap-2.5">
+                        {/* Left: icon */}
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                           event.type === 'training' ? 'bg-purple-500/10' : 'bg-muted'
                         }`}>
-                          {event.time ? (
-                            <>
-                              <span className={`text-base font-black leading-none ${event.type === 'training' ? 'text-purple-700' : 'text-muted-foreground'}`}>
-                                {event.time.split(':')[0]}h{event.time.split(':')[1]}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              {event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
-                            </>
-                          )}
+                          {event.type === 'training' ? <Dumbbell size={18} className="text-purple-600" /> : <Calendar size={18} className="text-muted-foreground" />}
                         </div>
 
                         {/* Center: info */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
+                          <div className="flex items-center gap-1.5">
                             <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
                               event.type === 'training' ? 'bg-purple-100 text-purple-700' : 'bg-muted text-muted-foreground'
                             }`}>
@@ -765,31 +755,42 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                               {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                             </span>
                           </div>
-                          <h3 className="font-bold text-[13px] text-foreground truncate leading-tight">{event.title}</h3>
-                          {event.location && (
-                            <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                              <MapPin size={9} className="shrink-0" /> {event.location}
-                            </p>
-                          )}
+                          <h3 className="font-bold text-sm text-foreground truncate leading-tight mt-0.5">{event.title}</h3>
                         </div>
 
-                        {/* Right: chevron */}
-                        <ChevronRight size={16} className="text-muted-foreground/30 shrink-0" />
+                        {/* Right: time badge + chevron */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {event.time && (
+                            <span className={`text-xs font-black px-2 py-1 rounded-lg ${
+                              event.type === 'training'
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-muted text-foreground'
+                            }`}>{event.time}</span>
+                          )}
+                          <ChevronRight size={16} className="text-muted-foreground/30" />
+                        </div>
                       </div>
 
-                      {/* Bottom: counters aligned */}
-                      <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-border/40">
-                        <span className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-accent/8 text-[10px] font-bold text-accent">
-                          <Check size={10} /> {presentCount}
-                        </span>
-                        <span className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-destructive/8 text-[10px] font-bold text-destructive">
-                          <X size={10} /> {absentCount}
-                        </span>
-                        {pendingCount > 0 && (
-                          <span className="flex-1 flex items-center justify-center gap-1 py-1 rounded-lg bg-warning/8 text-[10px] font-bold text-warning">
-                            <Clock size={10} /> {pendingCount}
+                      {/* Location + counters in one row */}
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/40">
+                        {event.location ? (
+                          <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1 flex-1 mr-3">
+                            <MapPin size={9} className="shrink-0" /> {event.location}
+                          </p>
+                        ) : <div />}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
+                            <Check size={10} /> {presentCount}
                           </span>
-                        )}
+                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
+                            <X size={10} /> {absentCount}
+                          </span>
+                          {pendingCount > 0 && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
+                              <Clock size={10} /> {pendingCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
