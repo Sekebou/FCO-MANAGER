@@ -85,22 +85,22 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
             <div key={item.id} className="bg-card border border-border rounded-2xl overflow-hidden animate-fade-in">
               {/* Content */}
               <div className="p-5">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg text-foreground">{item.title}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs font-medium text-accent">{item.author}</span>
+                <div className="flex justify-between items-start gap-2 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-base sm:text-lg text-foreground leading-tight">{item.title}</h3>
+                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                      <span className="text-xs font-semibold text-accent truncate max-w-[120px] sm:max-w-none">{item.author}</span>
                       {(() => {
                         const authorMember = members.find(m => m.id === item.authorId);
-                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} /> : null;
+                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} size="sm" compact /> : null;
                       })()}
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                      <span className="text-[10px] text-muted-foreground/60">•</span>
+                      <span className="text-[11px] text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                     </div>
                   </div>
                   {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || ((currentUser?.role === 'entraineur' || currentUser?.role === 'dirigeant') && item.authorId === currentUser?.uid)) && (
-                    <button onClick={() => deleteNews(item.id)} className="w-8 h-8 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all">
-                      <Trash2 size={15} className="text-destructive" />
+                    <button onClick={() => deleteNews(item.id)} className="w-7 h-7 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all shrink-0 mt-0.5">
+                      <Trash2 size={14} className="text-destructive" />
                     </button>
                   )}
                 </div>
