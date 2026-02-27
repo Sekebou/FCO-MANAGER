@@ -51,7 +51,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const upcomingEvents = events
     .filter(e => new Date(e.date) >= sevenDaysAgo)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    .sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      if (a.time) { const [h, m] = a.time.split(':').map(Number); dateA.setHours(h || 0, m || 0); }
+      if (b.time) { const [h, m] = b.time.split(':').map(Number); dateB.setHours(h || 0, m || 0); }
+      return dateA.getTime() - dateB.getTime();
+    });
 
   // Helper: resolve logos for a match event
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
