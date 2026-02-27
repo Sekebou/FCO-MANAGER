@@ -605,7 +605,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-4">
           {upcomingEvents.map(event => {
             const presences = event.presences || {};
             const presentCount = Object.values(presences).filter(p => p === 'present').length;
@@ -622,7 +622,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: Math.min(upcomingEvents.indexOf(event) * 0.15, 0.6), ease: [0.25, 0.46, 0.45, 0.94] }}
                 whileTap={{ scale: 0.98 }}
-                className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md'}`}
+                className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
                 {/* Main clickable area */}
                 <button
@@ -631,7 +631,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 >
                   {/* Match card: special layout with logos */}
                   {isMatch && matchInfo ? (
-                    <div className="p-3.5">
+                    <div className="p-4 sm:p-5">
                       {/* Date + time row */}
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-1.5">
@@ -734,7 +734,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     </div>
                   ) : (
                     /* Training / Other card — compact modern layout */
-                    <div className="p-3">
+                    <div className="p-4 sm:p-5">
                       <div className="flex items-center gap-3">
                         {/* Left: icon + time block */}
                         <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 ${
