@@ -714,7 +714,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       >
                         <div className="flex items-center justify-between">
                           {event.location ? (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2">
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2 uppercase font-semibold tracking-wide">
                               <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
                             </p>
                           ) : <div />}
@@ -782,7 +782,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-border/40">
                         <div className="flex items-center justify-between">
                           {event.location ? (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2">
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2 uppercase font-semibold tracking-wide">
                               <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
                             </p>
                           ) : <div />}
