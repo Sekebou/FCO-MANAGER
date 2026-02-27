@@ -605,7 +605,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-5 max-w-2xl mx-auto">
           {upcomingEvents.map(event => {
             const presences = event.presences || {};
             const presentCount = Object.values(presences).filter(p => p === 'present').length;
@@ -659,22 +659,22 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       </div>
 
                       {/* Teams row with logos */}
-                      <div className="flex items-center justify-center gap-3">
+                      <div className="flex items-center justify-center gap-4 py-2">
                         {/* Home team */}
                         <motion.div
                           initial={{ x: -40, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           transition={{ delay: 0.3, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-                          className="flex flex-col items-center gap-1 flex-1 min-w-0"
+                          className="flex flex-col items-center gap-1.5 flex-1 min-w-0"
                         >
                           {matchInfo.homeLogo ? (
-                            <img src={matchInfo.homeLogo} alt="" className="w-10 h-10 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={matchInfo.homeLogo} alt="" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                              <Shield size={18} className="text-muted-foreground" />
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-secondary flex items-center justify-center">
+                              <Shield size={22} className="text-muted-foreground" />
                             </div>
                           )}
-                          <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
+                          <span className="text-xs font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
                         </motion.div>
 
                         {/* VS */}
@@ -684,7 +684,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           transition={{ delay: 0.55, type: 'spring', stiffness: 400, damping: 14 }}
                           className="flex flex-col items-center shrink-0"
                         >
-                          <span className="text-xl font-black text-accent drop-shadow-sm">VS</span>
+                          <span className="text-2xl font-black text-accent drop-shadow-sm">VS</span>
                         </motion.div>
 
                         {/* Away team */}
@@ -692,16 +692,16 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           initial={{ x: 40, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           transition={{ delay: 0.3, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-                          className="flex flex-col items-center gap-1 flex-1 min-w-0"
+                          className="flex flex-col items-center gap-1.5 flex-1 min-w-0"
                         >
                           {matchInfo.awayLogo ? (
-                            <img src={matchInfo.awayLogo} alt="" className="w-10 h-10 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={matchInfo.awayLogo} alt="" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                              <Shield size={18} className="text-muted-foreground" />
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-secondary flex items-center justify-center">
+                              <Shield size={22} className="text-muted-foreground" />
                             </div>
                           )}
-                          <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.awayName}</span>
+                          <span className="text-xs font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.awayName}</span>
                         </motion.div>
                       </div>
 
