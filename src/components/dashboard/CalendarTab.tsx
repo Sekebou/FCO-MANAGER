@@ -32,15 +32,6 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
             ? 'border-border bg-muted/50 p-3 sm:p-4'
             : 'border-accent/50 bg-accent/5 shadow-sm p-3 sm:p-4'
       }`}>
-        {highlight && (
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-accent">Prochain événement</span>
-          </div>
-        )}
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
