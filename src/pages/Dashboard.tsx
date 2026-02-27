@@ -1034,7 +1034,6 @@ const Dashboard = () => {
     if (!canManagePhotos()) return;
     try {
       await supabase.from('albums').insert({ name: data.name, description: data.description || '', created_by: currentUser!.uid });
-      toast.success(`Album "${data.name}" créé`);
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 

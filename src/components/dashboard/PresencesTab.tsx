@@ -599,15 +599,28 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
+                        {event.type === 'match' && event.title.toLowerCase().includes(' vs ') ? (() => {
+                          const parts = event.title.split(/\s+vs\s+/i);
+                          return (
+                            <h3 className="font-semibold text-sm text-foreground truncate">
+                              {parts[0]} <span className="text-base font-black text-accent mx-0.5">VS</span> {parts[1]}
+                            </h3>
+                          );
+                        })() : (
+                          <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
+                        )}
                         {event.type === 'match' && (
                           <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full shrink-0">Match</span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                        {event.time && ` • ${event.time}`}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        </p>
+                        {event.time && (
+                          <span className="text-xs font-bold text-foreground bg-secondary px-1.5 py-0.5 rounded-md">{event.time}</span>
+                        )}
+                      </div>
                       {event.location && (
                         <p className="text-[11px] text-muted-foreground/70 mt-0.5 flex items-center gap-1 truncate">
                           <MapPin size={10} className="shrink-0" /> {event.location}
@@ -631,6 +644,30 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                     </div>
                   </div>
                 </motion.button>
+                {/* Quick presence buttons on card */}
+                {!isPast && currentUser?.playerId && (() => {
+                  const myStatus = (event.presences || {})[currentUser.playerId!];
+                  return (
+                    <div className="flex items-center gap-1.5 px-3.5 pb-2.5 -mt-1">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                          myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
+                        }`}
+                      >
+                        <Check size={11} /> Présent
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                          myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
+                        }`}
+                      >
+                        <X size={11} /> Absent
+                      </button>
+                    </div>
+                  );
+                })()}
                 {canDeleteEvent(event) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}

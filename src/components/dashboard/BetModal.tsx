@@ -3,6 +3,7 @@ import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, S
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface BetModalProps {
   isOpen: boolean;
@@ -72,6 +73,7 @@ function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, hom
 export { generateOdds };
 
 const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName }) => {
+  useBodyScrollLock(isOpen);
   const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
   const [amount, setAmount] = useState(10);
   const [balance, setBalance] = useState(0);

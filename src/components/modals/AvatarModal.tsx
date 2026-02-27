@@ -159,7 +159,11 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
             </button>
           </div>
           <p className="mt-3 text-sm font-semibold text-foreground">{currentUser.name}</p>
-          <p className="text-xs text-muted-foreground capitalize">{currentUser.role === 'admin+' ? 'Administrateur' : currentUser.role}</p>
+          <p className="text-xs text-muted-foreground capitalize">{(() => {
+            const effectiveRole = currentUser.displayRole || currentUser.role;
+            const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', dirigeant: 'Dirigeant', admin: 'Administrateur', 'admin+': 'Administrateur' };
+            return labels[effectiveRole] || effectiveRole;
+          })()}</p>
         </div>
 
         <div className="px-5 space-y-2">
