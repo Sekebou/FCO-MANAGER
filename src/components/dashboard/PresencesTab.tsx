@@ -712,31 +712,33 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         transition={{ delay: 0.4, duration: 0.3 }}
                         className="flex flex-col gap-1.5 mt-2.5 pt-2 border-t border-border/50"
                       >
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {event.location && (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
+                        <div className="flex items-center justify-between">
+                          {event.location ? (
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2">
                               <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
                             </p>
-                          )}
-                          {event.createdByName && (
+                          ) : <div />}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
+                              <Check size={10} /> {presentCount}
+                            </span>
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
+                              <X size={10} /> {absentCount}
+                            </span>
+                            {pendingCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
+                                <Clock size={10} /> {pendingCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {event.createdByName && (
+                          <div className="flex items-center gap-3">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <User size={9} className="shrink-0" /> {event.createdByName}
                             </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-end gap-1.5">
-                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
-                            <Check size={10} /> {presentCount}
-                          </span>
-                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
-                            <X size={10} /> {absentCount}
-                          </span>
-                          {pendingCount > 0 && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
-                              <Clock size={10} /> {pendingCount}
-                            </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </motion.div>
                     </div>
                   ) : (
@@ -778,38 +780,42 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         </div>
                       </div>
 
-                      {/* Duration + Creator + Location + counters */}
+                      {/* Location + counters row (same as match cards) */}
                       <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-border/40">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {event.duration && (
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <Timer size={9} className="shrink-0" /> {event.duration} min
+                        <div className="flex items-center justify-between">
+                          {event.location ? (
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2">
+                              <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
+                            </p>
+                          ) : <div />}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
+                              <Check size={10} /> {presentCount}
                             </span>
-                          )}
-                          {event.createdByName && (
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <User size={9} className="shrink-0" /> {event.createdByName}
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
+                              <X size={10} /> {absentCount}
                             </span>
-                          )}
-                          {event.location && (
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
-                              <MapPin size={9} className="shrink-0" /> {event.location}
-                            </span>
-                          )}
+                            {pendingCount > 0 && (
+                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
+                                <Clock size={10} /> {pendingCount}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center justify-end gap-1.5">
-                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
-                            <Check size={10} /> {presentCount}
-                          </span>
-                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
-                            <X size={10} /> {absentCount}
-                          </span>
-                          {pendingCount > 0 && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
-                              <Clock size={10} /> {pendingCount}
-                            </span>
-                          )}
-                        </div>
+                        {(event.duration || event.createdByName) && (
+                          <div className="flex items-center gap-3">
+                            {event.duration && (
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Timer size={9} className="shrink-0" /> {event.duration} min
+                              </span>
+                            )}
+                            {event.createdByName && (
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <User size={9} className="shrink-0" /> {event.createdByName}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
