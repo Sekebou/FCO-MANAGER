@@ -755,7 +755,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         {/* Center: info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-accent bg-accent/10">
+                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                              event.type === 'training' ? 'bg-purple-100 text-purple-700' : 'bg-accent/10 text-accent'
+                            }`}>
                               {event.type === 'training' ? 'ENTRAÎNEMENT' : 'AUTRE'}
                             </span>
                             <span className="text-[10px] text-muted-foreground capitalize">
