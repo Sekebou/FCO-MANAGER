@@ -605,7 +605,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {upcomingEvents.map(event => {
             const presences = event.presences || {};
             const presentCount = Object.values(presences).filter(p => p === 'present').length;
