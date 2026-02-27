@@ -107,48 +107,32 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
     if (!prediction || amount < 1 || amount > balance) return;
     setLoading(true);
     try {
-      // Check existing bet on same match
-      const { data: existing } = await supabase.from('bets')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('match_date', matchDate)
-        .eq('home_team', homeTeam)
-        .eq('away_team', awayTeam)
-        .maybeSingle();
-      
-      if (existing) {
-        toast.error('Tu as déjà parié sur ce match !');
+      const { data, error } = await supabase.rpc('place_bet', {
+        p_user_id: userId,
+        p_user_name: userName,
+        p_match_date: matchDate,
+        p_home_team: homeTeam,
+        p_away_team: awayTeam,
+        p_prediction: prediction,
+        p_odds: selectedOdd,
+        p_amount: amount,
+      });
+
+      if (error) {
+        // Extract user-friendly message from postgres exception
+        const msg = error.message || 'Erreur lors du pari';
+        if (msg.includes('déjà parié')) {
+          toast.error('Tu as déjà parié sur ce match !');
+        } else if (msg.includes('Solde insuffisant') || msg.includes('Insufficient')) {
+          toast.error('Solde insuffisant !');
+        } else if (msg.includes('Mise invalide')) {
+          toast.error('Mise invalide (1-500 pts)');
+        } else {
+          toast.error(msg);
+        }
         setLoading(false);
         return;
       }
-
-      // Insert bet
-      const { error: betError } = await supabase.from('bets').insert({
-        user_id: userId,
-        user_name: userName,
-        match_date: matchDate,
-        home_team: homeTeam,
-        away_team: awayTeam,
-        prediction,
-        odds: selectedOdd,
-        amount,
-      });
-      if (betError) throw betError;
-
-      // Deduct points
-      const newBalance = balance - amount;
-      const { error: pointsError } = await supabase.from('user_points')
-        .update({ balance: newBalance, total_bet: balance - newBalance + amount, updated_at: new Date().toISOString() })
-        .eq('user_id', userId);
-      if (pointsError) throw pointsError;
-
-      // Log transaction
-      await supabase.from('points_transactions').insert({
-        user_id: userId,
-        amount: -amount,
-        type: 'bet',
-        description: `Pari: ${homeTeam} vs ${awayTeam} — ${prediction === 'home' ? '1' : prediction === 'draw' ? 'N' : '2'} (cote ${selectedOdd})`,
-      });
 
       toast.success(`Pari de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
       onClose();
