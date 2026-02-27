@@ -21,10 +21,10 @@ const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; bg: 
   entraineur: {
     label: 'Entraîneur',
     icon: Dumbbell,
-    bg: 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20',
-    text: 'text-emerald-500',
-    border: 'border-emerald-500/40',
-    glow: 'shadow-[0_0_8px_rgba(16,185,129,0.2)]',
+    bg: 'bg-gradient-to-r from-blue-500/20 to-indigo-500/20',
+    text: 'text-blue-500',
+    border: 'border-blue-500/40',
+    glow: 'shadow-[0_0_8px_rgba(59,130,246,0.2)]',
   },
   dirigeant: {
     label: 'Dirigeant',

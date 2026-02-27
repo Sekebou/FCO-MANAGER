@@ -90,7 +90,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                     {(() => {
                       const authorMember = members.find(m => m.id === item.authorId);
                       if (!authorMember) return null;
-                      const config: Record<string, string> = { 'admin+': 'text-amber-500', admin: 'text-blue-500', entraineur: 'text-purple-500', dirigeant: 'text-emerald-500', photographe: 'text-pink-500', joueur: 'text-muted-foreground' };
+                      const config: Record<string, string> = { 'admin+': 'text-amber-500', admin: 'text-blue-500', entraineur: 'text-blue-500', dirigeant: 'text-emerald-500', photographe: 'text-pink-500', joueur: 'text-muted-foreground' };
                       const visualRole = authorMember.displayRole || authorMember.role;
                       const labels: Record<string, string> = { 'admin+': 'Super Admin', admin: 'Admin', entraineur: 'Entraîneur', dirigeant: 'Dirigeant', photographe: 'Photographe', joueur: 'Joueur' };
                       return <span className={`text-[10px] font-bold uppercase tracking-wider ${config[visualRole] || 'text-muted-foreground'}`}>{labels[visualRole] || visualRole}</span>;
