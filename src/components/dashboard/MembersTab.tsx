@@ -27,6 +27,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
   const [userPoints, setUserPoints] = useState<Record<string, number>>({});
   const [lastBetGains, setLastBetGains] = useState<Record<string, { amount: number; desc: string }>>({});
+  const [localDisplayRoles, setLocalDisplayRoles] = useState<Record<string, string | undefined>>({});
 
   // Fetch points for all members
   useEffect(() => {
@@ -75,7 +76,11 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     return labels[effectiveRole] || effectiveRole;
   };
 
-  const getEffectiveDisplayRole = (member: Member) => member.displayRole || member.role;
+  const getEffectiveDisplayRole = (member: Member) => {
+    const override = localDisplayRoles[member.id];
+    if (override !== undefined) return override || member.role;
+    return member.displayRole || member.role;
+  };
 
   const getLicenseStatus = (expiryDate: string) => {
     const now = new Date();
@@ -88,7 +93,11 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
 
   const visibleMembers = members.filter(m => m.role !== 'admin+');
   // Group by effective display role (displayRole takes priority for grouping)
-  const getGroupRole = (m: Member) => m.displayRole || m.role;
+  const getGroupRole = (m: Member) => {
+    const override = localDisplayRoles[m.id];
+    if (override !== undefined) return override || m.role;
+    return m.displayRole || m.role;
+  };
   const admins = visibleMembers.filter(m => getGroupRole(m) === 'admin');
   const coaches = visibleMembers.filter(m => getGroupRole(m) === 'entraineur');
   const dirigeants = visibleMembers.filter(m => getGroupRole(m) === 'dirigeant');
@@ -159,7 +168,8 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             const effectiveRole = getEffectiveDisplayRole(member);
             const config = roleConfig[effectiveRole] || roleConfig.joueur;
             const RoleIcon = config.icon;
-            const hasDisplayRole = member.displayRole && member.displayRole !== member.role && (member.role === 'admin' || member.role === 'admin+');
+            const currentDisplayRole = localDisplayRoles[member.id] !== undefined ? (localDisplayRoles[member.id] || undefined) : member.displayRole;
+            const hasDisplayRole = currentDisplayRole && currentDisplayRole !== member.role && (member.role === 'admin' || member.role === 'admin+');
 
             return (
               <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in flex flex-col">
@@ -389,15 +399,16 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           <Dumbbell size={13} className="text-muted-foreground shrink-0" />
                           <div className="relative flex-1 inline-flex items-center bg-secondary border border-border rounded-xl px-3 py-2 gap-2 cursor-pointer">
                             <span className="text-xs font-medium text-foreground flex-1">
-                              Affichage : {member.displayRole ? getRoleLabel(member.displayRole) : 'Par défaut (Admin)'}
+                              Affichage : {(() => { const dr = localDisplayRoles[member.id] !== undefined ? localDisplayRoles[member.id] : member.displayRole; return dr ? getRoleLabel(dr) : 'Par défaut (Admin)'; })()}
                             </span>
                             <ChevronDown size={13} className="text-muted-foreground shrink-0 pointer-events-none" />
                             <select
-                              value={member.displayRole || ''}
+                              value={(localDisplayRoles[member.id] !== undefined ? localDisplayRoles[member.id] : member.displayRole) || ''}
                               onChange={async (e) => {
                                 const newDisplayRole = e.target.value || null;
+                                setLocalDisplayRoles(prev => ({ ...prev, [member.id]: newDisplayRole || '' }));
                                 const { error } = await supabase.from('profiles').update({ display_role: newDisplayRole }).eq('id', member.id);
-                                if (error) { toast.error('Erreur: ' + error.message); return; }
+                                if (error) { toast.error('Erreur: ' + error.message); setLocalDisplayRoles(prev => { const n = { ...prev }; delete n[member.id]; return n; }); return; }
                                 toast.success(`Affichage mis à jour : ${newDisplayRole ? getRoleLabel(newDisplayRole) : 'Admin'}`);
                               }}
                               className="absolute inset-0 opacity-0 cursor-pointer w-full"
