@@ -494,12 +494,12 @@ const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
                   </div>
                 )}
                 <div className="flex items-center gap-1">
-                  {own && canDelete && <button onClick={() => deleteMessage(msg.id, isGlobal)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-destructive transition-all"><Trash2 size={12} /></button>}
+                  {own && canDelete && <button onClick={() => deleteMessage(msg.id, isGlobal)} className="opacity-0 group-hover:opacity-100 group-active:opacity-100 p-1 rounded text-muted-foreground hover:text-destructive transition-all"><Trash2 size={12} /></button>}
                   <div className={`px-3 py-2.5 text-sm leading-relaxed break-words shadow-sm ${own ? 'bg-gradient-to-br from-accent to-accent/90 text-accent-foreground rounded-2xl rounded-br-md' : 'bg-secondary text-foreground rounded-2xl rounded-bl-md border border-border/50'}`}>
                     {msg.imageUrl && <img src={msg.imageUrl} alt="" className="max-w-full rounded-lg mb-1 max-h-48 object-contain cursor-pointer" onClick={() => window.open(msg.imageUrl, '_blank')} />}
                     {msg.text && <span>{msg.text}</span>}
                   </div>
-                  {!own && isAdmin && <button onClick={() => deleteMessage(msg.id, isGlobal)} className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-destructive transition-all"><Trash2 size={12} /></button>}
+                  {!own && isAdmin && <button onClick={() => deleteMessage(msg.id, isGlobal)} className="opacity-0 group-hover:opacity-100 group-active:opacity-100 p-1 rounded text-muted-foreground hover:text-destructive transition-all"><Trash2 size={12} /></button>}
                 </div>
                 {!consecutive && <span className={`text-[10px] text-muted-foreground/60 mt-0.5 ${own ? 'mr-0.5' : 'ml-0.5'}`}>{formatMsgTime(msg.createdAt)}</span>}
 

@@ -179,7 +179,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[70]" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-card rounded-2xl w-full max-w-md border border-border shadow-2xl animate-fade-in" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="bg-card rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col border border-border shadow-2xl animate-fade-in" onMouseDown={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border">
           <div className="flex items-center gap-3">
@@ -194,7 +194,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Type selector */}
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
