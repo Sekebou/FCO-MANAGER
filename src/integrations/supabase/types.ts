@@ -396,6 +396,7 @@ export type Database = {
       }
       events: {
         Row: {
+          away_logo: string | null
           convocations: Json | null
           convocations_published: boolean | null
           created_at: string
@@ -403,6 +404,7 @@ export type Database = {
           created_by_name: string | null
           date: string
           duration: number | null
+          home_logo: string | null
           id: string
           location: string | null
           presences: Json | null
@@ -414,6 +416,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
           created_at?: string
@@ -421,6 +424,7 @@ export type Database = {
           created_by_name?: string | null
           date: string
           duration?: number | null
+          home_logo?: string | null
           id?: string
           location?: string | null
           presences?: Json | null
@@ -432,6 +436,7 @@ export type Database = {
           type?: string
         }
         Update: {
+          away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
           created_at?: string
@@ -439,6 +444,7 @@ export type Database = {
           created_by_name?: string | null
           date?: string
           duration?: number | null
+          home_logo?: string | null
           id?: string
           location?: string | null
           presences?: Json | null
