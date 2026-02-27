@@ -860,6 +860,10 @@ export type Database = {
         }
         Returns: Json
       }
+      update_event_presence: {
+        Args: { p_event_id: string; p_status: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
