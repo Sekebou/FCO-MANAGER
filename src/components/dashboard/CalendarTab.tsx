@@ -25,12 +25,12 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
 
   const EventCard = ({ event, isPast, highlight }: { event: Event; isPast?: boolean; highlight?: boolean }) => {
     return (
-      <div className={`border-l-4 p-3 sm:p-4 rounded-r-xl transition-all ${
+      <div className={`border-l-4 rounded-r-xl transition-all ${
         highlight
-          ? 'border-accent bg-accent/10 shadow-md ring-1 ring-accent/20 scale-[1.01]'
+          ? 'border-accent bg-accent/10 shadow-lg ring-1 ring-accent/25 p-4 sm:p-5'
           : isPast
-            ? 'border-border bg-muted/50'
-            : 'border-accent/50 bg-accent/5 shadow-sm'
+            ? 'border-border bg-muted/50 p-3 sm:p-4'
+            : 'border-accent/50 bg-accent/5 shadow-sm p-3 sm:p-4'
       }`}>
         {highlight && (
           <div className="flex items-center gap-1.5 mb-2">
@@ -97,24 +97,47 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
         <h2 className="text-lg sm:text-xl font-bold text-foreground">Calendrier</h2>
       </div>
 
+      {/* Prochain match en premier, plus gros */}
+      {nextMatch && (
+        <div>
+          <EventCard event={nextMatch} highlight />
+        </div>
+      )}
+
+      {/* Séparateur */}
+      {nextMatch && future.filter(e => e.id !== nextMatch.id).length > 0 && (
+        <div className="h-px bg-border/60" />
+      )}
+
       <div>
-        <h3 className="text-lg font-semibold mb-3 text-accent">Événements à venir</h3>
-        {future.length === 0 ? (
-          <p className="text-muted-foreground italic text-sm">Aucun événement planifié</p>
+        <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wider">À venir</h3>
+        {future.filter(e => e.id !== nextMatch?.id).length === 0 ? (
+          <p className="text-muted-foreground italic text-sm">Aucun autre événement planifié</p>
         ) : (
-          <div className="space-y-3">
-            {future.map(e => <EventCard key={e.id} event={e} highlight={nextMatch?.id === e.id} />)}
+          <div className="space-y-2">
+            {future.filter(e => e.id !== nextMatch?.id).map((e, i, arr) => (
+              <React.Fragment key={e.id}>
+                <EventCard event={e} />
+                {i < arr.length - 1 && <div className="h-px bg-border/30 mx-2" />}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </div>
+      <div className="h-px bg-border/60" />
 
       <div>
-        <h3 className="text-lg font-semibold mb-3 text-muted-foreground">Événements passés</h3>
+        <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Passés</h3>
         {past.length === 0 ? (
           <p className="text-muted-foreground italic text-sm">Aucun événement passé</p>
         ) : (
-          <div className="space-y-3">
-            {[...past].reverse().map(e => <EventCard key={e.id} event={e} isPast />)}
+          <div className="space-y-2">
+            {[...past].reverse().map((e, i, arr) => (
+              <React.Fragment key={e.id}>
+                <EventCard event={e} isPast />
+                {i < arr.length - 1 && <div className="h-px bg-border/30 mx-2" />}
+              </React.Fragment>
+            ))}
           </div>
         )}
       </div>
