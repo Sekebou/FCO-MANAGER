@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Sparkles } from 'lucide-react';
+import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Sparkles, Home, Minus, Plane, Trophy, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -167,19 +167,19 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm border border-border shadow-2xl"
+        className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm border border-border shadow-2xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border">
+        <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
-              <Zap size={20} className="text-accent" />
+              <Trophy size={20} className="text-accent" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-foreground">Parier</h3>
+              <h3 className="text-base font-bold text-foreground">Parier sur le match</h3>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Coins size={12} /> <span>{balance} pts disponibles</span>
+                <Coins size={12} className="text-amber-500" /> <span className="font-semibold">{balance} pts</span>
               </div>
             </div>
           </div>
@@ -188,63 +188,82 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
           </button>
         </div>
 
-        <div className="p-5 space-y-5">
-          {/* Match header */}
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                {homeLogo ? <img src={homeLogo} alt="" className="w-12 h-12 rounded-full object-cover bg-secondary/50 p-0.5" /> : <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-muted-foreground">{homeTeam.charAt(0)}</div>}
-                <span className="text-[10px] font-bold text-foreground leading-tight text-center line-clamp-2">{homeTeam}</span>
+        <div className="p-4 space-y-4 overflow-y-auto flex-1">
+          {/* Match confrontation */}
+          <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50">
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                {homeLogo ? (
+                  <img src={homeLogo} alt="" className="w-14 h-14 rounded-full object-contain bg-card p-1 border border-border shadow-sm" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-card border border-border flex items-center justify-center text-lg font-black text-muted-foreground shadow-sm">{homeTeam.charAt(0)}</div>
+                )}
+                <span className="text-[11px] font-bold text-foreground leading-tight text-center line-clamp-2">{homeTeam}</span>
               </div>
-              <span className="text-xl font-black text-accent shrink-0">VS</span>
-              <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                {awayLogo ? <img src={awayLogo} alt="" className="w-12 h-12 rounded-full object-cover bg-secondary/50 p-0.5" /> : <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-muted-foreground">{awayTeam.charAt(0)}</div>}
-                <span className="text-[10px] font-bold text-foreground leading-tight text-center line-clamp-2">{awayTeam}</span>
+              <div className="flex flex-col items-center shrink-0">
+                <span className="text-2xl font-black text-accent">VS</span>
+                <span className="text-[9px] text-muted-foreground font-medium mt-0.5">{matchDate}</span>
+              </div>
+              <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                {awayLogo ? (
+                  <img src={awayLogo} alt="" className="w-14 h-14 rounded-full object-contain bg-card p-1 border border-border shadow-sm" />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-card border border-border flex items-center justify-center text-lg font-black text-muted-foreground shadow-sm">{awayTeam.charAt(0)}</div>
+                )}
+                <span className="text-[11px] font-bold text-foreground leading-tight text-center line-clamp-2">{awayTeam}</span>
               </div>
             </div>
           </div>
 
-          {/* Odds buttons — 1 N 2 */}
+          {/* Pronostic selection — 1 N 2 */}
           <div>
-            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 text-center">Pronostic</label>
+            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Votre pronostic</label>
             <div className="grid grid-cols-3 gap-2">
               {([
-                { key: 'home' as const, label: '1', sublabel: `Victoire ${homeTeam}`, odd: odds.home, icon: '🏠' },
-                { key: 'draw' as const, label: 'N', sublabel: 'Match nul', odd: odds.draw, icon: '🤝' },
-                { key: 'away' as const, label: '2', sublabel: `Victoire ${awayTeam}`, odd: odds.away, icon: '✈️' },
-              ]).map(o => (
-                <motion.button
-                  key={o.key}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setPrediction(o.key)}
-                  className={`py-3 px-2 rounded-xl border-2 transition-all text-center relative overflow-hidden ${
-                    prediction === o.key
-                      ? 'border-accent bg-accent/10 shadow-sm shadow-accent/20'
-                      : 'border-border hover:border-accent/30 bg-secondary/50'
-                  }`}
-                >
-                  {prediction === o.key && (
-                    <motion.div
-                      layoutId="bet-selection"
-                      className="absolute inset-0 bg-accent/5 rounded-xl"
-                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    />
-                  )}
-                  <div className="relative z-10">
-                    <div className="text-base mb-0.5">{o.icon}</div>
-                    <div className="text-xl font-black text-foreground">{o.odd}</div>
-                    <div className="text-[8px] font-bold uppercase tracking-wider text-accent/70 mb-0.5">{o.label === 'N' ? 'Nul' : o.label}</div>
-                    <div className="text-[9px] font-semibold text-muted-foreground truncate leading-tight">{o.sublabel}</div>
-                  </div>
-                </motion.button>
-              ))}
+                { key: 'home' as const, code: '1', label: homeTeam, odd: odds.home, Icon: Home, color: 'text-blue-500' },
+                { key: 'draw' as const, code: 'N', label: 'Match nul', odd: odds.draw, Icon: Minus, color: 'text-amber-500' },
+                { key: 'away' as const, code: '2', label: awayTeam, odd: odds.away, Icon: Plane, color: 'text-red-500' },
+              ]).map(o => {
+                const selected = prediction === o.key;
+                return (
+                  <motion.button
+                    key={o.key}
+                    whileTap={{ scale: 0.93 }}
+                    animate={selected ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                    onClick={() => setPrediction(o.key)}
+                    className={`relative rounded-2xl border-2 transition-all overflow-hidden ${
+                      selected
+                        ? 'border-accent bg-accent/10 shadow-md shadow-accent/15'
+                        : 'border-border bg-card hover:border-accent/30'
+                    }`}
+                  >
+                    {/* Top section: icon + code + odd */}
+                    <div className="pt-3 pb-2 px-2 flex flex-col items-center gap-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selected ? 'bg-accent/20' : 'bg-secondary'}`}>
+                        <o.Icon size={16} className={selected ? 'text-accent' : o.color} />
+                      </div>
+                      <span className={`text-xs font-black ${selected ? 'text-accent' : 'text-muted-foreground'}`}>{o.code}</span>
+                      <span className="text-xl font-black text-foreground">{o.odd}</span>
+                    </div>
+                    {/* Bottom section: team name */}
+                    <div className={`px-2 py-1.5 border-t text-center ${
+                      selected ? 'bg-accent/5 border-accent/20' : 'bg-secondary/50 border-border/50'
+                    }`}>
+                      <span className="text-[9px] font-semibold text-muted-foreground leading-tight line-clamp-1">
+                        {o.key === 'draw' ? 'Match nul' : `Victoire`}
+                      </span>
+                    </div>
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Amount */}
+          {/* Amount slider */}
           {prediction && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3">
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mise (pts)</label>
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 bg-secondary/30 rounded-2xl p-4 border border-border/50">
+              <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mise</label>
               <div className="flex items-center gap-3">
                 <input
                   type="range"
@@ -252,50 +271,51 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
                   max={Math.min(balance, 500)}
                   value={amount}
                   onChange={e => setAmount(Number(e.target.value))}
-                  className="flex-1 accent-accent"
+                  className="flex-1 accent-accent h-2"
                 />
-                <div className="w-16 text-center text-lg font-black text-accent bg-accent/10 rounded-xl py-1">
+                <div className="w-16 text-center text-lg font-black text-accent bg-accent/10 rounded-xl py-1.5 border border-accent/20">
                   {amount}
                 </div>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Gain potentiel</span>
-                <span className="font-black text-accent flex items-center gap-1">
-                  <TrendingUp size={12} /> {potentialWin} pts
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground font-medium">Gain potentiel</span>
+                <span className="font-black text-accent flex items-center gap-1 text-sm">
+                  <TrendingUp size={14} /> {potentialWin} pts
                 </span>
               </div>
             </motion.div>
           )}
-        </div>
 
-        {/* How to earn points */}
-        <div className="mx-5 mb-3 p-3 bg-secondary/60 rounded-xl border border-border">
-          <div className="flex items-center gap-1.5 mb-2">
-            <Gift size={13} className="text-amber-400" />
-            <span className="text-[11px] font-bold text-foreground">Gagner des points</span>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <CalendarCheck size={11} className="text-emerald-400 shrink-0" />
-              <span><b className="text-foreground">+5 pts</b> — Répondre présent ou absent à un événement</span>
+          {/* How to earn points — collapsible */}
+          <details className="group">
+            <summary className="flex items-center gap-1.5 cursor-pointer text-[11px] text-muted-foreground hover:text-foreground transition-colors select-none">
+              <Gift size={13} className="text-amber-400" />
+              <span className="font-semibold">Comment gagner des points ?</span>
+              <ChevronRight size={12} className="transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="mt-2 p-3 bg-secondary/40 rounded-xl border border-border/50 space-y-1.5">
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <CalendarCheck size={11} className="text-emerald-400 shrink-0" />
+                <span><b className="text-foreground">+5 pts</b> — Répondre à un événement</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <MessageCircle size={11} className="text-blue-400 shrink-0" />
+                <span><b className="text-foreground">+5 pts</b> — Commenter une actu</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <Heart size={11} className="text-pink-400 shrink-0" />
+                <span><b className="text-foreground">+1 pt</b> — Liker une actu</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <Sparkles size={11} className="text-amber-400 shrink-0" />
+                <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <MessageCircle size={11} className="text-blue-400 shrink-0" />
-              <span><b className="text-foreground">+5 pts</b> — Commenter une actualité</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <Heart size={11} className="text-pink-400 shrink-0" />
-              <span><b className="text-foreground">+1 pt</b> — Liker une actualité</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <Sparkles size={11} className="text-amber-400 shrink-0" />
-              <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien automatique (30/mois)</span>
-            </div>
-          </div>
+          </details>
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-border pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-3">
+        <div className="p-4 border-t border-border pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3 shrink-0">
           {activeBetsCount > 0 && (
             <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Zap size={12} className="text-accent" />
@@ -303,16 +323,17 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
             </div>
           )}
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+            <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-semibold hover:bg-secondary/80 transition-all text-sm">
               Annuler
             </button>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={handleBet}
               disabled={!prediction || amount < 1 || amount > balance || loading}
-              className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
+              className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-semibold hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
             >
               {loading ? 'En cours...' : 'Valider le pari'}
-            </button>
+            </motion.button>
           </div>
         </div>
       </motion.div>
