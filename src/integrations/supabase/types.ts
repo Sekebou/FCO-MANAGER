@@ -712,7 +712,6 @@ export type Database = {
           photo_url: string | null
           player_id: string | null
           role: string
-          session_token: string | null
           team: string | null
           username: string | null
           welcome_seen: boolean | null
@@ -727,7 +726,6 @@ export type Database = {
           photo_url?: string | null
           player_id?: string | null
           role?: string
-          session_token?: string | null
           team?: string | null
           username?: string | null
           welcome_seen?: boolean | null
@@ -742,7 +740,6 @@ export type Database = {
           photo_url?: string | null
           player_id?: string | null
           role?: string
-          session_token?: string | null
           team?: string | null
           username?: string | null
           welcome_seen?: boolean | null
@@ -801,6 +798,24 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          session_token: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          session_token?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          session_token?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
