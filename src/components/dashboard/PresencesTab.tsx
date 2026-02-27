@@ -614,6 +614,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             return (
               <motion.div
                 key={event.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: Math.min(upcomingEvents.indexOf(event) * 0.08, 0.4), ease: [0.25, 0.46, 0.45, 0.94] }}
                 whileTap={{ scale: 0.98 }}
                 className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md'}`}
               >
@@ -628,14 +631,24 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       {/* Date + time row */}
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full">Match</span>
+                          <motion.span
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.3 }}
+                            className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full"
+                          >Match</motion.span>
                           <span className="text-[11px] font-medium text-muted-foreground capitalize">
                             {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           {event.time && (
-                            <span className="text-sm font-black text-foreground bg-secondary px-2 py-0.5 rounded-lg">{event.time}</span>
+                            <motion.span
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ delay: 0.35, type: 'spring', stiffness: 400, damping: 15 }}
+                              className="text-sm font-black text-accent-foreground bg-accent px-2.5 py-0.5 rounded-lg shadow-sm shadow-accent/30"
+                            >{event.time}</motion.span>
                           )}
                           <ChevronRight size={16} className="text-muted-foreground/40" />
                         </div>
@@ -644,7 +657,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       {/* Teams row with logos */}
                       <div className="flex items-center justify-center gap-3">
                         {/* Home team */}
-                        <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                        <motion.div
+                          initial={{ x: -30, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.15, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+                          className="flex flex-col items-center gap-1 flex-1 min-w-0"
+                        >
                           {matchInfo.homeLogo ? (
                             <img src={matchInfo.homeLogo} alt="" className="w-10 h-10 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : (
@@ -653,15 +671,25 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </div>
                           )}
                           <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
-                        </div>
+                        </motion.div>
 
                         {/* VS */}
-                        <div className="flex flex-col items-center shrink-0">
-                          <span className="text-lg font-black text-accent">VS</span>
-                        </div>
+                        <motion.div
+                          initial={{ scale: 0, rotate: -20 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ delay: 0.3, type: 'spring', stiffness: 500, damping: 12 }}
+                          className="flex flex-col items-center shrink-0"
+                        >
+                          <span className="text-xl font-black text-accent drop-shadow-sm">VS</span>
+                        </motion.div>
 
                         {/* Away team */}
-                        <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                        <motion.div
+                          initial={{ x: 30, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: 0.15, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+                          className="flex flex-col items-center gap-1 flex-1 min-w-0"
+                        >
                           {matchInfo.awayLogo ? (
                             <img src={matchInfo.awayLogo} alt="" className="w-10 h-10 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : (
@@ -670,11 +698,16 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </div>
                           )}
                           <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.awayName}</span>
-                        </div>
+                        </motion.div>
                       </div>
 
                       {/* Location + counters row */}
-                      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50">
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.3 }}
+                        className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50"
+                      >
                         {event.location ? (
                           <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2">
                             <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
@@ -693,7 +726,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </span>
                           )}
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
                   ) : (
                     /* Training / Other card */
