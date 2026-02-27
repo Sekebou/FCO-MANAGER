@@ -4,7 +4,7 @@ import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight } from 'lucide-react';
+import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -710,14 +710,21 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4, duration: 0.3 }}
-                        className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50"
+                        className="flex flex-col gap-1.5 mt-2.5 pt-2 border-t border-border/50"
                       >
-                        {event.location ? (
-                          <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2">
-                            <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
-                          </p>
-                        ) : <div />}
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {event.location && (
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
+                              <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
+                            </p>
+                          )}
+                          {event.createdByName && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <User size={9} className="shrink-0" /> {event.createdByName}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-end gap-1.5">
                           <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
                             <Check size={10} /> {presentCount}
                           </span>
@@ -771,14 +778,26 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         </div>
                       </div>
 
-                      {/* Location + counters in one row */}
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/40">
-                        {event.location ? (
-                          <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1 flex-1 mr-3">
-                            <MapPin size={9} className="shrink-0" /> {event.location}
-                          </p>
-                        ) : <div />}
-                        <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Duration + Creator + Location + counters */}
+                      <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-border/40">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {event.duration && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Timer size={9} className="shrink-0" /> {event.duration} min
+                            </span>
+                          )}
+                          {event.createdByName && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <User size={9} className="shrink-0" /> {event.createdByName}
+                            </span>
+                          )}
+                          {event.location && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
+                              <MapPin size={9} className="shrink-0" /> {event.location}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-end gap-1.5">
                           <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
                             <Check size={10} /> {presentCount}
                           </span>
