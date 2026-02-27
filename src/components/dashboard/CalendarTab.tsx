@@ -100,7 +100,13 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
       {/* Prochain événement en premier, plus gros */}
       {nextEvent && (
         <div>
-          <h3 className="text-sm font-semibold mb-2 text-accent uppercase tracking-wider">📌 Événement le plus proche</h3>
+          <h3 className="text-sm font-semibold mb-2 text-accent uppercase tracking-wider flex items-center gap-1.5">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-60" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
+            </span>
+            Événement le plus proche
+          </h3>
           <EventCard event={nextEvent} highlight />
         </div>
       )}
