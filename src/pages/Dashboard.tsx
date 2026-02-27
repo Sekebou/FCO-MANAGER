@@ -284,6 +284,19 @@ const Dashboard = () => {
       rafId = requestAnimationFrame(() => {
         rafId = null;
         const currentY = window.scrollY;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+        // Ignore bounce/elastic overscroll at top or bottom
+        if (currentY < 0 || currentY > maxScroll) {
+          lastScrollY.current = currentY;
+          return;
+        }
+        // Near bottom — ignore small movements (elastic bounce)
+        if (currentY >= maxScroll - 5) {
+          lastScrollY.current = currentY;
+          return;
+        }
+
         if (currentY < 10) { setHeaderVisible(true); lastDirection.current = null; }
         else {
           const dir = currentY > lastScrollY.current ? 'down' : currentY < lastScrollY.current ? 'up' : lastDirection.current;
@@ -292,7 +305,7 @@ const Dashboard = () => {
             lastDirection.current = dir;
           }
           const delta = Math.abs(currentY - directionChangeY.current);
-          if (delta > 40) {
+          if (delta > 50) {
             if (dir === 'down') { setHeaderVisible(false); setMobileMenuOpen(false); }
             else if (dir === 'up') setHeaderVisible(true);
           }
