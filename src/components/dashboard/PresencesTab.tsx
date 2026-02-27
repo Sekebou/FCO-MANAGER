@@ -733,43 +733,50 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       </motion.div>
                     </div>
                   ) : (
-                    /* Training / Other card */
+                    /* Training / Other card - optimized layout */
                     <div className="p-3.5">
-                      <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                          event.type === 'training' ? 'bg-purple-100' : 'bg-muted'
-                        }`}>
-                          {event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
+                      {/* Title row */}
+                      <div className="flex items-center justify-between gap-2 mb-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                            event.type === 'training' ? 'bg-purple-100' : 'bg-muted'
+                          }`}>
+                            {event.type === 'training' ? <Dumbbell size={18} className="text-purple-600" /> : <Calendar size={18} className="text-muted-foreground" />}
+                          </div>
+                          <h3 className="font-bold text-sm text-foreground truncate">{event.title}</h3>
+                        </div>
+                        <ChevronRight size={16} className="text-muted-foreground/40 shrink-0" />
+                      </div>
+
+                      {/* Info grid - date, time, location prominent */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Date */}
+                        <div className="flex items-center gap-2 bg-secondary/60 rounded-xl px-3 py-2">
+                          <CalendarDays size={14} className="text-purple-500 shrink-0" />
+                          <span className="text-xs font-semibold text-foreground capitalize truncate">
+                            {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
-                            <ChevronRight size={16} className="text-muted-foreground/40 shrink-0" />
-                          </div>
-
-                          {/* Date + Time row - prominent */}
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <span className="text-[11px] font-medium text-muted-foreground capitalize flex items-center gap-1">
-                              <CalendarDays size={11} className="shrink-0" />
-                              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            </span>
-                            {event.time && (
-                              <span className="text-xs font-bold text-foreground bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-md">{event.time}</span>
-                            )}
-                            {event.duration && (
-                              <span className="text-[10px] text-muted-foreground">• {event.duration} min</span>
-                            )}
-                          </div>
-
-                          {/* Location row */}
-                          {event.location && (
-                            <p className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-1 truncate">
-                              <MapPin size={9} className="shrink-0 text-accent/60" /> {event.location}
-                            </p>
+                        {/* Time */}
+                        <div className="flex items-center gap-2 bg-purple-500/10 rounded-xl px-3 py-2">
+                          <Clock size={14} className="text-purple-600 shrink-0" />
+                          <span className="text-sm font-black text-purple-700">
+                            {event.time || '—'}
+                          </span>
+                          {event.duration && (
+                            <span className="text-[10px] text-purple-500/70 ml-auto">{event.duration}min</span>
                           )}
                         </div>
                       </div>
+
+                      {/* Location */}
+                      {event.location && (
+                        <div className="flex items-center gap-2 mt-2 bg-accent/5 rounded-xl px-3 py-2">
+                          <MapPin size={13} className="text-accent shrink-0" />
+                          <span className="text-[11px] font-medium text-foreground truncate">{event.location}</span>
+                        </div>
+                      )}
 
                       {/* Presence counters */}
                       <div className="flex items-center gap-3 mt-2.5 pt-2 border-t border-border/50">
