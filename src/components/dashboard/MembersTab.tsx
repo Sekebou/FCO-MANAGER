@@ -197,10 +197,12 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
 
                   {/* Info rows */}
                   <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Mail size={12} className="text-accent shrink-0" />
-                      <span className="truncate">{member.email}</span>
-                    </div>
+                    {currentUser?.role === 'admin+' && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Mail size={12} className="text-accent shrink-0" />
+                        <span className="truncate">{member.email}</span>
+                      </div>
+                    )}
                     {player && member.role !== 'photographe' && member.role !== 'dirigeant' && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Target size={12} className="text-accent shrink-0" />
