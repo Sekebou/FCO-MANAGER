@@ -40,6 +40,7 @@ const CONVOCATION_STATUSES = [
 
 const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
@@ -598,16 +599,63 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         )}
       </div>
 
-      {upcomingEvents.length === 0 ? (
-        <div className="text-center py-16 bg-card rounded-2xl border border-border">
-          <Calendar className="mx-auto mb-3 text-muted-foreground" size={48} />
-          <p className="text-muted-foreground font-medium">Aucun événement à venir</p>
-          {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
-        </div>
-      ) : (
-        <div className="space-y-5 max-w-3xl mx-auto">
-          {upcomingEvents.map(event => {
+      {/* Native-feel segmented filter */}
+      <div className="bg-secondary/60 backdrop-blur-sm p-1 rounded-2xl border border-border/50 flex gap-0.5">
+        {([
+          { key: 'all' as const, label: 'Tous', icon: Calendar, count: upcomingEvents.length },
+          { key: 'match' as const, label: 'Matchs', icon: Trophy, count: upcomingEvents.filter(e => e.type === 'match').length },
+          { key: 'training' as const, label: 'Entraînements', icon: Dumbbell, count: upcomingEvents.filter(e => e.type === 'training').length },
+        ]).map(tab => {
+          const isActive = eventFilter === tab.key;
+          const TabIcon = tab.icon;
+          return (
+            <motion.button
+              key={tab.key}
+              onClick={() => setEventFilter(tab.key)}
+              whileTap={{ scale: 0.97 }}
+              className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                isActive
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground/70'
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="presences-filter-pill"
+                  className="absolute inset-0 bg-card rounded-xl shadow-sm border border-border/60"
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
+              <span className="relative flex items-center gap-1.5">
+                <TabIcon size={13} />
+                <span className="hidden min-[360px]:inline">{tab.label}</span>
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[20px] text-center ${
+                  isActive ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'
+                }`}>{tab.count}</span>
+              </span>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {(() => {
+        const filteredEvents = eventFilter === 'all'
+          ? upcomingEvents
+          : upcomingEvents.filter(e => e.type === eventFilter);
+
+        return filteredEvents.length === 0 ? (
+          <div className="text-center py-16 bg-card rounded-2xl border border-border">
+            <Calendar className="mx-auto mb-3 text-muted-foreground" size={48} />
+            <p className="text-muted-foreground font-medium">
+              {eventFilter === 'all' ? 'Aucun événement à venir' : eventFilter === 'match' ? 'Aucun match à venir' : 'Aucun entraînement à venir'}
+            </p>
+            {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
+          </div>
+        ) : (
+        <div className="space-y-0 max-w-3xl mx-auto">
+          {filteredEvents.map((event, idx) => {
             const presences = event.presences || {};
+
             const presentCount = Object.values(presences).filter(p => p === 'present').length;
             const absentCount = Object.values(presences).filter(p => p === 'absent').length;
             const pendingCount = players.length - presentCount - absentCount;
@@ -616,11 +664,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             const isMatch = !!matchInfo;
 
             return (
+              <React.Fragment key={event.id}>
+                {/* Divider between cards */}
+                {idx > 0 && (
+                  <div className="flex items-center gap-3 py-2 px-2">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-border" />
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                  </div>
+                )}
               <motion.div
-                key={event.id}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: Math.min(upcomingEvents.indexOf(event) * 0.15, 0.6), ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ duration: 0.7, delay: Math.min(idx * 0.15, 0.6), ease: [0.25, 0.46, 0.45, 0.94] }}
                 whileTap={{ scale: 0.98 }}
                 className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
@@ -871,10 +927,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   </button>
                 )}
               </motion.div>
+              </React.Fragment>
             );
           })}
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
