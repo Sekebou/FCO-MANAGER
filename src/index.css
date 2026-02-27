@@ -213,3 +213,32 @@
     100% { transform: scale(1); opacity: 1; }
   }
 }
+
+/* Desktop / small laptop optimization — does NOT affect mobile (<768px) */
+@media (min-width: 768px) {
+  /* Constrain modals for small laptops */
+  .fixed.inset-0 > div {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Better content width on small laptops */
+  @media (max-width: 1280px) {
+    main {
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  /* Scale down modal content on small screens */
+  @media (max-height: 768px) {
+    .fixed.inset-0 {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+    .fixed.inset-0 > div {
+      max-height: 85vh;
+    }
+  }
+}
