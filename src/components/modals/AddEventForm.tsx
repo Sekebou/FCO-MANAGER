@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Globe, ChevronDown, Clock, MapPin, Home } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Globe, ChevronDown, Clock, MapPin, Home, Pencil } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
@@ -92,24 +92,33 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           let loc = '';
           if (terrain) loc = [terrain.name, terrain.city].filter(Boolean).join(', ');
 
-          // Extract time from ISO string directly (avoid timezone shift from toLocaleTimeString)
+          // Extract time: prefer FFF separate `time` field, else parse raw date string
           let timeStr = '';
-          if (matchDate) {
-            const isoStr = m.date as string;
-            // Try to extract HH:mm from ISO string like "2026-03-15T15:00:00"
-            const timeMatch = isoStr.match(/T(\d{2}:\d{2})/);
-            if (timeMatch) {
-              timeStr = timeMatch[1];
-            } else {
-              // Fallback: use UTC hours
-              timeStr = `${String(matchDate.getUTCHours()).padStart(2, '0')}:${String(matchDate.getUTCMinutes()).padStart(2, '0')}`;
-            }
+          if (m.time && typeof m.time === 'string') {
+            // FFF sometimes returns "15:00" or "15:00:00" directly
+            const tm = m.time.match(/(\d{2}:\d{2})/);
+            if (tm) timeStr = tm[1];
+          }
+          if (!timeStr && m.date) {
+            const raw = m.date as string;
+            // Extract from raw string before any Date parsing (e.g. "2026-03-15T15:00:00+01:00")
+            const tm = raw.match(/T(\d{2}:\d{2})/);
+            if (tm) timeStr = tm[1];
+          }
+
+          // Extract date from raw string to avoid UTC shift
+          let dateStr = '';
+          if (m.date) {
+            const raw = m.date as string;
+            const dm = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+            if (dm) dateStr = dm[1];
+            else if (matchDate) dateStr = matchDate.toISOString().split('T')[0];
           }
 
           options.push({
             label: `${homeN} vs ${awayN}`,
             title: `${homeN} vs ${awayN}`,
-            date: matchDate ? matchDate.toISOString().split('T')[0] : '',
+            date: dateStr,
             time: timeStr,
             location: loc || (isHome ? 'Domicile' : 'Extérieur'),
             isHome,
@@ -293,19 +302,29 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
-          {/* Title: hidden for FFF match (auto-set), show toggle to customize */}
-          {fffMatchSelected ? (
+          {/* Title: for match type, only show input field (not for FFF selected, unless toggled) */}
+          {formData.type === 'match' && fffMatchSelected ? (
             <div className="animate-fade-in">
               {showCustomTitle ? (
-                <div className="relative">
-                  <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input type="text" placeholder="Titre personnalisé" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                <div className="space-y-1.5">
+                  <div className="relative">
+                    <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input type="text" placeholder="Titre personnalisé (optionnel)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                  </div>
+                  <button type="button" onClick={() => { setShowCustomTitle(false); }} className="text-[10px] text-muted-foreground hover:text-foreground underline">
+                    Annuler
+                  </button>
                 </div>
               ) : (
                 <button type="button" onClick={() => setShowCustomTitle(true)} className="text-[10px] text-muted-foreground hover:text-foreground underline flex items-center gap-1">
-                  <Type size={10} /> Personnaliser le titre de l'événement
+                  <Pencil size={10} /> Modifier le titre de l'événement
                 </button>
               )}
+            </div>
+          ) : formData.type !== 'match' ? (
+            <div className="relative">
+              <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="text" placeholder="Titre (ex: Entraînement du mardi)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
             </div>
           ) : (
             <div className="relative">
