@@ -198,7 +198,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           {/* Type selector */}
           <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-2">
               {typeOptions.map(opt => (
                 <button
                   key={opt.value}
@@ -208,11 +208,11 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                     if (opt.value === 'match') setMatchMode(null);
                     if (opt.value !== 'training') setTrainingLocationChoice(null);
                   }}
-                  className={`py-2 px-1.5 rounded-xl text-[10px] min-[380px]:text-[11px] sm:text-xs font-semibold border-2 transition-all overflow-hidden ${
+                  className={`py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-semibold border-2 transition-all overflow-hidden ${
                     formData.type === opt.value ? opt.color + ' scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
                   }`}
                 >
-                  <span className="inline-flex items-center gap-1 truncate">{opt.icon} <span className="truncate">{opt.label}</span></span>
+                  <span className="inline-flex items-center gap-1.5 truncate">{opt.icon} <span className="truncate">{opt.shortLabel}</span></span>
                 </button>
               ))}
             </div>
