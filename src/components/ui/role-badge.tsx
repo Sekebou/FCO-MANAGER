@@ -59,9 +59,11 @@ interface RoleBadgeProps {
   isAdminWithDisplayRole?: boolean;
   size?: 'sm' | 'md';
   compact?: boolean;
+  /** Use lowercase label with medium weight instead of bold uppercase */
+  subtle?: boolean;
 }
 
-const RoleBadge: React.FC<RoleBadgeProps> = ({ role, displayRole, isAdminWithDisplayRole, size = 'sm', compact = false }) => {
+const RoleBadge: React.FC<RoleBadgeProps> = ({ role, displayRole, isAdminWithDisplayRole, size = 'sm', compact = false, subtle = false }) => {
   if (!role) return null;
 
   // Use displayRole for visuals if provided, but keep admin indicator
@@ -73,7 +75,7 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({ role, displayRole, isAdminWithDis
   const Icon = config.icon;
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border font-bold tracking-wide uppercase ${config.bg} ${config.text} ${config.border} ${config.glow} ${
+    <span className={`inline-flex items-center gap-1 rounded-full border ${subtle ? 'font-medium' : 'font-bold tracking-wide uppercase'} ${config.bg} ${config.text} ${config.border} ${config.glow} ${
       compact ? 'px-1.5 py-0.5 text-[8px]' : size === 'sm' ? 'px-2.5 py-1 text-[9px]' : 'px-3 py-1 text-[10px]'
     }`} title={showAdminIndicator ? `${config.label} (droits admin)` : config.label}>
       <Icon size={compact ? 10 : size === 'sm' ? 11 : 13} strokeWidth={2.5} />
