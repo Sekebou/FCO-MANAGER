@@ -896,24 +896,48 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
                     <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                          myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
-                        }`}
-                      >
-                        <Check size={12} /> Présent
-                      </motion.button>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
-                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                          myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
-                        }`}
-                      >
-                        <X size={12} /> Absent
-                      </motion.button>
+                      <div className="relative flex-1 overflow-visible">
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          animate={myStatus === 'present' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
+                          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                          onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
+                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                            myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
+                          }`}
+                        >
+                          <Check size={12} /> Présent
+                        </motion.button>
+                        <AnimatePresence>
+                          {myStatus === 'present' && (
+                            <>
+                              <motion.span key={`qp1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -8, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-sm">✓</motion.span>
+                              <motion.span key={`qp2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 10, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-[10px]">✓</motion.span>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                      <div className="relative flex-1 overflow-visible">
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          animate={myStatus === 'absent' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
+                          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                          onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
+                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                            myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
+                          }`}
+                        >
+                          <X size={12} /> Absent
+                        </motion.button>
+                        <AnimatePresence>
+                          {myStatus === 'absent' && (
+                            <>
+                              <motion.span key={`qa1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -8, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-sm">✕</motion.span>
+                              <motion.span key={`qa2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 10, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-[10px]">✕</motion.span>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   );
                 })()}
