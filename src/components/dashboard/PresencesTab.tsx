@@ -776,46 +776,51 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       </div>
                     </div>
                   ) : (
-                    /* Training / Other card — compact layout */
-                    <div className="px-3.5 py-3 sm:px-4 sm:py-3.5">
-                      <div className="flex items-center gap-2.5">
-                        {/* Left: icon */}
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                          event.type === 'training' ? 'bg-purple-500/10' : 'bg-muted'
-                        }`}>
-                          {event.type === 'training' ? <Dumbbell size={18} className="text-purple-600" /> : <Calendar size={18} className="text-muted-foreground" />}
+                    /* Training / Other card — same size as match */
+                    <div className="p-4 sm:p-5">
+                      {/* Date + time row (same as match) */}
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            event.type === 'training' ? 'bg-purple-100 text-purple-700' : 'bg-accent/10 text-accent'
+                          }`}>
+                            {event.type === 'training' ? 'Entraînement' : 'Autre'}
+                          </span>
+                          <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                            {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
                         </div>
-
-                        {/* Center: info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                              event.type === 'training' ? 'bg-purple-100 text-purple-700' : 'bg-accent/10 text-accent'
-                            }`}>
-                              {event.type === 'training' ? 'ENTRAÎNEMENT' : 'AUTRE'}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground capitalize">
-                              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            </span>
-                          </div>
-                          <h3 className="font-bold text-sm text-foreground truncate leading-tight mt-0.5">{event.title}</h3>
-                        </div>
-
-                        {/* Right: time badge + chevron */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1.5">
                           {event.time && (
-                            <span className={`text-xs font-black px-2 py-1 rounded-lg ${
+                            <span className={`text-sm font-black px-2.5 py-0.5 rounded-lg shadow-sm ${
                               event.type === 'training'
-                                ? 'bg-purple-600 text-white'
+                                ? 'bg-purple-600 text-white shadow-purple-600/30'
                                 : 'bg-muted text-foreground'
                             }`}>{event.time}</span>
                           )}
-                          <ChevronRight size={16} className="text-muted-foreground/30" />
+                          <ChevronRight size={16} className="text-muted-foreground/40" />
                         </div>
                       </div>
 
-                      {/* Location + counters row (same as match cards) */}
-                      <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-border/40">
+                      {/* Central content area — same height as match logos */}
+                      <div className="flex items-center justify-center py-2 min-h-[88px]">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                            event.type === 'training' ? 'bg-purple-500/10' : 'bg-muted'
+                          }`}>
+                            {event.type === 'training' ? <Dumbbell size={28} className="text-purple-600" /> : <Calendar size={28} className="text-muted-foreground" />}
+                          </div>
+                          <h3 className="font-bold text-sm text-foreground text-center leading-tight line-clamp-2 max-w-[220px]">{event.title}</h3>
+                          {event.duration && (
+                            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+                              <Timer size={10} className="shrink-0" /> {event.duration} min
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Location + counters row (same as match) */}
+                      <div className="flex flex-col gap-1.5 mt-2.5 pt-2 border-t border-border/50">
                         <div className="flex items-center justify-between">
                           {event.location ? (
                             <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2 uppercase font-semibold tracking-wide">
@@ -836,18 +841,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             )}
                           </div>
                         </div>
-                        {(event.duration || event.createdByName) && (
+                        {event.createdByName && (
                           <div className="flex items-center gap-3">
-                            {event.duration && (
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <Timer size={9} className="shrink-0" /> {event.duration} min
-                              </span>
-                            )}
-                            {event.createdByName && (
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <User size={9} className="shrink-0" /> {event.createdByName}
-                              </span>
-                            )}
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <User size={9} className="shrink-0" /> {event.createdByName}
+                            </span>
                           </div>
                         )}
                       </div>
