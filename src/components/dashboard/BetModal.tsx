@@ -217,30 +217,39 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
 
           {/* Pronostic — qui va gagner ? */}
           <div>
-            <label className="block text-xs font-bold text-foreground mb-2">Qui va gagner ?</label>
-            <div className="flex flex-col gap-2">
+            <label className="block text-xs font-bold text-foreground mb-3">Qui va gagner ?</label>
+            <div className="grid grid-cols-3 gap-2">
               {([
                 { key: 'home' as const, label: homeTeam, odd: odds.home },
-                { key: 'draw' as const, label: 'Match nul', odd: odds.draw },
+                { key: 'draw' as const, label: 'Nul', odd: odds.draw },
                 { key: 'away' as const, label: awayTeam, odd: odds.away },
               ]).map(o => {
                 const selected = prediction === o.key;
                 return (
                   <motion.button
                     key={o.key}
-                    whileTap={{ scale: 0.97 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setPrediction(o.key)}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${
+                    className={`relative flex flex-col items-center gap-1.5 py-4 px-2 rounded-2xl border-2 transition-all ${
                       selected
-                        ? 'border-accent bg-accent/10'
-                        : 'border-border bg-card hover:border-accent/30'
+                        ? 'border-accent bg-gradient-to-b from-accent/15 to-accent/5 shadow-lg shadow-accent/10'
+                        : 'border-border bg-card hover:border-muted-foreground/30 hover:bg-secondary/50'
                     }`}
                   >
-                    <span className={`text-sm font-bold truncate ${selected ? 'text-accent' : 'text-foreground'}`}>
-                      {o.label}
-                    </span>
-                    <span className={`text-base font-black ml-3 shrink-0 ${selected ? 'text-accent' : 'text-muted-foreground'}`}>
+                    {selected && (
+                      <motion.div
+                        layoutId="bet-check"
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center"
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      >
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-foreground"/></svg>
+                      </motion.div>
+                    )}
+                    <span className={`text-2xl font-black ${selected ? 'text-accent' : 'text-foreground'}`}>
                       {o.odd}
+                    </span>
+                    <span className={`text-[10px] font-semibold leading-tight text-center line-clamp-2 ${selected ? 'text-accent' : 'text-muted-foreground'}`}>
+                      {o.label}
                     </span>
                   </motion.button>
                 );
