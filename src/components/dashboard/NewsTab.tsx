@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { NewsItem, NewsComment, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Bell, Plus, Trash2, Heart, MessageCircle, Send, X } from 'lucide-react';
+import { Bell, Plus, Trash2, Heart, MessageCircle, Send, X, Calendar } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface Props {
@@ -83,28 +83,34 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
 
           return (
             <div key={item.id} className="bg-card border border-border rounded-2xl overflow-hidden animate-fade-in">
-              {/* Content */}
-              <div className="p-5">
-                <div className="flex justify-between items-start gap-2 mb-3">
+              {/* Header */}
+              <div className="px-4 pt-4 pb-3">
+                <div className="flex justify-between items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-base sm:text-lg text-foreground leading-tight">{item.title}</h3>
-                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                      <span className="text-xs font-semibold text-accent truncate max-w-[120px] sm:max-w-none">{item.author}</span>
+                    <div className="flex items-center gap-2 mb-2">
                       {(() => {
                         const authorMember = members.find(m => m.id === item.authorId);
-                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} size="sm" /> : null;
+                        return authorMember ? <RoleBadge role={authorMember.role} displayRole={authorMember.displayRole} size="sm" compact /> : null;
                       })()}
-                      <span className="text-[10px] text-muted-foreground/60">•</span>
-                      <span className="text-[11px] text-muted-foreground">{new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                      <span className="text-xs font-semibold text-foreground truncate">{item.author}</span>
+                      <span className="text-muted-foreground/40">·</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground shrink-0">
+                        <Calendar size={10} className="opacity-60" />
+                        {new Date(item.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      </span>
                     </div>
+                    <h3 className="font-bold text-[15px] sm:text-base text-foreground leading-snug">{item.title}</h3>
                   </div>
                   {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || ((currentUser?.role === 'entraineur' || currentUser?.role === 'dirigeant') && item.authorId === currentUser?.uid)) && (
-                    <button onClick={() => deleteNews(item.id)} className="w-7 h-7 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all shrink-0 mt-0.5">
-                      <Trash2 size={14} className="text-destructive" />
+                    <button onClick={() => deleteNews(item.id)} className="w-7 h-7 rounded-lg bg-destructive/5 hover:bg-destructive/15 flex items-center justify-center transition-all shrink-0">
+                      <Trash2 size={13} className="text-destructive" />
                     </button>
                   )}
                 </div>
-                <p className="text-foreground/80 text-sm leading-relaxed">{item.content}</p>
+              </div>
+              {/* Body */}
+              <div className="px-4 pb-4">
+                <p className="text-foreground/75 text-sm leading-relaxed">{item.content}</p>
               </div>
 
               {/* Actions bar */}
