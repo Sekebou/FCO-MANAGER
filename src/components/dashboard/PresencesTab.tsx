@@ -600,11 +600,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       </div>
 
       {/* Native-feel segmented filter */}
-      <div className="bg-secondary/60 backdrop-blur-sm p-1 rounded-2xl border border-border/50 flex gap-0.5">
+      <div className="bg-secondary/60 backdrop-blur-sm p-1.5 rounded-2xl border border-border/50 flex gap-1">
         {([
           { key: 'all' as const, label: 'Tous', icon: Calendar, count: upcomingEvents.length },
           { key: 'match' as const, label: 'Matchs', icon: Trophy, count: upcomingEvents.filter(e => e.type === 'match').length },
-          { key: 'training' as const, label: 'Entraînements', icon: Dumbbell, count: upcomingEvents.filter(e => e.type === 'training').length },
+          { key: 'training' as const, label: 'Entraîn.', icon: Dumbbell, count: upcomingEvents.filter(e => e.type === 'training').length },
         ]).map(tab => {
           const isActive = eventFilter === tab.key;
           const TabIcon = tab.icon;
@@ -613,7 +613,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               key={tab.key}
               onClick={() => setEventFilter(tab.key)}
               whileTap={{ scale: 0.97 }}
-              className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+              className={`relative flex-1 flex items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-colors overflow-hidden ${
                 isActive
                   ? 'text-foreground'
                   : 'text-muted-foreground hover:text-foreground/70'
@@ -626,10 +626,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
-              <span className="relative flex items-center gap-1.5">
-                <TabIcon size={13} />
-                <span className="hidden min-[360px]:inline">{tab.label}</span>
-                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[20px] text-center ${
+              <span className="relative flex items-center gap-1 min-w-0">
+                <TabIcon size={12} className="shrink-0" />
+                <span className="truncate">{tab.label}</span>
+                <span className={`text-[9px] font-black px-1 py-0.5 rounded-md min-w-[18px] text-center shrink-0 ${
                   isActive ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'
                 }`}>{tab.count}</span>
               </span>
