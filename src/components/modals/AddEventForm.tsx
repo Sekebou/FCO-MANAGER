@@ -92,11 +92,25 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           let loc = '';
           if (terrain) loc = [terrain.name, terrain.city].filter(Boolean).join(', ');
 
+          // Extract time from ISO string directly (avoid timezone shift from toLocaleTimeString)
+          let timeStr = '';
+          if (matchDate) {
+            const isoStr = m.date as string;
+            // Try to extract HH:mm from ISO string like "2026-03-15T15:00:00"
+            const timeMatch = isoStr.match(/T(\d{2}:\d{2})/);
+            if (timeMatch) {
+              timeStr = timeMatch[1];
+            } else {
+              // Fallback: use UTC hours
+              timeStr = `${String(matchDate.getUTCHours()).padStart(2, '0')}:${String(matchDate.getUTCMinutes()).padStart(2, '0')}`;
+            }
+          }
+
           options.push({
             label: `${homeN} vs ${awayN}`,
             title: `${homeN} vs ${awayN}`,
             date: matchDate ? matchDate.toISOString().split('T')[0] : '',
-            time: matchDate ? matchDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+            time: timeStr,
             location: loc || (isHome ? 'Domicile' : 'Extérieur'),
             isHome,
             homeLogo: m.home?.club?.logo,
@@ -113,6 +127,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
   const [fffMatchSelected, setFffMatchSelected] = useState(false);
   const [showLocationOverride, setShowLocationOverride] = useState(false);
+  const [showCustomTitle, setShowCustomTitle] = useState(false);
 
   const handleFFFMatchSelect = (match: FFFMatchOption) => {
     setFormData(prev => ({
@@ -278,10 +293,26 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
-          <div className="relative">
-            <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
-          </div>
+          {/* Title: hidden for FFF match (auto-set), show toggle to customize */}
+          {fffMatchSelected ? (
+            <div className="animate-fade-in">
+              {showCustomTitle ? (
+                <div className="relative">
+                  <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input type="text" placeholder="Titre personnalisé" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowCustomTitle(true)} className="text-[10px] text-muted-foreground hover:text-foreground underline flex items-center gap-1">
+                  <Type size={10} /> Personnaliser le titre de l'événement
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="relative">
+              <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="text" placeholder="Titre (ex: Match vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+            </div>
+          )}
 
           <NativeDatePicker
             value={formData.date}
