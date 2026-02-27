@@ -1221,7 +1221,7 @@ const Dashboard = () => {
       </div>
 
       {/* Content */}
-      <main className="mx-auto w-full max-w-2xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
+      <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
         <div key={activeTab} className="animate-fade-in">
           {activeTab === 'presences' && (
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships}
