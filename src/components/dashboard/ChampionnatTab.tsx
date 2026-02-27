@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import NativeDatePicker from '@/components/ui/native-date-picker';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { 
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
@@ -143,6 +144,9 @@ const ChampionnatTab: React.FC<Props> = ({
   const [editingMatch, setEditingMatch] = useState<string | null>(null);
   const [editHome, setEditHome] = useState(0);
   const [editAway, setEditAway] = useState(0);
+
+  // Scroll lock for modals
+  useBodyScrollLock(!!(showAddChamp || showAddMatch || editingMatch));
 
   // Refresh result modal
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
@@ -586,9 +590,8 @@ const ChampionnatTab: React.FC<Props> = ({
             <button onClick={() => {
               const champsToDelete = championships.filter(c => (c.team || 'A') === deletingTab);
               champsToDelete.forEach(c => onDeleteChampionship(c.id));
-              setDeletingTab(null);
               if (selectedTeam === deletingTab) setSelectedTeam('A');
-              toast.success(`Onglet "${deletingTab}" supprimé`);
+              setDeletingTab(null);
             }} className="text-xs px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground font-medium">Supprimer</button>
           </div>
         </motion.div>
@@ -635,7 +638,7 @@ const ChampionnatTab: React.FC<Props> = ({
                       <RefreshCw size={14} className={refreshingChamp === champ.id ? 'animate-spin' : ''} />
                     </button>
                   )}
-                  {!BASE_TEAMS.includes(selectedTeam) && (
+                  {!BASE_TEAMS.includes(selectedTeam) && currentUserRole === 'admin+' && (
                     <button
                       onClick={() => { setEditingTab(selectedTeam); setEditTabName(selectedTeam); }}
                       className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
@@ -644,26 +647,24 @@ const ChampionnatTab: React.FC<Props> = ({
                       <Pencil size={14} />
                     </button>
                   )}
-                  {!BASE_TEAMS.includes(selectedTeam) ? (
-                    <button
-                      onClick={() => setDeletingTab(selectedTeam)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                      title="Supprimer"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        if (window.confirm(`Supprimer le championnat "${champ.name}" ?`)) {
-                          onDeleteChampionship(champ.id);
-                        }
-                      }}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                      title="Supprimer"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                  {currentUserRole === 'admin+' && (
+                    !BASE_TEAMS.includes(selectedTeam) ? (
+                      <button
+                        onClick={() => setDeletingTab(selectedTeam)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onDeleteChampionship(champ.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )
                   )}
                 </>
               );
@@ -875,7 +876,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
                 {nextMatch.time ? ` • ${nextMatch.time}` : ''}
               </p>
-
 
               {/* Bet button */}
               {currentUser && !live && (

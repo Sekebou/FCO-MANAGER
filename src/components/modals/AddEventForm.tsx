@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Globe, ChevronDown, Clock } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, Repeat, CircleDot, FileText, Globe, ChevronDown, Clock, MapPin } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
@@ -67,8 +67,20 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     setLoadingMatches(true);
     getCalendrier(comp.cpNo, comp.phase, comp.poule).then(data => {
       const members = Array.isArray(data) ? data : data?.['hydra:member'] || [];
+      const now = new Date();
       const options: FFFMatchOption[] = members
-        .filter((m: any) => m.home && m.away)
+        .filter((m: any) => {
+          if (!m.home || !m.away) return false;
+          // Only show matches involving Oisemont
+          const isOisemont = m.home?.club?.cl_no === OISEMONT_CL_NO || m.away?.club?.cl_no === OISEMONT_CL_NO;
+          if (!isOisemont) return false;
+          // Only show unplayed future matches
+          const hasScore = m.home_score !== null && m.home_score !== undefined && m.away_score !== null && m.away_score !== undefined;
+          if (hasScore) return false;
+          const matchDate = m.date ? new Date(m.date) : null;
+          if (matchDate && matchDate < new Date(now.getFullYear(), now.getMonth(), 1)) return false;
+          return true;
+        })
         .map((m: any) => {
           const isHome = m.home?.club?.cl_no === OISEMONT_CL_NO;
           const homeN = m.home?.short_name || m.home?.name || '';
@@ -265,6 +277,30 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                   value={formData.duration}
                   onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Predefined locations for training */}
+          {formData.type === 'training' && (
+            <div className="animate-fade-in">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Lieu rapide</label>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { label: 'Stade Oisemont', value: 'Stade municipal, Oisemont' },
+                  { label: 'Salle intérieure', value: 'Salle des sports, Oisemont' },
+                ].map(loc => (
+                  <button
+                    key={loc.value}
+                    type="button"
+                    onClick={() => { setFormData(prev => ({ ...prev, location: loc.value })); setLocationValid(true); }}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${
+                      formData.location === loc.value ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                    }`}
+                  >
+                    <MapPin className="inline w-3 h-3 mr-1" />{loc.label}
+                  </button>
+                ))}
               </div>
             </div>
           )}

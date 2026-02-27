@@ -87,10 +87,13 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   };
 
   const visibleMembers = members.filter(m => m.role !== 'admin+');
-  const admins = visibleMembers.filter(m => m.role === 'admin');
-  const coaches = visibleMembers.filter(m => m.role === 'entraineur');
-  const dirigeants = visibleMembers.filter(m => m.role === 'dirigeant');
-  const playerMembers = visibleMembers.filter(m => m.role === 'joueur');
+  // Group by effective display role (displayRole takes priority for grouping)
+  const getGroupRole = (m: Member) => m.displayRole || m.role;
+  const admins = visibleMembers.filter(m => getGroupRole(m) === 'admin');
+  const coaches = visibleMembers.filter(m => getGroupRole(m) === 'entraineur');
+  const dirigeants = visibleMembers.filter(m => getGroupRole(m) === 'dirigeant');
+  const playerMembers = visibleMembers.filter(m => getGroupRole(m) === 'joueur');
+  const photographes = visibleMembers.filter(m => getGroupRole(m) === 'photographe');
 
   const roleConfig: Record<string, any> = {
     'admin+': { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
