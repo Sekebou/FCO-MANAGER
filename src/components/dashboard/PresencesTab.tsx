@@ -4,7 +4,7 @@ import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight } from 'lucide-react';
+import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -149,10 +149,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               </div>
               <div className="min-w-0">
                 <h3 className="font-bold text-lg text-foreground truncate">{event.title}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  {event.time && <span className="ml-1.5">• {event.time}</span>}
-                </p>
+                {/* Date/time in header only for non-training (training shows in enriched section) */}
+                {event.type !== 'training' && (
+                  <p className="text-muted-foreground text-sm">
+                    {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    {event.time && <span className="ml-1.5">• {event.time}</span>}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-1 items-center shrink-0">
@@ -171,7 +174,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             </div>
           </div>
 
-          {event.location && (
+          {/* Location link - only for match and other (training shows it in enriched section) */}
+          {event.location && event.type !== 'training' && (
             <div className="mt-3">
               {event.type === 'match' && (
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide block mb-0.5">Lieu du match</span>
@@ -731,7 +735,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   ) : (
                     /* Training / Other card */
                     <div className="p-3.5">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                           event.type === 'training' ? 'bg-purple-100' : 'bg-muted'
                         }`}>
@@ -739,38 +743,47 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[11px] text-muted-foreground capitalize">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
+                            <ChevronRight size={16} className="text-muted-foreground/40 shrink-0" />
+                          </div>
+
+                          {/* Date + Time row - prominent */}
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-[11px] font-medium text-muted-foreground capitalize flex items-center gap-1">
+                              <CalendarDays size={11} className="shrink-0" />
                               {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                            </p>
+                            </span>
                             {event.time && (
-                              <span className="text-xs font-bold text-foreground bg-secondary px-1.5 py-0.5 rounded-md">{event.time}</span>
+                              <span className="text-xs font-bold text-foreground bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-md">{event.time}</span>
+                            )}
+                            {event.duration && (
+                              <span className="text-[10px] text-muted-foreground">• {event.duration} min</span>
                             )}
                           </div>
+
+                          {/* Location row */}
                           {event.location && (
-                            <p className="text-[10px] text-muted-foreground/70 mt-0.5 flex items-center gap-1 truncate">
-                              <MapPin size={9} className="shrink-0" /> {event.location}
+                            <p className="text-[10px] text-muted-foreground/70 mt-1 flex items-center gap-1 truncate">
+                              <MapPin size={9} className="shrink-0 text-accent/60" /> {event.location}
                             </p>
                           )}
                         </div>
+                      </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex flex-col items-end gap-0.5">
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
-                              <Check size={10} /> {presentCount}
-                            </span>
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
-                              <X size={10} /> {absentCount}
-                            </span>
-                            {pendingCount > 0 && (
-                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
-                                <Clock size={10} /> {pendingCount}
-                              </span>
-                            )}
-                          </div>
-                          <ChevronRight size={16} className="text-muted-foreground/40" />
-                        </div>
+                      {/* Presence counters */}
+                      <div className="flex items-center gap-3 mt-2.5 pt-2 border-t border-border/50">
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
+                          <Check size={10} /> {presentCount}
+                        </span>
+                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
+                          <X size={10} /> {absentCount}
+                        </span>
+                        {pendingCount > 0 && (
+                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
+                            <Clock size={10} /> {pendingCount}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
