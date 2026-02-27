@@ -373,8 +373,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
-          {/* Hide date/time when match mode not yet chosen */}
-          {(formData.type !== 'match' || matchMode !== null) && (
+          {/* Hide date/time: for match auto → only after FFF selection; for match manual → show; for others → show */}
+          {(formData.type !== 'match' || matchMode === 'manual' || (matchMode === 'auto' && fffMatchSelected)) && (
             <>
               <NativeDatePicker
                 value={formData.date}
@@ -443,15 +443,15 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
-          {/* Location autocomplete - for match manual or auto override; for training: only "Autre"; for other: always */}
-          {(formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && matchMode !== null && (!formData.location || showLocationOverride))) && (
+          {/* Location autocomplete - for match: only manual mode or auto after selection with override; for training: only "Autre"; for other: always */}
+          {(formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && matchMode === 'manual' && (!formData.location || showLocationOverride)) || (formData.type === 'match' && matchMode === 'auto' && fffMatchSelected && (!formData.location || showLocationOverride))) && (
             <LocationAutocomplete
               value={formData.location}
               onChange={(location) => setFormData({ ...formData, location })}
               onValidSelection={setLocationValid}
             />
           )}
-          {formData.type === 'match' && matchMode !== null && formData.location && !showLocationOverride && (
+          {formData.type === 'match' && matchMode !== null && (matchMode === 'manual' || fffMatchSelected) && formData.location && !showLocationOverride && (
             <button type="button" onClick={() => setShowLocationOverride(true)} className="text-[10px] text-muted-foreground hover:text-foreground underline">
               Modifier le stade
             </button>
@@ -500,8 +500,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
               />
             </div>
           )}
-          {/* Notification */}
-          {(formData.type === 'match' || formData.type === 'training') && (
+          {/* Notification - show only when mode is chosen for match, or for training */}
+          {((formData.type === 'match' && matchMode !== null) || formData.type === 'training') && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
               <label className="flex items-center gap-3 cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, sendNotification: !prev.sendNotification }))}>
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.sendNotification ? 'bg-accent border-accent' : 'border-border'}`}>
