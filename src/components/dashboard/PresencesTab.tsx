@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
+import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy } from 'lucide-react';
+import { Calendar, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight } from 'lucide-react';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -19,6 +20,7 @@ interface Props {
   events: Event[];
   players: Player[];
   members: Member[];
+  championships?: Championship[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
   canCreateEvent: () => boolean | null;
@@ -36,7 +38,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif }: Props) => {
+const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
@@ -49,6 +51,31 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
   const upcomingEvents = events
     .filter(e => new Date(e.date) >= sevenDaysAgo)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Helper: resolve logos for a match event
+  const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
+    if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return null;
+    const parts = event.title.split(/\s+vs\s+/i);
+    const homeName = (parts[0] || '').trim();
+    const awayName = (parts[1] || '').trim();
+    // Prefer logos stored on event
+    if (event.homeLogo || event.awayLogo) return { homeLogo: event.homeLogo, awayLogo: event.awayLogo, homeName, awayName };
+    // Fallback: look up from championships teamLogos
+    if (championships?.length) {
+      for (const c of championships) {
+        const logos = c.teamLogos || {};
+        const allKeys = Object.keys(logos);
+        const findLogo = (name: string) => {
+          const n = name.toLowerCase();
+          return logos[name] || allKeys.find(k => k.toLowerCase().includes(n) || n.includes(k.toLowerCase())) ? (logos[name] || logos[allKeys.find(k => k.toLowerCase().includes(n) || n.includes(k.toLowerCase()))!]) : undefined;
+        };
+        const hLogo = findLogo(homeName);
+        const aLogo = findLogo(awayName);
+        if (hLogo || aLogo) return { homeLogo: hLogo, awayLogo: aLogo, homeName, awayName };
+      }
+    }
+    return { homeName, awayName };
+  };
 
   const selectedEvent = selectedEventId ? events.find(e => e.id === selectedEventId) : null;
 
@@ -574,100 +601,176 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
           {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {upcomingEvents.map(event => {
             const presences = event.presences || {};
             const presentCount = Object.values(presences).filter(p => p === 'present').length;
             const absentCount = Object.values(presences).filter(p => p === 'absent').length;
             const isPast = isEventPast(event);
+            const matchInfo = getMatchLogos(event);
+            const isMatch = !!matchInfo;
 
             return (
-              <div key={event.id} className={`relative w-full text-left bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-all ${isPast ? 'opacity-60' : ''}`}>
-                <motion.button
+              <motion.div
+                key={event.id}
+                whileTap={{ scale: 0.98 }}
+                className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md'}`}
+              >
+                {/* Main clickable area */}
+                <button
                   onClick={() => setSelectedEventId(event.id)}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full text-left p-3.5 active:bg-secondary/30"
+                  className="w-full text-left"
                 >
-                  <div className="flex items-center gap-3">
-                    {/* Icon */}
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      event.type === 'match' ? 'bg-accent/15' : event.type === 'training' ? 'bg-purple-100' : 'bg-muted'
-                    }`}>
-                      {event.type === 'match' ? <Trophy size={20} className="text-accent" /> : event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
-                    </div>
+                  {/* Match card: special layout with logos */}
+                  {isMatch && matchInfo ? (
+                    <div className="p-3.5">
+                      {/* Date + time row */}
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full">Match</span>
+                          <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                            {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {event.time && (
+                            <span className="text-sm font-black text-foreground bg-secondary px-2 py-0.5 rounded-lg">{event.time}</span>
+                          )}
+                          <ChevronRight size={16} className="text-muted-foreground/40" />
+                        </div>
+                      </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {event.type === 'match' && event.title.toLowerCase().includes(' vs ') ? (() => {
-                          const parts = event.title.split(/\s+vs\s+/i);
-                          return (
-                            <h3 className="font-semibold text-sm text-foreground truncate">
-                              {parts[0]} <span className="text-base font-black text-accent mx-0.5">VS</span> {parts[1]}
-                            </h3>
-                          );
-                        })() : (
+                      {/* Teams row with logos */}
+                      <div className="flex items-center justify-center gap-3">
+                        {/* Home team */}
+                        <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                          {matchInfo.homeLogo ? (
+                            <img src={matchInfo.homeLogo} alt="" className="w-10 h-10 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                              <Shield size={18} className="text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
+                        </div>
+
+                        {/* VS */}
+                        <div className="flex flex-col items-center shrink-0">
+                          <span className="text-lg font-black text-accent">VS</span>
+                        </div>
+
+                        {/* Away team */}
+                        <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                          {matchInfo.awayLogo ? (
+                            <img src={matchInfo.awayLogo} alt="" className="w-10 h-10 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                              <Shield size={18} className="text-muted-foreground" />
+                            </div>
+                          )}
+                          <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.awayName}</span>
+                        </div>
+                      </div>
+
+                      {/* Location + counters row */}
+                      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50">
+                        {event.location ? (
+                          <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2">
+                            <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
+                          </p>
+                        ) : <div />}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
+                            <Check size={10} /> {presentCount}
+                          </span>
+                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
+                            <X size={10} /> {absentCount}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Training / Other card */
+                    <div className="p-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          event.type === 'training' ? 'bg-purple-100' : 'bg-muted'
+                        }`}>
+                          {event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-sm text-foreground truncate">{event.title}</h3>
-                        )}
-                        {event.type === 'match' && (
-                          <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full shrink-0">Match</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                        </p>
-                        {event.time && (
-                          <span className="text-xs font-bold text-foreground bg-secondary px-1.5 py-0.5 rounded-md">{event.time}</span>
-                        )}
-                      </div>
-                      {event.location && (
-                        <p className="text-[11px] text-muted-foreground/70 mt-0.5 flex items-center gap-1 truncate">
-                          <MapPin size={10} className="shrink-0" /> {event.location}
-                        </p>
-                      )}
-                    </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[11px] text-muted-foreground capitalize">
+                              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                            </p>
+                            {event.time && (
+                              <span className="text-xs font-bold text-foreground bg-secondary px-1.5 py-0.5 rounded-md">{event.time}</span>
+                            )}
+                          </div>
+                          {event.location && (
+                            <p className="text-[10px] text-muted-foreground/70 mt-0.5 flex items-center gap-1 truncate">
+                              <MapPin size={9} className="shrink-0" /> {event.location}
+                            </p>
+                          )}
+                        </div>
 
-                    {/* Right side: counters */}
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
-                          <Check size={10} /> {presentCount}
-                        </span>
-                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
-                          <X size={10} /> {absentCount}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
+                              <Check size={10} /> {presentCount}
+                            </span>
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
+                              <X size={10} /> {absentCount}
+                            </span>
+                          </div>
+                          <ChevronRight size={16} className="text-muted-foreground/40" />
+                        </div>
                       </div>
-                      {isPast && (
-                        <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">Terminé</span>
-                      )}
                     </div>
-                  </div>
-                </motion.button>
-                {/* Quick presence buttons on card */}
+                  )}
+
+                  {/* "Tap for details" hint */}
+                  {!isPast && (
+                    <div className="px-3.5 pb-1 -mt-0.5">
+                      <p className="text-[9px] text-muted-foreground/50 text-center">Appuie pour voir les détails →</p>
+                    </div>
+                  )}
+                  {isPast && (
+                    <div className="mx-3.5 mb-2 -mt-0.5">
+                      <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                        <Clock size={8} /> Terminé
+                      </span>
+                    </div>
+                  )}
+                </button>
+
+                {/* Quick presence buttons */}
                 {!isPast && currentUser?.playerId && (() => {
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
-                    <div className="flex items-center gap-1 px-3.5 pb-2 -mt-1">
+                    <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
                       <button
                         onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
-                        className={`flex items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[10px] font-bold transition-all ${
-                          myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
+                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                          myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
                         }`}
                       >
-                        <Check size={10} /> <span className="hidden min-[340px]:inline">Présent</span>
+                        <Check size={12} /> Présent
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
-                        className={`flex items-center justify-center gap-0.5 px-2 py-1 rounded-full text-[10px] font-bold transition-all ${
-                          myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
+                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                          myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
                         }`}
                       >
-                        <X size={10} /> <span className="hidden min-[340px]:inline">Absent</span>
+                        <X size={12} /> Absent
                       </button>
                     </div>
                   );
                 })()}
+
                 {canDeleteEvent(event) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}
@@ -676,7 +779,7 @@ const PresencesTab = ({ events, players, members, currentUser, canManage, canCre
                     <Trash2 size={13} />
                   </button>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>

@@ -39,6 +39,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     time: '',
     location: '',
     duration: '' as string,
+    homeLogo: '' as string,
+    awayLogo: '' as string,
   });
   const [locationValid, setLocationValid] = useState(false);
   const [trainingLocationChoice, setTrainingLocationChoice] = useState<'stade' | 'salle' | 'autre' | null>(null);
@@ -116,6 +118,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
       date: match.date,
       time: match.time,
       location: match.location,
+      homeLogo: match.homeLogo || '',
+      awayLogo: match.awayLogo || '',
     }));
     setLocationValid(true);
   };
