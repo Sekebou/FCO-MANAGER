@@ -189,34 +189,56 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Match */}
-          <div className="flex items-center justify-center gap-3">
-            {homeLogo ? <img src={homeLogo} alt="" className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">{homeTeam.charAt(0)}</div>}
-            <span className="text-xs font-black text-muted-foreground">VS</span>
-            {awayLogo ? <img src={awayLogo} alt="" className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">{awayTeam.charAt(0)}</div>}
+          {/* Match header */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-4">
+              <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+                {homeLogo ? <img src={homeLogo} alt="" className="w-12 h-12 rounded-full object-cover bg-secondary/50 p-0.5" /> : <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-muted-foreground">{homeTeam.charAt(0)}</div>}
+                <span className="text-[10px] font-bold text-foreground leading-tight text-center line-clamp-2">{homeTeam}</span>
+              </div>
+              <span className="text-xl font-black text-accent shrink-0">VS</span>
+              <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+                {awayLogo ? <img src={awayLogo} alt="" className="w-12 h-12 rounded-full object-cover bg-secondary/50 p-0.5" /> : <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-sm font-bold text-muted-foreground">{awayTeam.charAt(0)}</div>}
+                <span className="text-[10px] font-bold text-foreground leading-tight text-center line-clamp-2">{awayTeam}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Odds buttons */}
-          <div className="grid grid-cols-3 gap-2">
-            {([
-              { key: 'home' as const, label: '1', sublabel: homeTeam, odd: odds.home },
-              { key: 'draw' as const, label: 'N', sublabel: 'Nul', odd: odds.draw },
-              { key: 'away' as const, label: '2', sublabel: awayTeam, odd: odds.away },
-            ]).map(o => (
-              <button
-                key={o.key}
-                onClick={() => setPrediction(o.key)}
-                className={`py-3 px-2 rounded-xl border-2 transition-all text-center ${
-                  prediction === o.key
-                    ? 'border-accent bg-accent/10 shadow-sm'
-                    : 'border-border hover:border-accent/30 bg-secondary/50'
-                }`}
-              >
-                <div className="text-lg font-black text-foreground">{o.odd}</div>
-                <div className="text-[8px] font-bold uppercase tracking-wider text-accent/60 mb-0.5">Cote</div>
-                <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground truncate">{o.sublabel}</div>
-              </button>
-            ))}
+          {/* Odds buttons — 1 N 2 */}
+          <div>
+            <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 text-center">Pronostic</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { key: 'home' as const, label: '1', sublabel: `Victoire ${homeTeam}`, odd: odds.home, icon: '🏠' },
+                { key: 'draw' as const, label: 'N', sublabel: 'Match nul', odd: odds.draw, icon: '🤝' },
+                { key: 'away' as const, label: '2', sublabel: `Victoire ${awayTeam}`, odd: odds.away, icon: '✈️' },
+              ]).map(o => (
+                <motion.button
+                  key={o.key}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setPrediction(o.key)}
+                  className={`py-3 px-2 rounded-xl border-2 transition-all text-center relative overflow-hidden ${
+                    prediction === o.key
+                      ? 'border-accent bg-accent/10 shadow-sm shadow-accent/20'
+                      : 'border-border hover:border-accent/30 bg-secondary/50'
+                  }`}
+                >
+                  {prediction === o.key && (
+                    <motion.div
+                      layoutId="bet-selection"
+                      className="absolute inset-0 bg-accent/5 rounded-xl"
+                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    />
+                  )}
+                  <div className="relative z-10">
+                    <div className="text-base mb-0.5">{o.icon}</div>
+                    <div className="text-xl font-black text-foreground">{o.odd}</div>
+                    <div className="text-[8px] font-bold uppercase tracking-wider text-accent/70 mb-0.5">{o.label === 'N' ? 'Nul' : o.label}</div>
+                    <div className="text-[9px] font-semibold text-muted-foreground truncate leading-tight">{o.sublabel}</div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
           </div>
 
           {/* Amount */}
