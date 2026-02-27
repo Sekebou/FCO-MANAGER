@@ -274,23 +274,34 @@ const Dashboard = () => {
 
   const [headerVisible, setHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
-  const ticking = useRef(false);
+  const lastDirection = useRef<'up' | 'down' | null>(null);
+  const directionChangeY = useRef(0);
 
   useEffect(() => {
+    let rafId: number | null = null;
     const onScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-      requestAnimationFrame(() => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
         const currentY = window.scrollY;
-        if (currentY < 10) setHeaderVisible(true);
-        else if (currentY > lastScrollY.current + 20) { setHeaderVisible(false); setMobileMenuOpen(false); }
-        else if (currentY < lastScrollY.current - 20) setHeaderVisible(true);
+        if (currentY < 10) { setHeaderVisible(true); lastDirection.current = null; }
+        else {
+          const dir = currentY > lastScrollY.current ? 'down' : currentY < lastScrollY.current ? 'up' : lastDirection.current;
+          if (dir !== lastDirection.current) {
+            directionChangeY.current = lastScrollY.current;
+            lastDirection.current = dir;
+          }
+          const delta = Math.abs(currentY - directionChangeY.current);
+          if (delta > 40) {
+            if (dir === 'down') { setHeaderVisible(false); setMobileMenuOpen(false); }
+            else if (dir === 'up') setHeaderVisible(true);
+          }
+        }
         lastScrollY.current = currentY;
-        ticking.current = false;
       });
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); if (rafId) cancelAnimationFrame(rafId); };
   }, []);
 
   useEffect(() => {
