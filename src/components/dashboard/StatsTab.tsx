@@ -3,6 +3,7 @@ import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dash
 import type { AppUser } from '@/contexts/AuthContext';
 import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import RoleBadge from '@/components/ui/role-badge';
 
 interface Props {
   players: Player[];
@@ -243,9 +244,10 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                     <PlayerAvatar player={player} members={members} size={36} className="rounded-xl sm:w-[44px] sm:h-[44px]" />
                      <div>
                       <h3 className="font-bold text-sm sm:text-base text-foreground">{player.name}</h3>
-                      <div className="flex items-center gap-2">
-                         <span className="text-[10px] sm:text-xs font-medium text-muted-foreground px-1.5 sm:px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
-                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground px-1.5 sm:px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
+                        {(() => { const m = members.find(mb => mb.playerId === player.id); return m ? <RoleBadge role={m.role} displayRole={m.displayRole} size="sm" compact /> : null; })()}
+                      </div>
                     </div>
                   </div>
                 </div>
