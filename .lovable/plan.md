@@ -1,122 +1,86 @@
 
 
-## Plan de corrections et améliorations
+## Plan de corrections multiples
 
-### Problemes identifies et solutions
+### 1. Display role pour Thomas (admin affiché comme Entraîneur)
 
----
+**Probleme** : Quand un admin a un `displayRole` (ex: "entraineur"), l'app montre quand même "Administrateur" à plusieurs endroits :
+- `created_by_name` dans les événements/actus = stocke le nom, pas le rôle (OK)
+- `RoleBadge` dans PresencesTab (ligne 200) utilise `creator.role` et `creator.displayRole` → déjà correct via RoleBadge
+- `MembersTab` ligne 90 : les admins sont groupés par `m.role === 'admin'` même s'ils ont un displayRole → il faut regrouper par `displayRole || role`
+- `MembersTab` `roleConfig` et `getRoleLabel` : quand displayRole est défini, le label est correct via `getRoleLabel(role, displayRole)` mais le groupement ne suit pas le displayRole
+- `AvatarModal` ligne 162 : affiche `currentUser.role` sans tenir compte du displayRole
 
-### 1. Blocage du scroll arriere-plan quand un modal est ouvert
+**Fichiers** :
+- `src/components/dashboard/MembersTab.tsx` : regrouper les membres par `displayRole || role` au lieu de `role`
+- `src/components/modals/AvatarModal.tsx` : utiliser `currentUser.displayRole || currentUser.role` pour l'affichage
 
-**Probleme** : Quand un modal (AddEventForm, ConfirmModal, etc.) est ouvert avec le fond flou, on peut encore scroller le contenu derriere.
+### 2. Double notification à la création d'album
 
-**Solution** : Ajouter un `useEffect` dans chaque composant modal (ou un hook partage) qui applique `document.body.style.overflow = 'hidden'` a l'ouverture et le restaure a la fermeture. Les modaux concernes :
-- `ConfirmModal.tsx`
-- `AddEventForm.tsx`
-- `AddPlayerForm.tsx`
-- `AddNewsForm.tsx`
-- `AddCardForm.tsx`
-- `ChangePasswordForm.tsx`
-- `AdminResetPasswordForm.tsx`
-- `AvatarModal.tsx`
-- `InvitePlayerForm.tsx`
+**Probleme** : `toast.success` appelé dans `GalleryTab.tsx` ligne 59 ET dans `Dashboard.tsx` ligne 1037.
 
-Approche : creer un hook `useBodyScrollLock()` appele dans chaque modal, ou ajouter directement le `useEffect` dans chaque fichier.
+**Fix** : Retirer le `toast.success` de `Dashboard.tsx` ligne 1037 (laisser celui de GalleryTab).
 
----
+### 3. FFF Import : filtrer uniquement les matchs non joués d'Oisemont
 
-### 2. Retirer la gestion des convocations pour les entrainements
+**Probleme** : Dans `AddEventForm.tsx` lignes 70-89, tous les matchs sont affichés (joués + non joués, toutes équipes).
 
-**Probleme** : La section convocations est actuellement affichee uniquement pour `event.type === 'match'` (ligne 324 de PresencesTab), donc c'est deja le cas. Cependant, il faut aussi verifier qu'aucun bouton convocation n'apparait pour les entrainements dans la vue detail.
+**Fix** :
+- Filtrer les matchs : exclure ceux déjà joués (`m.played !== true` ou pas de score)
+- Filtrer par Oisemont : ne montrer que les matchs où `home.club.cl_no === OISEMONT_CL_NO || away.club.cl_no === OISEMONT_CL_NO`
+- Auto-remplir le stade depuis les données FFF `terrain` quand disponible
 
-**Verification** : Le code a la ligne 324 filtre deja `event.type === 'match'`. Aucun changement necessaire ici, c'est deja correct.
+### 4. Affichage match sur carte liste : X VS X avec VS en avant
 
----
+**Probleme** : Le titre du match s'affiche comme texte simple. L'utilisateur veut "X VS X" avec VS mis en avant, et l'heure plus visible.
 
-### 3. Optimiser la suppression (rendu instantane)
+**Fix dans PresencesTab** liste (lignes 600-632) :
+- Pour les events de type match, parser le titre "X vs Y" et afficher avec VS en gros/bold
+- Mettre l'heure en avant (plus grande/bold)
+- Ajouter le stade visible
 
-**Probleme** : Quand on supprime un evenement, il y a un delai de 1-2 secondes car la suppression attend la reponse du serveur avant de mettre a jour l'UI.
+### 5. Lieux prédéfinis pour entraînements
 
-**Solution** : Appliquer un "optimistic delete" dans `deleteEvent` (Dashboard.tsx) : retirer l'evenement du state local immediatement dans le `onConfirm` du ConfirmModal AVANT l'appel Supabase, puis restaurer en cas d'erreur. Meme approche pour les autres suppressions si necessaire.
+**Probleme** : Pour la création d'entraînements, proposer des lieux prédéfinis au lieu de recherche.
 
----
+**Fix dans AddEventForm** : Quand `type === 'training'`, afficher des boutons rapides de lieux prédéfinis ("Stade Oisemont", "Salle intérieure") avant le champ de recherche.
 
-### 4. Deplacer le bouton delete sur la carte compacte (liste)
+### 6. Boutons Présent/Absent sur carte liste (style TeamPulse)
 
-**Probleme** : Le bouton supprimer est actuellement dans la vue detail de l'evenement (ligne 145-148 de PresencesTab). L'utilisateur souhaite le voir directement sur les cartes dans la vue liste.
+**Probleme** : Actuellement il faut ouvrir le détail pour répondre. L'utilisateur veut pouvoir répondre directement depuis la liste.
 
-**Solution** : 
-- Retirer le bouton Trash2 de la vue detail (lignes 144-148)
-- Ajouter un bouton Trash2 sur chaque carte dans la vue liste (apres ligne 601), visible uniquement si `canDeleteEvent(event)` est vrai
-- Utiliser `e.stopPropagation()` pour eviter d'ouvrir la carte en cliquant sur supprimer
+**Fix dans PresencesTab** liste : Ajouter des boutons Présent/Absent compacts sur chaque carte pour le joueur connecté uniquement. Le détail reste pour voir tous les joueurs.
 
----
+### 7. Scroll lock manquant sur BetModal et modal "Nouveau championnat"
 
-### 5. Creation assistee de matchs via API FFF
+**Probleme** : On peut scroller derrière le modal de paris et le modal de création de championnat.
 
-**Probleme** : Quand on cree un match, on veut pouvoir choisir l'equipe (recuperable via API FFF), puis selectionner un match de la liste pour pre-remplir automatiquement adversaire, lieu (domicile/exterieur) et titre (X vs Y), avec possibilite de remplir manuellement.
+**Fix** :
+- `BetModal.tsx` : ajouter `useBodyScrollLock()` (conditionnel sur `isOpen`)
+- `ChampionnatTab.tsx` : ajouter le scroll lock dans les modals `showAddChamp` et `showAddMatch`
 
-**Solution** dans `AddEventForm.tsx` :
-- Quand `type === 'match'`, ajouter un toggle/section "Importer depuis FFF" (optionnel)
-- Appeler `getEquipes(OISEMONT_CL_NO)` pour lister les equipes du club
-- Selector d'equipe (A, B, C...)
-- Une fois l'equipe choisie, appeler `getAllCompetitions()` + `getCalendrier()` pour lister les prochains matchs
-- Selector de match pre-remplissant : titre (Home vs Away), lieu (domicile/exterieur deduisant si `home.club.cl_no === OISEMONT_CL_NO`), date et heure
-- Garder la possibilite d'ignorer l'import et remplir manuellement
+### 8. Championnat : équipes A/B/C non supprimables, admin+ seul pour modifier/supprimer
 
----
+**Probleme** : Les équipes par défaut (A, B, C) ne devraient pas être supprimables/modifiables par un admin normal. Seul admin+ peut tout modifier/supprimer.
 
-### 6. Vue detail enrichie pour les entrainements
+**Fix dans ChampionnatTab** :
+- Bouton delete sur A/B/C : masquer sauf pour admin+
+- `canManage()` pour l'ajout reste mais delete/rename restreint à `currentUserRole === 'admin+'`
+- Le bouton "Nouveau" doit être grisé pour les équipes A/B/C si elles ont déjà un championnat (déjà fait via `teamHasChampionship`)
 
-**Probleme** : Quand on ouvre un entrainement, on veut voir une presentation structuree avec : date en toutes lettres, heure, duree de la seance, et lieu.
+### 9. Toast de suppression championnat avant confirmation
 
-**Solution** dans `PresencesTab.tsx` vue detail :
-- Quand `event.type === 'training'`, afficher un bloc structure avec :
-  - Date formatee : "mercredi 25 fevrier 2026"
-  - Heure : "19:00"
-  - Duree : "90 minutes — Duree de la seance"
-  - Lieu : "Terrain synthetique" avec icone MapPin
-- Ajouter un champ `duration` au formulaire AddEventForm (visible pour entrainement)
+**Probleme** : Dans `ChampionnatTab` ligne 591, le `toast.success` est dans le callback du bouton "Supprimer" du delete tab, mais `onDeleteChampionship` dans Dashboard appelle `setConfirmModal` qui demande confirmation. Le toast arrive avant la confirmation car c'est le tab qui est supprimé directement, pas via `deleteChampionship`.
 
-**Migration DB** : Ajouter la colonne `duration` (integer, nullable) a la table `events`.
+**Fix** : Déplacer le `toast.success` dans le callback `onConfirm` du ConfirmModal, ou supprimer le toast direct de ChampionnatTab et laisser le flow passer par Dashboard confirmModal.
 
----
+### Fichiers modifiés
 
-### 7. Optimisation des conversations/messages (plus natif)
-
-**Probleme** : Les conversations pourraient etre plus fluides et natives.
-
-**Ameliorations dans MessagesTab.tsx** :
-- Ajouter `document.body.style.overflow = 'hidden'` quand une conversation est ouverte (pour empecher le scroll de la page derriere)
-- Ameliorer les transitions entre vues (liste → conversation → creation) avec des animations plus douces
-- S'assurer que le delete de conversation dans la liste utilise un swipe ou une confirmation plus native
-
----
-
-### Ordre d'implementation
-
-1. Hook `useBodyScrollLock` + application a tous les modaux
-2. Optimistic delete pour les evenements
-3. Bouton delete sur carte compacte + retrait de la vue detail
-4. Migration DB : colonne `duration` sur events
-5. Vue detail enrichie entrainement (date, heure, duree, lieu)
-6. Formulaire creation match assiste FFF (equipe, selection match, pre-remplissage)
-7. Amelioration messagerie (scroll lock, animations)
-
-### Fichiers modifies
-
-- `src/hooks/useBodyScrollLock.ts` (nouveau)
-- `src/components/modals/ConfirmModal.tsx`
-- `src/components/modals/AddEventForm.tsx` (scroll lock + FFF integration)
-- `src/components/modals/AddPlayerForm.tsx` (scroll lock)
-- `src/components/modals/AddNewsForm.tsx` (scroll lock)
-- `src/components/modals/AddCardForm.tsx` (scroll lock)
-- `src/components/modals/ChangePasswordForm.tsx` (scroll lock)
-- `src/components/modals/AdminResetPasswordForm.tsx` (scroll lock)
-- `src/components/modals/AvatarModal.tsx` (scroll lock)
-- `src/components/modals/InvitePlayerForm.tsx` (scroll lock)
-- `src/components/dashboard/PresencesTab.tsx` (delete sur carte, vue detail entrainement, retrait convocations detail)
-- `src/pages/Dashboard.tsx` (optimistic delete, interface Event + duration)
-- `src/components/dashboard/MessagesTab.tsx` (scroll lock, animations)
-- Migration SQL : `ALTER TABLE events ADD COLUMN duration integer DEFAULT NULL`
+1. `src/components/dashboard/MembersTab.tsx` — regroupement par displayRole
+2. `src/components/modals/AvatarModal.tsx` — affichage displayRole
+3. `src/pages/Dashboard.tsx` — retirer toast doublon album
+4. `src/components/modals/AddEventForm.tsx` — filtre FFF, lieux prédéfinis training
+5. `src/components/dashboard/PresencesTab.tsx` — boutons présent/absent sur carte, affichage VS match
+6. `src/components/dashboard/BetModal.tsx` — scroll lock
+7. `src/components/dashboard/ChampionnatTab.tsx` — scroll lock modals, restrictions admin+, fix toast suppression
 
