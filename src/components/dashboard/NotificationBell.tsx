@@ -124,7 +124,7 @@ const NotificationBell = () => {
                       <span className="text-[10px] text-muted-foreground/60 mt-1.5 block">{formatDate(a.createdAt)}</span>
                     </div>
                     {isSuperAdmin && (
-                      <button onClick={() => handleDelete(a.id)} className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-md hover:bg-destructive/10 flex items-center justify-center text-destructive/60 hover:text-destructive transition-all shrink-0" title="Supprimer"><Trash2 size={12} /></button>
+                      <button onClick={() => handleDelete(a.id)} className="sm:opacity-0 sm:group-hover:opacity-100 w-6 h-6 rounded-md hover:bg-destructive/10 flex items-center justify-center text-destructive/60 hover:text-destructive transition-all shrink-0" title="Supprimer"><Trash2 size={12} /></button>
                     )}
                   </div>
                 </div>

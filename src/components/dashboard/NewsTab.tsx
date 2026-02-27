@@ -157,7 +157,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
                                 {new Date(comment.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à {new Date(comment.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                               {(currentUser?.uid === comment.authorUid || currentUser?.role === 'admin+' || currentUser?.role === 'admin') && (
-                                <button onClick={() => deleteComment(comment.id)} className="text-[10px] text-destructive/60 hover:text-destructive font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => deleteComment(comment.id)} className="text-[10px] text-destructive/60 hover:text-destructive font-medium sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                   Supprimer
                                 </button>
                               )}
