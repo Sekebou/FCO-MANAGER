@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64url } from "https://deno.land/std@0.168.0/encoding/base64url.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -68,7 +69,47 @@ serve(async (req) => {
   }
 
   try {
-    const { title, body, data, tokens } = await req.json();
+    // --- Authentication: verify JWT and check role ---
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check if user can manage (admin, admin_plus, entraineur)
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    const { data: canManage } = await adminClient.rpc('can_manage', { _user_id: userId });
+    if (!canManage) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // --- Parse request ---
+    const { title, body, data, tokens: requestedTokens } = await req.json();
 
     if (!title || !body) {
       return new Response(JSON.stringify({ error: 'title and body are required' }), {
@@ -77,8 +118,24 @@ serve(async (req) => {
       });
     }
 
-    if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
-      return new Response(JSON.stringify({ success: true, sent: 0, message: 'No tokens provided' }), {
+    // Use requested tokens if provided, otherwise fetch all from DB
+    let fcmTokens: string[] = [];
+    if (requestedTokens && Array.isArray(requestedTokens) && requestedTokens.length > 0) {
+      // Validate tokens exist in the database to prevent arbitrary token targeting
+      const { data: validRows } = await adminClient
+        .from('fcm_tokens')
+        .select('token')
+        .in('token', requestedTokens);
+      fcmTokens = validRows?.map((r: any) => r.token).filter(Boolean) || [];
+    } else {
+      const { data: allRows } = await adminClient
+        .from('fcm_tokens')
+        .select('token');
+      fcmTokens = allRows?.map((r: any) => r.token).filter(Boolean) || [];
+    }
+
+    if (fcmTokens.length === 0) {
+      return new Response(JSON.stringify({ success: true, sent: 0, message: 'No tokens found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -108,8 +165,7 @@ serve(async (req) => {
     let successCount = 0;
     let failureCount = 0;
 
-    // Send to each token individually via FCM HTTP v1 API
-    for (const token of tokens) {
+    for (const fcmToken of fcmTokens) {
       try {
         const res = await fetch(fcmUrl, {
           method: 'POST',
@@ -119,7 +175,7 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             message: {
-              token,
+              token: fcmToken,
               notification: { title, body },
               data: data || {},
             },
@@ -130,7 +186,7 @@ serve(async (req) => {
           successCount++;
         } else {
           const errData = await res.json();
-          console.error(`FCM error for token ${token.substring(0, 10)}...:`, JSON.stringify(errData));
+          console.error(`FCM error for token ${fcmToken.substring(0, 10)}...:`, JSON.stringify(errData));
           failureCount++;
         }
       } catch (err) {
@@ -149,7 +205,7 @@ serve(async (req) => {
 
   } catch (err) {
     console.error('Error sending push notifications:', err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
