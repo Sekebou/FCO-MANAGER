@@ -21,10 +21,10 @@ const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; bg: 
   entraineur: {
     label: 'Entraîneur',
     icon: Dumbbell,
-    bg: 'bg-gradient-to-r from-purple-500/20 to-violet-500/20',
-    text: 'text-purple-500',
-    border: 'border-purple-500/40',
-    glow: 'shadow-[0_0_8px_rgba(168,85,247,0.2)]',
+    bg: 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20',
+    text: 'text-emerald-500',
+    border: 'border-emerald-500/40',
+    glow: 'shadow-[0_0_8px_rgba(16,185,129,0.2)]',
   },
   dirigeant: {
     label: 'Dirigeant',
@@ -81,7 +81,7 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({ role, displayRole, isAdminWithDis
       <Icon size={compact ? 10 : size === 'sm' ? 11 : 13} strokeWidth={2.5} />
       {!compact && config.label}
       {showAdminIndicator && (
-        <Shield size={compact ? 8 : size === 'sm' ? 9 : 10} strokeWidth={2.5} className="text-blue-500 ml-0.5 opacity-70" />
+        <Shield size={compact ? 8 : size === 'sm' ? 9 : 10} strokeWidth={2.5} className={`${config.text} ml-0.5 opacity-70`} />
       )}
     </span>
   );
