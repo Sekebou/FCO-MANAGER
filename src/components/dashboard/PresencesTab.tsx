@@ -252,15 +252,33 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
           {/* Presence counters */}
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="flex items-center gap-1 bg-accent/10 text-accent px-2.5 py-1 rounded-full text-xs font-semibold">
+            <motion.span 
+              key={`present-${event.id}-${presentCount}`}
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="flex items-center gap-1 bg-accent/10 text-accent px-2.5 py-1 rounded-full text-xs font-semibold"
+            >
               <Check size={12} /> {presentCount} Présent{presentCount > 1 ? 's' : ''}
-            </span>
-            <span className="flex items-center gap-1 bg-destructive/10 text-destructive px-2.5 py-1 rounded-full text-xs font-semibold">
+            </motion.span>
+            <motion.span 
+              key={`absent-${event.id}-${absentCount}`}
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.04 }}
+              className="flex items-center gap-1 bg-destructive/10 text-destructive px-2.5 py-1 rounded-full text-xs font-semibold"
+            >
               <X size={12} /> {absentCount} Absent{absentCount > 1 ? 's' : ''}
-            </span>
-            <span className="flex items-center gap-1 bg-warning/10 text-warning px-2.5 py-1 rounded-full text-xs font-semibold">
+            </motion.span>
+            <motion.span 
+              key={`waiting-${event.id}-${unknownCount}`}
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20, delay: 0.08 }}
+              className="flex items-center gap-1 bg-warning/10 text-warning px-2.5 py-1 rounded-full text-xs font-semibold"
+            >
               <Clock size={12} /> {unknownCount} En attente
-            </span>
+            </motion.span>
           </div>
         </div>
 
