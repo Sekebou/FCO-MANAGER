@@ -283,8 +283,8 @@ const Dashboard = () => {
       requestAnimationFrame(() => {
         const currentY = window.scrollY;
         if (currentY < 10) setHeaderVisible(true);
-        else if (currentY > lastScrollY.current + 5) { setHeaderVisible(false); setMobileMenuOpen(false); }
-        else if (currentY < lastScrollY.current - 5) setHeaderVisible(true);
+        else if (currentY > lastScrollY.current + 20) { setHeaderVisible(false); setMobileMenuOpen(false); }
+        else if (currentY < lastScrollY.current - 20) setHeaderVisible(true);
         lastScrollY.current = currentY;
         ticking.current = false;
       });
