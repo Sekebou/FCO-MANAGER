@@ -159,6 +159,16 @@ const mapChamp = (r: any): Championship => ({ id: r.id, name: r.name, season: r.
 const mapMatch = (r: any): Match => ({ id: r.id, championshipId: r.championship_id, homeTeam: r.home_team, awayTeam: r.away_team, homeScore: r.home_score, awayScore: r.away_score, date: r.date, journee: r.journee, played: r.played ?? false });
 const mapAlbum = (r: any): Album => ({ id: r.id, name: r.name, description: r.description, createdAt: r.created_at, createdBy: r.created_by, coverUrl: r.cover_url });
 const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url, storagePath: r.storage_path, title: r.title, uploadedAt: r.uploaded_at, uploadedBy: r.uploaded_by, uploaderName: r.uploader_name });
+
+// Generate signed URLs for photos (bucket is private)
+const getSignedPhotoUrls = async (photos: Photo[]): Promise<Photo[]> => {
+  if (photos.length === 0) return photos;
+  const paths = photos.map(p => p.storagePath);
+  const { data, error } = await supabase.storage.from('photos').createSignedUrls(paths, 3600);
+  if (error || !data) return photos;
+  const urlMap = new Map(data.filter(d => d.signedUrl).map(d => [d.path, d.signedUrl]));
+  return photos.map(p => ({ ...p, url: urlMap.get(p.storagePath) || p.url }));
+};
 // Small component showing points in header
 const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
   const [pts, setPts] = useState<number | null>(null);
@@ -396,7 +406,8 @@ const Dashboard = () => {
         setChampionships((champsData || []).map(mapChamp));
         setChampMatches((matchesData || []).map(mapMatch));
         setAlbums((albumsData || []).map(mapAlbum));
-        setGalleryPhotos((photosData || []).map(mapPhoto));
+        const mappedPhotos = (photosData || []).map(mapPhoto);
+        getSignedPhotoUrls(mappedPhotos).then(signed => setGalleryPhotos(signed));
         setLoading(false);
       } catch (err: any) {
         setError(err.message);
@@ -471,7 +482,7 @@ const Dashboard = () => {
           if (champsData) setChampionships(champsData.map(mapChamp));
           if (matchData) setChampMatches(matchData.map(mapMatch));
           if (albData) setAlbums(albData.map(mapAlbum));
-          if (photData) setGalleryPhotos(photData.map(mapPhoto));
+          if (photData) getSignedPhotoUrls(photData.map(mapPhoto)).then(signed => setGalleryPhotos(signed));
         } catch (err) { console.warn('iOS cold poll error:', err); }
       };
 
@@ -514,7 +525,7 @@ const Dashboard = () => {
         supabase.from('albums').select('*').order('created_at', { ascending: false }).then(({ data }) => data && setAlbums(data.map(mapAlbum)));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery_photos' }, () => {
-        supabase.from('gallery_photos').select('*').then(({ data }) => data && setGalleryPhotos(data.map(mapPhoto)));
+        supabase.from('gallery_photos').select('*').then(({ data }) => data && getSignedPhotoUrls(data.map(mapPhoto)).then(signed => setGalleryPhotos(signed)));
       })
       .subscribe();
 
