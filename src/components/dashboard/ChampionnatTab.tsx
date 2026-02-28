@@ -28,6 +28,8 @@ export interface Championship {
   teamLogos?: Record<string, string>;
   team?: string;
   createdAt: string;
+  fffLiveCache?: any;
+  fffRefreshedAt?: string;
 }
 
 export interface Match {
@@ -242,7 +244,7 @@ const ChampionnatTab: React.FC<Props> = ({
       .finally(() => setIsLoadingEquipes(false));
   }, [showAddChamp]);
 
-  // Auto-fetch live classement AND matches when team changes (merged single useEffect)
+  // Auto-fetch live classement AND matches — use DB cache first, fallback to API
   useEffect(() => {
     let cancelled = false;
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
@@ -272,6 +274,39 @@ const ChampionnatTab: React.FC<Props> = ({
       }
     }
 
+    // Check if any championship for this team has a valid DB cache (< 24h)
+    const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
+    const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
+    const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
+
+    if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
+      // Use DB cache — zero API calls!
+      const cache = teamChamp.fffLiveCache;
+      
+      if (cache.classement && Array.isArray(cache.classement)) {
+        const standings = mapClassementToStandings(cache.classement);
+        setLiveClassement(standings);
+        
+        // Extract logos from classement
+        const logosFromClassement: Record<number, string> = {};
+        for (const entry of cache.classement) {
+          const clNo = entry.equipe?.club?.cl_no;
+          const logo = entry.equipe?.club?.logo;
+          if (clNo && logo) logosFromClassement[clNo] = logo;
+        }
+        setLiveLogos(prev => ({ ...logosFromClassement, ...(cache.logos || {}), ...prev }));
+      } else {
+        setLiveError('Classement non disponible');
+      }
+      
+      setLiveUpcoming(cache.upcoming || []);
+      setLiveResults(cache.results || []);
+      setIsLoadingLive(false);
+      setIsLoadingMatches(false);
+      return;
+    }
+
+    // No cache or stale — fetch from API (this will be rare after cron is running)
     const fetchAll = async () => {
       setIsLoadingLive(true);
       setIsLoadingMatches(true);
@@ -282,7 +317,6 @@ const ChampionnatTab: React.FC<Props> = ({
       setLiveResults([]);
       
       try {
-        // Resolve champParams once (single getEquipes call instead of two)
         let champParams: { cpNo: number; phase: number; poule: number } | null = customParams;
         
         if (!champParams && mapping) {
@@ -296,7 +330,6 @@ const ChampionnatTab: React.FC<Props> = ({
           return;
         }
         
-        // Fetch classement + matches in parallel
         const [classementData, upcoming, results] = await Promise.all([
           getClassement(champParams.cpNo, champParams.phase, champParams.poule),
           getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
@@ -304,7 +337,6 @@ const ChampionnatTab: React.FC<Props> = ({
         ]);
         if (cancelled) return;
         
-        // Process classement
         const members = classementData?.['hydra:member'] || classementData;
         const totalItems = classementData?.['hydra:totalItems'] ?? (Array.isArray(members) ? members.length : 0);
         
@@ -314,7 +346,6 @@ const ChampionnatTab: React.FC<Props> = ({
           const standings = mapClassementToStandings(members);
           setLiveClassement(standings);
           
-          // Extract logos from classement itself
           if (Array.isArray(members)) {
             const logosFromClassement: Record<number, string> = {};
             for (const entry of members) {
@@ -325,7 +356,6 @@ const ChampionnatTab: React.FC<Props> = ({
             setLiveLogos(logosFromClassement);
           }
           
-          // Also fetch logos from results AND calendar endpoints for full coverage
           try {
             const [resultatsData, calendrierData] = await Promise.all([
               getResultats(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
@@ -339,7 +369,6 @@ const ChampionnatTab: React.FC<Props> = ({
           } catch {}
         }
         
-        // Process matches
         setLiveUpcoming(upcoming);
         setLiveResults(results);
       } catch (err) {
