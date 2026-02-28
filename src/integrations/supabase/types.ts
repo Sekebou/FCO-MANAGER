@@ -239,6 +239,8 @@ export type Database = {
       championships: {
         Row: {
           created_at: string
+          fff_live_cache: Json | null
+          fff_refreshed_at: string | null
           fff_standings: Json | null
           fff_url: string | null
           id: string
@@ -250,6 +252,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          fff_live_cache?: Json | null
+          fff_refreshed_at?: string | null
           fff_standings?: Json | null
           fff_url?: string | null
           id?: string
@@ -261,6 +265,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          fff_live_cache?: Json | null
+          fff_refreshed_at?: string | null
           fff_standings?: Json | null
           fff_url?: string | null
           id?: string
