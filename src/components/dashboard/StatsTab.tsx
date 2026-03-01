@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle } from 'lucide-react';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import RoleBadge from '@/components/ui/role-badge';
+import PlayerRadarChart from './PlayerRadarChart';
 
 interface Props {
   players: Player[];
@@ -43,22 +44,47 @@ const PlayerAvatar: React.FC<{ player: Player; members: Member[]; size?: number;
   );
 };
 
+type PeriodFilter = 'all' | 'season' | 'month';
+
+const PERIOD_LABELS: Record<PeriodFilter, string> = {
+  all: 'Toutes périodes',
+  season: 'Cette saison',
+  month: 'Ce mois',
+};
+
 const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
+  const [expandedRadar, setExpandedRadar] = useState<string | null>(null);
+
+  // Period filtering helpers
+  const now = new Date();
+  const seasonStart = useMemo(() => {
+    const y = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+    return new Date(y, 7, 1); // Aug 1
+  }, []);
+  const monthStart = useMemo(() => new Date(now.getFullYear(), now.getMonth(), 1), []);
+
+  const isInPeriod = (dateStr: string) => {
+    if (periodFilter === 'all') return true;
+    const d = new Date(dateStr);
+    if (periodFilter === 'season') return d >= seasonStart;
+    return d >= monthStart;
+  };
+
+  const filteredEvents = useMemo(() => events.filter(e => isInPeriod(e.date)), [events, periodFilter]);
+  const filteredCards = useMemo(() => cards.filter(c => isInPeriod(c.date)), [cards, periodFilter]);
+  const filteredAttendance = useMemo(() => attendanceRecords.filter(r => isInPeriod(r.eventDate)), [attendanceRecords, periodFilter]);
+
   const calculateAttendanceRate = (playerId: string) => {
-    // Combine: active events + saved attendance_records (from deleted events)
     let present = 0, total = 0;
 
-    // From active events
-    events.filter(e => e.type === 'training').forEach(t => {
+    filteredEvents.filter(e => e.type === 'training').forEach(t => {
       const p = t.presences || {};
       if (p[playerId]) { total++; if (p[playerId] === 'present') present++; }
     });
 
-    // From saved records (deleted events)
-    const savedForPlayer = attendanceRecords.filter(r => r.playerId === playerId && r.eventType === 'training');
-    // Deduplicate by eventId (avoid counting same event twice if still active)
-    const activeEventIds = new Set(events.map(e => e.id));
-    savedForPlayer.forEach(r => {
+    const activeEventIds = new Set(filteredEvents.map(e => e.id));
+    filteredAttendance.filter(r => r.playerId === playerId && r.eventType === 'training').forEach(r => {
       if (!activeEventIds.has(r.eventId)) {
         total++;
         if (r.status === 'present') present++;
@@ -69,14 +95,28 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
     return { rate: (present / total) * 100, present, total };
   };
 
-  const attendancePlayers = players;
-  const attendanceStats = attendancePlayers
+  const getDisciplineScore = (playerId: string) => {
+    const playerCards = filteredCards.filter(c => c.playerId === playerId);
+    let penalty = 0;
+    playerCards.forEach(c => { penalty += c.type === 'yellow' ? 10 : 30; });
+    return Math.max(0, 100 - penalty);
+  };
+
+  const attendanceStats = players
     .map(p => ({ player: p, attendance: calculateAttendanceRate(p.id) }))
     .filter(i => i.attendance !== null)
     .sort((a, b) => (b.attendance?.rate || 0) - (a.attendance?.rate || 0));
 
+  // KPI cards data
+  const topScorer = [...players].sort((a, b) => (b.goals || 0) - (a.goals || 0))[0];
+  const topAssister = [...players].sort((a, b) => (b.assists || 0) - (a.assists || 0))[0];
+  const topAttendance = attendanceStats[0];
+
+  const isCoachOrAdmin = currentUser?.role === 'admin+' || currentUser?.role === 'admin' || currentUser?.role === 'entraineur';
+
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Header with period filter */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
@@ -84,12 +124,52 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
         </div>
+        {/* Period filter dropdown */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground bg-secondary hover:bg-secondary/80 px-3 py-1.5 rounded-lg transition-colors">
+              <Calendar size={14} />
+              {PERIOD_LABELS[periodFilter]}
+              <ChevronDown size={12} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-44 p-1" align="end">
+            {(Object.keys(PERIOD_LABELS) as PeriodFilter[]).map(key => (
+              <button
+                key={key}
+                onClick={() => setPeriodFilter(key)}
+                className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${periodFilter === key ? 'bg-accent text-accent-foreground font-semibold' : 'hover:bg-secondary text-foreground'}`}
+              >
+                {PERIOD_LABELS[key]}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* Attendance section - admin only */}
-      {(currentUser?.role === 'admin+' || currentUser?.role === 'admin' || currentUser?.role === 'entraineur') && attendanceStats.length > 0 && (
+      {/* KPI Summary Cards */}
+      {isCoachOrAdmin && players.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          {[
+            { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, icon: Target, color: 'text-green-500', bgColor: 'bg-green-500/10' },
+            { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} PD`, icon: Zap, color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+            { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}%` : '—', icon: Trophy, color: 'text-accent', bgColor: 'bg-accent/10' },
+          ].map((kpi, i) => (
+            <div key={i} className="bg-card border border-border rounded-xl p-3 sm:p-4 text-center">
+              <div className={`w-8 h-8 sm:w-9 sm:h-9 ${kpi.bgColor} rounded-lg flex items-center justify-center mx-auto mb-2`}>
+                <kpi.icon size={16} className={kpi.color} />
+              </div>
+              <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">{kpi.label}</div>
+              <div className="text-xs sm:text-sm font-bold text-foreground truncate">{kpi.player?.name || '—'}</div>
+              <div className={`text-sm sm:text-lg font-black ${kpi.color}`}>{kpi.value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Attendance section - admin/coach only */}
+      {isCoachOrAdmin && attendanceStats.length > 0 && (
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          {/* Header */}
           <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-3 sm:p-5 border-b border-border">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -148,7 +228,6 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
 
                 return (
                   <div key={item.player.id} className="flex flex-col items-center flex-1 max-w-[100px] sm:max-w-[140px]">
-                    {/* Avatar + Icon */}
                     <div className={`relative mb-3 ${isFirst ? 'scale-110' : ''} transition-transform`}>
                       <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} p-[2px] shadow-lg ${podiumGlows[podiumIdx]}`}>
                         {(() => {
@@ -170,18 +249,12 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                         <PodiumIcon size={12} className="text-white" />
                       </div>
                     </div>
-
-                    {/* Name */}
                     <div className="text-xs font-bold text-foreground text-center truncate w-full mb-1">
                       {item.player.name}
                     </div>
-
-                    {/* Rate */}
                     <div className={`text-lg font-black ${podiumTextColors[podiumIdx]} mb-2`}>
                       {rate.toFixed(0)}%
                     </div>
-
-                    {/* Podium bar */}
                     <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-2xl bg-gradient-to-t ${podiumGradients[podiumIdx]} border border-b-0 flex flex-col items-center justify-start pt-3 relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
                       <span className="text-2xl font-black text-white/90 relative z-10">{podiumRanks[podiumIdx]}</span>
@@ -223,6 +296,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
         </div>
       )}
 
+      {/* Player cards with radar */}
       {players.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
           <p className="text-muted-foreground font-medium">Aucun joueur enregistré</p>
@@ -235,6 +309,9 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
             const goals = player.goals || 0;
             const assists = player.assists || 0;
             const avgGoals = matches > 0 ? (goals / matches).toFixed(2) : '—';
+            const attendance = calculateAttendanceRate(player.id);
+            const discipline = getDisciplineScore(player.id);
+            const isExpanded = expandedRadar === player.id;
 
             return (
               <div key={player.id} className="bg-card border border-border rounded-2xl overflow-hidden animate-fade-in">
@@ -250,13 +327,46 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                       </div>
                     </div>
                   </div>
+                  {/* Radar toggle button */}
+                  {isCoachOrAdmin && (
+                    <button
+                      onClick={() => setExpandedRadar(isExpanded ? null : player.id)}
+                      className={`flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+                    >
+                      <BarChart3 size={13} />
+                      <span className="hidden sm:inline">Radar</span>
+                    </button>
+                  )}
                 </div>
+
+                {/* Radar chart (expandable) */}
+                {isCoachOrAdmin && isExpanded && (
+                  <div className="px-3 sm:px-5 pb-3">
+                    <div className="bg-secondary/30 rounded-xl p-2 border border-border/50">
+                      <PlayerRadarChart
+                        name={player.name}
+                        goals={goals}
+                        assists={assists}
+                        matches={matches}
+                        attendanceRate={attendance?.rate ?? null}
+                        disciplineScore={discipline}
+                      />
+                      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[9px] sm:text-[10px] text-muted-foreground mt-1 pb-1">
+                        <span>⚽ {goals} buts</span>
+                        <span>🎯 {assists} PD</span>
+                        <span>📊 {matches} matchs</span>
+                        <span>✅ {attendance ? `${attendance.rate.toFixed(0)}%` : '—'}</span>
+                        <span>🟢 {discipline.toFixed(0)}% disc.</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border mx-3 sm:mx-5 rounded-xl overflow-hidden mb-3 sm:mb-4">
                   {[
                     { icon: Activity, label: 'Matchs', value: matches, field: 'matches', color: 'text-accent' },
-                    { icon: Target, label: 'Buts', value: goals, field: 'goals', color: 'text-success' },
+                    { icon: Target, label: 'Buts', value: goals, field: 'goals', color: 'text-green-500' },
                     { icon: Zap, label: 'Passes D.', value: assists, field: 'assists', color: 'text-purple-500' },
                     { icon: TrendingUp, label: 'Moy/Match', value: avgGoals, field: null, color: 'text-muted-foreground' },
                   ].map((stat) => (
@@ -307,7 +417,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                   </div>
                   {playerCards.length === 0 ? (
                     <div className="flex items-center gap-2 py-2.5 px-3 bg-secondary/50 rounded-xl">
-                      <Check size={14} className="text-success" />
+                      <Check size={14} className="text-green-500" />
                       <p className="text-xs text-muted-foreground font-medium">Aucun carton</p>
                     </div>
                   ) : (
