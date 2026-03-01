@@ -57,6 +57,7 @@ interface Props {
   onUpdateMatchScore: (matchId: string, homeScore: number, awayScore: number) => void;
   onDeleteMatch: (id: string) => void;
   onRefreshFromFFF?: (championshipId: string, fffUrl: string) => Promise<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string }>;
+  dataLoaded?: boolean;
 }
 
 const stagger = {
@@ -95,6 +96,7 @@ const ChampionnatTab: React.FC<Props> = ({
   onUpdateMatchScore,
   onDeleteMatch,
   onRefreshFromFFF,
+  dataLoaded = true,
 }) => {
   const { currentUser } = useAuth();
   const BASE_TEAMS = ['A', 'B', 'C'];
@@ -246,6 +248,7 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Auto-fetch live classement AND matches — use DB cache first, fallback to API
   useEffect(() => {
+    if (!dataLoaded) return; // Wait for DB data before deciding cache vs API
     let cancelled = false;
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
@@ -386,7 +389,7 @@ const ChampionnatTab: React.FC<Props> = ({
     
     fetchAll();
     return () => { cancelled = true; };
-  }, [selectedTeam, championships.length]);
+  }, [selectedTeam, championships.length, dataLoaded]);
 
   const handleImportCompetition = async (comp: FFFCompetition) => {
     setSelectedCompetition(comp);
