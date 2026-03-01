@@ -100,6 +100,8 @@ const Register = () => {
       let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = 'Un compte avec cet email existe déjà.';
       else if (err.code === 'auth/invalid-email') msg = 'Email invalide.';
+      else if (msg?.includes('weak') || msg?.includes('easy to guess')) msg = 'Ce mot de passe est trop faible et facile à deviner, veuillez en choisir un autre.';
+      else if (msg?.includes('at least')) msg = 'Le mot de passe doit contenir au moins 6 caractères.';
       setError(msg);
     } finally {
       setLoading(false);
