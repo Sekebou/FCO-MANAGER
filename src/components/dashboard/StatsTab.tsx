@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X } from 'lucide-react';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import RoleBadge from '@/components/ui/role-badge';
 import PlayerRadarChart from './PlayerRadarChart';
@@ -179,33 +179,34 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
       {/* KPI & Attendance Modal */}
       <Dialog open={showStatsModal} onOpenChange={setShowStatsModal}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl">
-          {/* Header */}
-          <DialogHeader className="p-5 pb-4 border-b border-border sticky top-0 bg-background z-10">
-            <DialogTitle className="flex items-center gap-2.5 text-base">
-              <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
-                <Trophy size={16} className="text-accent" />
-              </div>
-              Tableau de bord
-            </DialogTitle>
-            <p className="text-xs text-muted-foreground mt-1 ml-[42px]">
-              Vue d'ensemble des performances de l'équipe
-            </p>
-          </DialogHeader>
+          {/* Header with back button */}
+          <div className="p-4 pb-3 border-b border-border sticky top-0 bg-background z-10 flex items-center gap-3">
+            <button
+              onClick={() => setShowStatsModal(false)}
+              className="w-9 h-9 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors shrink-0"
+            >
+              <ArrowLeft size={18} className="text-foreground" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-base font-bold text-foreground">Tableau de bord</DialogTitle>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Performances & présences de l'équipe</p>
+            </div>
+          </div>
 
           <div className="p-4 space-y-5">
 
             {/* ── Section 1 : Tops joueurs ── */}
             <div>
               <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                <span className="w-5 h-px bg-border" />
-                🏆 Tops joueurs
+                <Trophy size={12} className="text-accent" />
+                Tops joueurs
                 <span className="flex-1 h-px bg-border" />
               </h4>
               <div className="space-y-2">
                 {[
-                  { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, icon: Target, emoji: '⚽' },
-                  { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} passes déc.`, icon: Zap, emoji: '🎯' },
-                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}% présence` : '—', icon: Trophy, emoji: '✅' },
+                  { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, IconBadge: CircleDot },
+                  { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} passes déc.`, IconBadge: Target },
+                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}% présence` : '—', IconBadge: Users },
                 ].map((kpi, i) => {
                   const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
                   const photoURL = member?.photoURL;
@@ -220,7 +221,9 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                             <span className="text-xs font-bold text-accent">{initials}</span>
                           </div>
                         )}
-                        <span className="absolute -bottom-0.5 -right-0.5 text-sm">{kpi.emoji}</span>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center">
+                          <kpi.IconBadge size={10} className="text-accent" />
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{kpi.label}</div>
@@ -239,8 +242,8 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
             {attendanceStats.length > 0 && (
               <div>
                 <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                  <span className="w-5 h-px bg-border" />
-                  📊 Présences entraînements
+                  <BarChart3 size={12} className="text-accent" />
+                  Présences entraînements
                   <span className="flex-1 h-px bg-border" />
                 </h4>
 
