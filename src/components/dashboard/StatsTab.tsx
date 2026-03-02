@@ -178,120 +178,123 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
 
       {/* KPI & Attendance Modal */}
       <Dialog open={showStatsModal} onOpenChange={setShowStatsModal}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0">
-          <DialogHeader className="p-4 pb-3 border-b border-border sticky top-0 bg-background z-10">
-            <DialogTitle className="flex items-center gap-2">
-              <Trophy size={18} className="text-accent" />
-              Performances & Présences
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl">
+          {/* Header */}
+          <DialogHeader className="p-5 pb-4 border-b border-border sticky top-0 bg-background z-10">
+            <DialogTitle className="flex items-center gap-2.5 text-base">
+              <div className="w-8 h-8 bg-accent/15 rounded-lg flex items-center justify-center">
+                <Trophy size={16} className="text-accent" />
+              </div>
+              Tableau de bord
             </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1 ml-[42px]">
+              Vue d'ensemble des performances de l'équipe
+            </p>
           </DialogHeader>
 
-          <div className="p-4 space-y-4">
-            {/* KPI Summary Cards */}
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, icon: Target, color: 'text-accent', bgColor: 'bg-accent/10' },
-                { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} PD`, icon: Zap, color: 'text-accent', bgColor: 'bg-accent/10' },
-                { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}%` : '—', icon: Trophy, color: 'text-accent', bgColor: 'bg-accent/10' },
-              ].map((kpi, i) => (
-                <div key={i} className="bg-secondary/50 border border-border rounded-xl p-3 text-center">
-                  <div className={`w-8 h-8 ${kpi.bgColor} rounded-lg flex items-center justify-center mx-auto mb-2`}>
-                    <kpi.icon size={16} className={kpi.color} />
-                  </div>
-                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">{kpi.label}</div>
-                  <div className="text-xs font-bold text-foreground truncate">{kpi.player?.name || '—'}</div>
-                  <div className={`text-sm font-black ${kpi.color}`}>{kpi.value}</div>
-                </div>
-              ))}
+          <div className="p-4 space-y-5">
+
+            {/* ── Section 1 : Tops joueurs ── */}
+            <div>
+              <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                <span className="w-5 h-px bg-border" />
+                🏆 Tops joueurs
+                <span className="flex-1 h-px bg-border" />
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, icon: Target, emoji: '⚽' },
+                  { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} passes déc.`, icon: Zap, emoji: '🎯' },
+                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}% présence` : '—', icon: Trophy, emoji: '✅' },
+                ].map((kpi, i) => {
+                  const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
+                  const photoURL = member?.photoURL;
+                  const initials = kpi.player?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+                  return (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-secondary/40 border border-border/50 rounded-xl">
+                      <div className="relative shrink-0">
+                        {photoURL ? (
+                          <img src={photoURL} alt="" className="w-10 h-10 rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center">
+                            <span className="text-xs font-bold text-accent">{initials}</span>
+                          </div>
+                        )}
+                        <span className="absolute -bottom-0.5 -right-0.5 text-sm">{kpi.emoji}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{kpi.label}</div>
+                        <div className="text-sm font-bold text-foreground truncate">{kpi.player?.name || 'Aucun'}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-black text-accent">{kpi.value}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Attendance section */}
+            {/* ── Section 2 : Présences entraînements ── */}
             {attendanceStats.length > 0 && (
-              <div className="bg-card border border-border rounded-2xl overflow-hidden">
-                <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-3 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-sm">
-                        <Trophy size={18} className="text-accent-foreground" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="text-sm font-bold text-foreground">Taux de présence</h3>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button className="text-muted-foreground hover:text-foreground transition-colors">
-                                <HelpCircle size={14} />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="text-xs max-w-[240px]" side="top">
-                              <p className="font-semibold mb-1">Moyenne annuelle</p>
-                              <p className="text-muted-foreground">Taux de présence aux entraînements.</p>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-accent">
-                        {attendanceStats.length > 0 ? attendanceStats[0].attendance!.rate.toFixed(0) : 0}%
-                      </div>
-                      <div className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium">Meilleur taux</div>
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                  <span className="w-5 h-px bg-border" />
+                  📊 Présences entraînements
+                  <span className="flex-1 h-px bg-border" />
+                </h4>
 
                 {/* Podium top 3 */}
                 {attendanceStats.length >= 3 && (
-                  <div className="flex items-end justify-center gap-2 p-4 pb-2 bg-gradient-to-b from-accent/5 to-transparent">
+                  <div className="flex items-end justify-center gap-3 py-4 pb-2 mb-3">
                     {[1, 0, 2].map((podiumIdx) => {
                       const item = attendanceStats[podiumIdx];
                       if (!item) return null;
                       const rate = item.attendance!.rate;
                       const isFirst = podiumIdx === 0;
-                      const podiumHeights = ['h-28', 'h-36', 'h-24'];
+                      const podiumHeights = ['h-20', 'h-28', 'h-16'];
                       const podiumIcons = [Crown, Medal, Award];
-                      const podiumGradients = [
-                        'from-muted to-muted-foreground/30 border-muted-foreground/20',
-                        'from-accent to-accent/80 border-accent/50',
-                        'from-muted-foreground/40 to-muted-foreground/60 border-muted-foreground/30',
+                      const podiumBg = [
+                        'bg-muted-foreground/20',
+                        'bg-accent/20',
+                        'bg-muted-foreground/10',
+                      ];
+                      const podiumBorder = [
+                        'border-muted-foreground/30',
+                        'border-accent/40',
+                        'border-muted-foreground/20',
                       ];
                       const podiumTextColors = ['text-muted-foreground', 'text-accent', 'text-muted-foreground'];
                       const podiumRanks = [2, 1, 3];
                       const PodiumIcon = podiumIcons[podiumIdx];
+                      const member = members.find(m => m.playerId === item.player.id);
+                      const photoURL = member?.photoURL;
 
                       return (
                         <div key={item.player.id} className="flex flex-col items-center flex-1 max-w-[100px]">
                           <div className={`relative mb-2 ${isFirst ? 'scale-110' : ''} transition-transform`}>
-                            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} p-[2px] shadow-lg`}>
-                              {(() => {
-                                const member = members.find(m => m.playerId === item.player.id);
-                                const photoURL = member?.photoURL;
-                                if (photoURL) {
-                                  return <img src={photoURL} alt={item.player.name} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
-                                }
-                                return (
-                                  <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                                    <span className="text-xs font-bold text-foreground">
-                                      {item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} flex items-center justify-center shadow-md`}>
-                              <PodiumIcon size={10} className="text-primary-foreground" />
+                            {photoURL ? (
+                              <img src={photoURL} alt={item.player.name} className="w-11 h-11 rounded-full object-cover border-2 border-border" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full bg-secondary border-2 border-border flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-foreground">
+                                  {item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                </span>
+                              </div>
+                            )}
+                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${podiumBg[podiumIdx]} border ${podiumBorder[podiumIdx]} flex items-center justify-center`}>
+                              <PodiumIcon size={10} className={podiumTextColors[podiumIdx]} />
                             </div>
                           </div>
-                          <div className="text-[10px] font-bold text-foreground text-center truncate w-full mb-0.5">
-                            {item.player.name}
+                          <div className="text-[10px] font-semibold text-foreground text-center truncate w-full">
+                            {item.player.name.split(' ')[0]}
                           </div>
-                          <div className={`text-base font-black ${podiumTextColors[podiumIdx]} mb-1.5`}>
+                          <div className={`text-base font-black ${podiumTextColors[podiumIdx]} mb-1`}>
                             {rate.toFixed(0)}%
                           </div>
-                          <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-2xl bg-gradient-to-t ${podiumGradients[podiumIdx]} border border-b-0 flex flex-col items-center justify-start pt-2 relative overflow-hidden`}>
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                            <span className="text-xl font-black text-primary-foreground/90 relative z-10">{podiumRanks[podiumIdx]}</span>
-                            <span className="text-[8px] text-primary-foreground/70 font-medium relative z-10 mt-0.5 text-center leading-tight">
+                          <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-xl ${podiumBg[podiumIdx]} border ${podiumBorder[podiumIdx]} border-b-0 flex flex-col items-center justify-center relative`}>
+                            <span className={`text-lg font-black ${podiumTextColors[podiumIdx]}`}>{podiumRanks[podiumIdx]}</span>
+                            <span className="text-[8px] text-muted-foreground font-medium">
                               {item.attendance!.present}/{item.attendance!.total}
                             </span>
                           </div>
@@ -302,25 +305,25 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                 )}
 
                 {/* Full ranking list */}
-                <div className="p-3 space-y-1.5">
+                <div className="space-y-1.5">
                   {attendanceStats.map((item, index) => {
                     const rate = item.attendance!.rate;
                     const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
                     const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
                     return (
-                      <div key={item.player.id} className="flex items-center gap-2 p-2 bg-secondary/50 rounded-xl hover:bg-secondary transition-all">
-                        <div className={`w-7 h-7 rounded-lg ${colorClass} flex items-center justify-center text-[10px] font-bold text-primary-foreground shadow-sm shrink-0`}>
+                      <div key={item.player.id} className="flex items-center gap-2 p-2.5 bg-secondary/30 rounded-xl">
+                        <div className={`w-6 h-6 rounded-md ${colorClass} flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0`}>
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-semibold text-foreground truncate">{item.player.name}</div>
-                          <div className="text-[9px] text-muted-foreground">{item.attendance!.present}/{item.attendance!.total} entraînements</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-2 bg-border rounded-full overflow-hidden">
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="w-20 h-1.5 bg-border rounded-full overflow-hidden">
                             <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
                           </div>
-                          <span className={`text-xs font-bold w-10 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
+                          <span className={`text-[11px] font-bold w-8 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
+                          <span className="text-[9px] text-muted-foreground w-10 text-right">{item.attendance!.present}/{item.attendance!.total}</span>
                         </div>
                       </div>
                     );
