@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3 } from 'lucide-react';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import RoleBadge from '@/components/ui/role-badge';
 import PlayerRadarChart from './PlayerRadarChart';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Props {
   players: Player[];
@@ -55,6 +56,7 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
 const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
   const [expandedRadar, setExpandedRadar] = useState<string | null>(null);
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   // Period filtering helpers
   const now = new Date();
@@ -147,154 +149,188 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
         </Popover>
       </div>
 
-      {/* KPI Summary Cards */}
+      {/* Button to open KPI/Attendance modal */}
       {isCoachOrAdmin && players.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {[
-            { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, icon: Target, color: 'text-green-500', bgColor: 'bg-green-500/10' },
-            { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} PD`, icon: Zap, color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
-            { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}%` : '—', icon: Trophy, color: 'text-accent', bgColor: 'bg-accent/10' },
-          ].map((kpi, i) => (
-            <div key={i} className="bg-card border border-border rounded-xl p-3 sm:p-4 text-center">
-              <div className={`w-8 h-8 sm:w-9 sm:h-9 ${kpi.bgColor} rounded-lg flex items-center justify-center mx-auto mb-2`}>
-                <kpi.icon size={16} className={kpi.color} />
-              </div>
-              <div className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">{kpi.label}</div>
-              <div className="text-xs sm:text-sm font-bold text-foreground truncate">{kpi.player?.name || '—'}</div>
-              <div className={`text-sm sm:text-lg font-black ${kpi.color}`}>{kpi.value}</div>
+        <button
+          onClick={() => setShowStatsModal(true)}
+          className="w-full flex items-center justify-between bg-card border border-border rounded-2xl p-4 hover:bg-secondary/50 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-accent/15 rounded-xl flex items-center justify-center">
+              <Trophy size={20} className="text-accent" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Attendance section - admin/coach only */}
-      {isCoachOrAdmin && attendanceStats.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-3 sm:p-5 border-b border-border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-9 h-9 sm:w-11 sm:h-11 bg-accent rounded-xl flex items-center justify-center shadow-sm">
-                  <Trophy size={18} className="text-accent-foreground sm:w-5 sm:h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm sm:text-lg font-bold text-foreground">Taux de présence</h3>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="text-muted-foreground hover:text-foreground transition-colors">
-                          <HelpCircle size={14} className="sm:w-4 sm:h-4" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="text-xs sm:text-sm max-w-[240px]" side="top">
-                        <p className="font-semibold mb-1">Moyenne annuelle</p>
-                        <p className="text-muted-foreground">Taux de présence aux entraînements. Pour réinitialiser les stats, contactez un admin.</p>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-              </div>
-              <div className="text-right hidden sm:block">
-                <div className="text-2xl font-bold text-accent">
-                  {attendanceStats.length > 0 ? attendanceStats[0].attendance!.rate.toFixed(0) : 0}%
-                </div>
-                <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Meilleur taux</div>
-              </div>
+            <div className="text-left">
+              <div className="text-sm font-bold text-foreground">Performances & Présences</div>
+              <div className="text-[10px] text-muted-foreground">KPIs, podium, taux de présence</div>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            {topScorer && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-lg">
+                <Target size={12} className="text-accent" />
+                {topScorer.name.split(' ')[0]} · {topScorer.goals || 0} buts
+              </div>
+            )}
+            <ChevronDown size={16} className="text-muted-foreground group-hover:text-foreground transition-colors -rotate-90" />
+          </div>
+        </button>
+      )}
 
-          {/* Podium top 3 */}
-          {attendanceStats.length >= 3 && (
-            <div className="flex items-end justify-center gap-2 sm:gap-4 p-4 sm:p-6 pb-2 bg-gradient-to-b from-accent/5 to-transparent">
-              {[1, 0, 2].map((podiumIdx) => {
-                const item = attendanceStats[podiumIdx];
-                if (!item) return null;
-                const rate = item.attendance!.rate;
-                const isFirst = podiumIdx === 0;
-                const podiumHeights = ['h-36', 'h-44', 'h-32'];
-                const podiumIcons = [Crown, Medal, Award];
-                const podiumGradients = [
-                  'from-gray-300 to-gray-400 border-gray-300/50',
-                  'from-yellow-400 to-amber-500 border-yellow-400/50',
-                  'from-amber-600 to-amber-700 border-amber-600/50',
-                ];
-                const podiumGlows = [
-                  'shadow-gray-300/20',
-                  'shadow-yellow-400/30',
-                  'shadow-amber-600/20',
-                ];
-                const podiumTextColors = ['text-gray-500', 'text-yellow-500', 'text-amber-700'];
-                const podiumRanks = [2, 1, 3];
-                const PodiumIcon = podiumIcons[podiumIdx];
+      {/* KPI & Attendance Modal */}
+      <Dialog open={showStatsModal} onOpenChange={setShowStatsModal}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0">
+          <DialogHeader className="p-4 pb-3 border-b border-border sticky top-0 bg-background z-10">
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy size={18} className="text-accent" />
+              Performances & Présences
+            </DialogTitle>
+          </DialogHeader>
 
-                return (
-                  <div key={item.player.id} className="flex flex-col items-center flex-1 max-w-[100px] sm:max-w-[140px]">
-                    <div className={`relative mb-3 ${isFirst ? 'scale-110' : ''} transition-transform`}>
-                      <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} p-[2px] shadow-lg ${podiumGlows[podiumIdx]}`}>
-                        {(() => {
-                          const member = members.find(m => m.playerId === item.player.id);
-                          const photoURL = member?.photoURL;
-                          if (photoURL) {
-                            return <img src={photoURL} alt={item.player.name} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
-                          }
-                          return (
-                            <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                              <span className="text-sm font-bold text-foreground">
-                                {item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                              </span>
+          <div className="p-4 space-y-4">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, icon: Target, color: 'text-accent', bgColor: 'bg-accent/10' },
+                { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} PD`, icon: Zap, color: 'text-accent', bgColor: 'bg-accent/10' },
+                { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}%` : '—', icon: Trophy, color: 'text-accent', bgColor: 'bg-accent/10' },
+              ].map((kpi, i) => (
+                <div key={i} className="bg-secondary/50 border border-border rounded-xl p-3 text-center">
+                  <div className={`w-8 h-8 ${kpi.bgColor} rounded-lg flex items-center justify-center mx-auto mb-2`}>
+                    <kpi.icon size={16} className={kpi.color} />
+                  </div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">{kpi.label}</div>
+                  <div className="text-xs font-bold text-foreground truncate">{kpi.player?.name || '—'}</div>
+                  <div className={`text-sm font-black ${kpi.color}`}>{kpi.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Attendance section */}
+            {attendanceStats.length > 0 && (
+              <div className="bg-card border border-border rounded-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-accent/10 to-accent/5 p-3 border-b border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center shadow-sm">
+                        <Trophy size={18} className="text-accent-foreground" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-sm font-bold text-foreground">Taux de présence</h3>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className="text-muted-foreground hover:text-foreground transition-colors">
+                                <HelpCircle size={14} />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="text-xs max-w-[240px]" side="top">
+                              <p className="font-semibold mb-1">Moyenne annuelle</p>
+                              <p className="text-muted-foreground">Taux de présence aux entraînements.</p>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-bold text-accent">
+                        {attendanceStats.length > 0 ? attendanceStats[0].attendance!.rate.toFixed(0) : 0}%
+                      </div>
+                      <div className="text-[9px] text-muted-foreground uppercase tracking-wider font-medium">Meilleur taux</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Podium top 3 */}
+                {attendanceStats.length >= 3 && (
+                  <div className="flex items-end justify-center gap-2 p-4 pb-2 bg-gradient-to-b from-accent/5 to-transparent">
+                    {[1, 0, 2].map((podiumIdx) => {
+                      const item = attendanceStats[podiumIdx];
+                      if (!item) return null;
+                      const rate = item.attendance!.rate;
+                      const isFirst = podiumIdx === 0;
+                      const podiumHeights = ['h-28', 'h-36', 'h-24'];
+                      const podiumIcons = [Crown, Medal, Award];
+                      const podiumGradients = [
+                        'from-muted to-muted-foreground/30 border-muted-foreground/20',
+                        'from-accent to-accent/80 border-accent/50',
+                        'from-muted-foreground/40 to-muted-foreground/60 border-muted-foreground/30',
+                      ];
+                      const podiumTextColors = ['text-muted-foreground', 'text-accent', 'text-muted-foreground'];
+                      const podiumRanks = [2, 1, 3];
+                      const PodiumIcon = podiumIcons[podiumIdx];
+
+                      return (
+                        <div key={item.player.id} className="flex flex-col items-center flex-1 max-w-[100px]">
+                          <div className={`relative mb-2 ${isFirst ? 'scale-110' : ''} transition-transform`}>
+                            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} p-[2px] shadow-lg`}>
+                              {(() => {
+                                const member = members.find(m => m.playerId === item.player.id);
+                                const photoURL = member?.photoURL;
+                                if (photoURL) {
+                                  return <img src={photoURL} alt={item.player.name} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+                                }
+                                return (
+                                  <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                                    <span className="text-xs font-bold text-foreground">
+                                      {item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
                             </div>
-                          );
-                        })()}
-                      </div>
-                      <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} flex items-center justify-center shadow-md`}>
-                        <PodiumIcon size={12} className="text-white" />
-                      </div>
-                    </div>
-                    <div className="text-xs font-bold text-foreground text-center truncate w-full mb-1">
-                      {item.player.name}
-                    </div>
-                    <div className={`text-lg font-black ${podiumTextColors[podiumIdx]} mb-2`}>
-                      {rate.toFixed(0)}%
-                    </div>
-                    <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-2xl bg-gradient-to-t ${podiumGradients[podiumIdx]} border border-b-0 flex flex-col items-center justify-start pt-3 relative overflow-hidden`}>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-                      <span className="text-2xl font-black text-white/90 relative z-10">{podiumRanks[podiumIdx]}</span>
-                      <span className="text-[9px] text-white/70 font-medium relative z-10 mt-1 text-center leading-tight">
-                        {item.attendance!.present}/{item.attendance!.total} entraîn.
-                      </span>
-                    </div>
+                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br ${podiumGradients[podiumIdx]} flex items-center justify-center shadow-md`}>
+                              <PodiumIcon size={10} className="text-primary-foreground" />
+                            </div>
+                          </div>
+                          <div className="text-[10px] font-bold text-foreground text-center truncate w-full mb-0.5">
+                            {item.player.name}
+                          </div>
+                          <div className={`text-base font-black ${podiumTextColors[podiumIdx]} mb-1.5`}>
+                            {rate.toFixed(0)}%
+                          </div>
+                          <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-2xl bg-gradient-to-t ${podiumGradients[podiumIdx]} border border-b-0 flex flex-col items-center justify-start pt-2 relative overflow-hidden`}>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+                            <span className="text-xl font-black text-primary-foreground/90 relative z-10">{podiumRanks[podiumIdx]}</span>
+                            <span className="text-[8px] text-primary-foreground/70 font-medium relative z-10 mt-0.5 text-center leading-tight">
+                              {item.attendance!.present}/{item.attendance!.total}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                )}
 
-          {/* Full ranking list */}
-          <div className="p-3 sm:p-5 space-y-1.5 sm:space-y-2">
-            {attendanceStats.map((item, index) => {
-              const rate = item.attendance!.rate;
-              const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
-              const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
-              return (
-                <div key={item.player.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-secondary/50 rounded-xl hover:bg-secondary transition-all">
-                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${colorClass} flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shadow-sm shrink-0`}>
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs sm:text-sm font-semibold text-foreground truncate">{item.player.name}</div>
-                    <div className="text-[9px] sm:text-[10px] text-muted-foreground">{item.attendance!.present}/{item.attendance!.total} entraînements</div>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-16 sm:w-28 h-2 sm:h-2.5 bg-border rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
-                    </div>
-                    <span className={`text-xs sm:text-sm font-bold w-10 sm:w-12 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
-                  </div>
+                {/* Full ranking list */}
+                <div className="p-3 space-y-1.5">
+                  {attendanceStats.map((item, index) => {
+                    const rate = item.attendance!.rate;
+                    const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
+                    const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
+                    return (
+                      <div key={item.player.id} className="flex items-center gap-2 p-2 bg-secondary/50 rounded-xl hover:bg-secondary transition-all">
+                        <div className={`w-7 h-7 rounded-lg ${colorClass} flex items-center justify-center text-[10px] font-bold text-primary-foreground shadow-sm shrink-0`}>
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-semibold text-foreground truncate">{item.player.name}</div>
+                          <div className="text-[9px] text-muted-foreground">{item.attendance!.present}/{item.attendance!.total} entraînements</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-border rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
+                          </div>
+                          <span className={`text-xs font-bold w-10 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Player cards with radar */}
       {players.length === 0 ? (
