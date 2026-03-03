@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, MessageCircle } from 'lucide-react';
+import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, MessageCircle, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -11,10 +11,11 @@ interface Tab {
 }
 
 const allTabs: Tab[] = [
+  { id: 'home', label: 'Accueil', icon: Home, featured: true },
   { id: 'news', label: 'Actus', icon: Bell },
   { id: 'championnat', label: 'Championnat', icon: Trophy },
   { id: 'gallery', label: 'Galerie', icon: Camera },
-  { id: 'presences', label: 'Présences', icon: ClipboardCheck, featured: true },
+  { id: 'presences', label: 'Présences', icon: ClipboardCheck },
   { id: 'stats', label: 'Stats', icon: TrendingUp },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'members', label: 'Membres', icon: UserCheck },
@@ -93,7 +94,7 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
 
   // One-shot animation when featured tab is activated
   useEffect(() => {
-    if (prevActiveTab.current !== activeTab && activeTab === 'presences') {
+    if (prevActiveTab.current !== activeTab && activeTab === 'home') {
       setFeaturedJustActivated(true);
       const t = setTimeout(() => setFeaturedJustActivated(false), 700);
       prevActiveTab.current = activeTab;

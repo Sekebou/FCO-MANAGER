@@ -22,6 +22,7 @@ import GalleryTab, { type Album, type Photo } from '@/components/dashboard/Galle
 import ChatTab from '@/components/dashboard/ChatTab';
 import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
+import HomeTab from '@/components/dashboard/HomeTab';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
@@ -258,7 +259,7 @@ const Dashboard = () => {
   usePushNotifications(currentUser?.uid);
   const [activeTab, setActiveTab] = useState(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('tab') || 'presences';
+    return urlParams.get('tab') || 'home';
   });
 
   const handleTabChange = (tab: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setActiveTab(tab); };
@@ -1254,26 +1255,14 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Welcome Banner */}
-      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${headerVisible ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <motion.div 
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-10 pt-4 pb-1"
-        >
-          <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-border/40 rounded-xl px-4 py-2.5 shadow-sm">
-            <Hand size={16} className="text-accent shrink-0" />
-            <p className="text-sm font-medium text-foreground">
-              Bienvenue, <span className="font-bold bg-gradient-to-r from-accent to-accent/70 bg-clip-text text-transparent">{currentUser?.name?.split(' ')[0]}</span>
-            </p>
-          </div>
-        </motion.div>
-      </div>
+      {/* Welcome banner removed — HomeTab is the new landing */}
 
       {/* Content */}
       <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
         <div key={activeTab} className="animate-fade-in">
+          {activeTab === 'home' && (
+            <HomeTab currentUser={currentUser} events={events} players={visiblePlayers} news={news} members={visibleMembers} onNavigate={handleTabChange} />
+          )}
           {activeTab === 'presences' && (
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; }}
               onUpdateConvocations={async (eventId, convocations) => {
