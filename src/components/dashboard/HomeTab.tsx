@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import clubLogo from '@/assets/logo.png';
+
 
 interface HomeTabProps {
   currentUser: AppUser | null;
@@ -109,7 +109,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-primary-foreground leading-tight">
-                {getGreeting()}, <span className="bg-gradient-to-r from-primary-foreground to-primary-foreground/70 bg-clip-text">{currentUser?.name?.split(' ')[0]}</span>
+                {getGreeting()}, {currentUser?.name?.split(' ')[0]}
               </h2>
               <p className="text-xs sm:text-sm text-primary-foreground/50 mt-1.5 leading-relaxed">
                 {isCoach
@@ -120,8 +120,15 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 }
               </p>
             </div>
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary-foreground/10 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-primary-foreground/10 shadow-lg shrink-0">
-              <img src={clubLogo} alt="FCO" className="w-10 h-10 sm:w-12 sm:h-12 object-contain drop-shadow-lg" />
+            {/* Profile photo (round) instead of club logo */}
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center border-2 border-primary-foreground/20 shadow-lg shrink-0 overflow-hidden">
+              {currentUser?.photoURL ? (
+                <img src={currentUser.photoURL} alt="Profil" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-lg sm:text-xl font-bold text-primary-foreground">
+                  {currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                </span>
+              )}
             </div>
           </div>
 
