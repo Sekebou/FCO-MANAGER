@@ -168,7 +168,7 @@ const Register = () => {
   };
 
   const registeredEmail = invitation?.email || formData.email || sessionStorage.getItem('register_email') || '';
-  const showPlayStoreLink = isGoogleEmail(registeredEmail);
+  const showPlayStoreLink = true;
 
   if (isSuccess) {
     return (
