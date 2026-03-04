@@ -362,7 +362,7 @@ const OnboardingTutorial = ({ userRole, onComplete, onTabChange, mandatory = fal
                 transition={{ delay: 0.7 }}
                 className="text-sm text-muted-foreground"
               >
-                Tu es redirigé vers <span className="font-bold text-accent">Présences</span>
+                Tu es redirigé vers <span className="font-bold text-accent">Accueil</span>
               </motion.p>
 
               {/* Arrow */}
