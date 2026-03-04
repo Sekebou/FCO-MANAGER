@@ -150,21 +150,159 @@ const Register = () => {
     );
   }
 
+  const isGoogleEmail = (email: string) => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    return domain === 'gmail.com' || domain === 'googlemail.com';
+  };
+
+  const registeredEmail = invitation?.email || formData.email;
+  const showPlayStoreLink = isGoogleEmail(registeredEmail);
+
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="w-full max-w-sm text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 rounded-2xl mb-4">
-            <CheckCircle2 size={32} className="text-accent" />
-          </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Compte créé avec succès !</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Vous pouvez maintenant vous connecter avec votre email et votre mot de passe.
-          </p>
-          <button onClick={() => navigate('/auth')} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
-            Se connecter
-          </button>
+      <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
+        {/* Background particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-primary/20"
+              initial={{ opacity: 0, y: 100, x: Math.random() * 300 }}
+              animate={{
+                opacity: [0, 1, 0],
+                y: [100, -100],
+                x: Math.random() * 300,
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: i * 0.5,
+                ease: 'easeOut',
+              }}
+            />
+          ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="w-full max-w-sm text-center relative z-10"
+        >
+          {/* Animated confetti icon */}
+          <motion.div
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.2 }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-accent/10 rounded-2xl mb-5 border border-accent/20 shadow-lg shadow-accent/10"
+          >
+            <PartyPopper size={36} className="text-accent" />
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="text-2xl font-extrabold text-foreground mb-2 tracking-tight"
+          >
+            Félicitations ! 🎉
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="text-base font-semibold text-primary mb-1"
+          >
+            Ton compte a été créé avec succès
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="text-sm text-muted-foreground mb-6"
+          >
+            Bienvenue dans la famille FCO ! 💪
+          </motion.p>
+
+          {/* Steps card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.85 }}
+            className="bg-card rounded-2xl p-5 border border-border shadow-sm mb-5"
+          >
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+              Prochaines étapes
+            </p>
+
+            <div className="space-y-3">
+              {showPlayStoreLink && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.0 }}
+                  className="flex items-center gap-3 text-left"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                    <Download size={16} className="text-accent" />
+                  </div>
+                  <p className="text-sm text-foreground">
+                    Télécharge l'application <span className="font-bold">FCO Manager</span>
+                  </p>
+                </motion.div>
+              )}
+
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: showPlayStoreLink ? 1.15 : 1.0 }}
+                className="flex items-center gap-3 text-left"
+              >
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Smartphone size={16} className="text-primary" />
+                </div>
+                <p className="text-sm text-foreground">
+                  Connecte-toi avec <span className="font-bold">{registeredEmail}</span>
+                </p>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Play Store button */}
+          {showPlayStoreLink && (
+            <motion.a
+              href="https://play.google.com/store/apps/details?id=com.sekebou.fcomanager"
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3, type: 'spring', stiffness: 150 }}
+              className="group inline-flex items-center justify-center gap-2.5 w-full bg-accent text-accent-foreground py-3.5 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 mb-3"
+            >
+              <Download size={18} />
+              Télécharger sur Google Play
+              <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+            </motion.a>
+          )}
+
+          {/* Login button */}
+          <motion.button
+            onClick={() => navigate('/auth')}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: showPlayStoreLink ? 1.45 : 1.15 }}
+            className={`group w-full py-3.5 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
+              showPlayStoreLink
+                ? 'bg-secondary text-foreground border border-border hover:bg-secondary/80'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20'
+            }`}
+          >
+            Se connecter
+            <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+          </motion.button>
+        </motion.div>
       </div>
     );
   }
