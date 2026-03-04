@@ -52,8 +52,8 @@ const MobileOnlyGuard = ({ children }: MobileOnlyGuardProps) => {
           FCO Manager
         </h1>
         <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-          Cette application est exclusivement disponible sur mobile.
-          Veuillez utiliser l'application iOS ou Android.
+          Cette application est exclusivement disponible via l'application native.
+          Téléchargez l'app FCO Manager sur iOS ou Android pour y accéder.
         </p>
         <div className="space-y-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50">
