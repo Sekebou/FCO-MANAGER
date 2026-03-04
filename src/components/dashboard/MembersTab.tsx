@@ -125,12 +125,21 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             <h2 className="text-lg sm:text-xl font-bold text-foreground">Membres du club</h2>
           </div>
           {canManage() && (
-            <button
-              onClick={() => toast.error("L'application est en test sur Android. Impossible de créer des comptes avant la version publique.")}
-              className="bg-muted text-muted-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium border border-border opacity-60 cursor-not-allowed"
-            >
-              <Send size={14} className="sm:w-4 sm:h-4" /> Inviter
-            </button>
+            currentUser?.role === 'admin+' ? (
+              <button
+                onClick={onInvitePlayer}
+                className="bg-accent text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium shadow-lg hover:opacity-90 transition-opacity"
+              >
+                <Send size={14} className="sm:w-4 sm:h-4" /> Inviter
+              </button>
+            ) : (
+              <button
+                onClick={() => toast.error("L'application est en test sur Android. Impossible de créer des comptes avant la version publique.")}
+                className="bg-muted text-muted-foreground px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium border border-border opacity-60 cursor-not-allowed"
+              >
+                <Send size={14} className="sm:w-4 sm:h-4" /> Inviter
+              </button>
+            )
           )}
         </div>
         <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap">
