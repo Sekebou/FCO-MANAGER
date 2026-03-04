@@ -10,15 +10,18 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
+  // Use sessionStorage to persist success across re-mounts caused by signOut
   const [invitation, setInvitation] = useState<any>(null);
   const [status, setStatus] = useState<'loading' | 'valid' | 'expired' | 'used' | 'not_found'>('loading');
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(() => sessionStorage.getItem('register_success') === 'true');
   const [focused, setFocused] = useState<string | null>(null);
 
   useEffect(() => {
+    // If already registered successfully, skip invitation check
+    if (success) return;
     if (!token) { setStatus('not_found'); return; }
     const checkInvitation = async () => {
       try {
@@ -94,9 +97,13 @@ const Register = () => {
         } as any).eq('id', token!);
       }
 
-      // Sign out (user needs to login manually)
-      await supabase.auth.signOut();
+      // Persist success + email before signOut (which remounts component)
+      const emailForSuccess = invitation.email || formData.email.trim();
+      sessionStorage.setItem('register_success', 'true');
+      sessionStorage.setItem('register_email', emailForSuccess);
       setSuccess(true);
+      // Sign out (user needs to login via native app)
+      await supabase.auth.signOut();
     } catch (err: any) {
       let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = 'Un compte avec cet email existe déjà.';
@@ -155,7 +162,7 @@ const Register = () => {
     return domain === 'gmail.com' || domain === 'googlemail.com';
   };
 
-  const registeredEmail = invitation?.email || formData.email;
+  const registeredEmail = invitation?.email || formData.email || sessionStorage.getItem('register_email') || '';
   const showPlayStoreLink = isGoogleEmail(registeredEmail);
 
   if (success) {
