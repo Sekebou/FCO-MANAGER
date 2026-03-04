@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Lock, Mail, User, Loader2, Shield, ChevronRight, CheckCircle2, XCircle, AlertTriangle, Download, Smartphone, PartyPopper } from 'lucide-react';
@@ -10,13 +10,13 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
-  // Use sessionStorage to persist success across re-mounts caused by signOut
+  const successRef = useRef(sessionStorage.getItem('register_success') === 'true');
   const [invitation, setInvitation] = useState<any>(null);
   const [status, setStatus] = useState<'loading' | 'valid' | 'expired' | 'used' | 'not_found'>('loading');
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(() => sessionStorage.getItem('register_success') === 'true');
+  const [success, setSuccess] = useState(successRef.current);
   const [focused, setFocused] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,16 +97,15 @@ const Register = () => {
         } as any).eq('id', token!);
       }
 
-      // Persist success + email FIRST
+      // Mark success IMMEDIATELY — ref ensures it survives any re-mount
       const emailForSuccess = invitation.email || formData.email.trim();
       sessionStorage.setItem('register_success', 'true');
       sessionStorage.setItem('register_email', emailForSuccess);
-
-      // Sign out immediately and await it BEFORE setting success state
-      // This prevents AuthProvider re-renders from interfering with the success screen
-      try { await supabase.auth.signOut(); } catch {}
-
+      successRef.current = true;
       setSuccess(true);
+
+      // Sign out in background — no await, no interference with success screen
+      supabase.auth.signOut().catch(() => {});
     } catch (err: any) {
       let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = 'Un compte avec cet email existe déjà.';
@@ -124,7 +123,10 @@ const Register = () => {
     return labels[role] || role;
   };
 
-  if (status === 'loading' && !success) {
+  // Check ref OR state — ref survives re-mounts from AuthProvider re-renders
+  const isSuccess = success || successRef.current;
+
+  if (status === 'loading' && !isSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="animate-spin text-primary" size={32} />
@@ -132,7 +134,7 @@ const Register = () => {
     );
   }
 
-  if (status === 'not_found' || status === 'expired' || status === 'used') {
+  if (!isSuccess && (status === 'not_found' || status === 'expired' || status === 'used')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
         <div className="w-full max-w-sm text-center">
@@ -168,7 +170,7 @@ const Register = () => {
   const registeredEmail = invitation?.email || formData.email || sessionStorage.getItem('register_email') || '';
   const showPlayStoreLink = isGoogleEmail(registeredEmail);
 
-  if (success) {
+  if (isSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
         {/* Background particles */}
