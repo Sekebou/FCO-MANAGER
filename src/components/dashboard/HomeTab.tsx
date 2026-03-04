@@ -136,7 +136,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 <Trophy size={20} className="text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-foreground truncate">{nextMatch.title}</h3>
+                <h3 className="text-sm font-bold text-foreground truncate capitalize" style={{ textTransform: 'capitalize' }}>{nextMatch.title.toLowerCase()}</h3>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar size={11} /> {formatDate(nextMatch.date)}
@@ -149,7 +149,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 </div>
                 {nextMatch.location && (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                    <MapPin size={11} /> <span className="truncate">{nextMatch.location}</span>
+                    <MapPin size={11} /> <span className="truncate capitalize">{nextMatch.location.toLowerCase()}</span>
                   </span>
                 )}
               </div>
@@ -172,7 +172,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 <Dumbbell size={20} className="text-accent" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-foreground truncate">{nextTraining.title}</h3>
+                <h3 className="text-sm font-bold text-foreground truncate capitalize">{nextTraining.title.toLowerCase()}</h3>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar size={11} /> {formatDate(nextTraining.date)}
@@ -185,7 +185,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 </div>
                 {nextTraining.location && (
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                    <MapPin size={11} /> <span className="truncate">{nextTraining.location}</span>
+                    <MapPin size={11} /> <span className="truncate capitalize">{nextTraining.location.toLowerCase()}</span>
                   </span>
                 )}
               </div>
