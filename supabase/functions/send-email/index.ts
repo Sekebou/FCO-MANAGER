@@ -258,7 +258,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "FCO Manager <onboarding@resend.dev>",
+        from: "FCO Manager <noreply@fco-manager.fr>",
         to: [to],
         subject,
         html,
