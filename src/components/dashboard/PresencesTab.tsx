@@ -678,26 +678,18 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </div>
         ) : (
         <div className="space-y-0 max-w-3xl mx-auto">
-          {filteredEvents.map((event, idx) => {
-            const presences = event.presences || {};
+          {(() => {
+            const renderCard = (event: Event) => {
+              const presences = event.presences || {};
+              const presentCount = Object.values(presences).filter(p => p === 'present').length;
+              const absentCount = Object.values(presences).filter(p => p === 'absent').length;
+              const pendingCount = players.length - presentCount - absentCount;
+              const isPast = isEventPast(event);
+              const matchInfo = getMatchLogos(event);
+              const isMatch = !!matchInfo;
 
-            const presentCount = Object.values(presences).filter(p => p === 'present').length;
-            const absentCount = Object.values(presences).filter(p => p === 'absent').length;
-            const pendingCount = players.length - presentCount - absentCount;
-            const isPast = isEventPast(event);
-            const matchInfo = getMatchLogos(event);
-            const isMatch = !!matchInfo;
-
-            return (
-              <React.Fragment key={event.id}>
-                {/* Divider between cards */}
-                {idx > 0 && (
-                  <div className="flex items-center gap-3 py-2 px-2">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-border" />
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-                  </div>
-                )}
+              return (
+                <div key={event.id} className="mb-2.5">
               <div
                 className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
@@ -731,10 +723,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
                       {/* Teams row with logos */}
                       <div className="flex items-center justify-center gap-4 py-2">
-                        {/* Home team */}
-                        <div
-                          className="flex flex-col items-center gap-1.5 flex-1 min-w-0"
-                        >
+                        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                           {matchInfo.homeLogo ? (
                             <img src={matchInfo.homeLogo} alt="" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : (
@@ -744,18 +733,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           )}
                           <span className="text-xs font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
                         </div>
-
-                        {/* VS */}
-                        <div
-                          className="flex flex-col items-center shrink-0"
-                        >
+                        <div className="flex flex-col items-center shrink-0">
                           <span className="text-2xl font-black text-accent drop-shadow-sm">VS</span>
                         </div>
-
-                        {/* Away team */}
-                        <div
-                          className="flex flex-col items-center gap-1.5 flex-1 min-w-0"
-                        >
+                        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                           {matchInfo.awayLogo ? (
                             <img src={matchInfo.awayLogo} alt="" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-contain bg-secondary/50 p-0.5" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : (
@@ -768,83 +749,6 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       </div>
 
                       {/* Location + counters row */}
-                      <div
-                        className="flex flex-col gap-1.5 mt-2.5 pt-2 border-t border-border/50"
-                      >
-                        <div className="flex items-center justify-between">
-                          {event.location ? (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2 uppercase font-semibold tracking-wide">
-                              <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
-                            </p>
-                          ) : <div />}
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
-                              <Check size={10} /> {presentCount}
-                            </span>
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
-                              <X size={10} /> {absentCount}
-                            </span>
-                            {pendingCount > 0 && (
-                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
-                                <Clock size={10} /> {pendingCount}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {event.createdByName && (
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <User size={9} className="shrink-0" /> {event.createdByName}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    /* Training / Other card — same size as match */
-                    <div className="p-4 sm:p-5">
-                      {/* Date + time row (same as match) */}
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                            event.type === 'training' ? 'bg-purple-100 text-purple-700' : 'bg-accent/10 text-accent'
-                          }`}>
-                            {event.type === 'training' ? 'Entraînement' : 'Autre'}
-                          </span>
-                          <span className="text-[11px] font-medium text-muted-foreground capitalize">
-                            {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {event.time && (
-                            <span className={`text-sm font-black px-2.5 py-0.5 rounded-lg shadow-sm ${
-                              event.type === 'training'
-                                ? 'bg-purple-600 text-white shadow-purple-600/30'
-                                : 'bg-muted text-foreground'
-                            }`}>{event.time}</span>
-                          )}
-                          <ChevronRight size={16} className="text-muted-foreground/40" />
-                        </div>
-                      </div>
-
-                      {/* Central content area — same height as match logos */}
-                      <div className="flex items-center justify-center py-2 min-h-[88px]">
-                        <div className="flex flex-col items-center gap-2">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                            event.type === 'training' ? 'bg-purple-500/10' : 'bg-muted'
-                          }`}>
-                            {event.type === 'training' ? <Dumbbell size={28} className="text-purple-600" /> : <Calendar size={28} className="text-muted-foreground" />}
-                          </div>
-                          <h3 className="font-bold text-sm text-foreground text-center leading-tight line-clamp-2 max-w-[220px]">{event.title}</h3>
-                          {event.duration && (
-                            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
-                              <Timer size={10} className="shrink-0" /> {event.duration} min
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Location + counters row (same as match) */}
                       <div className="flex flex-col gap-1.5 mt-2.5 pt-2 border-t border-border/50">
                         <div className="flex items-center justify-between">
                           {event.location ? (
@@ -853,46 +757,77 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </p>
                           ) : <div />}
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent">
-                              <Check size={10} /> {presentCount}
-                            </span>
-                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive">
-                              <X size={10} /> {absentCount}
-                            </span>
-                            {pendingCount > 0 && (
-                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning">
-                                <Clock size={10} /> {pendingCount}
-                              </span>
-                            )}
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent"><Check size={10} /> {presentCount}</span>
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive"><X size={10} /> {absentCount}</span>
+                            {pendingCount > 0 && <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning"><Clock size={10} /> {pendingCount}</span>}
                           </div>
                         </div>
                         {event.createdByName && (
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <User size={9} className="shrink-0" /> {event.createdByName}
-                            </span>
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1"><User size={9} className="shrink-0" /> {event.createdByName}</span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 sm:p-5">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${event.type === 'training' ? 'bg-purple-100 text-purple-700' : 'bg-accent/10 text-accent'}`}>
+                            {event.type === 'training' ? 'Entraînement' : 'Autre'}
+                          </span>
+                          <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                            {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {event.time && (
+                            <span className={`text-sm font-black px-2.5 py-0.5 rounded-lg shadow-sm ${event.type === 'training' ? 'bg-purple-600 text-white shadow-purple-600/30' : 'bg-muted text-foreground'}`}>{event.time}</span>
+                          )}
+                          <ChevronRight size={16} className="text-muted-foreground/40" />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center py-2 min-h-[88px]">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${event.type === 'training' ? 'bg-purple-500/10' : 'bg-muted'}`}>
+                            {event.type === 'training' ? <Dumbbell size={28} className="text-purple-600" /> : <Calendar size={28} className="text-muted-foreground" />}
                           </div>
+                          <h3 className="font-bold text-sm text-foreground text-center leading-tight line-clamp-2 max-w-[220px]">{event.title}</h3>
+                          {event.duration && (
+                            <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1"><Timer size={10} className="shrink-0" /> {event.duration} min</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5 mt-2.5 pt-2 border-t border-border/50">
+                        <div className="flex items-center justify-between">
+                          {event.location ? (
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate flex-1 mr-2 uppercase font-semibold tracking-wide">
+                              <MapPin size={10} className="shrink-0 text-accent/60" /> {event.location}
+                            </p>
+                          ) : <div />}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-accent"><Check size={10} /> {presentCount}</span>
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-destructive"><X size={10} /> {absentCount}</span>
+                            {pendingCount > 0 && <span className="flex items-center gap-0.5 text-[10px] font-bold text-warning"><Clock size={10} /> {pendingCount}</span>}
+                          </div>
+                        </div>
+                        {event.createdByName && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-1"><User size={9} className="shrink-0" /> {event.createdByName}</span>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {/* "Tap for details" hint */}
                   {!isPast && (
-                  <div className="px-3.5 pb-1.5 mt-1">
+                    <div className="px-3.5 pb-1.5 mt-1">
                       <p className="text-[9px] text-muted-foreground/50 text-center">Appuyez pour voir plus de détails sur l'événement</p>
                     </div>
                   )}
                   {isPast && (
                     <div className="mx-3.5 mb-2 -mt-0.5">
-                      <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                        <Clock size={8} /> Terminé
-                      </span>
+                      <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Clock size={8} /> Terminé</span>
                     </div>
                   )}
                 </button>
 
-                {/* Quick presence buttons */}
                 {!isPast && currentUser?.playerId && (() => {
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
@@ -903,9 +838,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           animate={myStatus === 'present' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
                           transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
                           onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
-                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                            myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'
-                          }`}
+                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'}`}
                         >
                           <Check size={12} /> Présent
                         </motion.button>
@@ -924,17 +857,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           animate={myStatus === 'absent' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
                           transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
                           onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
-                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                            myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'
-                          }`}
+                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'}`}
                         >
                           <X size={12} /> Absent
                         </motion.button>
                         <AnimatePresence>
                           {myStatus === 'absent' && (
                             <>
-                              <motion.span key={`qa1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -8, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-sm">✕</motion.span>
-                              <motion.span key={`qa2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 10, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-[10px]">✕</motion.span>
+                              <motion.span key={`qa1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -6, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-sm">✕</motion.span>
+                              <motion.span key={`qa2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 8, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-[10px]">✕</motion.span>
                             </>
                           )}
                         </AnimatePresence>
@@ -952,9 +883,64 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   </button>
                 )}
               </div>
-              </React.Fragment>
-            );
-          })}
+                </div>
+              );
+            };
+
+            // When "all" is selected, group by type with section headers
+            if (eventFilter === 'all') {
+              const matches = filteredEvents.filter(e => e.type === 'match');
+              const trainings = filteredEvents.filter(e => e.type === 'training');
+              const others = filteredEvents.filter(e => e.type !== 'match' && e.type !== 'training');
+
+              return (
+                <>
+                  {matches.length > 0 && (
+                    <div className="mb-5">
+                      <div className="flex items-center gap-2 px-1 mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center">
+                          <Trophy size={14} className="text-accent" />
+                        </div>
+                        <span className="text-xs font-bold text-foreground tracking-wide">Matchs</span>
+                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">{matches.length}</span>
+                        <div className="flex-1 h-px bg-border/50 ml-1" />
+                      </div>
+                      {matches.map(renderCard)}
+                    </div>
+                  )}
+                  {trainings.length > 0 && (
+                    <div className="mb-5">
+                      <div className="flex items-center gap-2 px-1 mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+                          <Dumbbell size={14} className="text-purple-600" />
+                        </div>
+                        <span className="text-xs font-bold text-foreground tracking-wide">Entraînements</span>
+                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">{trainings.length}</span>
+                        <div className="flex-1 h-px bg-border/50 ml-1" />
+                      </div>
+                      {trainings.map(renderCard)}
+                    </div>
+                  )}
+                  {others.length > 0 && (
+                    <div className="mb-5">
+                      <div className="flex items-center gap-2 px-1 mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
+                          <Calendar size={14} className="text-muted-foreground" />
+                        </div>
+                        <span className="text-xs font-bold text-foreground tracking-wide">Autres</span>
+                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">{others.length}</span>
+                        <div className="flex-1 h-px bg-border/50 ml-1" />
+                      </div>
+                      {others.map(renderCard)}
+                    </div>
+                  )}
+                </>
+              );
+            }
+
+            // Filtered: simple list
+            return filteredEvents.map(renderCard);
+          })()}
         </div>
         );
       })()}
