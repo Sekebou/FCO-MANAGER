@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Monitor, Download } from "lucide-react";
+import { Smartphone } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 
 /**
@@ -20,19 +20,19 @@ const isMobileOrTablet = () => {
   if (typeof navigator === "undefined") return false;
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Tablet|PlayBook|Silk/i.test(
     navigator.userAgent
-  ) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent)); // iPad detection
+  ) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
 };
 
 /**
  * Access rules:
- * - Desktop browser → ALLOWED
  * - Capacitor native app (iOS/Android) → ALLOWED
- * - Mobile/tablet browser → BLOCKED
+ * - Mobile/tablet browser → ALLOWED (pour inscription via lien d'invitation)
+ * - Desktop browser → BLOCKED
  */
 const isAllowed = () => {
   if (isCapacitorNative()) return true;
-  if (isMobileOrTablet()) return false;
-  return true; // desktop
+  if (isMobileOrTablet()) return true;
+  return false; // desktop blocked
 };
 
 interface MobileOnlyGuardProps {
@@ -54,17 +54,13 @@ const MobileOnlyGuard = ({ children }: MobileOnlyGuardProps) => {
           FCO Manager
         </h1>
         <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-          Cette application n'est pas accessible depuis un navigateur mobile ou tablette.
-          Veuillez utiliser l'application native ou un ordinateur.
+          Cette application est exclusivement disponible sur mobile.
+          Veuillez utiliser l'application iOS ou Android.
         </p>
         <div className="space-y-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50">
-            <Download className="h-4 w-4 text-primary/60 shrink-0" />
+            <Smartphone className="h-4 w-4 text-primary/60 shrink-0" />
             <span>Téléchargez l'app sur iOS ou Android</span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/60 border border-border/50">
-            <Monitor className="h-4 w-4 text-primary/60 shrink-0" />
-            <span>Ou connectez-vous depuis un ordinateur</span>
           </div>
         </div>
       </div>
