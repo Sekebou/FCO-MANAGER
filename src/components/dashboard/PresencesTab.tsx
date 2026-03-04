@@ -887,55 +887,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               );
             };
 
-            // When "all" is selected, group by type with section headers
+            // When "all" is selected, show all events in chronological order (already sorted)
             if (eventFilter === 'all') {
-              const matches = filteredEvents.filter(e => e.type === 'match');
-              const trainings = filteredEvents.filter(e => e.type === 'training');
-              const others = filteredEvents.filter(e => e.type !== 'match' && e.type !== 'training');
-
-              return (
-                <>
-                  {matches.length > 0 && (
-                    <div className="mb-5">
-                      <div className="flex items-center gap-2 px-1 mb-2">
-                        <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center">
-                          <Trophy size={14} className="text-accent" />
-                        </div>
-                        <span className="text-xs font-bold text-foreground tracking-wide">Matchs</span>
-                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">{matches.length}</span>
-                        <div className="flex-1 h-px bg-border/50 ml-1" />
-                      </div>
-                      {matches.map(renderCard)}
-                    </div>
-                  )}
-                  {trainings.length > 0 && (
-                    <div className="mb-5">
-                      <div className="flex items-center gap-2 px-1 mb-2">
-                        <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
-                          <Dumbbell size={14} className="text-purple-600" />
-                        </div>
-                        <span className="text-xs font-bold text-foreground tracking-wide">Entraînements</span>
-                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">{trainings.length}</span>
-                        <div className="flex-1 h-px bg-border/50 ml-1" />
-                      </div>
-                      {trainings.map(renderCard)}
-                    </div>
-                  )}
-                  {others.length > 0 && (
-                    <div className="mb-5">
-                      <div className="flex items-center gap-2 px-1 mb-2">
-                        <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center">
-                          <Calendar size={14} className="text-muted-foreground" />
-                        </div>
-                        <span className="text-xs font-bold text-foreground tracking-wide">Autres</span>
-                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">{others.length}</span>
-                        <div className="flex-1 h-px bg-border/50 ml-1" />
-                      </div>
-                      {others.map(renderCard)}
-                    </div>
-                  )}
-                </>
-              );
+              return filteredEvents.map(renderCard);
             }
 
             // Filtered: simple list
