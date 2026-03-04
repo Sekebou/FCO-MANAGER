@@ -104,8 +104,8 @@ const Register = () => {
       successRef.current = true;
       setSuccess(true);
 
-      // Sign out in background — no await, no interference with success screen
-      supabase.auth.signOut().catch(() => {});
+      // Do NOT sign out — it triggers AuthProvider re-render causing blank page on Chrome mobile
+      // The user will use the native app to log in anyway
     } catch (err: any) {
       let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = 'Un compte avec cet email existe déjà.';
