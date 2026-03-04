@@ -287,21 +287,6 @@ const Register = () => {
             </motion.a>
           )}
 
-          {/* Login button */}
-          <motion.button
-            onClick={() => navigate('/auth')}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: showPlayStoreLink ? 1.45 : 1.15 }}
-            className={`group w-full py-3.5 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
-              showPlayStoreLink
-                ? 'bg-secondary text-foreground border border-border hover:bg-secondary/80'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20'
-            }`}
-          >
-            Se connecter
-            <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
-          </motion.button>
         </motion.div>
       </div>
     );
