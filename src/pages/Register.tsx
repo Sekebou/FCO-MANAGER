@@ -101,11 +101,12 @@ const Register = () => {
       const emailForSuccess = invitation.email || formData.email.trim();
       sessionStorage.setItem('register_success', 'true');
       sessionStorage.setItem('register_email', emailForSuccess);
+
+      // Sign out immediately and await it BEFORE setting success state
+      // This prevents AuthProvider re-renders from interfering with the success screen
+      try { await supabase.auth.signOut(); } catch {}
+
       setSuccess(true);
-      // Defer signOut so React renders success screen before AuthProvider re-renders
-      setTimeout(() => {
-        supabase.auth.signOut();
-      }, 500);
     } catch (err: any) {
       let msg = err.message;
       if (err.code === 'auth/email-already-in-use') msg = 'Un compte avec cet email existe déjà.';
