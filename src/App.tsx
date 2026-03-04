@@ -15,18 +15,24 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Sonner />
-      <MobileOnlyGuard>
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </MobileOnlyGuard>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            {/* Register accessible depuis n'importe quel navigateur */}
+            <Route path="/register" element={<Register />} />
+            {/* Tout le reste : app native uniquement */}
+            <Route path="*" element={
+              <MobileOnlyGuard>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </MobileOnlyGuard>
+            } />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
