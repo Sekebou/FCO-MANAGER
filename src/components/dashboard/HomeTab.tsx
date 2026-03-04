@@ -254,7 +254,7 @@ const SectionHeader: React.FC<{
   <div className="flex items-center justify-between mb-2 px-0.5">
     <div className="flex items-center gap-1.5">
       <Icon size={14} className="text-primary" />
-      <span className="text-xs font-bold text-foreground uppercase tracking-wide">{title}</span>
+      <span className="text-xs font-bold text-foreground tracking-wide">{title}</span>
     </div>
     {onAction && (
       <button onClick={onAction} className="text-[11px] font-semibold text-accent flex items-center gap-0.5">
