@@ -282,7 +282,7 @@ const Register = () => {
           {/* Play Store button */}
           {showPlayStoreLink && (
             <motion.a
-              href="https://play.google.com/store/apps/details?id=com.sekebou.fcomanager"
+              href="https://play.google.com/apps/testing/com.sekebou.fcomanager"
               target="_blank"
               rel="noopener noreferrer"
               initial={{ opacity: 0, y: 15 }}
