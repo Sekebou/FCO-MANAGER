@@ -173,7 +173,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold text-foreground truncate">{nextTraining.title}</h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar size={11} /> {formatDate(nextTraining.date)}
                   </span>
@@ -183,6 +183,11 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                     </span>
                   )}
                 </div>
+                {nextTraining.location && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                    <MapPin size={11} /> <span className="truncate">{nextTraining.location}</span>
+                  </span>
+                )}
               </div>
               <ChevronRight size={16} className="text-muted-foreground/40 shrink-0" />
             </div>
