@@ -6,7 +6,7 @@
 export function getWebOrigin(): string {
   const origin = window.location.origin;
   if (origin.startsWith('capacitor://') || origin.startsWith('http://localhost')) {
-    return 'https://blue-pitch-dash.lovable.app';
+    return 'https://fco-manager.lovable.app';
   }
   return origin;
 }
