@@ -16,12 +16,12 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* Register accessible depuis n'importe quel navigateur */}
-            <Route path="/register" element={<Register />} />
-            {/* Tout le reste : app native uniquement */}
-            <Route path="*" element={
+        <Routes>
+          {/* Register en dehors de AuthProvider — aucun re-render auth ne peut le perturber */}
+          <Route path="/register" element={<Register />} />
+          {/* Tout le reste passe par AuthProvider */}
+          <Route path="*" element={
+            <AuthProvider>
               <MobileOnlyGuard>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
@@ -29,9 +29,9 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </MobileOnlyGuard>
-            } />
-          </Routes>
-        </AuthProvider>
+            </AuthProvider>
+          } />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
