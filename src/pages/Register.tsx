@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Lock, Mail, User, Loader2, Shield, ChevronRight, XCircle, AlertTriangle, Download, Smartphone, PartyPopper, X } from 'lucide-react';
+import { Lock, Mail, User, Loader2, Shield, ChevronRight, XCircle, AlertTriangle, Download, Smartphone, PartyPopper } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clubLogo from '@/assets/logo.png';
 
@@ -164,6 +164,102 @@ const Register = () => {
 
   const registeredEmail = invitation?.email || formData.email || sessionStorage.getItem('register_email') || '';
 
+  // Success page — full screen, early return
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+          className="w-full max-w-sm text-center relative z-10"
+        >
+          <motion.div
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.2 }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-accent/10 rounded-2xl mb-4 border border-accent/20 shadow-lg shadow-accent/10"
+          >
+            <PartyPopper size={36} className="text-accent" />
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-2xl font-extrabold text-foreground mb-1 tracking-tight"
+          >
+            Félicitations ! 🎉
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="text-sm font-semibold text-primary mb-1"
+          >
+            Ton compte a été créé avec succès
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+            className="text-xs text-muted-foreground mb-6"
+          >
+            Bienvenue dans la famille FCO ! 💪
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            className="bg-card rounded-2xl p-5 border border-border shadow-sm mb-6"
+          >
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Prochaines étapes
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Download size={16} className="text-accent" />
+                </div>
+                <p className="text-sm text-foreground">
+                  Télécharge l'application <span className="font-bold">FCO Manager</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Smartphone size={16} className="text-primary" />
+                </div>
+                <p className="text-sm text-foreground">
+                  Connecte-toi avec <span className="font-bold">{registeredEmail}</span>
+                </p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.a
+            href="https://play.google.com/apps/testing/com.sekebou.fcomanager"
+            target="_blank"
+            rel="noopener noreferrer"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, type: 'spring', stiffness: 150 }}
+            className="group inline-flex items-center justify-center gap-2 w-full bg-accent text-accent-foreground py-3.5 rounded-xl font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20"
+          >
+            <Download size={18} />
+            Télécharger sur Google Play
+            <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+          </motion.a>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
       <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
@@ -256,108 +352,6 @@ const Register = () => {
           </button>
         </div>
       </div>
-
-      {/* Success Modal */}
-      <AnimatePresence>
-        {isSuccess && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-              className="w-full max-w-sm bg-card rounded-2xl border border-border shadow-2xl p-6 text-center relative"
-            >
-              {/* Confetti icon */}
-              <motion.div
-                initial={{ scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.2 }}
-                className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 rounded-2xl mb-4 border border-accent/20 shadow-lg shadow-accent/10"
-              >
-                <PartyPopper size={30} className="text-accent" />
-              </motion.div>
-
-              <motion.h2
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-xl font-extrabold text-foreground mb-1 tracking-tight"
-              >
-                Félicitations ! 🎉
-              </motion.h2>
-
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45 }}
-                className="text-sm font-semibold text-primary mb-1"
-              >
-                Ton compte a été créé avec succès
-              </motion.p>
-
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55 }}
-                className="text-xs text-muted-foreground mb-5"
-              >
-                Bienvenue dans la famille FCO ! 💪
-              </motion.p>
-
-              {/* Steps */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.65 }}
-                className="bg-secondary/60 rounded-xl p-4 border border-border/50 mb-5"
-              >
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Prochaines étapes
-                </p>
-                <div className="space-y-2.5">
-                  <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                      <Download size={14} className="text-accent" />
-                    </div>
-                    <p className="text-xs text-foreground">
-                      Télécharge l'application <span className="font-bold">FCO Manager</span>
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Smartphone size={14} className="text-primary" />
-                    </div>
-                    <p className="text-xs text-foreground">
-                      Connecte-toi avec <span className="font-bold">{registeredEmail}</span>
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Download button */}
-              <motion.a
-                href="https://play.google.com/apps/testing/com.sekebou.fcomanager"
-                target="_blank"
-                rel="noopener noreferrer"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, type: 'spring', stiffness: 150 }}
-                className="group inline-flex items-center justify-center gap-2 w-full bg-accent text-accent-foreground py-3 rounded-xl font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20"
-              >
-                <Download size={16} />
-                Télécharger sur Google Play
-                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
-              </motion.a>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
