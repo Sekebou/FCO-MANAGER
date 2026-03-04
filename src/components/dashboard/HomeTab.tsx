@@ -74,7 +74,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
       <motion.div variants={fadeUp} className="flex items-center gap-3.5">
         <div className="w-12 h-12 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
           {currentUser?.photoURL ? (
-            <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" />
+            <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <span className="text-sm font-bold text-primary">{initials}</span>
           )}

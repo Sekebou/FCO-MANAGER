@@ -198,7 +198,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   {/* Cover image */}
                   <div className="aspect-video bg-secondary relative overflow-hidden">
                     {cover ? (
-                      <img src={cover.url} alt={album.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={cover.url} alt={album.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Camera size={40} className="text-muted-foreground/30" />

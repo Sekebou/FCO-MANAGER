@@ -170,6 +170,26 @@ const getSignedPhotoUrls = async (photos: Photo[]): Promise<Photo[]> => {
   const urlMap = new Map(data.filter(d => d.signedUrl).map(d => [d.path, d.signedUrl]));
   return photos.map(p => ({ ...p, url: urlMap.get(p.storagePath) || p.url }));
 };
+
+// ── Stale-While-Revalidate cache helpers ──
+const CACHE_PREFIX = 'fco_cache_';
+const CACHE_TTL = 10 * 60 * 1000; // 10 min — data older than this won't be shown from cache
+
+const writeCache = (key: string, data: any) => {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ ts: Date.now(), data }));
+  } catch { /* quota exceeded — ignore */ }
+};
+
+const readCache = <T,>(key: string): T | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null; // stale
+    return data as T;
+  } catch { return null; }
+};
 // Small component showing points in header
 const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
   const [pts, setPts] = useState<number | null>(null);
@@ -376,13 +396,40 @@ const Dashboard = () => {
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return; }
 
+    // ── 1. Restore from cache instantly ──
+    const cachedPlayers = readCache<Player[]>('players');
+    const cachedEvents = readCache<Event[]>('events');
+    const cachedNews = readCache<NewsItem[]>('news');
+    const cachedMembers = readCache<Member[]>('members');
+    const cachedCards = readCache<Card[]>('cards');
+    const cachedAttendance = readCache<AttendanceRecord[]>('attendance');
+    const cachedComments = readCache<NewsComment[]>('comments');
+    const cachedChamps = readCache<Championship[]>('champs');
+    const cachedMatches = readCache<Match[]>('matches');
+    const cachedAlbums = readCache<Album[]>('albums');
+
+    if (cachedPlayers) setPlayers(cachedPlayers);
+    if (cachedEvents) setEvents(cachedEvents);
+    if (cachedNews) setNews(cachedNews);
+    if (cachedMembers) setMembers(cachedMembers);
+    if (cachedCards) setCards(cachedCards);
+    if (cachedAttendance) setAttendanceRecords(cachedAttendance);
+    if (cachedComments) setNewsComments(cachedComments);
+    if (cachedChamps) setChampionships(cachedChamps);
+    if (cachedMatches) setChampMatches(cachedMatches);
+    if (cachedAlbums) setAlbums(cachedAlbums);
+
+    const hasCache = cachedPlayers || cachedEvents || cachedNews;
+    if (hasCache) setLoading(false); // show cached data immediately
+
+    // ── 2. Fetch fresh data in background (without gallery_photos) ──
     const fetchAll = async () => {
       try {
         const [
           { data: playersData }, { data: eventsData }, { data: newsData },
           { data: membersData }, { data: cardsData }, { data: attendanceData },
           { data: commentsData }, { data: champsData }, { data: matchesData },
-          { data: albumsData }, { data: photosData }
+          { data: albumsData }
         ] = await Promise.all([
           supabase.from('players').select('*'),
           supabase.from('events').select('*').order('date', { ascending: false }),
@@ -394,21 +441,42 @@ const Dashboard = () => {
           supabase.from('championships').select('*'),
           supabase.from('championship_matches').select('*'),
           supabase.from('albums').select('*').order('created_at', { ascending: false }),
-          supabase.from('gallery_photos').select('*'),
         ]);
 
-        setPlayers(sortPlayersStable((playersData || []).map(mapPlayer)));
-        setEvents((eventsData || []).map(mapEvent));
-        setNews((newsData || []).map(mapNews));
-        setMembers((membersData || []).map(mapMember));
-        setCards((cardsData || []).map(mapCard));
-        setAttendanceRecords((attendanceData || []).map(mapAttendance));
-        setNewsComments((commentsData || []).map(mapComment));
-        setChampionships((champsData || []).map(mapChamp));
-        setChampMatches((matchesData || []).map(mapMatch));
-        setAlbums((albumsData || []).map(mapAlbum));
-        const mappedPhotos = (photosData || []).map(mapPhoto);
-        getSignedPhotoUrls(mappedPhotos).then(signed => setGalleryPhotos(signed));
+        const freshPlayers = sortPlayersStable((playersData || []).map(mapPlayer));
+        const freshEvents = (eventsData || []).map(mapEvent);
+        const freshNews = (newsData || []).map(mapNews);
+        const freshMembers = (membersData || []).map(mapMember);
+        const freshCards = (cardsData || []).map(mapCard);
+        const freshAttendance = (attendanceData || []).map(mapAttendance);
+        const freshComments = (commentsData || []).map(mapComment);
+        const freshChamps = (champsData || []).map(mapChamp);
+        const freshMatches = (matchesData || []).map(mapMatch);
+        const freshAlbums = (albumsData || []).map(mapAlbum);
+
+        setPlayers(freshPlayers);
+        setEvents(freshEvents);
+        setNews(freshNews);
+        setMembers(freshMembers);
+        setCards(freshCards);
+        setAttendanceRecords(freshAttendance);
+        setNewsComments(freshComments);
+        setChampionships(freshChamps);
+        setChampMatches(freshMatches);
+        setAlbums(freshAlbums);
+
+        // Write to cache for next visit
+        writeCache('players', freshPlayers);
+        writeCache('events', freshEvents);
+        writeCache('news', freshNews);
+        writeCache('members', freshMembers);
+        writeCache('cards', freshCards);
+        writeCache('attendance', freshAttendance);
+        writeCache('comments', freshComments);
+        writeCache('champs', freshChamps);
+        writeCache('matches', freshMatches);
+        writeCache('albums', freshAlbums);
+
         setLoading(false);
       } catch (err: any) {
         setError(err.message);
@@ -468,14 +536,13 @@ const Dashboard = () => {
 
       const fetchCold = async () => {
         try {
-          const [{ data: evData }, { data: memData }, { data: cardsData }, { data: champsData }, { data: matchData }, { data: albData }, { data: photData }] = await Promise.all([
+          const [{ data: evData }, { data: memData }, { data: cardsData }, { data: champsData }, { data: matchData }, { data: albData }] = await Promise.all([
             supabase.from('events').select('*').order('date', { ascending: false }),
             supabase.from('profiles').select('*').order('created_at', { ascending: false }),
             supabase.from('cards').select('*').order('date', { ascending: false }),
             supabase.from('championships').select('*'),
             supabase.from('championship_matches').select('*'),
             supabase.from('albums').select('*').order('created_at', { ascending: false }),
-            supabase.from('gallery_photos').select('*'),
           ]);
           if (evData) setEvents(evData.map(mapEvent));
           if (memData) setMembers(memData.map(mapMember));
@@ -483,7 +550,6 @@ const Dashboard = () => {
           if (champsData) setChampionships(champsData.map(mapChamp));
           if (matchData) setChampMatches(matchData.map(mapMatch));
           if (albData) setAlbums(albData.map(mapAlbum));
-          if (photData) getSignedPhotoUrls(photData.map(mapPhoto)).then(signed => setGalleryPhotos(signed));
         } catch (err) { console.warn('iOS cold poll error:', err); }
       };
 
@@ -526,14 +592,30 @@ const Dashboard = () => {
         supabase.from('albums').select('*').order('created_at', { ascending: false }).then(({ data }) => data && setAlbums(data.map(mapAlbum)));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery_photos' }, () => {
-        supabase.from('gallery_photos').select('*').then(({ data }) => data && getSignedPhotoUrls(data.map(mapPhoto)).then(signed => setGalleryPhotos(signed)));
+        if (galleryLoadedRef.current) {
+          supabase.from('gallery_photos').select('*').then(({ data }) => data && getSignedPhotoUrls(data.map(mapPhoto)).then(signed => setGalleryPhotos(signed)));
+        }
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [currentUser, navigate]);
 
-  // Auto-generate next occurrence for recurring events
+  // ── Lazy-load gallery photos only when gallery tab is opened ──
+  const galleryLoadedRef = useRef(false);
+  useEffect(() => {
+    if (activeTab !== 'gallery' || galleryLoadedRef.current) return;
+    galleryLoadedRef.current = true;
+    const loadPhotos = async () => {
+      const { data: photosData } = await supabase.from('gallery_photos').select('*');
+      if (photosData) {
+        const mapped = photosData.map(mapPhoto);
+        getSignedPhotoUrls(mapped).then(signed => setGalleryPhotos(signed));
+      }
+    };
+    loadPhotos();
+  }, [activeTab]);
+
   const recurringProcessed = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!currentUser || events.length === 0) return;
