@@ -26,13 +26,11 @@ const isMobileOrTablet = () => {
 /**
  * Access rules:
  * - Capacitor native app (iOS/Android) → ALLOWED
- * - Mobile/tablet browser → ALLOWED (pour inscription via lien d'invitation)
- * - Desktop browser → BLOCKED
+ * - Any browser (mobile or desktop) → BLOCKED
  */
 const isAllowed = () => {
   if (isCapacitorNative()) return true;
-  if (isMobileOrTablet()) return true;
-  return false; // desktop blocked
+  return false;
 };
 
 interface MobileOnlyGuardProps {
