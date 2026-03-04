@@ -127,7 +127,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
           {canManage() && (
             currentUser?.role === 'admin+' ? (
               <button
-                onClick={() => setShowInviteForm(true)}
+                onClick={onInvitePlayer}
                 className="bg-accent text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium shadow-lg hover:opacity-90 transition-opacity"
               >
                 <Send size={14} className="sm:w-4 sm:h-4" /> Inviter
