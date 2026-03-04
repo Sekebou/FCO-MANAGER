@@ -121,7 +121,7 @@ const Register = () => {
     return labels[role] || role;
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' && !success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="animate-spin text-primary" size={32} />
