@@ -486,20 +486,26 @@ const Dashboard = () => {
 
     fetchAll();
 
-    // Daily bonus: +1 pt/day (automatic)
+    // Daily bonus: +1 pt/day (automatic) — guarded by localStorage to avoid duplicates
     const awardDailyBonus = async () => {
       if (!currentUser?.uid) return;
       const today = new Date().toISOString().slice(0, 10);
-      const { data: existing } = await supabase
+      const cacheKey = `fco_daily_bonus_${currentUser.uid}`;
+      if (localStorage.getItem(cacheKey) === today) return; // already awarded locally
+      // Double-check in DB
+      const { data: existing, error: checkErr } = await supabase
         .from('points_transactions')
         .select('id')
         .eq('user_id', currentUser.uid)
         .eq('type', 'daily')
         .like('description', `%${today}%`)
-        .maybeSingle();
-      if (existing) return; // already awarded today
-      // Award 1 pt
-      const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
+        .limit(1);
+      if (checkErr || (existing && existing.length > 0)) {
+        localStorage.setItem(cacheKey, today);
+        return;
+      }
+      // Award 1 pt — upsert-safe
+      const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).limit(1).maybeSingle();
       if (pts) {
         await supabase.from('user_points').update({ balance: pts.balance + 1, updated_at: new Date().toISOString() }).eq('id', pts.id);
       } else {
@@ -511,6 +517,7 @@ const Dashboard = () => {
         type: 'daily',
         description: `Bonus quotidien ${today}`,
       });
+      localStorage.setItem(cacheKey, today);
     };
     awardDailyBonus();
 
