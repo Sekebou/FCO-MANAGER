@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users, MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink, Zap, Timer, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -370,6 +371,26 @@ const ChampionnatTab: React.FC<Props> = ({
               setLiveLogos(prev => ({ ...prev, ...logosResultats, ...logosCalendrier }));
             }
           } catch {}
+
+          // Save cache to DB so other users don't need to fetch
+          if (Array.isArray(members) && members.length > 0 && teamChamp) {
+            const liveCache: Record<string, any> = { classement: members, upcoming, results };
+            const liveLogosCache: Record<number, string> = {};
+            for (const entry of members) {
+              const clNo = entry.equipe?.club?.cl_no;
+              const logo = entry.equipe?.club?.logo;
+              if (clNo && logo) liveLogosCache[clNo] = logo;
+            }
+            if (Object.keys(liveLogosCache).length > 0) liveCache.logos = liveLogosCache;
+            supabase
+              .from('championships')
+              .update({ fff_live_cache: liveCache, fff_refreshed_at: new Date().toISOString() } as any)
+              .eq('id', teamChamp.id)
+              .then(({ error }) => {
+                if (error) console.error('Failed to save FFF cache:', error);
+                else console.log('FFF cache saved for team', selectedTeam);
+              });
+          }
         }
         
         setLiveUpcoming(upcoming);
