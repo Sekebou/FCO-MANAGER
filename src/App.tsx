@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import Download from "./pages/Download";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
         <Routes>
           {/* Register en dehors de AuthProvider — aucun re-render auth ne peut le perturber */}
           <Route path="/register" element={<Register />} />
+          <Route path="/dl-app-x7k9" element={<Download />} />
           {/* Tout le reste passe par AuthProvider */}
           <Route path="*" element={
             <AuthProvider>
