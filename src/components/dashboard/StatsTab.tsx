@@ -298,13 +298,16 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                           <div className="text-[10px] font-semibold text-foreground text-center truncate w-full">
                             {item.player.name.split(' ')[0]}
                           </div>
-                          <div className={`text-base font-black ${podiumTextColors[podiumIdx]} mb-1`}>
-                            {rate.toFixed(0)}%
+                          <div className={`text-lg font-black ${podiumTextColors[podiumIdx]} mb-0.5`}>
+                            {item.attendance!.present}
+                          </div>
+                          <div className="text-[9px] text-muted-foreground font-medium mb-1">
+                            présence{item.attendance!.present > 1 ? 's' : ''}
                           </div>
                           <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-xl ${podiumBg[podiumIdx]} border ${podiumBorder[podiumIdx]} border-b-0 flex flex-col items-center justify-center relative`}>
                             <span className={`text-lg font-black ${podiumTextColors[podiumIdx]}`}>{podiumRanks[podiumIdx]}</span>
                             <span className="text-[8px] text-muted-foreground font-medium">
-                              {item.attendance!.present} sur {item.attendance!.total}
+                              {item.attendance!.present}/{item.attendance!.total} ({rate.toFixed(0)}%)
                             </span>
                           </div>
                         </div>
