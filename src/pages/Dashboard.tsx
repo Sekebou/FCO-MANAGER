@@ -1451,7 +1451,7 @@ const Dashboard = () => {
       </main>
 
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
-
+      <FloatingChatBubble currentUser={currentUser} members={members} />
 
 
 
