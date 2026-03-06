@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot } from 'lucide-react';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import RoleBadge from '@/components/ui/role-badge';
 import PlayerRadarChart from './PlayerRadarChart';
@@ -227,36 +227,33 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                 Tops joueurs
                 <span className="flex-1 h-px bg-border/50" />
               </h4>
-              <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
                 {[
-                  { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, IconBadge: CircleDot },
-                  { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} passes déc.`, IconBadge: Target },
-                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present} sur ${topAttendance.attendance!.total} entraîn.` : '—', IconBadge: Users },
+                  { label: 'Buteur', player: topScorer, value: `${topScorer?.goals || 0}`, unit: 'buts', Icon: Target, gradient: 'from-accent/15 to-accent/5' },
+                  { label: 'Passeur', player: topAssister, value: `${topAssister?.assists || 0}`, unit: 'passes', Icon: Zap, gradient: 'from-primary/15 to-primary/5' },
+                  { label: 'Assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present}/${topAttendance.attendance!.total}` : '—', unit: 'entraîn.', Icon: Calendar, gradient: 'from-accent/10 to-accent/5' },
                 ].map((kpi, i) => {
                   const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
                   const photoURL = member?.photoURL;
                   const initials = kpi.player?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
                   return (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-secondary/30 border border-border/40 rounded-xl hover:bg-secondary/50 transition-colors">
-                      <div className="relative shrink-0">
+                    <div key={i} className={`flex flex-col items-center p-3 bg-gradient-to-b ${kpi.gradient} border border-border/40 rounded-xl text-center`}>
+                      <div className="relative mb-2">
                         {photoURL ? (
-                          <img src={photoURL} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-border/50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          <img src={photoURL} alt="" className="w-11 h-11 rounded-xl object-cover ring-1 ring-border/50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center ring-2 ring-border/50">
-                            <span className="text-xs font-bold text-accent">{initials}</span>
+                          <div className="w-11 h-11 rounded-xl bg-secondary flex items-center justify-center ring-1 ring-border/50">
+                            <span className="text-xs font-bold text-foreground">{initials}</span>
                           </div>
                         )}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center">
-                          <kpi.IconBadge size={10} className="text-accent" />
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-background border border-border/50 flex items-center justify-center shadow-sm">
+                          <kpi.Icon size={10} className="text-accent" />
                         </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{kpi.label}</div>
-                        <div className="text-sm font-bold text-foreground truncate">{kpi.player?.name || 'Aucun'}</div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-sm font-black text-accent">{kpi.value}</div>
-                      </div>
+                      <div className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">{kpi.label}</div>
+                      <div className="text-xs font-bold text-foreground truncate w-full">{kpi.player?.name.split(' ')[0] || '—'}</div>
+                      <div className="text-lg font-black text-accent leading-tight mt-0.5">{kpi.value}</div>
+                      <div className="text-[8px] text-muted-foreground font-medium">{kpi.unit}</div>
                     </div>
                   );
                 })}
@@ -397,16 +394,25 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                         <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground px-1.5 sm:px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
                         {(() => { const m = members.find(mb => mb.playerId === player.id); return m ? <RoleBadge role={m.role} displayRole={m.displayRole} size="sm" subtle /> : null; })()}
                       </div>
+                      {/* Attendance info */}
+                      {attendance && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Calendar size={10} className="text-muted-foreground" />
+                          <span className="text-[9px] text-muted-foreground font-medium">
+                            {attendance.present}/{attendance.total} entraîn. ({attendance.rate.toFixed(0)}%)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {/* Radar toggle button */}
                   {isCoachOrAdmin && (
                     <button
                       onClick={() => setExpandedRadar(isExpanded ? null : player.id)}
-                      className={`flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+                      className={`flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
                     >
-                      <BarChart3 size={13} />
-                      <span className="hidden sm:inline">Radar</span>
+                      <ChartNoAxesCombined size={15} />
+                      <span className="text-[8px] leading-tight">Stats avancées</span>
                     </button>
                   )}
                 </div>
@@ -424,11 +430,11 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                         disciplineScore={discipline}
                       />
                       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[9px] sm:text-[10px] text-muted-foreground mt-1 pb-1">
-                        <span>⚽ {goals} buts</span>
-                        <span>🎯 {assists} PD</span>
-                        <span>📊 {matches} matchs</span>
-                        <span>✅ {attendance ? `${attendance.rate.toFixed(0)}%` : '—'}</span>
-                        <span>🟢 {discipline.toFixed(0)}% disc.</span>
+                        <span className="flex items-center gap-1"><Target size={10} /> {goals} buts</span>
+                        <span className="flex items-center gap-1"><Zap size={10} /> {assists} PD</span>
+                        <span className="flex items-center gap-1"><Activity size={10} /> {matches} matchs</span>
+                        <span className="flex items-center gap-1"><Check size={10} /> {attendance ? `${attendance.rate.toFixed(0)}%` : '—'}</span>
+                        <span className="flex items-center gap-1"><Shield size={10} /> {discipline.toFixed(0)}% disc.</span>
                       </div>
                     </div>
                   </div>
