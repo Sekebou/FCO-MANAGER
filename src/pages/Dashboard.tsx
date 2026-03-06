@@ -379,6 +379,7 @@ const Dashboard = () => {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showAdminResetPassword, setShowAdminResetPassword] = useState(false);
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
+  const [showPushTest, setShowPushTest] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarFocusLicense, setAvatarFocusLicense] = useState(false);
   const [showLicenseReminder, setShowLicenseReminder] = useState(false);
