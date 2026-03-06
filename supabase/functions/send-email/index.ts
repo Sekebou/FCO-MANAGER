@@ -492,6 +492,10 @@ serve(async (req) => {
         subject = `🏟️ Convocation — ${params.match_title}`;
         emailElement = e(ConvocationEmail, params);
         break;
+      case "support":
+        subject = `🆘 Assistance — ${params.subject}`;
+        emailElement = e(SupportEmail, params);
+        break;
       default:
         throw new Error(`Unknown email type: ${type}`);
     }

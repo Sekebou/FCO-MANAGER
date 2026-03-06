@@ -22,6 +22,7 @@ const App = () => (
           {/* Register en dehors de AuthProvider — aucun re-render auth ne peut le perturber */}
           <Route path="/register" element={<Register />} />
           <Route path="/dl-app-x7k9" element={<Download />} />
+          <Route path="/support" element={<Support />} />
           {/* Tout le reste passe par AuthProvider */}
           <Route path="*" element={
             <AuthProvider>
