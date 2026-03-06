@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { MessageCircle, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Member } from '@/pages/Dashboard';
@@ -15,22 +14,35 @@ interface Props {
 
 const BUBBLE_SIZE = 56;
 const EDGE_MARGIN = 8;
+const DRAG_THRESHOLD = 8;
+
+const clampPosition = (x: number, y: number) => ({
+  x: Math.max(EDGE_MARGIN, Math.min(window.innerWidth - BUBBLE_SIZE - EDGE_MARGIN, x)),
+  y: Math.max(EDGE_MARGIN + 40, Math.min(window.innerHeight - BUBBLE_SIZE - 80, y)),
+});
+
+const snapToEdge = (x: number, y: number) => {
+  const midX = window.innerWidth / 2;
+  const snappedX = x + BUBBLE_SIZE / 2 < midX ? EDGE_MARGIN : window.innerWidth - BUBBLE_SIZE - EDGE_MARGIN;
+  return clampPosition(snappedX, y);
+};
 
 const FloatingChatBubble: React.FC<Props> = ({ currentUser, members }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [position, setPosition] = useState({ x: -1, y: -1 });
-  const dragRef = useRef<{ startX: number; startY: number; startPosX: number; startPosY: number; moved: boolean } | null>(null);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const dragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
   useBodyScrollLock(isOpen);
 
   // Initialize position
   useEffect(() => {
-    const savedPos = localStorage.getItem('chat_bubble_pos');
-    if (savedPos) {
+    const saved = localStorage.getItem('chat_bubble_pos');
+    if (saved) {
       try {
-        const parsed = JSON.parse(savedPos);
-        setPosition(clampPosition(parsed.x, parsed.y));
+        const p = JSON.parse(saved);
+        setPosition(clampPosition(p.x, p.y));
         return;
       } catch {}
     }
@@ -76,90 +88,60 @@ const FloatingChatBubble: React.FC<Props> = ({ currentUser, members }) => {
     if (isOpen) setUnreadCount(0);
   }, [isOpen]);
 
-  const clampPosition = (x: number, y: number) => ({
-    x: Math.max(EDGE_MARGIN, Math.min(window.innerWidth - BUBBLE_SIZE - EDGE_MARGIN, x)),
-    y: Math.max(EDGE_MARGIN + 40, Math.min(window.innerHeight - BUBBLE_SIZE - 80, y)),
-  });
-
-  const snapToEdge = useCallback((x: number, y: number) => {
-    const midX = window.innerWidth / 2;
-    const snappedX = x + BUBBLE_SIZE / 2 < midX ? EDGE_MARGIN : window.innerWidth - BUBBLE_SIZE - EDGE_MARGIN;
-    const pos = clampPosition(snappedX, y);
-    setPosition(pos);
-    localStorage.setItem('chat_bubble_pos', JSON.stringify(pos));
-  }, []);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    dragRef.current = { startX: touch.clientX, startY: touch.clientY, startPosX: position.x, startPosY: position.y, moved: false };
+  // --- Pointer-based drag (works for touch + mouse) ---
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (!position) return;
+    dragging.current = false;
+    dragStart.current = { x: e.clientX, y: e.clientY, posX: position.x, posY: position.y };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, [position]);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!dragRef.current) return;
-    const touch = e.touches[0];
-    const dx = touch.clientX - dragRef.current.startX;
-    const dy = touch.clientY - dragRef.current.startY;
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragRef.current.moved = true;
-    if (dragRef.current.moved) {
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    if (!dragging.current && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+      dragging.current = true;
+    }
+    if (dragging.current) {
       e.preventDefault();
-      setPosition(clampPosition(dragRef.current.startPosX + dx, dragRef.current.startPosY + dy));
+      setPosition(clampPosition(dragStart.current.posX + dx, dragStart.current.posY + dy));
     }
   }, []);
 
-  const handleTouchEnd = useCallback(() => {
-    if (dragRef.current?.moved) {
-      snapToEdge(position.x, position.y);
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    if (dragging.current && position) {
+      const snapped = snapToEdge(position.x, position.y);
+      setPosition(snapped);
+      localStorage.setItem('chat_bubble_pos', JSON.stringify(snapped));
     } else {
       setIsOpen(true);
     }
-    dragRef.current = null;
-  }, [position, snapToEdge]);
+    dragging.current = false;
+  }, [position]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    const startData = { startX: e.clientX, startY: e.clientY, startPosX: position.x, startPosY: position.y, moved: false };
-    dragRef.current = startData;
+  const closeChat = useCallback(() => setIsOpen(false), []);
 
-    const onMove = (ev: MouseEvent) => {
-      if (!dragRef.current) return;
-      const dx = ev.clientX - dragRef.current.startX;
-      const dy = ev.clientY - dragRef.current.startY;
-      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragRef.current.moved = true;
-      if (dragRef.current.moved) {
-        setPosition(clampPosition(dragRef.current.startPosX + dx, dragRef.current.startPosY + dy));
-      }
-    };
-    const onUp = () => {
-      if (dragRef.current?.moved) {
-        snapToEdge(position.x, position.y);
-      } else {
-        setIsOpen(true);
-      }
-      dragRef.current = null;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [position, snapToEdge]);
-
-  if (!currentUser || position.x < 0) return null;
+  if (!currentUser || !position) return null;
 
   return createPortal(
     <>
-      {/* Bubble — only visible when chat is CLOSED. z-40 = below all modals */}
+      {/* ====== BUBBLE (visible only when closed) ====== */}
       {!isOpen && (
         <div
-          className="fixed select-none touch-none"
-          style={{ left: position.x, top: position.y, zIndex: 40, width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleMouseDown}
+          className="fixed touch-none select-none"
+          style={{
+            left: position.x,
+            top: position.y,
+            zIndex: 40,
+            width: BUBBLE_SIZE,
+            height: BUBBLE_SIZE,
+          }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+          <div
             className="w-full h-full rounded-full flex items-center justify-center shadow-xl border-2 border-accent/30"
             style={{
               background: 'linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent) / 0.8))',
@@ -167,71 +149,61 @@ const FloatingChatBubble: React.FC<Props> = ({ currentUser, members }) => {
             }}
           >
             <MessageCircle size={26} className="text-accent-foreground" strokeWidth={2.2} />
-          </motion.div>
+          </div>
 
           {/* Unread badge */}
-          <AnimatePresence>
-            {unreadCount > 0 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-                className="absolute -top-1 -right-1 min-w-[22px] h-[22px] rounded-full bg-destructive flex items-center justify-center px-1"
-              >
-                <span className="text-[11px] font-black text-destructive-foreground leading-none">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 min-w-[22px] h-[22px] rounded-full bg-destructive flex items-center justify-center px-1">
+              <span className="text-[11px] font-black text-destructive-foreground leading-none">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Chat fullscreen panel — z-45 = below confirm modals (z-50/70) */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0"
-            style={{ zIndex: 45 }}
+      {/* ====== CHAT PANEL (fullscreen overlay) ====== */}
+      {isOpen && (
+        <div className="fixed inset-0" style={{ zIndex: 45 }}>
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+            onClick={closeChat}
+            onTouchEnd={closeChat}
+          />
+
+          {/* Panel */}
+          <div
+            className="absolute inset-0 sm:inset-3 bg-card sm:rounded-2xl border-0 sm:border sm:border-border shadow-2xl overflow-hidden flex flex-col"
+            style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
-            <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
-
-            <motion.div
-              initial={{ opacity: 0, y: 60, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 60, scale: 0.95 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="absolute inset-0 sm:inset-3 sm:top-3 sm:bottom-3 bg-card sm:rounded-2xl border-0 sm:border border-border shadow-2xl overflow-hidden flex flex-col"
-              style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header with close */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
-                    <MessageCircle size={18} className="text-accent" />
-                  </div>
-                  <h2 className="text-base font-bold text-foreground">Discussions</h2>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
+                  <MessageCircle size={18} className="text-accent" />
                 </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="w-9 h-9 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors active:scale-90"
-                >
-                  <X size={18} className="text-muted-foreground" />
-                </button>
+                <h2 className="text-base font-bold text-foreground">Discussions</h2>
               </div>
+              <button
+                type="button"
+                onClick={closeChat}
+                onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); closeChat(); }}
+                className="w-10 h-10 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors"
+              >
+                <X size={20} className="text-muted-foreground" />
+              </button>
+            </div>
 
-              {/* Chat content */}
-              <div className="flex-1 overflow-hidden">
-                <ChatTab currentUser={currentUser} members={members} embedded />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {/* Chat content */}
+            <div className="flex-1 overflow-hidden">
+              <ChatTab currentUser={currentUser} members={members} embedded />
+            </div>
+          </div>
+        </div>
+      )}
     </>,
     document.body,
   );
