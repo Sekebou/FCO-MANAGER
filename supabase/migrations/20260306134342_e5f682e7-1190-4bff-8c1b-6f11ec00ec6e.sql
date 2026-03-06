@@ -1,0 +1,1 @@
+DELETE FROM public.fcm_tokens WHERE platform = 'ios';
