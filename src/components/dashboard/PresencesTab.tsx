@@ -920,6 +920,70 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         );
       })()}
     </div>
+
+      {/* Confirmation modal for publish & notify */}
+      <AnimatePresence>
+        {showPublishConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[80]"
+            onMouseDown={(e) => { if (e.target === e.currentTarget && !publishing) setShowPublishConfirm(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card rounded-2xl w-full max-w-sm p-5 border border-border shadow-2xl space-y-4"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+                  <Bell size={20} className="text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Confirmer l'envoi</h3>
+                  <p className="text-xs text-muted-foreground">Notification push aux joueurs convoqués</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Les joueurs marqués comme <span className="font-semibold text-accent">convoqués</span> recevront une notification push sur leur téléphone. Les autres joueurs ne seront pas notifiés.
+              </p>
+              {(() => {
+                const convokedCount = Object.values(draftConvocations).filter(c => c.status === 'convoque').length;
+                return (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 rounded-xl border border-accent/10">
+                    <UserCheck size={14} className="text-accent" />
+                    <span className="text-sm font-medium text-foreground">{convokedCount} joueur{convokedCount > 1 ? 's' : ''} convoqué{convokedCount > 1 ? 's' : ''}</span>
+                  </div>
+                );
+              })()}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setShowPublishConfirm(null)}
+                  disabled={publishing}
+                  className="flex-1 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => confirmPublish(showPublishConfirm)}
+                  disabled={publishing}
+                  className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {publishing ? (
+                    <span className="animate-pulse">Envoi…</span>
+                  ) : (
+                    <><Send size={14} /> Confirmer</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
