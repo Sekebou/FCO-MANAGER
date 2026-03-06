@@ -93,7 +93,7 @@ const PresenceDot = ({ online }: { online: boolean }) => (
   />
 );
 
-const ChatTab: React.FC<Props> = ({ currentUser, members }) => {
+const ChatTab: React.FC<Props> = ({ currentUser, members, embedded = false }) => {
   const [view, setView] = useState<ChatView>('tabs');
   const [animating, setAnimating] = useState(false);
   const [globalMessages, setGlobalMessages] = useState<ChatMessage[]>([]);
