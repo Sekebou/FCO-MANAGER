@@ -40,70 +40,62 @@ export function usePushNotifications(userId: string | undefined) {
     if (!userId || registered.current) return;
     if (!Capacitor.isNativePlatform()) return;
 
-    // Defer push registration to avoid blocking WebView cold start
-    const timeoutId = setTimeout(() => {
-      const register = async () => {
-        try {
-          let permStatus = await PushNotifications.checkPermissions();
-          if (permStatus.receive === 'prompt') {
-            permStatus = await PushNotifications.requestPermissions();
-          }
-          if (permStatus.receive !== 'granted') {
-            console.log('Push notifications permission not granted');
-            return;
-          }
-
-          PushNotifications.addListener('registration', async (token) => {
-            const finalToken = tryDecodeHexToString(token.value);
-            console.log('FCM Token:', finalToken);
-            try {
-              const { error } = await supabase
-                .from('fcm_tokens')
-                .upsert({
-                  user_id: userId,
-                  token: finalToken,
-                  platform: Capacitor.getPlatform(),
-                  updated_at: new Date().toISOString(),
-                }, { onConflict: 'token' });
-              
-              if (error) {
-                console.error('Error storing FCM token:', error);
-              } else {
-                console.log('FCM token saved successfully');
-                registered.current = true;
-              }
-            } catch (e) {
-              console.error('Error saving FCM token:', e);
-            }
-          });
-
-          PushNotifications.addListener('registrationError', (error) => {
-            console.error('Push registration error:', error);
-          });
-
-          PushNotifications.addListener('pushNotificationReceived', (notification) => {
-            toast.info(notification.title || 'Notification', {
-              description: notification.body || '',
-            });
-          });
-
-          PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-            console.log('Push notification action:', action);
-          });
-
-          try {
-            await PushNotifications.register();
-          } catch (registerErr) {
-            console.error('FCM register() failed:', registerErr);
-          }
-
-        } catch (err) {
-          console.error('Push notification setup error:', err);
+    // Set up listeners IMMEDIATELY so we don't miss tokens from Firebase
+    PushNotifications.addListener('registration', async (token) => {
+      const finalToken = tryDecodeHexToString(token.value);
+      console.log('FCM Token:', finalToken);
+      try {
+        const { error } = await supabase
+          .from('fcm_tokens')
+          .upsert({
+            user_id: userId,
+            token: finalToken,
+            platform: Capacitor.getPlatform(),
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'token' });
+        
+        if (error) {
+          console.error('Error storing FCM token:', error);
+        } else {
+          console.log('FCM token saved successfully');
+          registered.current = true;
         }
-      };
+      } catch (e) {
+        console.error('Error saving FCM token:', e);
+      }
+    });
 
-      register();
-    }, 3000); // 3s delay to let WebView fully initialize first
+    PushNotifications.addListener('registrationError', (error) => {
+      console.error('Push registration error:', error);
+    });
+
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      toast.info(notification.title || 'Notification', {
+        description: notification.body || '',
+      });
+    });
+
+    PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      console.log('Push notification action:', action);
+    });
+
+    // Defer the actual register() call to avoid blocking WebView cold start
+    const timeoutId = setTimeout(async () => {
+      try {
+        let permStatus = await PushNotifications.checkPermissions();
+        if (permStatus.receive === 'prompt') {
+          permStatus = await PushNotifications.requestPermissions();
+        }
+        if (permStatus.receive !== 'granted') {
+          console.log('Push notifications permission not granted');
+          return;
+        }
+
+        await PushNotifications.register();
+      } catch (err) {
+        console.error('Push notification setup error:', err);
+      }
+    }, 2000);
 
     return () => {
       clearTimeout(timeoutId);
