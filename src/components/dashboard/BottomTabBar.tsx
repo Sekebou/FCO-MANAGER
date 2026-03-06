@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, MessageCircle, Home } from 'lucide-react';
+import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, Ticket, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
