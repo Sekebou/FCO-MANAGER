@@ -69,7 +69,7 @@ interface BottomTabBarProps {
   unreadDiscussions?: number;
 }
 
-const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
+const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomTabBarProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [featuredJustActivated, setFeaturedJustActivated] = useState(false);
