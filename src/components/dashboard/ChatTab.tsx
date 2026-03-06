@@ -44,6 +44,7 @@ interface ChatMessage {
 interface Props {
   currentUser: AppUser | null;
   members: Member[];
+  embedded?: boolean; // When true, fills parent container instead of using fixed height
 }
 
 const ROLE_COLORS: Record<string, string> = {
