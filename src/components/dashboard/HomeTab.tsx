@@ -126,9 +126,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
       {/* ── Next Match ── */}
       {nextMatch && (
         <motion.div variants={fadeUp}>
-          <SectionHeader icon={Trophy} title="Prochain match" onAction={() => onNavigate('presences')} />
+          <SectionHeader icon={Trophy} title="Prochain match" onAction={() => onNavigate('presences', nextMatch.id)} />
           <button
-            onClick={() => onNavigate('presences')}
+            onClick={() => onNavigate('presences', nextMatch.id)}
             className="w-full text-left bg-card border border-border/50 rounded-2xl p-4 active:scale-[0.98] transition-transform"
           >
             <div className="flex items-center gap-3">
