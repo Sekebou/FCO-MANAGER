@@ -1361,6 +1361,57 @@ const Dashboard = () => {
                   }
                 } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}
+              onSendReminder={async (event) => {
+                try {
+                  const presences = event.presences || {};
+                  // Find players who haven't responded (not present, not absent)
+                  const allPlayerIds = players.filter(p => !p.id.startsWith('temp-')).map(p => p.id);
+                  const noResponsePlayerIds = allPlayerIds.filter(pid => !presences[pid] || (presences[pid] !== 'present' && presences[pid] !== 'absent'));
+
+                  if (noResponsePlayerIds.length === 0) {
+                    toast.info('Tous les joueurs ont déjà répondu !');
+                    return;
+                  }
+
+                  // Find member IDs linked to these players
+                  const targetMemberIds = members
+                    .filter(m => m.playerId && noResponsePlayerIds.includes(m.playerId))
+                    .map(m => m.id);
+
+                  if (targetMemberIds.length === 0) {
+                    toast.info('Aucun membre à notifier');
+                    return;
+                  }
+
+                  const { data: tokenRows } = await supabase
+                    .from('fcm_tokens')
+                    .select('token')
+                    .in('user_id', targetMemberIds);
+
+                  const tokens = tokenRows?.map(r => r.token) || [];
+
+                  if (tokens.length === 0) {
+                    toast.info('Aucun appareil enregistré pour les joueurs en attente');
+                    return;
+                  }
+
+                  const typeLabels: Record<string, string> = { match: 'match', training: 'entraînement', other: 'événement' };
+                  const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+                  await supabase.functions.invoke('send-push-notification', {
+                    body: {
+                      title: '⏰ Rappel',
+                      body: `N'oublie pas de confirmer ta présence ou absence pour le ${typeLabels[event.type] || 'événement'} : ${event.title} le ${eventDate} !`,
+                      tokens,
+                      data: { tab: 'presences', eventId: event.id },
+                    },
+                  });
+
+                  toast.success(`Rappel envoyé à ${tokens.length} joueur(s) en attente`);
+                } catch (err: any) {
+                  toast.error('Erreur: ' + err.message);
+                }
+              }}
             />
           )}
           {activeTab === 'stats' && <StatsTab players={visiblePlayersForStats} events={events} cards={cards} attendanceRecords={attendanceRecords} members={visibleMembers} currentUser={currentUser} canManage={canManage} updatePlayerStats={updatePlayerStats} deletePlayer={deletePlayer} getPlayerCards={getPlayerCards} deleteCard={deleteCard} onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }} />}

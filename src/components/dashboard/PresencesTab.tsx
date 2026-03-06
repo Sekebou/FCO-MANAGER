@@ -30,6 +30,7 @@ interface Props {
   canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
   onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>) => Promise<void>;
+  onSendReminder?: (event: Event) => Promise<void>;
   onResetHeader?: () => void;
   initialSelectedEventId?: string | null;
 }
@@ -39,7 +40,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onPublishAndNotifyConvocations, onResetHeader, initialSelectedEventId }: Props) => {
+const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onPublishAndNotifyConvocations, onSendReminder, onResetHeader, initialSelectedEventId }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialSelectedEventId || null);
   const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
@@ -49,6 +50,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [expandedConvocationsEdit, setExpandedConvocationsEdit] = useState<Record<string, boolean>>({});
   const [showPublishConfirm, setShowPublishConfirm] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   // React to navigation with a specific event ID
   useEffect(() => {
@@ -302,6 +304,25 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             </motion.span>
           </div>
         </div>
+
+        {/* Reminder button - only for managers, non-past events */}
+        {!isEventPast(event) && canManage() && unknownCount > 0 && onSendReminder && (
+          <button
+            onClick={async () => {
+              setSendingReminder(true);
+              try { await onSendReminder(event); } catch {}
+              setSendingReminder(false);
+            }}
+            disabled={sendingReminder}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-warning/10 text-warning hover:bg-warning/20 text-sm font-semibold transition-all disabled:opacity-50 border border-warning/20"
+          >
+            {sendingReminder ? (
+              <span className="animate-pulse">Envoi du rappel…</span>
+            ) : (
+              <><Bell size={14} /> Envoyer un rappel ({unknownCount} en attente)</>
+            )}
+          </button>
+        )}
 
         {/* Past event banner */}
         {isEventPast(event) && (
