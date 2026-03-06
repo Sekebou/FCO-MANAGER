@@ -5,6 +5,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
+ * Decode a hex string to UTF-8 text.
+ * On iOS, the FCM token string gets hex-encoded by Capacitor's Data→hex conversion.
+ */
+function tryDecodeHexToString(hex: string): string {
+  // Check if it looks like a hex-encoded UTF-8 string (only hex chars, even length)
+  if (/^[0-9A-Fa-f]+$/.test(hex) && hex.length % 2 === 0 && hex.length > 100) {
+    try {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+      }
+      const decoded = new TextDecoder().decode(bytes);
+      // FCM tokens contain ':' and alphanumeric chars
+      if (decoded.includes(':') && /^[\w\-:]+$/.test(decoded)) {
+        console.log('Decoded hex FCM token:', decoded);
+        return decoded;
+      }
+    } catch {
+      // Not a valid hex-encoded string, return as-is
+    }
+  }
+  return hex;
+}
+
+/**
  * Hook to register for push notifications on native platforms.
  * Stores the FCM token in Supabase fcm_tokens table.
  */
@@ -17,7 +42,6 @@ export function usePushNotifications(userId: string | undefined) {
 
     const register = async () => {
       try {
-        // Check / request permission
         let permStatus = await PushNotifications.checkPermissions();
         if (permStatus.receive === 'prompt') {
           permStatus = await PushNotifications.requestPermissions();
@@ -27,16 +51,16 @@ export function usePushNotifications(userId: string | undefined) {
           return;
         }
 
-        // Listen for token BEFORE calling register to avoid race condition
         PushNotifications.addListener('registration', async (token) => {
-          console.log('FCM Token:', token.value);
+          // On iOS, the FCM token arrives hex-encoded — decode it
+          const finalToken = tryDecodeHexToString(token.value);
+          console.log('FCM Token:', finalToken);
           try {
-            // Simple upsert — UNIQUE constraint on token column handles conflicts
             const { error } = await supabase
               .from('fcm_tokens')
               .upsert({
                 user_id: userId,
-                token: token.value,
+                token: finalToken,
                 platform: Capacitor.getPlatform(),
                 updated_at: new Date().toISOString(),
               }, { onConflict: 'token' });
@@ -56,23 +80,20 @@ export function usePushNotifications(userId: string | undefined) {
           console.error('Push registration error:', error);
         });
 
-        // Handle received notifications when app is in foreground
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
           toast.info(notification.title || 'Notification', {
             description: notification.body || '',
           });
         });
 
-        // Handle notification tap (app was in background)
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
           console.log('Push notification action:', action);
         });
 
-        // Register with FCM - wrapped in its own try/catch to prevent native crash propagation
         try {
           await PushNotifications.register();
         } catch (registerErr) {
-          console.error('FCM register() failed (google-services.json missing?):', registerErr);
+          console.error('FCM register() failed:', registerErr);
         }
 
       } catch (err) {
