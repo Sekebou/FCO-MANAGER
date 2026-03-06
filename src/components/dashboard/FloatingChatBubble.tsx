@@ -226,7 +226,7 @@ const FloatingChatBubble: React.FC<Props> = ({ currentUser, members }) => {
 
               {/* Chat content */}
               <div className="flex-1 overflow-hidden">
-                <ChatTab currentUser={currentUser} members={members} />
+                <ChatTab currentUser={currentUser} members={members} embedded />
               </div>
             </motion.div>
           </motion.div>
