@@ -1320,46 +1320,46 @@ const Dashboard = () => {
           )}
           {activeTab === 'presences' && (
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} initialSelectedEventId={pendingEventId} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(null); }}
-              onUpdateConvocations={async (eventId, convocations) => {
-                try { await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId); toast.success('Convocations publiées !'); } catch (err: any) { toast.error('Erreur: ' + err.message); }
-              }}
-              onSendConvocationNotif={async (event, convocations) => {
+              onPublishAndNotifyConvocations={async (eventId, event, convocations) => {
                 try {
-                  // Get player IDs that ARE convoked
+                  // 1. Save convocations to DB
+                  await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId);
+
+                  // 2. Notify only convoked players
                   const convokedPlayerIds = Object.entries(convocations)
                     .filter(([, c]) => c.status === 'convoque')
                     .map(([playerId]) => playerId);
 
-                  // Find member IDs linked to convoked players
                   const convokedMemberIds = members
                     .filter(m => m.playerId && convokedPlayerIds.includes(m.playerId))
                     .map(m => m.id);
 
-                  if (convokedMemberIds.length === 0) {
-                    toast.info('Aucun joueur convoqué à notifier');
-                    return;
+                  if (convokedMemberIds.length > 0) {
+                    const { data: tokenRows } = await supabase
+                      .from('fcm_tokens')
+                      .select('token')
+                      .in('user_id', convokedMemberIds);
+
+                    const tokens = tokenRows?.map(r => r.token) || [];
+
+                    if (tokens.length > 0) {
+                      const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+                      await supabase.functions.invoke('send-push-notification', {
+                        body: {
+                          title: '✅ Convocation',
+                          body: `Tu es sélectionné pour ${event.title} le ${eventDate} ! Confirme ta présence sur l'app.`,
+                          tokens,
+                          data: { type: 'convocation', eventId: event.id },
+                        },
+                      });
+                      toast.success(`Convocations publiées et ${tokens.length} joueur(s) notifié(s) !`);
+                    } else {
+                      toast.success('Convocations publiées ! (aucun appareil enregistré pour les convoqués)');
+                    }
+                  } else {
+                    toast.success('Convocations publiées !');
                   }
-
-                  // Fetch FCM tokens for convoked players only
-                  const { data: tokenRows } = await supabase
-                    .from('fcm_tokens')
-                    .select('token')
-                    .in('user_id', convokedMemberIds);
-
-                  const tokens = tokenRows?.map(r => r.token) || [];
-
-                  if (tokens.length === 0) {
-                    toast.info('Aucun appareil enregistré pour les joueurs convoqués. Les joueurs doivent ouvrir l\'application mobile pour activer les notifications.');
-                    return;
-                  }
-
-                  const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-
-                  const res = await supabase.functions.invoke('send-push-notification', {
-                    body: {
-                      title: '✅ Convocation',
-                      body: `Tu es sélectionné pour ${event.title} le ${eventDate} !`,
-                      tokens,
+                } catch (err: any) { toast.error('Erreur: ' + err.message); }
                       data: { type: 'convocation', eventId: event.id },
                     },
                   });
