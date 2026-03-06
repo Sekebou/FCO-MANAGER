@@ -36,24 +36,24 @@ const App = () => {
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          {/* Register en dehors de AuthProvider — aucun re-render auth ne peut le perturber */}
-          <Route path="/register" element={<Register />} />
-          <Route path="/dl-app-x7k9" element={<Download />} />
-          <Route path="/support" element={<Support />} />
-          {/* Tout le reste passe par AuthProvider */}
-          <Route path="*" element={
-            <AuthProvider>
-              <MobileOnlyGuard>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </MobileOnlyGuard>
-            </AuthProvider>
-          } />
-        </Routes>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/register" element={<Register />} />
+            <Route path="/dl-app-x7k9" element={<Download />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="*" element={
+              <AuthProvider>
+                <MobileOnlyGuard>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </MobileOnlyGuard>
+              </AuthProvider>
+            } />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
