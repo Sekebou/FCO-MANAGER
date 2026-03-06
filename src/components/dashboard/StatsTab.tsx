@@ -107,7 +107,13 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
   const attendanceStats = players
     .map(p => ({ player: p, attendance: calculateAttendanceRate(p.id) }))
     .filter(i => i.attendance !== null)
-    .sort((a, b) => (b.attendance?.rate || 0) - (a.attendance?.rate || 0));
+    .sort((a, b) => {
+      // Primary: number of presences (who attended the most)
+      const diff = (b.attendance?.present || 0) - (a.attendance?.present || 0);
+      if (diff !== 0) return diff;
+      // Secondary: rate
+      return (b.attendance?.rate || 0) - (a.attendance?.rate || 0);
+    });
 
   // KPI cards data
   const topScorer = [...players].sort((a, b) => (b.goals || 0) - (a.goals || 0))[0];
