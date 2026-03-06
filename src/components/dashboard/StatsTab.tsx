@@ -288,14 +288,15 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                         const photoURL = member?.photoURL;
                         const initials = item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+                        // podiumIdx = index in attendanceStats (0=1st, 1=2nd, 2=3rd)
                         const podiumConfig = [
-                          { rank: 2, medal: '🥈', height: 'h-14', avatarSize: 'w-12 h-12', ringColor: 'ring-muted-foreground/30', bg: 'bg-secondary/60', textColor: 'text-muted-foreground' },
                           { rank: 1, medal: '🥇', height: 'h-20', avatarSize: 'w-14 h-14', ringColor: 'ring-accent/50', bg: 'bg-accent/10', textColor: 'text-accent' },
+                          { rank: 2, medal: '🥈', height: 'h-14', avatarSize: 'w-12 h-12', ringColor: 'ring-muted-foreground/30', bg: 'bg-secondary/60', textColor: 'text-muted-foreground' },
                           { rank: 3, medal: '🥉', height: 'h-10', avatarSize: 'w-11 h-11', ringColor: 'ring-muted-foreground/20', bg: 'bg-secondary/40', textColor: 'text-muted-foreground' },
                         ][podiumIdx];
 
                         return (
-                          <div key={item.player.id} className={`flex flex-col items-center flex-1 max-w-[110px] ${isFirst ? 'order-2' : podiumIdx === 1 ? 'order-1' : 'order-3'}`}>
+                          <div key={item.player.id} className={`flex flex-col items-center flex-1 max-w-[110px] ${podiumIdx === 0 ? 'order-2' : podiumIdx === 1 ? 'order-1' : 'order-3'}`}>
                             {/* Medal */}
                             <span className={`text-lg ${isFirst ? 'text-2xl mb-1' : 'mb-0.5'}`}>{podiumConfig.medal}</span>
                             
