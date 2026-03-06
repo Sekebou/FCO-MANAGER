@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import Download from "./pages/Download";
+import Support from "./pages/Support";
 
 const queryClient = new QueryClient();
 
