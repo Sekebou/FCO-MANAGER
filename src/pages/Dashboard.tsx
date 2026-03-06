@@ -1500,6 +1500,7 @@ const Dashboard = () => {
       {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
       {showAdminResetPassword && selectedMemberForReset && <AdminResetPasswordForm member={selectedMemberForReset} onClose={() => { setShowAdminResetPassword(false); setSelectedMemberForReset(null); }} />}
       {showAvatarModal && currentUser && <AvatarModal currentUser={currentUser} onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }} onAvatarUpdated={(photoURL) => setCurrentUser({ ...currentUser, photoURL })} focusLicense={avatarFocusLicense} onStartTutorial={() => setShowTutorial(true)} />}
+      {showPushTest && <SendPushNotifForm onClose={() => setShowPushTest(false)} />}
       {showLicenseReminder && (
         <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setShowLicenseReminder(false)}>
           <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
