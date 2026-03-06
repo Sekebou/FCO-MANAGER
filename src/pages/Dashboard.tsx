@@ -21,7 +21,7 @@ import ChampionnatTab, { type Championship, type Match } from '@/components/dash
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
 import ChatTab from '@/components/dashboard/ChatTab';
 import ParisTab from '@/components/dashboard/ParisTab';
-import FloatingChatBubble from '@/components/dashboard/FloatingChatBubble';
+// FloatingChatBubble removed — discussions is now a tab
 import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
 import HomeTab from '@/components/dashboard/HomeTab';
