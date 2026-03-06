@@ -1455,6 +1455,7 @@ const Dashboard = () => {
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryTab albums={albums} photos={galleryPhotos} currentUser={currentUser} canManagePhotos={canManagePhotos} onCreateAlbum={createAlbum} onDeleteAlbum={deleteAlbum} onUploadPhotos={uploadPhotos} onDeletePhoto={deletePhoto} />}
           {activeTab === 'paris' && <ParisTab currentUser={currentUser} championships={championships} matches={champMatches} />}
+          {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
               onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
