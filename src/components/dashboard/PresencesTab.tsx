@@ -475,11 +475,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors">
                           <Pencil size={14} /> Modifier
                         </button>
-                        {onSendConvocationNotif && event.convocations && (
-                          <button onClick={() => onSendConvocationNotif(event, event.convocations!)} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors" title="Notifier les joueurs convoqués">
-                            <Bell size={14} /> Convoqués
-                          </button>
-                        )}
+                        <button onClick={() => {
+                          setDraftConvocations(event.convocations || {});
+                          setShowPublishConfirm(event.id);
+                        }} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors" title="Re-notifier les joueurs convoqués">
+                          <Bell size={14} /> Re-notifier
+                        </button>
                       </div>
                     )}
                   </div>
