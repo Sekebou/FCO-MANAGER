@@ -199,6 +199,15 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
     supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle().then(({ data }) => {
       setPts(data?.balance ?? 100);
     });
+    // Subscribe to realtime updates for this user's points
+    const channel = supabase
+      .channel(`user_points_${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${userId}` }, (payload: any) => {
+        const newBalance = payload.new?.balance;
+        if (typeof newBalance === 'number') setPts(newBalance);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
   if (pts === null) return null;
   return (
