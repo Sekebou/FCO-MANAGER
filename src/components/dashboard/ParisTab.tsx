@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trophy, Coins, TrendingUp, Clock, CheckCircle2, XCircle, Filter, Ticket, BarChart3, Flame, ChevronDown, Zap } from 'lucide-react';
+import { Trophy, Coins, TrendingUp, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Zap, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import type { AppUser } from '@/contexts/AuthContext';
-import type { Championship, Match } from './ChampionnatTab';
+import type { Championship } from './ChampionnatTab';
+import {
+  getEquipes, getTeamChampionship, getTousMatchsAvenir,
+  mapClassementToStandings, getClassement,
+  OISEMONT_CL_NO, decodeFFFApiRef,
+  type FFFMonthGroup, type FFFLiveMatch, type ScrapedStanding
+} from '@/lib/fffApi';
 import BetModal, { generateOdds } from './BetModal';
 import BetLeaderboard from './BetLeaderboard';
 
@@ -25,7 +32,6 @@ interface Bet {
 interface Props {
   currentUser: AppUser | null;
   championships: Championship[];
-  matches: Match[];
 }
 
 const mapBet = (r: any): Bet => ({
@@ -51,13 +57,26 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; co
   lost: { icon: XCircle, label: 'Perdu', color: 'text-destructive', bg: 'bg-destructive/10' },
 };
 
-const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
+const BASE_TEAMS = ['A', 'B', 'C'];
+
+const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [bets, setBets] = useState<Bet[]>([]);
   const [balance, setBalance] = useState(100);
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedTeam, setSelectedTeam] = useState<string>('A');
 
+  // FFF live data
+  const [liveUpcoming, setLiveUpcoming] = useState<FFFMonthGroup[]>([]);
+  const [liveClassement, setLiveClassement] = useState<ScrapedStanding[]>([]);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+
+  // Custom teams from championships
+  const customTeams = [...new Set(championships.map(c => c.team || 'A').filter(t => !BASE_TEAMS.includes(t)))].sort();
+  const allTeamOptions = [...BASE_TEAMS, ...customTeams];
+
+  // Load bets & balance
   useEffect(() => {
     if (!currentUser) return;
     const fetchData = async () => {
@@ -83,30 +102,94 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
 
-  // Upcoming matches that can be bet on (string comparison to avoid timezone issues)
-  const upcomingMatches = useMemo(() => {
-    const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
-    return matches
-      .filter(m => !m.played && m.date >= todayStr)
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .slice(0, 20);
-  }, [matches]);
+  // Load FFF live upcoming matches for selected team (use cache from championships)
+  useEffect(() => {
+    let cancelled = false;
+    const teamMapping: Record<string, { categoryCode: string; code: number }> = {
+      'A': { categoryCode: 'SEM', code: 1 },
+      'B': { categoryCode: 'SEM', code: 2 },
+      'C': { categoryCode: 'SEM', code: 3 },
+    };
 
-  // Get team logo from championship data
-  const getTeamLogo = (teamName: string) => {
-    for (const champ of championships) {
-      const logos = champ.teamLogos as Record<string, string> | undefined;
-      if (logos?.[teamName]) return logos[teamName];
+    const mapping = teamMapping[selectedTeam];
+
+    let customParams: { cpNo: number; phase: number; poule: number } | null = null;
+    if (!mapping) {
+      const customChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffUrl);
+      if (customChamp?.fffUrl) customParams = decodeFFFApiRef(customChamp.fffUrl);
+      if (!customParams) {
+        setLiveUpcoming([]);
+        setLiveClassement([]);
+        setIsLoadingMatches(false);
+        return;
+      }
     }
-    return null;
-  };
+
+    // Check DB cache first
+    const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
+    const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
+    const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+
+    if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
+      const cache = teamChamp.fffLiveCache;
+      setLiveUpcoming(cache.upcoming || []);
+      if (cache.classement && Array.isArray(cache.classement)) {
+        setLiveClassement(mapClassementToStandings(cache.classement));
+      }
+      setIsLoadingMatches(false);
+      return;
+    }
+
+    // Fetch from API
+    const fetchMatches = async () => {
+      setIsLoadingMatches(true);
+      try {
+        let champParams = customParams;
+        if (!champParams && mapping) {
+          const equipesData = await getEquipes(OISEMONT_CL_NO);
+          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+        }
+        if (!champParams || cancelled) return;
+
+        const [upcoming, classementData] = await Promise.all([
+          getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
+          getClassement(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
+        ]);
+        if (cancelled) return;
+        setLiveUpcoming(upcoming);
+        if (classementData) {
+          const members = classementData?.['hydra:member'] || classementData;
+          if (Array.isArray(members)) {
+            setLiveClassement(mapClassementToStandings(members));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching FFF matches for Paris:', err);
+      } finally {
+        if (!cancelled) setIsLoadingMatches(false);
+      }
+    };
+    fetchMatches();
+    return () => { cancelled = true; };
+  }, [selectedTeam, championships.length]);
+
+  // Flatten upcoming matches
+  const allUpcoming = useMemo(() => {
+    const result: (FFFLiveMatch & { _groupMonth: string })[] = [];
+    for (const group of liveUpcoming) {
+      for (const m of group.matchs) {
+        result.push({ ...m, _groupMonth: group.mois });
+      }
+    }
+    return result;
+  }, [liveUpcoming]);
 
   const myBets = useMemo(() => bets.filter(b => b.userId === currentUser?.uid), [bets, currentUser]);
   const myPendingBets = myBets.filter(b => b.status === 'pending');
   const myWonBets = myBets.filter(b => b.status === 'won');
   const myLostBets = myBets.filter(b => b.status === 'lost');
 
-  // Check if user already bet on a match
   const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
     myBets.some(b => b.homeTeam === homeTeam && b.awayTeam === awayTeam && b.matchDate === matchDate);
 
@@ -131,6 +214,24 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
           <span className="text-sm font-black text-amber-500">{balance}</span>
           <span className="text-[10px] text-amber-500/70 font-medium">pts</span>
         </div>
+      </div>
+
+      {/* Team selector */}
+      <div className="flex items-center gap-1.5 bg-secondary/60 backdrop-blur-sm rounded-xl border border-border/50 p-1">
+        {allTeamOptions.map(team => (
+          <button
+            key={team}
+            onClick={() => setSelectedTeam(team)}
+            className={cn(
+              "flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap",
+              selectedTeam === team
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-secondary"
+            )}
+          >
+            {BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}
+          </button>
+        ))}
       </div>
 
       {/* Stats cards */}
@@ -176,25 +277,46 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
       <AnimatePresence mode="wait">
         {activeFilter === 'upcoming' && (
           <motion.div key="upcoming" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-2.5">
-            {upcomingMatches.length === 0 ? (
+            {isLoadingMatches ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16">
+                <Loader2 size={24} className="text-accent animate-spin" />
+                <span className="text-xs text-muted-foreground">Chargement des matchs...</span>
+              </div>
+            ) : allUpcoming.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Flame size={32} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm font-medium">Aucun match à venir</p>
                 <p className="text-xs mt-1">Les matchs du championnat apparaîtront ici</p>
               </div>
             ) : (
-              upcomingMatches.map(match => {
-                const alreadyBet = hasBetOnMatch(match.homeTeam, match.awayTeam, match.date);
-                const homeLogo = getTeamLogo(match.homeTeam);
-                const awayLogo = getTeamLogo(match.awayTeam);
-                const odds = generateOdds(match.homeTeam, match.awayTeam, match.date);
-                const matchDate = new Date(match.date);
-                
+              allUpcoming.map((match, idx) => {
+                const homeName = match.home?.short_name || match.home?.name || '';
+                const awayName = match.away?.short_name || match.away?.name || '';
+                const homeLogo = match.home?.club?.logo;
+                const awayLogo = match.away?.club?.logo;
+                const alreadyBet = hasBetOnMatch(homeName, awayName, match.date || '');
+                const matchDate = match.date ? new Date(match.date) : null;
+
+                // Get ranks for smart odds
+                const homeClNo = match.home?.club?.cl_no;
+                const awayClNo = match.away?.club?.cl_no;
+                const homeStanding = liveClassement.find(s => s.clNo === homeClNo);
+                const awayStanding = liveClassement.find(s => s.clNo === awayClNo);
+                const homeRank = homeStanding ? liveClassement.indexOf(homeStanding) + 1 : undefined;
+                const awayRank = awayStanding ? liveClassement.indexOf(awayStanding) + 1 : undefined;
+                const odds = generateOdds(homeName, awayName, match.date || '', homeRank, awayRank, liveClassement.length || undefined);
+
                 return (
                   <motion.div
-                    key={match.id}
+                    key={`${match.date}-${idx}`}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => !alreadyBet && currentUser && setBetModal({ home: match.homeTeam, away: match.awayTeam, date: match.date, homeLogo: homeLogo || undefined, awayLogo: awayLogo || undefined })}
+                    onClick={() => !alreadyBet && currentUser && match.date && setBetModal({
+                      home: homeName,
+                      away: awayName,
+                      date: match.date,
+                      homeLogo: homeLogo || undefined,
+                      awayLogo: awayLogo || undefined,
+                    })}
                     className={`bg-card rounded-xl border border-border p-4 transition-all ${
                       alreadyBet ? 'opacity-60' : 'hover:border-accent/30 cursor-pointer active:bg-secondary/30'
                     }`}
@@ -202,7 +324,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
                     {/* Date */}
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        J{match.journee} • {matchDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        {matchDate?.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        {match.time ? ` • ${match.time}` : ''}
                       </span>
                       {alreadyBet && (
                         <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">✓ Parié</span>
@@ -217,10 +340,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
                           <img src={homeLogo} alt="" className="w-8 h-8 rounded-full object-contain bg-secondary p-0.5 shrink-0" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-black text-muted-foreground shrink-0">
-                            {match.homeTeam.charAt(0)}
+                            {homeName.charAt(0)}
                           </div>
                         )}
-                        <span className="text-xs font-semibold text-foreground truncate">{match.homeTeam}</span>
+                        <span className="text-xs font-semibold text-foreground truncate">{homeName}</span>
                       </div>
 
                       {/* Odds row */}
@@ -241,12 +364,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
 
                       {/* Away */}
                       <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
-                        <span className="text-xs font-semibold text-foreground truncate text-right">{match.awayTeam}</span>
+                        <span className="text-xs font-semibold text-foreground truncate text-right">{awayName}</span>
                         {awayLogo ? (
                           <img src={awayLogo} alt="" className="w-8 h-8 rounded-full object-contain bg-secondary p-0.5 shrink-0" />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-black text-muted-foreground shrink-0">
-                            {match.awayTeam.charAt(0)}
+                            {awayName.charAt(0)}
                           </div>
                         )}
                       </div>
