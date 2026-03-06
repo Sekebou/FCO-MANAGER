@@ -1,0 +1,1 @@
+ALTER TABLE public.fcm_tokens DROP CONSTRAINT IF EXISTS fcm_tokens_user_id_key;
