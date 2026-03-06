@@ -66,6 +66,7 @@ const AnimatedIcon = ({ icon: Icon, isActive, size, strokeWidth, className }: {
 interface BottomTabBarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  unreadDiscussions?: number;
 }
 
 const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
