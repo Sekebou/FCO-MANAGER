@@ -212,7 +212,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                 {[
                   { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, IconBadge: CircleDot },
                   { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} passes déc.`, IconBadge: Target },
-                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}% présence` : '—', IconBadge: Users },
+                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present} présences (${topAttendance.attendance!.present}/${topAttendance.attendance!.total})` : '—', IconBadge: Users },
                 ].map((kpi, i) => {
                   const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
                   const photoURL = member?.photoURL;
