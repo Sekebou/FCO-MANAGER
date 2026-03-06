@@ -49,6 +49,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [expandedPlayers, setExpandedPlayers] = useState<Record<string, boolean>>({});
   const [expandedConvocationsEdit, setExpandedConvocationsEdit] = useState<Record<string, boolean>>({});
 
+  // React to navigation with a specific event ID
+  useEffect(() => {
+    if (initialSelectedEventId) {
+      setSelectedEventId(initialSelectedEventId);
+    }
+  }, [initialSelectedEventId]);
+
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const upcomingEvents = events
