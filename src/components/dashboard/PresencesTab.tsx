@@ -50,6 +50,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [expandedConvocationsEdit, setExpandedConvocationsEdit] = useState<Record<string, boolean>>({});
   const [showPublishConfirm, setShowPublishConfirm] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   // React to navigation with a specific event ID
   useEffect(() => {
