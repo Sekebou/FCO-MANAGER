@@ -553,7 +553,7 @@ const ChatTab: React.FC<Props> = ({ currentUser, members, embedded = false }) =>
     </div>
   );
 
-  const containerHeight = 'calc(100dvh - 10rem - env(safe-area-inset-bottom) - env(safe-area-inset-top))';
+  const containerHeight = embedded ? '100%' : 'calc(100dvh - 10rem - env(safe-area-inset-bottom) - env(safe-area-inset-top))';
 
   return (
     <div className="flex flex-col overflow-hidden relative" style={{ height: containerHeight }}>
