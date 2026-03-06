@@ -562,18 +562,20 @@ const ChatTab: React.FC<Props> = ({ currentUser, members, embedded = false }) =>
         {/* ─── VUE ACCUEIL (tabs) ─── */}
         {view === 'tabs' && (
           <>
-            {/* Header sans fond bleu, sans logo */}
-            <div className="flex items-center gap-3 px-4 py-3 bg-card border-b border-border shrink-0">
-              <div className="flex items-center gap-2 sm:gap-3 flex-1">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center shrink-0">
-                  <MessageCircle className="text-accent" size={18} />
+            {/* Header — hidden when embedded (bubble modal has its own) */}
+            {!embedded && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-card border-b border-border shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center shrink-0">
+                    <MessageCircle className="text-accent" size={18} />
+                  </div>
+                  <span className="font-bold text-base text-foreground">Discussions</span>
                 </div>
-                <span className="font-bold text-base text-foreground">Discussions</span>
+                {totalUnread > 0 && (
+                  <span className="bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center">{totalUnread > 99 ? '99+' : totalUnread}</span>
+                )}
               </div>
-              {totalUnread > 0 && (
-                <span className="bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center">{totalUnread > 99 ? '99+' : totalUnread}</span>
-              )}
-            </div>
+            )}
 
             <div className="flex-1 overflow-y-auto">
               {/* Discussion globale */}
