@@ -32,6 +32,7 @@ interface Props {
   onUpdateConvocations: (eventId: string, convocations: Record<string, Convocation>) => void;
   onSendConvocationNotif?: (event: Event, convocations: Record<string, Convocation>) => void;
   onResetHeader?: () => void;
+  initialSelectedEventId?: string | null;
 }
 
 const CONVOCATION_STATUSES = [
