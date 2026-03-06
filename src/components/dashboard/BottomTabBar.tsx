@@ -19,7 +19,7 @@ const allTabs: Tab[] = [
   { id: 'stats', label: 'Stats', icon: TrendingUp },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'members', label: 'Membres', icon: UserCheck },
-  { id: 'chat', label: 'Discussions', icon: MessageCircle },
+  { id: 'paris', label: 'Paris', icon: Ticket },
 ];
 
 /** Icône animée : bounce prononcé + rotation à l'activation */
