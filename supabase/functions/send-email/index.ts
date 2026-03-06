@@ -427,6 +427,37 @@ function ConvocationEmail({ player_name, match_title, match_date, status, positi
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TEMPLATE: SUPPORT REQUEST
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function SupportEmail({ name, email, subject, message }: {
+  name: string; email: string; subject: string; message: string;
+}) {
+  return e(EmailShell, { preview: `Demande d'assistance : ${subject}` },
+    e(AccentBar, { color: ds.amber }),
+    e(SectionTitle, {
+      emoji: "🆘",
+      title: "Demande d'assistance",
+      subtitle: "Un utilisateur a besoin d'aide",
+    }),
+    e(Spacer, { h: 24 }),
+    e(DetailCard, null,
+      e(InfoRow, { icon: "👤", label: "Nom", value: name }),
+      e(InfoRow, { icon: "📧", label: "Email", value: e("a", { href: `mailto:${email}`, style: { color: ds.blueSoft, textDecoration: "none" } }, email) }),
+      e(InfoRow, { icon: "📌", label: "Sujet", value: subject, isLast: true }),
+    ),
+    e(Spacer, { h: 20 }),
+    e("div", { style: { margin: "0 28px", padding: "16px 20px", backgroundColor: ds.gray50, border: `1px solid ${ds.gray200}`, borderRadius: "12px" } },
+      e("div", { style: { fontSize: "10px", color: ds.gray500, textTransform: "uppercase" as const, letterSpacing: "1.2px", fontWeight: 600, marginBottom: "8px" } }, "MESSAGE"),
+      e("p", { style: { margin: 0, fontSize: "14px", color: ds.gray700, lineHeight: "1.7", whiteSpace: "pre-wrap" as const } }, message),
+    ),
+    e(Spacer, { h: 20 }),
+    e(CTAButton, { href: `mailto:${email}?subject=Re: ${encodeURIComponent(subject)}`, label: `Répondre à ${name} →` }),
+    e(Spacer, { h: 28 }),
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MAIN HANDLER
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
