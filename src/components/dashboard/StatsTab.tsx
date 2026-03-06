@@ -397,16 +397,25 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                         <span className="text-[9px] sm:text-[10px] font-medium text-muted-foreground px-1.5 sm:px-2 py-0.5 bg-secondary rounded-md">{player.position}</span>
                         {(() => { const m = members.find(mb => mb.playerId === player.id); return m ? <RoleBadge role={m.role} displayRole={m.displayRole} size="sm" subtle /> : null; })()}
                       </div>
+                      {/* Attendance info */}
+                      {attendance && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Calendar size={10} className="text-muted-foreground" />
+                          <span className="text-[9px] text-muted-foreground font-medium">
+                            {attendance.present}/{attendance.total} entraîn. ({attendance.rate.toFixed(0)}%)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {/* Radar toggle button */}
                   {isCoachOrAdmin && (
                     <button
                       onClick={() => setExpandedRadar(isExpanded ? null : player.id)}
-                      className={`flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+                      className={`flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
                     >
-                      <BarChart3 size={13} />
-                      <span className="hidden sm:inline">Radar</span>
+                      <ChartNoAxesCombined size={15} />
+                      <span className="text-[8px] leading-tight">Stats avancées</span>
                     </button>
                   )}
                 </div>
@@ -424,11 +433,11 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                         disciplineScore={discipline}
                       />
                       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[9px] sm:text-[10px] text-muted-foreground mt-1 pb-1">
-                        <span>⚽ {goals} buts</span>
-                        <span>🎯 {assists} PD</span>
-                        <span>📊 {matches} matchs</span>
-                        <span>✅ {attendance ? `${attendance.rate.toFixed(0)}%` : '—'}</span>
-                        <span>🟢 {discipline.toFixed(0)}% disc.</span>
+                        <span className="flex items-center gap-1"><Target size={10} /> {goals} buts</span>
+                        <span className="flex items-center gap-1"><Zap size={10} /> {assists} PD</span>
+                        <span className="flex items-center gap-1"><Activity size={10} /> {matches} matchs</span>
+                        <span className="flex items-center gap-1"><Check size={10} /> {attendance ? `${attendance.rate.toFixed(0)}%` : '—'}</span>
+                        <span className="flex items-center gap-1"><Shield size={10} /> {discipline.toFixed(0)}% disc.</span>
                       </div>
                     </div>
                   </div>
