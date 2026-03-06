@@ -261,7 +261,7 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Coins size={13} className="text-amber-400 shrink-0" />
-                  <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien automatique</span>
+                  <span><b className="text-foreground">Paris gagnés</b> — Remporte tes paris pour gagner plus !</span>
                 </div>
               </div>
               <div className="bg-accent/10 rounded-xl p-3 border border-accent/20">
