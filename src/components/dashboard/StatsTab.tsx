@@ -298,7 +298,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                           <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-xl ${podiumBg[podiumIdx]} border ${podiumBorder[podiumIdx]} border-b-0 flex flex-col items-center justify-center relative`}>
                             <span className={`text-lg font-black ${podiumTextColors[podiumIdx]}`}>{podiumRanks[podiumIdx]}</span>
                             <span className="text-[8px] text-muted-foreground font-medium">
-                              {item.attendance!.present}/{item.attendance!.total}
+                              {item.attendance!.present} sur {item.attendance!.total}
                             </span>
                           </div>
                         </div>
