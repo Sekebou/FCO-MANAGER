@@ -1359,6 +1359,7 @@ const Dashboard = () => {
                   } else {
                     toast.success('Convocations publiées !');
                   }
+                } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}
             />
           )}
