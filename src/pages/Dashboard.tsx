@@ -496,40 +496,7 @@ const Dashboard = () => {
 
     fetchAll();
 
-    // Daily bonus: +1 pt/day (automatic) — guarded by localStorage to avoid duplicates
-    const awardDailyBonus = async () => {
-      if (!currentUser?.uid) return;
-      const today = new Date().toISOString().slice(0, 10);
-      const cacheKey = `fco_daily_bonus_${currentUser.uid}`;
-      if (localStorage.getItem(cacheKey) === today) return; // already awarded locally
-      // Double-check in DB
-      const { data: existing, error: checkErr } = await supabase
-        .from('points_transactions')
-        .select('id')
-        .eq('user_id', currentUser.uid)
-        .eq('type', 'daily')
-        .like('description', `%${today}%`)
-        .limit(1);
-      if (checkErr || (existing && existing.length > 0)) {
-        localStorage.setItem(cacheKey, today);
-        return;
-      }
-      // Award 1 pt — upsert-safe
-      const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).limit(1).maybeSingle();
-      if (pts) {
-        await supabase.from('user_points').update({ balance: pts.balance + 1, updated_at: new Date().toISOString() }).eq('id', pts.id);
-      } else {
-        await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 101 });
-      }
-      await supabase.from('points_transactions').insert({
-        user_id: currentUser.uid,
-        amount: 1,
-        type: 'daily',
-        description: `Bonus quotidien ${today}`,
-      });
-      localStorage.setItem(cacheKey, today);
-    };
-    awardDailyBonus();
+    // Daily bonus removed — was generating too many DB rows
 
     // Detect iOS Capacitor (Realtime WebSocket doesn't work reliably on iOS native)
     const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
