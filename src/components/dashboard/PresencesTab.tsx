@@ -305,6 +305,25 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </div>
         </div>
 
+        {/* Reminder button - only for managers, non-past events */}
+        {!isEventPast(event) && canManage() && unknownCount > 0 && onSendReminder && (
+          <button
+            onClick={async () => {
+              setSendingReminder(true);
+              try { await onSendReminder(event); } catch {}
+              setSendingReminder(false);
+            }}
+            disabled={sendingReminder}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-warning/10 text-warning hover:bg-warning/20 text-sm font-semibold transition-all disabled:opacity-50 border border-warning/20"
+          >
+            {sendingReminder ? (
+              <span className="animate-pulse">Envoi du rappel…</span>
+            ) : (
+              <><Bell size={14} /> Envoyer un rappel ({unknownCount} en attente)</>
+            )}
+          </button>
+        )}
+
         {/* Past event banner */}
         {isEventPast(event) && (
           <div className="flex items-center gap-2 bg-muted/60 border border-border rounded-xl px-3 py-2">
