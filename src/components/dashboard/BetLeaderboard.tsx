@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface LeaderboardEntry {
   user_id: string;
   user_name: string;
+  photo_url: string | null;
   balance: number;
   total_won: number;
   total_bet: number;
@@ -17,26 +18,18 @@ const BetLeaderboard: React.FC = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      // Get top bettors by balance
       const { data: points } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('balance', { ascending: false }).limit(10);
       if (!points || points.length === 0) { setLoading(false); return; }
 
-      // Get names from profiles table (more reliable than bets)
       const userIds = points.map(p => p.user_id);
-      const { data: profiles } = await supabase.from('profiles').select('id, name').in('id', userIds);
-      const nameMap: Record<string, string> = {};
-      profiles?.forEach(p => { nameMap[p.id] = p.name; });
-
-      // Fallback to bets table for names not found in profiles
-      const missingIds = userIds.filter(id => !nameMap[id]);
-      if (missingIds.length > 0) {
-        const { data: bets } = await supabase.from('bets').select('user_id, user_name').in('user_id', missingIds);
-        bets?.forEach(b => { if (!nameMap[b.user_id]) nameMap[b.user_id] = b.user_name; });
-      }
+      const { data: profiles } = await supabase.from('profiles').select('id, name, photo_url').in('id', userIds);
+      const profileMap: Record<string, { name: string; photo_url: string | null }> = {};
+      profiles?.forEach(p => { profileMap[p.id] = { name: p.name, photo_url: p.photo_url }; });
 
       setEntries(points.map(p => ({
         ...p,
-        user_name: nameMap[p.user_id] || 'Joueur',
+        user_name: profileMap[p.user_id]?.name || 'Joueur',
+        photo_url: profileMap[p.user_id]?.photo_url || null,
       })));
       setLoading(false);
     };
@@ -66,6 +59,14 @@ const BetLeaderboard: React.FC = () => {
             <span className={`text-sm font-black w-6 text-center ${i < 3 ? 'text-yellow-600' : 'text-muted-foreground'}`}>
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
             </span>
+            {/* Avatar */}
+            {e.photo_url ? (
+              <img src={e.photo_url} alt="" className="w-7 h-7 rounded-full object-cover ring-1 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                {e.user_name.charAt(0).toUpperCase()}
+              </div>
+            )}
             <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.user_name}</span>
             <div className="flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1 text-muted-foreground">

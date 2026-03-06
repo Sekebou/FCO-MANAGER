@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Championship } from './ChampionnatTab';
 import {
@@ -50,13 +51,6 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; co
 
 const BASE_TEAMS = ['A', 'B', 'C'];
 
-interface TeamNextMatch {
-  team: string;
-  match: FFFLiveMatch;
-  classement: ScrapedStanding[];
-  loading: boolean;
-}
-
 function buildLocationLink(terrain?: { city?: string; name?: string }) {
   if (!terrain) return null;
   const parts = [terrain.name, terrain.city].filter(Boolean).join(', ');
@@ -70,15 +64,16 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedTeam, setSelectedTeam] = useState<string>('A');
 
-  // Per-team data
+  // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
 
-  // Countdown timers
-  const [countdowns, setCountdowns] = useState<Record<string, { days: number; hours: number; minutes: number; seconds: number }>>({});
+  // Countdown
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   const customTeams = [...new Set(championships.map(c => c.team || 'A').filter(t => !BASE_TEAMS.includes(t)))].sort();
-  const allTeams = [...BASE_TEAMS, ...customTeams];
+  const allTeamOptions = [...BASE_TEAMS, ...customTeams];
 
   // Load bets & balance
   useEffect(() => {
@@ -106,115 +101,104 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
 
-  // Load FFF data for ALL teams
+  // Load FFF data for selected team
   useEffect(() => {
+    if (teamData[selectedTeam] && !teamData[selectedTeam].loading) return; // already loaded
+
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
       'B': { categoryCode: 'SEM', code: 2 },
       'C': { categoryCode: 'SEM', code: 3 },
     };
 
+    const mapping = teamMapping[selectedTeam];
+    let customParams: { cpNo: number; phase: number; poule: number } | null = null;
+
+    if (!mapping) {
+      const customChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffUrl);
+      if (customChamp?.fffUrl) customParams = decodeFFFApiRef(customChamp.fffUrl);
+      if (!customParams) {
+        setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: false } }));
+        return;
+      }
+    }
+
+    // Check cache
     const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+    const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
+    const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
 
-    for (const team of allTeams) {
-      const mapping = teamMapping[team];
-      let customParams: { cpNo: number; phase: number; poule: number } | null = null;
-
-      if (!mapping) {
-        const customChamp = championships.find(c => (c.team || 'A') === team && c.fffUrl);
-        if (customChamp?.fffUrl) customParams = decodeFFFApiRef(customChamp.fffUrl);
-        if (!customParams) continue;
-      }
-
-      // Check cache
-      const teamChamp = championships.find(c => (c.team || 'A') === team && c.fffLiveCache && c.fffRefreshedAt);
-      const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
-
-      if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
-        const cache = teamChamp.fffLiveCache;
-        const classement = cache.classement && Array.isArray(cache.classement)
-          ? mapClassementToStandings(cache.classement)
-          : [];
-        setTeamData(prev => ({ ...prev, [team]: { upcoming: cache.upcoming || [], classement, loading: false } }));
-        continue;
-      }
-
-      // Fetch from API
-      setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: true } }));
-      (async () => {
-        try {
-          let champParams = customParams;
-          if (!champParams && mapping) {
-            const equipesData = await getEquipes(OISEMONT_CL_NO);
-            const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
-            champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
-          }
-          if (!champParams) return;
-
-          const [upcoming, classementData] = await Promise.all([
-            getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
-            getClassement(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
-          ]);
-          
-          let classement: ScrapedStanding[] = [];
-          if (classementData) {
-            const members = classementData?.['hydra:member'] || classementData;
-            if (Array.isArray(members)) classement = mapClassementToStandings(members);
-          }
-          setTeamData(prev => ({ ...prev, [team]: { upcoming, classement, loading: false } }));
-        } catch (err) {
-          console.error(`Error loading FFF for team ${team}:`, err);
-          setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: false } }));
-        }
-      })();
+    if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
+      const cache = teamChamp.fffLiveCache;
+      const classement = cache.classement && Array.isArray(cache.classement)
+        ? mapClassementToStandings(cache.classement) : [];
+      setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: cache.upcoming || [], classement, loading: false } }));
+      return;
     }
-  }, [championships.length]);
 
-  // Get next match per team
-  const nextMatches = useMemo(() => {
-    const result: { team: string; match: FFFLiveMatch; classement: ScrapedStanding[] }[] = [];
-    for (const team of allTeams) {
-      const data = teamData[team];
-      if (!data || data.loading) continue;
-      for (const group of data.upcoming) {
-        for (const m of group.matchs) {
-          if (m.date) {
-            result.push({ team, match: m, classement: data.classement });
-            break;
-          }
+    // Fetch from API
+    setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: true } }));
+    let cancelled = false;
+    (async () => {
+      try {
+        let champParams = customParams;
+        if (!champParams && mapping) {
+          const equipesData = await getEquipes(OISEMONT_CL_NO);
+          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
         }
-        if (result.length > 0 && result[result.length - 1].team === team) break;
+        if (!champParams || cancelled) return;
+        const [upcoming, classementData] = await Promise.all([
+          getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
+          getClassement(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
+        ]);
+        if (cancelled) return;
+        let classement: ScrapedStanding[] = [];
+        if (classementData) {
+          const members = classementData?.['hydra:member'] || classementData;
+          if (Array.isArray(members)) classement = mapClassementToStandings(members);
+        }
+        setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming, classement, loading: false } }));
+      } catch (err) {
+        console.error(`Error loading FFF for team ${selectedTeam}:`, err);
+        if (!cancelled) setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: false } }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedTeam, championships.length]);
+
+  // Current team data
+  const currentData = teamData[selectedTeam] || { upcoming: [], classement: [], loading: true };
+
+  // Next match for selected team
+  const nextMatch: FFFLiveMatch | null = useMemo(() => {
+    for (const group of currentData.upcoming) {
+      for (const m of group.matchs) {
+        if (m.date) return m;
       }
     }
-    return result;
-  }, [teamData, allTeams]);
+    return null;
+  }, [currentData.upcoming]);
 
-  // Countdown timers for all next matches
+  // Countdown timer
   useEffect(() => {
+    if (!nextMatch?.date) return;
+    const target = new Date(nextMatch.date);
     const update = () => {
       const now = new Date();
-      const newCountdowns: Record<string, { days: number; hours: number; minutes: number; seconds: number }> = {};
-      for (const nm of nextMatches) {
-        if (!nm.match.date) continue;
-        const target = new Date(nm.match.date);
-        const diff = target.getTime() - now.getTime();
-        if (diff <= 0) {
-          newCountdowns[nm.team] = { days: 0, hours: 0, minutes: 0, seconds: 0 };
-        } else {
-          newCountdowns[nm.team] = {
-            days: Math.floor(diff / 86400000),
-            hours: Math.floor((diff % 86400000) / 3600000),
-            minutes: Math.floor((diff % 3600000) / 60000),
-            seconds: Math.floor((diff % 60000) / 1000),
-          };
-        }
-      }
-      setCountdowns(newCountdowns);
+      const diff = target.getTime() - now.getTime();
+      if (diff <= 0) { setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 }); return; }
+      setCountdown({
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+      });
     };
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [nextMatches]);
+  }, [nextMatch?.date]);
 
   const isMatchLive = (matchDate: string) => {
     const today = new Date().toISOString().split('T')[0];
@@ -227,16 +211,23 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const myWonBets = myBets.filter(b => b.status === 'won');
   const myLostBets = myBets.filter(b => b.status === 'lost');
 
+  // All pending bets from all users (for public view in "Matchs" tab)
+  const allPendingBets = useMemo(() => bets.filter(b => b.status === 'pending'), [bets]);
+
+  // Count pending bets for a specific match
+  const getPendingBetsForMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
+    allPendingBets.filter(b => b.homeTeam === homeTeam && b.awayTeam === awayTeam && b.matchDate === matchDate);
+
   const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
     myBets.some(b => b.homeTeam === homeTeam && b.awayTeam === awayTeam && b.matchDate === matchDate);
-
-  const isAnyLoading = allTeams.some(t => teamData[t]?.loading);
 
   const filters: { id: TabFilter; label: string; icon: React.ElementType; count?: number }[] = [
     { id: 'upcoming', label: 'Matchs', icon: Flame },
     { id: 'my-bets', label: 'Mes Paris', icon: Ticket, count: myPendingBets.length },
     { id: 'leaderboard', label: 'Classement', icon: BarChart3 },
   ];
+
+  const totalPotentialGain = myPendingBets.reduce((sum, b) => sum + Math.round(b.amount * b.odds), 0);
 
   return (
     <div className="space-y-4">
@@ -253,6 +244,24 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           <span className="text-sm font-black text-amber-500">{balance}</span>
           <span className="text-[10px] text-amber-500/70 font-medium">pts</span>
         </div>
+      </div>
+
+      {/* Team selector */}
+      <div className="flex items-center gap-1.5 bg-secondary/60 backdrop-blur-sm rounded-xl border border-border/50 p-1">
+        {allTeamOptions.map(team => (
+          <button
+            key={team}
+            onClick={() => setSelectedTeam(team)}
+            className={cn(
+              "flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap",
+              selectedTeam === team
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-secondary"
+            )}
+          >
+            {BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}
+          </button>
+        ))}
       </div>
 
       {/* Stats cards */}
@@ -296,43 +305,44 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
       {/* Content */}
       <AnimatePresence mode="wait">
+        {/* ═══ MATCHS TAB ═══ */}
         {activeFilter === 'upcoming' && (
           <motion.div key="upcoming" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-            {isAnyLoading && nextMatches.length === 0 ? (
+            {currentData.loading ? (
               <div className="flex flex-col items-center justify-center gap-3 py-16">
                 <Loader2 size={24} className="text-accent animate-spin" />
                 <span className="text-xs text-muted-foreground">Chargement des matchs...</span>
               </div>
-            ) : nextMatches.length === 0 ? (
+            ) : !nextMatch ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Flame size={32} className="mx-auto mb-3 opacity-30" />
                 <p className="text-sm font-medium">Aucun match à venir</p>
-                <p className="text-xs mt-1">Les prochains matchs apparaîtront ici</p>
+                <p className="text-xs mt-1">Les prochains matchs de l'équipe {selectedTeam} apparaîtront ici</p>
               </div>
-            ) : (
-              nextMatches.map(({ team, match, classement }) => {
-                const live = match.date ? isMatchLive(match.date) : false;
-                const homeName = match.home?.short_name || match.home?.name || '';
-                const awayName = match.away?.short_name || match.away?.name || '';
-                const homeLogo = match.home?.club?.logo;
-                const awayLogo = match.away?.club?.logo;
-                const alreadyBet = hasBetOnMatch(homeName, awayName, match.date || '');
-                const cd = countdowns[team] || { days: 0, hours: 0, minutes: 0, seconds: 0 };
+            ) : (() => {
+              const live = nextMatch.date ? isMatchLive(nextMatch.date) : false;
+              const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
+              const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
+              const homeLogo = nextMatch.home?.club?.logo;
+              const awayLogo = nextMatch.away?.club?.logo;
+              const alreadyBet = hasBetOnMatch(homeName, awayName, nextMatch.date || '');
+              const matchBets = getPendingBetsForMatch(homeName, awayName, nextMatch.date || '');
 
-                // Ranks for smart odds
-                const homeClNo = match.home?.club?.cl_no;
-                const awayClNo = match.away?.club?.cl_no;
-                const homeStanding = classement.find(s => s.clNo === homeClNo);
-                const awayStanding = classement.find(s => s.clNo === awayClNo);
-                const homeRank = homeStanding ? classement.indexOf(homeStanding) + 1 : undefined;
-                const awayRank = awayStanding ? classement.indexOf(awayStanding) + 1 : undefined;
-                const odds = generateOdds(homeName, awayName, match.date || '', homeRank, awayRank, classement.length || undefined);
-                const locationLink = buildLocationLink(match.terrain);
-                const locationLabel = [match.terrain?.name, match.terrain?.city].filter(Boolean).join(', ');
+              // Ranks for smart odds
+              const homeClNo = nextMatch.home?.club?.cl_no;
+              const awayClNo = nextMatch.away?.club?.cl_no;
+              const homeStanding = currentData.classement.find(s => s.clNo === homeClNo);
+              const awayStanding = currentData.classement.find(s => s.clNo === awayClNo);
+              const homeRank = homeStanding ? currentData.classement.indexOf(homeStanding) + 1 : undefined;
+              const awayRank = awayStanding ? currentData.classement.indexOf(awayStanding) + 1 : undefined;
+              const odds = generateOdds(homeName, awayName, nextMatch.date || '', homeRank, awayRank, currentData.classement.length || undefined);
+              const locationLink = buildLocationLink(nextMatch.terrain);
+              const locationLabel = [nextMatch.terrain?.name, nextMatch.terrain?.city].filter(Boolean).join(', ');
 
-                return (
+              return (
+                <>
+                  {/* Hero card */}
                   <motion.div
-                    key={team}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={`relative rounded-2xl overflow-hidden border shadow-sm ${
@@ -351,7 +361,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             <Timer size={14} className="text-accent" />
                           </div>
                           <span className="text-[11px] font-bold text-foreground uppercase tracking-widest">
-                            Équipe {team}
+                            Prochain Match — Équipe {selectedTeam}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -373,7 +383,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           {homeLogo ? (
                             <img src={homeLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-border/30 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : <div className="w-14 h-14 rounded-full bg-secondary" />}
-                          <span className={`text-[11px] font-bold text-center leading-tight ${match.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
+                          <span className={`text-[11px] font-bold text-center leading-tight ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
                             {homeName}
                           </span>
                           {homeRank && <span className="text-[9px] text-muted-foreground font-medium">{homeRank}e</span>}
@@ -390,7 +400,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           {awayLogo ? (
                             <img src={awayLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-border/30 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : <div className="w-14 h-14 rounded-full bg-secondary" />}
-                          <span className={`text-[11px] font-bold text-center leading-tight ${match.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
+                          <span className={`text-[11px] font-bold text-center leading-tight ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
                             {awayName}
                           </span>
                           {awayRank && <span className="text-[9px] text-muted-foreground font-medium">{awayRank}e</span>}
@@ -401,10 +411,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       {!live && (
                         <div className="flex items-center justify-center gap-1 mb-3">
                           {[
-                            { val: cd.days, label: 'J' },
-                            { val: cd.hours, label: 'H' },
-                            { val: cd.minutes, label: 'M' },
-                            { val: cd.seconds, label: 'S' },
+                            { val: countdown.days, label: 'J' },
+                            { val: countdown.hours, label: 'H' },
+                            { val: countdown.minutes, label: 'M' },
+                            { val: countdown.seconds, label: 'S' },
                           ].map((c, i) => (
                             <React.Fragment key={c.label}>
                               {i > 0 && <span className="text-sm font-black text-accent/30 mx-0.5">:</span>}
@@ -419,16 +429,16 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
                       {/* Date */}
                       <p className="text-[11px] text-muted-foreground text-center mb-3">
-                        {match.date ? new Date(match.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
-                        {match.time ? ` • ${match.time}` : ''}
+                        {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
+                        {nextMatch.time ? ` • ${nextMatch.time}` : ''}
                       </p>
 
                       {/* Odds row */}
                       <div className="flex items-center justify-center gap-2 mb-3">
                         {[
-                          { label: '1', value: odds.home, pred: 'home' },
-                          { label: 'N', value: odds.draw, pred: 'draw' },
-                          { label: '2', value: odds.away, pred: 'away' },
+                          { label: '1', value: odds.home },
+                          { label: 'N', value: odds.draw },
+                          { label: '2', value: odds.away },
                         ].map(o => (
                           <div key={o.label} className="bg-secondary/60 rounded-lg px-3 py-2 text-center flex-1 max-w-[80px]">
                             <div className="text-[9px] text-muted-foreground/60 font-medium">{o.label}</div>
@@ -437,15 +447,25 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         ))}
                       </div>
 
+                      {/* Pending bets count */}
+                      {matchBets.length > 0 && (
+                        <div className="flex items-center justify-center gap-1.5 mb-3">
+                          <div className="flex items-center gap-1 bg-accent/10 text-accent rounded-full px-3 py-1">
+                            <Ticket size={12} />
+                            <span className="text-[10px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours sur ce match</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Bet button */}
                       {currentUser && !live && !alreadyBet && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
-                          onClick={() => match.date && setBetModal({
+                          onClick={() => nextMatch.date && setBetModal({
                             home: homeName,
                             away: awayName,
-                            date: match.date,
+                            date: nextMatch.date,
                             homeLogo: homeLogo || undefined,
                             awayLogo: awayLogo || undefined,
                           })}
@@ -471,14 +491,46 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       )}
                     </div>
                   </motion.div>
-                );
-              })
-            )}
+
+                  {/* Public pending bets on this match */}
+                  {matchBets.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Paris en cours sur ce match</h3>
+                      {matchBets.map(bet => {
+                        const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                        const isMe = bet.userId === currentUser?.uid;
+                        return (
+                          <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
+                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                              {bet.userName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
+                                {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds} • Mise {bet.amount}
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-xs font-black text-foreground">→ {Math.round(bet.amount * bet.odds)}</div>
+                              <div className="text-[9px] text-muted-foreground">pts</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </motion.div>
         )}
 
+        {/* ═══ MES PARIS TAB ═══ */}
         {activeFilter === 'my-bets' && (
-          <motion.div key="my-bets" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-2.5">
+          <motion.div key="my-bets" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
             {myBets.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Ticket size={32} className="mx-auto mb-3 opacity-30" />
@@ -486,43 +538,103 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                 <p className="text-xs mt-1">Place ton premier pari sur un match !</p>
               </div>
             ) : (
-              myBets.map(bet => {
-                const config = STATUS_CONFIG[bet.status] || STATUS_CONFIG.pending;
-                const StatusIcon = config.icon;
-                const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
-
-                return (
-                  <div key={bet.id} className="bg-card rounded-xl border border-border p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] text-muted-foreground font-medium">
-                        {new Date(bet.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
-                        <StatusIcon size={10} />
-                        {config.label}
-                      </span>
+              <>
+                {/* Pending bets summary */}
+                {myPendingBets.length > 0 && (
+                  <div className="bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl border border-accent/20 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 bg-accent/20 rounded-lg flex items-center justify-center">
+                        <Clock size={16} className="text-accent" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">Paris en cours</h3>
+                        <p className="text-[10px] text-muted-foreground">{myPendingBets.length} pari{myPendingBets.length > 1 ? 's' : ''} en attente</p>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-foreground truncate">{bet.homeTeam} vs {bet.awayTeam}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
-                          Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds}
-                        </p>
+
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-card/60 rounded-xl p-3 text-center border border-border/30">
+                        <div className="text-[10px] text-muted-foreground font-medium mb-1">Mise totale</div>
+                        <div className="text-base font-black text-foreground">{myPendingBets.reduce((s, b) => s + b.amount, 0)}</div>
+                        <div className="text-[9px] text-muted-foreground">pts</div>
                       </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <div className="text-xs font-medium text-muted-foreground">Mise: {bet.amount}</div>
-                        <div className={`text-sm font-black ${bet.status === 'won' ? 'text-emerald-500' : bet.status === 'lost' ? 'text-destructive' : 'text-foreground'}`}>
-                          {bet.status === 'won' ? `+${bet.payout}` : bet.status === 'lost' ? `-${bet.amount}` : `→ ${Math.round(bet.amount * bet.odds)}`}
-                        </div>
+                      <div className="bg-card/60 rounded-xl p-3 text-center border border-border/30">
+                        <div className="text-[10px] text-muted-foreground font-medium mb-1">Gain potentiel</div>
+                        <div className="text-base font-black text-emerald-500">+{totalPotentialGain}</div>
+                        <div className="text-[9px] text-muted-foreground">pts</div>
                       </div>
+                    </div>
+
+                    {/* Pending bets list */}
+                    <div className="space-y-2">
+                      {myPendingBets.map(bet => {
+                        const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                        return (
+                          <div key={bet.id} className="bg-card rounded-xl border border-border/50 p-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <p className="text-xs font-bold text-foreground truncate">{bet.homeTeam} vs {bet.awayTeam}</p>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500">
+                                <Clock size={10} /> En cours
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] text-muted-foreground">
+                                Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-muted-foreground">Mise: {bet.amount}</span>
+                                <span className="font-black text-emerald-500">→ {Math.round(bet.amount * bet.odds)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                );
-              })
+                )}
+
+                {/* Settled bets (won/lost) */}
+                {(myWonBets.length > 0 || myLostBets.length > 0) && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Historique</h3>
+                    {myBets.filter(b => b.status !== 'pending').map(bet => {
+                      const config = STATUS_CONFIG[bet.status] || STATUS_CONFIG.pending;
+                      const StatusIcon = config.icon;
+                      const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+
+                      return (
+                        <div key={bet.id} className="bg-card rounded-xl border border-border p-3">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] text-muted-foreground font-medium">
+                              {new Date(bet.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                              <StatusIcon size={10} />
+                              {config.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-foreground truncate">{bet.homeTeam} vs {bet.awayTeam}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {predLabel} • Cote {bet.odds}
+                              </p>
+                            </div>
+                            <div className={`text-sm font-black shrink-0 ml-3 ${bet.status === 'won' ? 'text-emerald-500' : 'text-destructive'}`}>
+                              {bet.status === 'won' ? `+${bet.payout}` : `-${bet.amount}`}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </motion.div>
         )}
 
+        {/* ═══ CLASSEMENT TAB ═══ */}
         {activeFilter === 'leaderboard' && (
           <motion.div key="leaderboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <BetLeaderboard />
