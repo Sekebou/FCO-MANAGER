@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users, MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink, Zap, Timer, Pencil } from 'lucide-react';
+import { Trophy, Plus, Trash2, Calendar, Award, ChevronDown, ChevronUp, X, Hash, CalendarDays, Home, Plane, Loader2, RefreshCw, Clock, CheckCircle2, AlertCircle, ArrowUpCircle, PlusCircle, BarChart3, Users, MapPin, Sparkles, TrendingUp, TrendingDown, Minus, ExternalLink, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -155,9 +155,6 @@ const ChampionnatTab: React.FC<Props> = ({
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
 
 
-  // Countdown
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
   const filteredChampionships = championships.filter(c => (c.team || 'A') === selectedTeam);
   const teamHasChampionship = (team: string) => championships.some(c => (c.team || 'A') === team);
 
@@ -187,38 +184,6 @@ const ChampionnatTab: React.FC<Props> = ({
     );
   };
 
-  // Get the next upcoming match for the hero section
-  const nextMatch: FFFLiveMatch | null = (() => {
-    for (const group of liveUpcoming) {
-      for (const m of group.matchs) {
-        if (m.date) return m;
-      }
-    }
-    return null;
-  })();
-
-  // Countdown timer
-  useEffect(() => {
-    if (!nextMatch?.date) return;
-    const target = new Date(nextMatch.date);
-    const update = () => {
-      const now = new Date();
-      const diff = target.getTime() - now.getTime();
-      if (diff <= 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-      setCountdown({
-        days: Math.floor(diff / 86400000),
-        hours: Math.floor((diff % 86400000) / 3600000),
-        minutes: Math.floor((diff % 3600000) / 60000),
-        seconds: Math.floor((diff % 60000) / 1000),
-      });
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [nextMatch?.date]);
 
   // Check if match is live (today)
   const isMatchLive = (matchDate: string) => {
@@ -851,128 +816,7 @@ const ChampionnatTab: React.FC<Props> = ({
         </motion.div>
       )}
 
-      {/* ─── Next Match Hero (Premium) ─── */}
-      {nextMatch && !isLoadingMatches && (() => {
-        const live = isMatchLive(nextMatch.date);
-        const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
-        const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
-        
-        const homeClNo = nextMatch.home?.club?.cl_no;
-        const awayClNo = nextMatch.away?.club?.cl_no;
-        const homeStanding = liveClassement.find(s => s.clNo === homeClNo);
-        const awayStanding = liveClassement.find(s => s.clNo === awayClNo);
-        const homeRank = homeStanding ? liveClassement.indexOf(homeStanding) + 1 : undefined;
-        const awayRank = awayStanding ? liveClassement.indexOf(awayStanding) + 1 : undefined;
-        
-        return (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className={`relative rounded-2xl overflow-hidden border shadow-sm ${
-              live ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-border/60'
-            } bg-card`}
-          >
-            {live && (
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse" />
-            )}
 
-            <div className="px-5 py-5">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
-                    <Timer size={14} className="text-accent" />
-                  </div>
-                  <span className="text-[11px] font-bold text-foreground uppercase tracking-widest">Prochain Match</span>
-                </div>
-                {live && (
-                  <span className="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                    LIVE
-                  </span>
-                )}
-              </div>
-
-              {/* Teams & VS */}
-              <div className="flex items-center justify-center gap-5 mb-5">
-                <div className="flex flex-col items-center gap-2.5 flex-1">
-                  {nextMatch.home?.club?.logo ? (
-                    <img src={nextMatch.home.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-border/30 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  ) : <div className="w-16 h-16 rounded-full bg-secondary" />}
-                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
-                    {homeName}
-                  </span>
-                  {homeRank && <span className="text-[9px] text-muted-foreground font-medium">{homeRank}e au classement</span>}
-                </div>
-                <div className="relative">
-                  <motion.span 
-                    animate={{ scale: [1, 1.1, 1], opacity: [0.6, 1, 0.6] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="text-2xl font-black text-blue-500"
-                    style={{ textShadow: '0 0 20px hsl(217 91% 60% / 0.5), 0 0 40px hsl(217 91% 60% / 0.2)' }}
-                  >VS</motion.span>
-                </div>
-                <div className="flex flex-col items-center gap-2.5 flex-1">
-                  {nextMatch.away?.club?.logo ? (
-                    <img src={nextMatch.away.club.logo} alt="" className="w-16 h-16 rounded-full object-cover ring-2 ring-border/30 shadow-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  ) : <div className="w-16 h-16 rounded-full bg-secondary" />}
-                  <span className={`text-xs font-bold text-center leading-tight ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-accent' : 'text-foreground'}`}>
-                    {awayName}
-                  </span>
-                  {awayRank && <span className="text-[9px] text-muted-foreground font-medium">{awayRank}e au classement</span>}
-                </div>
-              </div>
-
-              {/* Countdown */}
-              {!live && (
-                <div className="flex items-center justify-center gap-1.5 mb-4">
-                  {[
-                    { val: countdown.days, label: 'JOURS' },
-                    { val: countdown.hours, label: 'HEURES' },
-                    { val: countdown.minutes, label: 'MIN' },
-                    { val: countdown.seconds, label: 'SEC' },
-                  ].map((c, i) => (
-                    <React.Fragment key={c.label}>
-                      {i > 0 && <span className="text-lg font-black text-accent/40 animate-pulse mx-0.5">:</span>}
-                      <div className="bg-secondary rounded-xl px-3 py-2 text-center min-w-[48px]">
-                        <div className="text-lg font-black text-foreground leading-none">{String(c.val).padStart(2, '0')}</div>
-                        <div className="text-[7px] font-bold text-muted-foreground uppercase mt-1 tracking-wider">{c.label}</div>
-                      </div>
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
-
-              {/* Date & Time */}
-              <p className="text-[11px] text-muted-foreground text-center mb-3">
-                {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
-                {nextMatch.time ? ` • ${nextMatch.time}` : ''}
-              </p>
-
-
-              {/* Location */}
-              {(() => {
-                const link = buildLocationLink(nextMatch.terrain);
-                const label = [nextMatch.terrain?.name, nextMatch.terrain?.city].filter(Boolean).join(', ');
-                if (!label) return null;
-                return (
-                  <div className="flex items-center justify-center gap-1.5 mt-4 pt-3 border-t border-border/30">
-                    <MapPin size={11} className="text-muted-foreground shrink-0" />
-                    {link ? (
-                      <a href={link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1">
-                        {label} <ExternalLink size={9} />
-                      </a>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground truncate">{label}</span>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          </motion.div>
-        );
-      })()}
 
 
       {/* ─── Matches sections ─── */}
