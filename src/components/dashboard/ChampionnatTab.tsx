@@ -950,24 +950,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 {nextMatch.time ? ` • ${nextMatch.time}` : ''}
               </p>
 
-              {/* Bet button */}
-              {currentUser && !live && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setBetMatch({
-                    homeTeam: homeName,
-                    awayTeam: awayName,
-                    matchDate: nextMatch.date,
-                    homeLogo: nextMatch.home?.club?.logo,
-                    awayLogo: nextMatch.away?.club?.logo,
-                  })}
-                  className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent/20 hover:brightness-110 transition-all"
-                >
-                  <Zap size={15} />
-                  <span>Parier sur ce match</span>
-                </motion.button>
-              )}
 
               {/* Location */}
               {(() => {
