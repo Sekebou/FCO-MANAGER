@@ -128,7 +128,10 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
       const presenceDiff = (b.attendance?.present ?? 0) - (a.attendance?.present ?? 0);
       if (presenceDiff !== 0) return presenceDiff;
       // Secondary: attendance rate
-      return (b.attendance?.rate ?? 0) - (a.attendance?.rate ?? 0);
+      const rateDiff = (b.attendance?.rate ?? 0) - (a.attendance?.rate ?? 0);
+      if (rateDiff !== 0) return rateDiff;
+      // Tertiary: stable alphabetical tiebreaker
+      return a.player.name.localeCompare(b.player.name);
     });
 
   // KPI cards data
