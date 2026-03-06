@@ -130,8 +130,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   };
 
   const publishConvocations = (eventId: string) => {
-    onUpdateConvocations(eventId, draftConvocations);
-    setConvocationMode(null);
+    setShowPublishConfirm(eventId);
+  };
+
+  const confirmPublish = async (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    setPublishing(true);
+    try {
+      await onPublishAndNotifyConvocations(eventId, event, draftConvocations);
+      setConvocationMode(null);
+      setShowPublishConfirm(null);
+    } catch {}
+    setPublishing(false);
   };
 
   // ─── DETAIL VIEW ───
