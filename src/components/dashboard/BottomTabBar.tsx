@@ -326,6 +326,13 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
                   strokeWidth={isActive ? 2.4 : 1.6}
                   className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')}
                 />
+                {tab.id === 'discussions' && unreadDiscussions > 0 && !isActive && (
+                  <span className="absolute -top-1 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive flex items-center justify-center px-0.5">
+                    <span className="text-[10px] font-black text-destructive-foreground leading-none">
+                      {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
+                    </span>
+                  </span>
+                )}
               </motion.div>
               <span className={cn('text-xs leading-none mt-1.5 tracking-tight whitespace-nowrap', isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45')}>
                 {tab.label}
