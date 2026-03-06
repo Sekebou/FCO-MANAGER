@@ -296,7 +296,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                         ][podiumIdx];
 
                         return (
-                          <div key={item.player.id} className={`flex flex-col items-center flex-1 max-w-[110px] ${isFirst ? 'order-2' : podiumIdx === 1 ? 'order-1' : 'order-3'}`}>
+                          <div key={item.player.id} className={`flex flex-col items-center flex-1 max-w-[110px] ${podiumIdx === 0 ? 'order-2' : podiumIdx === 1 ? 'order-1' : 'order-3'}`}>
                             {/* Medal */}
                             <span className={`text-lg ${isFirst ? 'text-2xl mb-1' : 'mb-0.5'}`}>{podiumConfig.medal}</span>
                             
