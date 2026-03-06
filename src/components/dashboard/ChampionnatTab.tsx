@@ -15,8 +15,6 @@ import {
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
 import { toast } from 'sonner';
-import BetModal, { generateOdds } from './BetModal';
-import BetLeaderboard from './BetLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface Championship {
@@ -156,8 +154,6 @@ const ChampionnatTab: React.FC<Props> = ({
   // Refresh result modal
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
 
-  // Bet modal
-  const [betMatch, setBetMatch] = useState<{ homeTeam: string; awayTeam: string; matchDate: string; homeLogo?: string | null; awayLogo?: string | null } | null>(null);
 
   // Countdown
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -861,15 +857,12 @@ const ChampionnatTab: React.FC<Props> = ({
         const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
         const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
         
-        // Find ranks from live classement for smart odds
         const homeClNo = nextMatch.home?.club?.cl_no;
         const awayClNo = nextMatch.away?.club?.cl_no;
         const homeStanding = liveClassement.find(s => s.clNo === homeClNo);
         const awayStanding = liveClassement.find(s => s.clNo === awayClNo);
         const homeRank = homeStanding ? liveClassement.indexOf(homeStanding) + 1 : undefined;
         const awayRank = awayStanding ? liveClassement.indexOf(awayStanding) + 1 : undefined;
-        
-        const odds = generateOdds(homeName, awayName, nextMatch.date, homeRank, awayRank, liveClassement.length || undefined);
         
         return (
           <motion.div
@@ -957,24 +950,6 @@ const ChampionnatTab: React.FC<Props> = ({
                 {nextMatch.time ? ` • ${nextMatch.time}` : ''}
               </p>
 
-              {/* Bet button */}
-              {currentUser && !live && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setBetMatch({
-                    homeTeam: homeName,
-                    awayTeam: awayName,
-                    matchDate: nextMatch.date,
-                    homeLogo: nextMatch.home?.club?.logo,
-                    awayLogo: nextMatch.away?.club?.logo,
-                  })}
-                  className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent/20 hover:brightness-110 transition-all"
-                >
-                  <Zap size={15} />
-                  <span>Parier sur ce match</span>
-                </motion.button>
-              )}
 
               {/* Location */}
               {(() => {
@@ -999,8 +974,6 @@ const ChampionnatTab: React.FC<Props> = ({
         );
       })()}
 
-      {/* ─── Bet Leaderboard (remonté) ─── */}
-      <BetLeaderboard />
 
       {/* ─── Matches sections ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
@@ -1574,20 +1547,6 @@ const ChampionnatTab: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ─── Bet Modal ─── */}
-      {betMatch && currentUser && (
-        <BetModal
-          isOpen={!!betMatch}
-          onClose={() => setBetMatch(null)}
-          homeTeam={betMatch.homeTeam}
-          awayTeam={betMatch.awayTeam}
-          matchDate={betMatch.matchDate}
-          homeLogo={betMatch.homeLogo}
-          awayLogo={betMatch.awayLogo}
-          userId={currentUser.uid}
-          userName={currentUser.name || 'Joueur'}
-        />
-      )}
     </div>
   );
 };
