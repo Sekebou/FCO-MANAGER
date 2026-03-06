@@ -33,6 +33,7 @@ import AdminResetPasswordForm from '@/components/modals/AdminResetPasswordForm';
 import AvatarModal from '@/components/modals/AvatarModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import InvitePlayerForm from '@/components/modals/InvitePlayerForm';
+import SendPushNotifForm from '@/components/modals/SendPushNotifForm';
 
 
 export interface Player {
