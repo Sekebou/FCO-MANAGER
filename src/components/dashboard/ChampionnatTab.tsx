@@ -154,8 +154,6 @@ const ChampionnatTab: React.FC<Props> = ({
   // Refresh result modal
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
 
-  // Bet modal
-  const [betMatch, setBetMatch] = useState<{ homeTeam: string; awayTeam: string; matchDate: string; homeLogo?: string | null; awayLogo?: string | null } | null>(null);
 
   // Countdown
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
