@@ -143,35 +143,12 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header with period filter */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-            <TrendingUp className="text-accent" size={18} />
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
+      {/* Header */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+          <TrendingUp className="text-accent" size={18} />
         </div>
-        {/* Period filter dropdown */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground bg-secondary hover:bg-secondary/80 px-3 py-1.5 rounded-lg transition-colors">
-              <Calendar size={14} />
-              {PERIOD_LABELS[periodFilter]}
-              <ChevronDown size={12} />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-44 p-1" align="end">
-            {(Object.keys(PERIOD_LABELS) as PeriodFilter[]).map(key => (
-              <button
-                key={key}
-                onClick={() => setPeriodFilter(key)}
-                className={`w-full text-left text-sm px-3 py-2 rounded-md transition-colors ${periodFilter === key ? 'bg-accent text-accent-foreground font-semibold' : 'hover:bg-secondary text-foreground'}`}
-              >
-                {PERIOD_LABELS[key]}
-              </button>
-            ))}
-          </PopoverContent>
-        </Popover>
+        <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
       </div>
 
       {/* Button to open KPI/Attendance modal */}
