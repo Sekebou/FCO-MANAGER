@@ -180,14 +180,14 @@ const FloatingChatBubble: React.FC<Props> = ({ currentUser, members }) => {
 
   return createPortal(
     <>
-      {/* Bubble - z-40 so it's BELOW modals (z-50/70) */}
+      {/* Bubble - when closed z-40 (below modals), when open z-[46] (above chat modal) */}
       <div
         ref={bubbleRef}
         className="fixed select-none touch-none"
         style={{
           left: position.x,
           top: position.y,
-          zIndex: 40,
+          zIndex: isOpen ? 46 : 40,
           width: BUBBLE_SIZE,
           height: BUBBLE_SIZE,
           cursor: dragging ? 'grabbing' : 'grab',
@@ -198,14 +198,19 @@ const FloatingChatBubble: React.FC<Props> = ({ currentUser, members }) => {
         onMouseDown={handleMouseDown}
       >
         <motion.div
-          whileTap={{ scale: 0.9 }}
+          animate={{ rotate: isOpen ? 90 : 0 }}
+          transition={{ type: 'spring', damping: 15, stiffness: 300 }}
           className="w-full h-full rounded-full flex items-center justify-center shadow-xl border-2 border-accent/30"
           style={{
             background: 'linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent) / 0.8))',
             boxShadow: '0 4px 20px -2px hsl(var(--accent) / 0.5)',
           }}
         >
-          <MessageCircle size={26} className="text-accent-foreground" strokeWidth={2.2} />
+          {isOpen ? (
+            <X size={26} className="text-accent-foreground" strokeWidth={2.2} />
+          ) : (
+            <MessageCircle size={26} className="text-accent-foreground" strokeWidth={2.2} />
+          )}
         </motion.div>
 
         {/* Unread badge */}
