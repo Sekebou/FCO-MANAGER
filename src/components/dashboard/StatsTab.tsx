@@ -78,21 +78,27 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
   const filteredAttendance = useMemo(() => attendanceRecords.filter(r => isInPeriod(r.eventDate)), [attendanceRecords, periodFilter]);
 
   const calculateAttendanceRate = (playerId: string) => {
-    let present = 0, total = 0;
+    let present = 0;
 
-    filteredEvents.filter(e => e.type === 'training').forEach(t => {
+    // Count all training events as the total (not just ones where player has an entry)
+    const trainingEvents = filteredEvents.filter(e => e.type === 'training');
+    
+    trainingEvents.forEach(t => {
       const p = t.presences || {};
-      if (p[playerId]) { total++; if (p[playerId] === 'present') present++; }
+      if (p[playerId] === 'present') present++;
     });
 
+    // Also count archived attendance records for events no longer in the active list
     const activeEventIds = new Set(filteredEvents.map(e => e.id));
-    filteredAttendance.filter(r => r.playerId === playerId && r.eventType === 'training').forEach(r => {
-      if (!activeEventIds.has(r.eventId)) {
-        total++;
-        if (r.status === 'present') present++;
-      }
+    const archivedRecords = filteredAttendance.filter(r => r.playerId === playerId && r.eventType === 'training' && !activeEventIds.has(r.eventId));
+    
+    let archivedTotal = 0;
+    archivedRecords.forEach(r => {
+      archivedTotal++;
+      if (r.status === 'present') present++;
     });
 
+    const total = trainingEvents.length + archivedTotal;
     if (total === 0) return null;
     return { rate: (present / total) * 100, present, total };
   };
