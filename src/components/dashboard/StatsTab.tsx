@@ -320,7 +320,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                               {item.attendance!.present}
                             </div>
                             <div className="text-[9px] text-muted-foreground font-medium leading-tight mb-1.5">
-                              sur {item.attendance!.total} ({rate.toFixed(0)}%)
+                              sur {item.attendance!.total} entraîn. ({rate.toFixed(0)}%)
                             </div>
                             
                             {/* Podium bar */}
