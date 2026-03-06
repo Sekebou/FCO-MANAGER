@@ -95,7 +95,7 @@ export function usePushNotifications(userId: string | undefined) {
       } catch (err) {
         console.error('Push notification setup error:', err);
       }
-    }, 2000);
+    }, 1000);
 
     return () => {
       clearTimeout(timeoutId);
