@@ -383,14 +383,16 @@ const ChampionnatTab: React.FC<Props> = ({
               if (clNo && logo) liveLogosCache[clNo] = logo;
             }
             if (Object.keys(liveLogosCache).length > 0) liveCache.logos = liveLogosCache;
-            supabase
-              .from('championships')
-              .update({ fff_live_cache: liveCache, fff_refreshed_at: new Date().toISOString() } as any)
-              .eq('id', teamChamp.id)
-              .then(({ error }) => {
-                if (error) console.error('Failed to save FFF cache:', error);
-                else console.log('FFF cache saved for team', selectedTeam);
-              });
+            if (champToCache) {
+              supabase
+                .from('championships')
+                .update({ fff_live_cache: liveCache, fff_refreshed_at: new Date().toISOString() } as any)
+                .eq('id', champToCache.id)
+                .then(({ error }) => {
+                  if (error) console.error('Failed to save FFF cache:', error);
+                  else console.log('FFF cache saved for team', selectedTeam);
+                });
+            }
           }
         }
         
