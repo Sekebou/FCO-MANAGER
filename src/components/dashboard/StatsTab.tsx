@@ -128,7 +128,10 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
       const presenceDiff = (b.attendance?.present ?? 0) - (a.attendance?.present ?? 0);
       if (presenceDiff !== 0) return presenceDiff;
       // Secondary: attendance rate
-      return (b.attendance?.rate ?? 0) - (a.attendance?.rate ?? 0);
+      const rateDiff = (b.attendance?.rate ?? 0) - (a.attendance?.rate ?? 0);
+      if (rateDiff !== 0) return rateDiff;
+      // Tertiary: stable alphabetical tiebreaker
+      return a.player.name.localeCompare(b.player.name);
     });
 
   // KPI cards data
@@ -228,7 +231,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                 {[
                   { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, IconBadge: CircleDot },
                   { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} passes déc.`, IconBadge: Target },
-                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present} sur ${topAttendance.attendance!.total}` : '—', IconBadge: Users },
+                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present} sur ${topAttendance.attendance!.total} entraîn.` : '—', IconBadge: Users },
                 ].map((kpi, i) => {
                   const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
                   const photoURL = member?.photoURL;
@@ -317,7 +320,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                               {item.attendance!.present}
                             </div>
                             <div className="text-[9px] text-muted-foreground font-medium leading-tight mb-1.5">
-                              sur {item.attendance!.total} ({rate.toFixed(0)}%)
+                              sur {item.attendance!.total} entraîn. ({rate.toFixed(0)}%)
                             </div>
                             
                             {/* Podium bar */}
@@ -352,7 +355,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                           <div className="w-16 h-1.5 bg-border/50 rounded-full overflow-hidden">
                             <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
                           </div>
-                          <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap w-14">{item.attendance!.present}/{item.attendance!.total} ({rate.toFixed(0)}%)</span>
+                          <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap w-[4.5rem]">{item.attendance!.present}/{item.attendance!.total} entraîn.</span>
                         </div>
                       </div>
                     );
