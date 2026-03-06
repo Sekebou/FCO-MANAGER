@@ -1330,7 +1330,7 @@ const Dashboard = () => {
             <HomeTab currentUser={currentUser} events={events} players={visiblePlayers} news={news} members={visibleMembers} onNavigate={handleTabChange} />
           )}
           {activeTab === 'presences' && (
-            <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; }}
+            <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} initialSelectedEventId={pendingEventId} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(null); }}
               onUpdateConvocations={async (eventId, convocations) => {
                 try { await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId); toast.success('Convocations publiées !'); } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}

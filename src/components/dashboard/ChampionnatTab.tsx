@@ -372,8 +372,9 @@ const ChampionnatTab: React.FC<Props> = ({
             }
           } catch {}
 
-          // Save cache to DB so other users don't need to fetch
-          if (Array.isArray(members) && members.length > 0 && teamChamp) {
+          if (Array.isArray(members) && members.length > 0) {
+            // Save cache even if no teamChamp exists yet — find or use any championship for this team
+            const champToCache = teamChamp || championships.find(c => (c.team || 'A') === selectedTeam);
             const liveCache: Record<string, any> = { classement: members, upcoming, results };
             const liveLogosCache: Record<number, string> = {};
             for (const entry of members) {
