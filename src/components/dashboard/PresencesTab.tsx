@@ -30,6 +30,7 @@ interface Props {
   canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
   onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>) => Promise<void>;
+  onSendReminder?: (event: Event) => Promise<void>;
   onResetHeader?: () => void;
   initialSelectedEventId?: string | null;
 }
