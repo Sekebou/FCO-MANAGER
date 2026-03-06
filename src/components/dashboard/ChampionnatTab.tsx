@@ -857,15 +857,12 @@ const ChampionnatTab: React.FC<Props> = ({
         const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
         const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
         
-        // Find ranks from live classement for smart odds
         const homeClNo = nextMatch.home?.club?.cl_no;
         const awayClNo = nextMatch.away?.club?.cl_no;
         const homeStanding = liveClassement.find(s => s.clNo === homeClNo);
         const awayStanding = liveClassement.find(s => s.clNo === awayClNo);
         const homeRank = homeStanding ? liveClassement.indexOf(homeStanding) + 1 : undefined;
         const awayRank = awayStanding ? liveClassement.indexOf(awayStanding) + 1 : undefined;
-        
-        const odds = generateOdds(homeName, awayName, nextMatch.date, homeRank, awayRank, liveClassement.length || undefined);
         
         return (
           <motion.div
