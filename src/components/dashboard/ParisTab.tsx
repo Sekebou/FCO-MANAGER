@@ -83,12 +83,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships, matches }) => {
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
 
-  // Upcoming matches that can be bet on
+  // Upcoming matches that can be bet on (string comparison to avoid timezone issues)
   const upcomingMatches = useMemo(() => {
-    const now = new Date();
+    const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
     return matches
-      .filter(m => !m.played && new Date(m.date) >= now)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .filter(m => !m.played && m.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))
       .slice(0, 20);
   }, [matches]);
 
