@@ -78,27 +78,37 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
   const filteredAttendance = useMemo(() => attendanceRecords.filter(r => isInPeriod(r.eventDate)), [attendanceRecords, periodFilter]);
 
   const calculateAttendanceRate = (playerId: string) => {
+    const trainingEvents = filteredEvents.filter(e => e.type === 'training');
+    const activeEventIds = new Set(trainingEvents.map(e => e.id));
+
+    // Build a unified set of all training event IDs (active + archived)
+    const archivedRecords = filteredAttendance.filter(
+      r => r.playerId === playerId && r.eventType === 'training' && !activeEventIds.has(r.eventId)
+    );
+    // Deduplicate archived event IDs
+    const archivedEventIds = new Set(archivedRecords.map(r => r.eventId));
+
+    // Also count archived events from ALL players (not just this one) to get true total
+    const allArchivedEventIds = new Set(
+      filteredAttendance
+        .filter(r => r.eventType === 'training' && !activeEventIds.has(r.eventId))
+        .map(r => r.eventId)
+    );
+
     let present = 0;
 
-    // Count all training events as the total (not just ones where player has an entry)
-    const trainingEvents = filteredEvents.filter(e => e.type === 'training');
-    
+    // Count from active events
     trainingEvents.forEach(t => {
       const p = t.presences || {};
       if (p[playerId] === 'present') present++;
     });
 
-    // Also count archived attendance records for events no longer in the active list
-    const activeEventIds = new Set(filteredEvents.map(e => e.id));
-    const archivedRecords = filteredAttendance.filter(r => r.playerId === playerId && r.eventType === 'training' && !activeEventIds.has(r.eventId));
-    
-    let archivedTotal = 0;
+    // Count from archived records for this player
     archivedRecords.forEach(r => {
-      archivedTotal++;
       if (r.status === 'present') present++;
     });
 
-    const total = trainingEvents.length + archivedTotal;
+    const total = activeEventIds.size + allArchivedEventIds.size;
     if (total === 0) return null;
     return { rate: (present / total) * 100, present, total };
   };
@@ -114,11 +124,11 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
     .map(p => ({ player: p, attendance: calculateAttendanceRate(p.id) }))
     .filter(i => i.attendance !== null)
     .sort((a, b) => {
-      // Primary: number of presences (who attended the most)
-      const diff = (b.attendance?.present || 0) - (a.attendance?.present || 0);
-      if (diff !== 0) return diff;
-      // Secondary: rate
-      return (b.attendance?.rate || 0) - (a.attendance?.rate || 0);
+      // Primary sort: number of presences (descending)
+      const presenceDiff = (b.attendance?.present ?? 0) - (a.attendance?.present ?? 0);
+      if (presenceDiff !== 0) return presenceDiff;
+      // Secondary: attendance rate
+      return (b.attendance?.rate ?? 0) - (a.attendance?.rate ?? 0);
     });
 
   // KPI cards data
