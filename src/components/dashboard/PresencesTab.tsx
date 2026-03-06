@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
@@ -29,8 +29,7 @@ interface Props {
   deleteEvent: (eventId: string) => void;
   canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
-  onUpdateConvocations: (eventId: string, convocations: Record<string, Convocation>) => void;
-  onSendConvocationNotif?: (event: Event, convocations: Record<string, Convocation>) => void;
+  onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>) => Promise<void>;
   onResetHeader?: () => void;
   initialSelectedEventId?: string | null;
 }
@@ -40,7 +39,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif, onResetHeader, initialSelectedEventId }: Props) => {
+const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onPublishAndNotifyConvocations, onResetHeader, initialSelectedEventId }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialSelectedEventId || null);
   const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
@@ -48,6 +47,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
   const [expandedPlayers, setExpandedPlayers] = useState<Record<string, boolean>>({});
   const [expandedConvocationsEdit, setExpandedConvocationsEdit] = useState<Record<string, boolean>>({});
+  const [showPublishConfirm, setShowPublishConfirm] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
   // React to navigation with a specific event ID
   useEffect(() => {
@@ -129,8 +130,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   };
 
   const publishConvocations = (eventId: string) => {
-    onUpdateConvocations(eventId, draftConvocations);
-    setConvocationMode(null);
+    setShowPublishConfirm(eventId);
+  };
+
+  const confirmPublish = async (eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+    setPublishing(true);
+    try {
+      await onPublishAndNotifyConvocations(eventId, event, draftConvocations);
+      setConvocationMode(null);
+      setShowPublishConfirm(null);
+    } catch {}
+    setPublishing(false);
   };
 
   // ─── DETAIL VIEW ───
@@ -463,11 +475,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors">
                           <Pencil size={14} /> Modifier
                         </button>
-                        {onSendConvocationNotif && event.convocations && (
-                          <button onClick={() => onSendConvocationNotif(event, event.convocations!)} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors" title="Notifier les joueurs convoqués">
-                            <Bell size={14} /> Convoqués
-                          </button>
-                        )}
+                        <button onClick={() => {
+                          setDraftConvocations(event.convocations || {});
+                          setShowPublishConfirm(event.id);
+                        }} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors" title="Re-notifier les joueurs convoqués">
+                          <Bell size={14} /> Re-notifier
+                        </button>
                       </div>
                     )}
                   </div>
@@ -597,7 +610,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 <div className="pt-3 flex gap-2">
                   <button onClick={() => setConvocationMode(null)} className="flex-1 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
                   <button onClick={() => publishConvocations(event.id)} className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 transition-all flex items-center justify-center gap-2">
-                    <Send size={14} /> Publier
+                    <Send size={14} /> Publier & Notifier
                   </button>
                 </div>
               </div>
@@ -617,6 +630,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
   // ─── LIST VIEW (cards) ───
   return (
+    <>
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -907,6 +921,70 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         );
       })()}
     </div>
+
+      {/* Confirmation modal for publish & notify */}
+      <AnimatePresence>
+        {showPublishConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[80]"
+            onMouseDown={(e) => { if (e.target === e.currentTarget && !publishing) setShowPublishConfirm(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-card rounded-2xl w-full max-w-sm p-5 border border-border shadow-2xl space-y-4"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+                  <Bell size={20} className="text-accent" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Confirmer l'envoi</h3>
+                  <p className="text-xs text-muted-foreground">Notification push aux joueurs convoqués</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Les joueurs marqués comme <span className="font-semibold text-accent">convoqués</span> recevront une notification push sur leur téléphone. Les autres joueurs ne seront pas notifiés.
+              </p>
+              {(() => {
+                const convokedCount = Object.values(draftConvocations).filter(c => c.status === 'convoque').length;
+                return (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-accent/5 rounded-xl border border-accent/10">
+                    <UserCheck size={14} className="text-accent" />
+                    <span className="text-sm font-medium text-foreground">{convokedCount} joueur{convokedCount > 1 ? 's' : ''} convoqué{convokedCount > 1 ? 's' : ''}</span>
+                  </div>
+                );
+              })()}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setShowPublishConfirm(null)}
+                  disabled={publishing}
+                  className="flex-1 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => confirmPublish(showPublishConfirm)}
+                  disabled={publishing}
+                  className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {publishing ? (
+                    <span className="animate-pulse">Envoi…</span>
+                  ) : (
+                    <><Send size={14} /> Confirmer</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

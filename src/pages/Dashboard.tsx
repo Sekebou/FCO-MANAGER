@@ -834,41 +834,23 @@ const Dashboard = () => {
             away_logo: eventData.awayLogo || null,
           } as any);
 
-          // Only send notifications for match and training
+          // Only send push notifications for match and training (no email)
           if (sendNotification && isNotifiable) {
             const typeIcons: Record<string, string> = { match: '🏟️', training: '🏋️', other: '📅' };
-            const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const dateFormatted = new Date(eventData.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
             const timeFormatted = eventData.time ? ` à ${eventData.time}` : '';
             const locationInfo = eventData.location ? `\n📍 ${eventData.location}` : '';
-            const pushTitle = `${typeIcons[eventData.type] || '📅'} Nouveau ${(typeLabels[eventData.type] || 'événement').toLowerCase()} !`;
-            const pushBody = `${eventData.title}\n📅 ${dateFormatted}${timeFormatted}${locationInfo}\n\nN'oublie pas de répondre présent ou absent ! 💪`;
+            const creatorName = currentUser?.name || 'Un membre';
+            const pushTitle = `${typeIcons[eventData.type] || '📅'} Nouvel événement`;
+            const pushBody = `${creatorName} a publié un nouveau ${(typeLabels[eventData.type] || 'événement').toLowerCase()} :\n${eventData.title}\n📅 ${dateFormatted}${timeFormatted}${locationInfo}\n\nConfirme ta présence sur l'app ! 💪`;
 
-            const tasks: Promise<any>[] = [];
-
-            // Push notification to all members
             const { data: tokenRows } = await supabase.from('fcm_tokens').select('token');
             const fcmTokens = [...new Set((tokenRows || []).map((r: any) => r.token).filter(Boolean))];
             if (fcmTokens.length > 0) {
-              tasks.push(
-                fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-                  body: JSON.stringify({ title: pushTitle, body: pushBody, data: { tab: 'presences' }, tokens: fcmTokens }),
-                }).catch(e => console.error('Push error:', e))
-              );
+              await supabase.functions.invoke('send-push-notification', {
+                body: { title: pushTitle, body: pushBody, data: { tab: 'presences' }, tokens: fcmTokens },
+              }).catch(e => console.error('Push error:', e));
             }
-
-            // Email to all notifiable members
-            tasks.push(...memberEmails.map(email =>
-              sendEventEmail({
-                to_email: email,
-                event_title: pushTitle,
-                event_date: eventData.date,
-                event_type: eventData.type,
-              }).catch(e => console.error('Email error:', e))
-            ));
-
-            await Promise.allSettled(tasks);
           }
         } catch (err) { console.error('Background event save error:', err); toast.error('Erreur lors de la sauvegarde'); }
       })();
@@ -1338,55 +1320,46 @@ const Dashboard = () => {
           )}
           {activeTab === 'presences' && (
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} initialSelectedEventId={pendingEventId} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(null); }}
-              onUpdateConvocations={async (eventId, convocations) => {
-                try { await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId); toast.success('Convocations publiées !'); } catch (err: any) { toast.error('Erreur: ' + err.message); }
-              }}
-              onSendConvocationNotif={async (event, convocations) => {
+              onPublishAndNotifyConvocations={async (eventId, event, convocations) => {
                 try {
-                  // Get player IDs that ARE convoked
+                  // 1. Save convocations to DB
+                  await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId);
+
+                  // 2. Notify only convoked players
                   const convokedPlayerIds = Object.entries(convocations)
                     .filter(([, c]) => c.status === 'convoque')
                     .map(([playerId]) => playerId);
 
-                  // Find member IDs linked to convoked players
                   const convokedMemberIds = members
                     .filter(m => m.playerId && convokedPlayerIds.includes(m.playerId))
                     .map(m => m.id);
 
-                  if (convokedMemberIds.length === 0) {
-                    toast.info('Aucun joueur convoqué à notifier');
-                    return;
+                  if (convokedMemberIds.length > 0) {
+                    const { data: tokenRows } = await supabase
+                      .from('fcm_tokens')
+                      .select('token')
+                      .in('user_id', convokedMemberIds);
+
+                    const tokens = tokenRows?.map(r => r.token) || [];
+
+                    if (tokens.length > 0) {
+                      const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+                      await supabase.functions.invoke('send-push-notification', {
+                        body: {
+                          title: '✅ Convocation',
+                          body: `Tu es sélectionné pour ${event.title} le ${eventDate} ! Confirme ta présence sur l'app.`,
+                          tokens,
+                          data: { type: 'convocation', eventId: event.id },
+                        },
+                      });
+                      toast.success(`Convocations publiées et ${tokens.length} joueur(s) notifié(s) !`);
+                    } else {
+                      toast.success('Convocations publiées ! (aucun appareil enregistré pour les convoqués)');
+                    }
+                  } else {
+                    toast.success('Convocations publiées !');
                   }
-
-                  // Fetch FCM tokens for convoked players only
-                  const { data: tokenRows } = await supabase
-                    .from('fcm_tokens')
-                    .select('token')
-                    .in('user_id', convokedMemberIds);
-
-                  const tokens = tokenRows?.map(r => r.token) || [];
-
-                  if (tokens.length === 0) {
-                    toast.info('Aucun appareil enregistré pour les joueurs convoqués. Les joueurs doivent ouvrir l\'application mobile pour activer les notifications.');
-                    return;
-                  }
-
-                  const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-
-                  const res = await supabase.functions.invoke('send-push-notification', {
-                    body: {
-                      title: '✅ Convocation',
-                      body: `Tu es sélectionné pour ${event.title} le ${eventDate} !`,
-                      tokens,
-                      data: { type: 'convocation', eventId: event.id },
-                    },
-                  });
-
-                  if (res.error) throw res.error;
-                  toast.success(`Notification envoyée à ${tokens.length} joueur(s) convoqué(s)`);
-                } catch (err: any) {
-                  toast.error('Erreur lors de l\'envoi : ' + err.message);
-                }
+                } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}
             />
           )}
