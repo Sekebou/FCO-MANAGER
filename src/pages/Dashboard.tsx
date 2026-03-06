@@ -291,7 +291,8 @@ const Dashboard = () => {
     return urlParams.get('tab') || 'home';
   });
 
-  const handleTabChange = (tab: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setActiveTab(tab); };
+  const [pendingEventId, setPendingEventId] = useState<string | null>(null);
+  const handleTabChange = (tab: string, eventId?: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(eventId || null); setActiveTab(tab); };
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
