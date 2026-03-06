@@ -1312,6 +1312,11 @@ const Dashboard = () => {
               </button>
               <HeaderPoints userId={currentUser?.uid} />
               <NotificationBell />
+              {currentUser?.role === 'admin+' && (
+                <button onClick={() => setShowPushTest(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Test Push Notification">
+                  <Send size={14} className="sm:hidden" /><Send size={16} className="hidden sm:block" />
+                </button>
+              )}
               <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Changer mot de passe">
                 <Lock size={14} className="sm:hidden" /><Lock size={16} className="hidden sm:block" />
               </button>
