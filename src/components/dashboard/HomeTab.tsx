@@ -162,9 +162,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
       {/* ── Next Training ── */}
       {nextTraining && nextTraining.id !== nextMatch?.id && (
         <motion.div variants={fadeUp}>
-          <SectionHeader icon={Dumbbell} title="Prochain entraînement" onAction={() => onNavigate('presences')} />
+          <SectionHeader icon={Dumbbell} title="Prochain entraînement" onAction={() => onNavigate('presences', nextTraining.id)} />
           <button
-            onClick={() => onNavigate('presences')}
+            onClick={() => onNavigate('presences', nextTraining.id)}
             className="w-full text-left bg-card border border-border/50 rounded-2xl p-4 active:scale-[0.98] transition-transform"
           >
             <div className="flex items-center gap-3">

@@ -326,7 +326,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                             <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
                           </div>
                           <span className={`text-[11px] font-bold w-8 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
-                          <span className="text-[9px] text-muted-foreground w-10 text-right">{item.attendance!.present}/{item.attendance!.total}</span>
+                          <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap">{item.attendance!.present} sur {item.attendance!.total}</span>
                         </div>
                       </div>
                     );

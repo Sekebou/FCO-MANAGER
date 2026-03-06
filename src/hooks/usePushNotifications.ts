@@ -31,14 +31,7 @@ export function usePushNotifications(userId: string | undefined) {
         PushNotifications.addListener('registration', async (token) => {
           console.log('FCM Token:', token.value);
           try {
-            // First, delete any existing rows with the same token (from other users)
-            // This prevents duplicate notifications on the same device
-            await supabase
-              .from('fcm_tokens')
-              .delete()
-              .eq('token', token.value);
-
-            // Then upsert for the current user (conflict on token to support multiple devices)
+            // Simple upsert — UNIQUE constraint on token column handles conflicts
             const { error } = await supabase
               .from('fcm_tokens')
               .upsert({
@@ -51,6 +44,7 @@ export function usePushNotifications(userId: string | undefined) {
             if (error) {
               console.error('Error storing FCM token:', error);
             } else {
+              console.log('FCM token saved successfully');
               registered.current = true;
             }
           } catch (e) {
