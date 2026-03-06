@@ -148,6 +148,7 @@ const tabs = [
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: Users },
   { id: 'chat', label: 'Discussions', icon: MessageCircle },
+  { id: 'paris', label: 'Paris', icon: Ticket },
 ];
 
 // ---- Supabase helpers: map DB snake_case → app camelCase ----
