@@ -1359,16 +1359,6 @@ const Dashboard = () => {
                   } else {
                     toast.success('Convocations publiées !');
                   }
-                } catch (err: any) { toast.error('Erreur: ' + err.message); }
-                      data: { type: 'convocation', eventId: event.id },
-                    },
-                  });
-
-                  if (res.error) throw res.error;
-                  toast.success(`Notification envoyée à ${tokens.length} joueur(s) convoqué(s)`);
-                } catch (err: any) {
-                  toast.error('Erreur lors de l\'envoi : ' + err.message);
-                }
               }}
             />
           )}
