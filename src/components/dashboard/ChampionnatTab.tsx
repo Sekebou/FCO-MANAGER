@@ -158,28 +158,8 @@ const ChampionnatTab: React.FC<Props> = ({
 
 
 
-  // Countdown timer
-  useEffect(() => {
-    if (!nextMatch?.date) return;
-    const target = new Date(nextMatch.date);
-    const update = () => {
-      const now = new Date();
-      const diff = target.getTime() - now.getTime();
-      if (diff <= 0) {
-        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-      setCountdown({
-        days: Math.floor(diff / 86400000),
-        hours: Math.floor((diff % 86400000) / 3600000),
-        minutes: Math.floor((diff % 3600000) / 60000),
-        seconds: Math.floor((diff % 60000) / 1000),
-      });
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [nextMatch?.date]);
+
+
 
   // Check if match is live (today)
   const isMatchLive = (matchDate: string) => {
