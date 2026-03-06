@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, Ticket, Home } from 'lucide-react';
+import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, Ticket, Home, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +19,7 @@ const allTabs: Tab[] = [
   { id: 'stats', label: 'Stats', icon: TrendingUp },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'members', label: 'Membres', icon: UserCheck },
+  { id: 'discussions', label: 'Discussions', icon: MessageCircle },
   { id: 'paris', label: 'Paris', icon: Ticket },
 ];
 
