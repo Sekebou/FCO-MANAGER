@@ -308,6 +308,38 @@ const Dashboard = () => {
   const [champMatches, setChampMatches] = useState<Match[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
+  const [unreadDiscussions, setUnreadDiscussions] = useState(0);
+
+  // Fetch unread discussions count
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchUnread = async () => {
+      const { data } = await supabase
+        .from('conversations')
+        .select('unread_count')
+        .contains('participants', [currentUser.uid]);
+      if (data) {
+        const total = data.reduce((sum: number, c: any) => {
+          const uc = (c.unread_count as Record<string, number>) || {};
+          return sum + (uc[currentUser.uid] || 0);
+        }, 0);
+        setUnreadDiscussions(total);
+      }
+    };
+    fetchUnread();
+
+    const channel = supabase
+      .channel('discussions-unread')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, fetchUnread)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_messages' }, fetchUnread)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUser]);
+
+  // Reset unread when viewing discussions
+  useEffect(() => {
+    if (activeTab === 'discussions') setUnreadDiscussions(0);
+  }, [activeTab]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
