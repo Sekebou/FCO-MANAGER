@@ -974,8 +974,6 @@ const ChampionnatTab: React.FC<Props> = ({
         );
       })()}
 
-      {/* ─── Bet Leaderboard (remonté) ─── */}
-      <BetLeaderboard />
 
       {/* ─── Matches sections ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
