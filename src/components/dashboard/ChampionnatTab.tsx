@@ -15,8 +15,6 @@ import {
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
 import { toast } from 'sonner';
-import BetModal, { generateOdds } from './BetModal';
-import BetLeaderboard from './BetLeaderboard';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface Championship {
