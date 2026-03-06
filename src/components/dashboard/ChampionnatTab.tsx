@@ -155,47 +155,8 @@ const ChampionnatTab: React.FC<Props> = ({
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
 
 
-  // Countdown
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
-  const filteredChampionships = championships.filter(c => (c.team || 'A') === selectedTeam);
-  const teamHasChampionship = (team: string) => championships.some(c => (c.team || 'A') === team);
 
-  const getChampMatches = (champId: string) => matches.filter(m => m.championshipId === champId);
-
-  const getTeamLogo = (teamName: string, champId?: string) => {
-    const searchChamps = champId ? [championships.find(c => c.id === champId)] : championships;
-    for (const champ of searchChamps) {
-      if (!champ?.teamLogos) continue;
-      const logo = champ.teamLogos[teamName.toUpperCase()] || champ.teamLogos[teamName];
-      if (logo) return logo;
-    }
-    return null;
-  };
-
-  const TeamLogo: React.FC<{ team: string; champId?: string; size?: number }> = ({ team, champId, size = 24 }) => {
-    const logo = getTeamLogo(team, champId);
-    if (!logo) return null;
-    return (
-      <img
-        src={logo}
-        alt={team}
-        className="rounded-full object-cover shrink-0 bg-muted"
-        style={{ width: size, height: size }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-      />
-    );
-  };
-
-  // Get the next upcoming match for the hero section
-  const nextMatch: FFFLiveMatch | null = (() => {
-    for (const group of liveUpcoming) {
-      for (const m of group.matchs) {
-        if (m.date) return m;
-      }
-    }
-    return null;
-  })();
 
   // Countdown timer
   useEffect(() => {
