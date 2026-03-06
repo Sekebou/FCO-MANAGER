@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, Ticket, Home } from 'lucide-react';
+import { TrendingUp, Trophy, Bell, Calendar, Camera, UserCheck, ClipboardCheck, Ticket, Home, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +19,7 @@ const allTabs: Tab[] = [
   { id: 'stats', label: 'Stats', icon: TrendingUp },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'members', label: 'Membres', icon: UserCheck },
+  { id: 'discussions', label: 'Discussions', icon: MessageCircle },
   { id: 'paris', label: 'Paris', icon: Ticket },
 ];
 
@@ -65,9 +66,10 @@ const AnimatedIcon = ({ icon: Icon, isActive, size, strokeWidth, className }: {
 interface BottomTabBarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  unreadDiscussions?: number;
 }
 
-const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
+const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomTabBarProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [featuredJustActivated, setFeaturedJustActivated] = useState(false);
@@ -227,6 +229,13 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                     strokeWidth={isActive ? 2.4 : 1.6}
                     className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')}
                   />
+                  {tab.id === 'discussions' && unreadDiscussions > 0 && !isActive && (
+                    <span className="absolute -top-1 -right-0.5 min-w-[16px] h-[16px] rounded-full bg-destructive flex items-center justify-center px-0.5">
+                      <span className="text-[9px] font-black text-destructive-foreground leading-none">
+                        {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
+                      </span>
+                    </span>
+                  )}
                 </motion.div>
                 <span className={cn('text-[10px] leading-none mt-1 tracking-tight whitespace-nowrap transition-colors duration-200', isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45')}>
                   {tab.label}
@@ -317,6 +326,13 @@ const BottomTabBar = ({ activeTab, onTabChange }: BottomTabBarProps) => {
                   strokeWidth={isActive ? 2.4 : 1.6}
                   className={cn('transition-colors duration-200', isActive ? 'text-accent' : 'text-muted-foreground/55')}
                 />
+                {tab.id === 'discussions' && unreadDiscussions > 0 && !isActive && (
+                  <span className="absolute -top-1 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive flex items-center justify-center px-0.5">
+                    <span className="text-[10px] font-black text-destructive-foreground leading-none">
+                      {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
+                    </span>
+                  </span>
+                )}
               </motion.div>
               <span className={cn('text-xs leading-none mt-1.5 tracking-tight whitespace-nowrap', isActive ? 'font-bold text-accent' : 'font-medium text-muted-foreground/45')}>
                 {tab.label}
