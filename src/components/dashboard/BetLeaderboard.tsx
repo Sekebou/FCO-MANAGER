@@ -17,15 +17,22 @@ const BetLeaderboard: React.FC = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      // Get top bettors by total_bet (most active bettors)
+      // Get top bettors by balance
       const { data: points } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('balance', { ascending: false }).limit(10);
       if (!points || points.length === 0) { setLoading(false); return; }
 
-      // Get names from bets table
+      // Get names from profiles table (more reliable than bets)
       const userIds = points.map(p => p.user_id);
-      const { data: bets } = await supabase.from('bets').select('user_id, user_name').in('user_id', userIds);
+      const { data: profiles } = await supabase.from('profiles').select('id, name').in('id', userIds);
       const nameMap: Record<string, string> = {};
-      bets?.forEach(b => { if (!nameMap[b.user_id]) nameMap[b.user_id] = b.user_name; });
+      profiles?.forEach(p => { nameMap[p.id] = p.name; });
+
+      // Fallback to bets table for names not found in profiles
+      const missingIds = userIds.filter(id => !nameMap[id]);
+      if (missingIds.length > 0) {
+        const { data: bets } = await supabase.from('bets').select('user_id, user_name').in('user_id', missingIds);
+        bets?.forEach(b => { if (!nameMap[b.user_id]) nameMap[b.user_id] = b.user_name; });
+      }
 
       setEntries(points.map(p => ({
         ...p,

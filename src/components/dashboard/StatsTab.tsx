@@ -107,7 +107,13 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
   const attendanceStats = players
     .map(p => ({ player: p, attendance: calculateAttendanceRate(p.id) }))
     .filter(i => i.attendance !== null)
-    .sort((a, b) => (b.attendance?.rate || 0) - (a.attendance?.rate || 0));
+    .sort((a, b) => {
+      // Primary: number of presences (who attended the most)
+      const diff = (b.attendance?.present || 0) - (a.attendance?.present || 0);
+      if (diff !== 0) return diff;
+      // Secondary: rate
+      return (b.attendance?.rate || 0) - (a.attendance?.rate || 0);
+    });
 
   // KPI cards data
   const topScorer = [...players].sort((a, b) => (b.goals || 0) - (a.goals || 0))[0];
@@ -206,7 +212,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                 {[
                   { label: 'Meilleur buteur', player: topScorer, value: `${topScorer?.goals || 0} buts`, IconBadge: CircleDot },
                   { label: 'Meilleur passeur', player: topAssister, value: `${topAssister?.assists || 0} passes déc.`, IconBadge: Target },
-                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.rate.toFixed(0)}% présence` : '—', IconBadge: Users },
+                  { label: 'Plus assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present} présences (${topAttendance.attendance!.present}/${topAttendance.attendance!.total})` : '—', IconBadge: Users },
                 ].map((kpi, i) => {
                   const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
                   const photoURL = member?.photoURL;
@@ -292,13 +298,16 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                           <div className="text-[10px] font-semibold text-foreground text-center truncate w-full">
                             {item.player.name.split(' ')[0]}
                           </div>
-                          <div className={`text-base font-black ${podiumTextColors[podiumIdx]} mb-1`}>
-                            {rate.toFixed(0)}%
+                          <div className={`text-lg font-black ${podiumTextColors[podiumIdx]} mb-0.5`}>
+                            {item.attendance!.present}
+                          </div>
+                          <div className="text-[9px] text-muted-foreground font-medium mb-1">
+                            présence{item.attendance!.present > 1 ? 's' : ''}
                           </div>
                           <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-xl ${podiumBg[podiumIdx]} border ${podiumBorder[podiumIdx]} border-b-0 flex flex-col items-center justify-center relative`}>
                             <span className={`text-lg font-black ${podiumTextColors[podiumIdx]}`}>{podiumRanks[podiumIdx]}</span>
                             <span className="text-[8px] text-muted-foreground font-medium">
-                              {item.attendance!.present} sur {item.attendance!.total}
+                              {item.attendance!.present}/{item.attendance!.total} ({rate.toFixed(0)}%)
                             </span>
                           </div>
                         </div>
@@ -322,11 +331,11 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                           <div className="text-xs font-semibold text-foreground truncate">{item.player.name}</div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="w-20 h-1.5 bg-border rounded-full overflow-hidden">
+                          <span className={`text-sm font-black ${textColor} w-7 text-right`}>{item.attendance!.present}</span>
+                          <div className="w-16 h-1.5 bg-border rounded-full overflow-hidden">
                             <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
                           </div>
-                          <span className={`text-[11px] font-bold w-8 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
-                          <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap">{item.attendance!.present} sur {item.attendance!.total}</span>
+                          <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap w-14">{item.attendance!.present}/{item.attendance!.total} ({rate.toFixed(0)}%)</span>
                         </div>
                       </div>
                     );
