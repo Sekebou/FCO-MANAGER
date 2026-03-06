@@ -1547,20 +1547,6 @@ const ChampionnatTab: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ─── Bet Modal ─── */}
-      {betMatch && currentUser && (
-        <BetModal
-          isOpen={!!betMatch}
-          onClose={() => setBetMatch(null)}
-          homeTeam={betMatch.homeTeam}
-          awayTeam={betMatch.awayTeam}
-          matchDate={betMatch.matchDate}
-          homeLogo={betMatch.homeLogo}
-          awayLogo={betMatch.awayLogo}
-          userId={currentUser.uid}
-          userName={currentUser.name || 'Joueur'}
-        />
-      )}
     </div>
   );
 };
