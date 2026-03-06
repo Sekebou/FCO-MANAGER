@@ -14,7 +14,7 @@ interface HomeTabProps {
   players: Player[];
   news: NewsItem[];
   members: Member[];
-  onNavigate: (tab: string) => void;
+  onNavigate: (tab: string, eventId?: string) => void;
 }
 
 const formatDate = (d: string) => {
