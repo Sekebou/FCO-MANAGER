@@ -1,94 +1,43 @@
 
 
-# Plan de correction — 8 points
+## Plan de corrections
 
-## 1. Bug FCM tokens (notifications push)
+### Problèmes identifiés
 
-**Problème identifié** : Le hook `usePushNotifications` tente de `delete` les tokens d'autres utilisateurs avant l'upsert, mais la politique RLS `(auth.uid())::text = user_id` bloque cette suppression silencieusement. De plus, l'upsert avec `onConflict: 'token'` échoue probablement car il n'y a pas de contrainte UNIQUE sur la colonne `token` en base.
+1. **Logos non persistés** : La table `events` n'a pas de colonnes `home_logo`/`away_logo`. Les logos sont dans le state local mais jamais insérés en DB, donc perdus au rechargement.
+2. **Heure non auto-remplie** dans le sélecteur natif (le `time` est mis dans `formData.time` mais le `NativeTimePicker` l'affiche bien — à vérifier si c'est un problème d'affichage).
+3. **Après sélection d'un match FFF**, tout reste visible (équipe, compétition, liste) — il faut cacher la section FFF et montrer la date/heure.
+4. **LocationAutocomplete toujours visible** pour les matchs — il faut le cacher par défaut et ne le montrer que si le stade n'est pas trouvé via FFF ou via un bouton admin+.
+5. **Icône "en attente"** manquante à côté des compteurs ✓ et ✗ sur les cartes liste.
+6. **Texte "Appuie pour voir les détails"** à améliorer + ajouter un petit espace.
+7. **Animations** manquantes sur les boutons Présent/Absent de la carte liste.
 
-**Corrections** :
-- Migration : ajouter une contrainte UNIQUE sur `fcm_tokens.token` si elle n'existe pas
-- Ajouter une politique RLS permettant la suppression par token (ou utiliser une fonction `SECURITY DEFINER` pour gérer l'upsert côté serveur)
-- Simplifier le hook : supprimer le `delete` préalable et garder uniquement l'`upsert` avec `onConflict: 'token'`, en s'assurant que le `user_id` correspond bien à `auth.uid()::text`
+### Modifications
 
-## 2. Suppression automatique des événements passés (48h)
+#### 1. Migration DB : ajouter `home_logo` et `away_logo` à `events`
+```sql
+ALTER TABLE public.events ADD COLUMN home_logo text;
+ALTER TABLE public.events ADD COLUMN away_logo text;
+```
 
-**Approche** : Créer une edge function `cleanup-old-events` déclenchée par un cron job quotidien.
+#### 2. `src/pages/Dashboard.tsx`
+- Dans `addEvent` (ligne 706-713) : inclure `home_logo: eventData.homeLogo`, `away_logo: eventData.awayLogo` dans l'insert
+- Dans le fetch des events : mapper `home_logo`/`away_logo` vers `homeLogo`/`awayLogo` dans le type Event
 
-- Sélectionne les événements dont `date < now() - 48h` et type `match` ou `training`
-- Archive les présences dans `attendance_records` avant suppression
-- Supprime les événements de la table `events`
-- Cron : exécution 1x/jour via `pg_cron`
+#### 3. `src/components/modals/AddEventForm.tsx`
+- **`handleFFFMatchSelect`** : après sélection, mettre un state `fffMatchSelected = true` qui masque toute la section FFF (équipes, compétitions, matchs) pour montrer uniquement titre/date/heure/lieu pré-remplis
+- Ajouter un bouton "Modifier le match" pour ré-ouvrir la sélection FFF si besoin
+- **LocationAutocomplete pour match** : masquer par défaut. Afficher uniquement si `!formData.location` (stade non trouvé via FFF) OU si admin+ clique sur un bouton "Modifier le stade"
+- S'assurer que `formData.time` est bien rempli (déjà fait dans `handleFFFMatchSelect` ligne 119)
 
-## 3. Amélioration section statistiques
+#### 4. `src/components/dashboard/PresencesTab.tsx`
+- **Compteur "en attente"** : ajouter une icône Clock avec le count des joueurs n'ayant pas répondu à côté des ✓ et ✗ sur les cartes liste
+- **Texte hint** : changer en "Appuyez pour voir plus de détails sur l'événement" avec un `mt-1` pour l'espacement
+- **Animations Présent/Absent** : ajouter `motion.button` avec `whileTap={{ scale: 0.9 }}` et `AnimatePresence` pour les boutons de la carte liste (comme dans la vue détail)
 
-**Problème** : Les formats `3/3` et `1/1` dans le podium et la liste des présences ne sont pas explicites.
-
-**Corrections dans `StatsTab.tsx`** :
-- Podium (ligne ~301) : remplacer `{present}/{total}` par `Présent à {present} entraînements sur {total}` (version courte pour le podium : `{present} sur {total}`)
-- Liste ranking (ligne ~329) : idem, remplacer `{present}/{total}` par `{present} sur {total}`
-- Section "Tops joueurs" : ajouter des labels plus explicites
-
-## 4. Bug classement (BetLeaderboard)
-
-**Problème** : Le classement des parieurs trie par `total_bet` (montant total misé) au lieu d'un critère pertinent comme le `balance` ou `total_won`.
-
-**Correction dans `BetLeaderboard.tsx`** :
-- Trier par `balance` décroissant (celui qui a le plus de points est premier)
-- Ou trier par `total_won` si l'intention est de classer par gains
-
-## 5. Navigation accueil → événement dans Présences
-
-**Problème** : Quand on clique sur le prochain match/entraînement depuis `HomeTab`, ça navigue vers l'onglet `presences` mais n'ouvre pas l'événement concerné.
-
-**Corrections** :
-- Modifier `HomeTab` : passer l'id de l'événement dans le callback `onNavigate`, ex: `onNavigate('presences', nextMatch.id)`
-- Modifier `Dashboard` : gérer un paramètre `initialEventId` dans `handleTabChange`
-- Modifier `PresencesTab` : accepter un prop `initialSelectedEventId` et l'utiliser pour pré-sélectionner l'événement à l'ouverture
-
-## 6. Bug points (mise à jour en temps réel)
-
-**Problème** : Les points dans `HeaderPoints` sont chargés une seule fois au montage et ne se rafraîchissent jamais. Idem dans `MembersTab` et `BetLeaderboard`.
-
-**Corrections** :
-- `HeaderPoints` : ajouter un abonnement Realtime sur `user_points` pour rafraîchir automatiquement
-- Ou rafraîchir les points après chaque action (pari, présence, like, commentaire) via un callback partagé
-- S'assurer que `user_points` est dans la publication Realtime
-
-## 7. Nettoyage BDD points + suppression Daily Bonus
-
-**Problème** : Le daily bonus génère 1 transaction/jour/utilisateur, ce qui multiplie les rows inutilement. De plus, il y a des doublons dans `user_points`.
-
-**Corrections** :
-- Supprimer la logique `awardDailyBonus` dans `Dashboard.tsx` (retirer le bonus quotidien)
-- Nettoyage via requête SQL (outil insert) :
-  - Supprimer toutes les transactions de type `daily`
-  - Dédupliquer `user_points` : garder 1 seule row par `user_id` avec le solde le plus récent
-- Ajouter une contrainte UNIQUE sur `user_points.user_id` pour éviter les futurs doublons
-
-## 8. Optimisation API Championnat
-
-**Problème** : Le cache de 24h fonctionne déjà en principe (implémenté précédemment), mais il y a un risque que le cache ne soit pas sauvegardé si `teamChamp` est `undefined` (ligne 376 du ChampionnatTab : `if (... && teamChamp)`). Si un utilisateur ouvre l'app et qu'il n'y a pas encore de championship dans la BDD pour cette équipe, le cache n'est jamais sauvegardé.
-
-**Corrections** :
-- Vérifier que le cache est bien sauvegardé même quand le championship est récent
-- S'assurer que le cron `auto-refresh-championships` fonctionne correctement pour pré-remplir le cache
-- Ajouter un log/debug pour confirmer que l'API n'est appelée qu'une fois par jour
-
----
-
-## Résumé des fichiers à modifier
-
-| Fichier | Changements |
-|---|---|
-| `src/hooks/usePushNotifications.ts` | Fix upsert FCM, retirer delete |
-| `src/pages/Dashboard.tsx` | Supprimer daily bonus, gérer navigation avec eventId |
-| `src/components/dashboard/HomeTab.tsx` | Passer eventId dans onNavigate |
-| `src/components/dashboard/PresencesTab.tsx` | Accepter initialSelectedEventId |
-| `src/components/dashboard/StatsTab.tsx` | Textes explicites pour présences |
-| `src/components/dashboard/BetLeaderboard.tsx` | Fix tri classement par balance |
-| `src/components/dashboard/ChampionnatTab.tsx` | Vérifier sauvegarde cache |
-| Migration SQL | UNIQUE sur fcm_tokens.token, UNIQUE sur user_points.user_id |
-| SQL nettoyage (insert) | Purge daily transactions, dédoublonnage user_points, purge invitations used |
-| Edge function + cron | cleanup-old-events |
+### Fichiers modifiés
+1. Migration SQL (nouvelle)
+2. `src/pages/Dashboard.tsx`
+3. `src/components/modals/AddEventForm.tsx`
+4. `src/components/dashboard/PresencesTab.tsx`
 

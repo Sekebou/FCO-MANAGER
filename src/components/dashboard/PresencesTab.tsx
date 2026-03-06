@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
@@ -32,6 +32,7 @@ interface Props {
   onUpdateConvocations: (eventId: string, convocations: Record<string, Convocation>) => void;
   onSendConvocationNotif?: (event: Event, convocations: Record<string, Convocation>) => void;
   onResetHeader?: () => void;
+  initialSelectedEventId?: string | null;
 }
 
 const CONVOCATION_STATUSES = [
@@ -39,14 +40,21 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif, onResetHeader }: Props) => {
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onUpdateConvocations, onSendConvocationNotif, onResetHeader, initialSelectedEventId }: Props) => {
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(initialSelectedEventId || null);
   const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
   const [expandedPlayers, setExpandedPlayers] = useState<Record<string, boolean>>({});
   const [expandedConvocationsEdit, setExpandedConvocationsEdit] = useState<Record<string, boolean>>({});
+
+  // React to navigation with a specific event ID
+  useEffect(() => {
+    if (initialSelectedEventId) {
+      setSelectedEventId(initialSelectedEventId);
+    }
+  }, [initialSelectedEventId]);
 
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);

@@ -298,7 +298,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                           <div className={`w-full ${podiumHeights[podiumIdx]} rounded-t-xl ${podiumBg[podiumIdx]} border ${podiumBorder[podiumIdx]} border-b-0 flex flex-col items-center justify-center relative`}>
                             <span className={`text-lg font-black ${podiumTextColors[podiumIdx]}`}>{podiumRanks[podiumIdx]}</span>
                             <span className="text-[8px] text-muted-foreground font-medium">
-                              {item.attendance!.present}/{item.attendance!.total}
+                              {item.attendance!.present} sur {item.attendance!.total}
                             </span>
                           </div>
                         </div>
@@ -326,7 +326,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                             <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
                           </div>
                           <span className={`text-[11px] font-bold w-8 text-right ${textColor}`}>{rate.toFixed(0)}%</span>
-                          <span className="text-[9px] text-muted-foreground w-10 text-right">{item.attendance!.present}/{item.attendance!.total}</span>
+                          <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap">{item.attendance!.present} sur {item.attendance!.total}</span>
                         </div>
                       </div>
                     );

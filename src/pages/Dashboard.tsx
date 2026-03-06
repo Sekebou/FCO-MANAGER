@@ -199,6 +199,15 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
     supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle().then(({ data }) => {
       setPts(data?.balance ?? 100);
     });
+    // Subscribe to realtime updates for this user's points
+    const channel = supabase
+      .channel(`user_points_${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${userId}` }, (payload: any) => {
+        const newBalance = payload.new?.balance;
+        if (typeof newBalance === 'number') setPts(newBalance);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [userId]);
   if (pts === null) return null;
   return (
@@ -252,7 +261,7 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Coins size={13} className="text-amber-400 shrink-0" />
-                  <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien automatique</span>
+                  <span><b className="text-foreground">Paris gagnés</b> — Remporte tes paris pour gagner plus !</span>
                 </div>
               </div>
               <div className="bg-accent/10 rounded-xl p-3 border border-accent/20">
@@ -282,7 +291,8 @@ const Dashboard = () => {
     return urlParams.get('tab') || 'home';
   });
 
-  const handleTabChange = (tab: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setActiveTab(tab); };
+  const [pendingEventId, setPendingEventId] = useState<string | null>(null);
+  const handleTabChange = (tab: string, eventId?: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(eventId || null); setActiveTab(tab); };
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -486,40 +496,7 @@ const Dashboard = () => {
 
     fetchAll();
 
-    // Daily bonus: +1 pt/day (automatic) — guarded by localStorage to avoid duplicates
-    const awardDailyBonus = async () => {
-      if (!currentUser?.uid) return;
-      const today = new Date().toISOString().slice(0, 10);
-      const cacheKey = `fco_daily_bonus_${currentUser.uid}`;
-      if (localStorage.getItem(cacheKey) === today) return; // already awarded locally
-      // Double-check in DB
-      const { data: existing, error: checkErr } = await supabase
-        .from('points_transactions')
-        .select('id')
-        .eq('user_id', currentUser.uid)
-        .eq('type', 'daily')
-        .like('description', `%${today}%`)
-        .limit(1);
-      if (checkErr || (existing && existing.length > 0)) {
-        localStorage.setItem(cacheKey, today);
-        return;
-      }
-      // Award 1 pt — upsert-safe
-      const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).limit(1).maybeSingle();
-      if (pts) {
-        await supabase.from('user_points').update({ balance: pts.balance + 1, updated_at: new Date().toISOString() }).eq('id', pts.id);
-      } else {
-        await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 101 });
-      }
-      await supabase.from('points_transactions').insert({
-        user_id: currentUser.uid,
-        amount: 1,
-        type: 'daily',
-        description: `Bonus quotidien ${today}`,
-      });
-      localStorage.setItem(cacheKey, today);
-    };
-    awardDailyBonus();
+    // Daily bonus removed — was generating too many DB rows
 
     // Detect iOS Capacitor (Realtime WebSocket doesn't work reliably on iOS native)
     const isIOSNative = /iPad|iPhone|iPod/.test(navigator.userAgent) && (window as any).Capacitor?.isNativePlatform?.();
@@ -1353,7 +1330,7 @@ const Dashboard = () => {
             <HomeTab currentUser={currentUser} events={events} players={visiblePlayers} news={news} members={visibleMembers} onNavigate={handleTabChange} />
           )}
           {activeTab === 'presences' && (
-            <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; }}
+            <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} initialSelectedEventId={pendingEventId} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(null); }}
               onUpdateConvocations={async (eventId, convocations) => {
                 try { await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId); toast.success('Convocations publiées !'); } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}

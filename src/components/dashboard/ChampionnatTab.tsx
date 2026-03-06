@@ -372,8 +372,9 @@ const ChampionnatTab: React.FC<Props> = ({
             }
           } catch {}
 
-          // Save cache to DB so other users don't need to fetch
-          if (Array.isArray(members) && members.length > 0 && teamChamp) {
+          if (Array.isArray(members) && members.length > 0) {
+            // Save cache even if no teamChamp exists yet — find or use any championship for this team
+            const champToCache = teamChamp || championships.find(c => (c.team || 'A') === selectedTeam);
             const liveCache: Record<string, any> = { classement: members, upcoming, results };
             const liveLogosCache: Record<number, string> = {};
             for (const entry of members) {
@@ -382,14 +383,16 @@ const ChampionnatTab: React.FC<Props> = ({
               if (clNo && logo) liveLogosCache[clNo] = logo;
             }
             if (Object.keys(liveLogosCache).length > 0) liveCache.logos = liveLogosCache;
-            supabase
-              .from('championships')
-              .update({ fff_live_cache: liveCache, fff_refreshed_at: new Date().toISOString() } as any)
-              .eq('id', teamChamp.id)
-              .then(({ error }) => {
-                if (error) console.error('Failed to save FFF cache:', error);
-                else console.log('FFF cache saved for team', selectedTeam);
-              });
+            if (champToCache) {
+              supabase
+                .from('championships')
+                .update({ fff_live_cache: liveCache, fff_refreshed_at: new Date().toISOString() } as any)
+                .eq('id', champToCache.id)
+                .then(({ error }) => {
+                  if (error) console.error('Failed to save FFF cache:', error);
+                  else console.log('FFF cache saved for team', selectedTeam);
+                });
+            }
           }
         }
         
