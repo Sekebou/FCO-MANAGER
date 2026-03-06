@@ -610,7 +610,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 <div className="pt-3 flex gap-2">
                   <button onClick={() => setConvocationMode(null)} className="flex-1 py-2.5 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
                   <button onClick={() => publishConvocations(event.id)} className="flex-1 py-2.5 rounded-xl bg-accent text-accent-foreground text-sm font-semibold hover:bg-accent/90 transition-all flex items-center justify-center gap-2">
-                    <Send size={14} /> Publier
+                    <Send size={14} /> Publier & Notifier
                   </button>
                 </div>
               </div>
