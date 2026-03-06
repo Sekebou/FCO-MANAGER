@@ -629,6 +629,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   }
 
   // ─── LIST VIEW (cards) ───
+  return (
     <>
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-2">
