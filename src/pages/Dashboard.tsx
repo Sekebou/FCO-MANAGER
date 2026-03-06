@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.png';
 import { toast } from 'sonner';
@@ -20,6 +20,8 @@ import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
 import ChatTab from '@/components/dashboard/ChatTab';
+import ParisTab from '@/components/dashboard/ParisTab';
+import FloatingChatBubble from '@/components/dashboard/FloatingChatBubble';
 import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
 import HomeTab from '@/components/dashboard/HomeTab';
@@ -146,6 +148,7 @@ const tabs = [
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: Users },
   { id: 'chat', label: 'Discussions', icon: MessageCircle },
+  { id: 'paris', label: 'Paris', icon: Ticket },
 ];
 
 // ---- Supabase helpers: map DB snake_case → app camelCase ----
@@ -1419,7 +1422,7 @@ const Dashboard = () => {
           {activeTab === 'news' && <NewsTab news={news} comments={newsComments} members={members} currentUser={currentUser} canManage={canManage} canCreateNews={canCreateNews} deleteNews={deleteNews} toggleLike={toggleLike} addComment={addComment} deleteComment={deleteComment} onAddNews={() => setShowAddNews(true)} />}
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryTab albums={albums} photos={galleryPhotos} currentUser={currentUser} canManagePhotos={canManagePhotos} onCreateAlbum={createAlbum} onDeleteAlbum={deleteAlbum} onUploadPhotos={uploadPhotos} onDeletePhoto={deletePhoto} />}
-          {activeTab === 'chat' && <ChatTab currentUser={currentUser} members={members} />}
+          {activeTab === 'paris' && <ParisTab currentUser={currentUser} championships={championships} matches={champMatches} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
               onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
@@ -1448,7 +1451,7 @@ const Dashboard = () => {
       </main>
 
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
-
+      <FloatingChatBubble currentUser={currentUser} members={members} />
 
 
 
