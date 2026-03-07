@@ -453,10 +453,21 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
                       {/* Pending bets count */}
                       {matchBets.length > 0 && (
-                        <div className="flex items-center justify-center gap-1.5 mb-3">
+                        <div className="flex items-center justify-center gap-2 mb-3">
+                          <div className="flex -space-x-2">
+                            {matchBets.slice(0, 5).map(bet => (
+                              profilePhotos[bet.userId] ? (
+                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-card" />
+                              ) : (
+                                <div key={bet.id} className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[8px] font-bold text-muted-foreground ring-2 ring-card">
+                                  {bet.userName.charAt(0).toUpperCase()}
+                                </div>
+                              )
+                            ))}
+                          </div>
                           <div className="flex items-center gap-1 bg-accent/10 text-accent rounded-full px-3 py-1">
                             <Ticket size={12} />
-                            <span className="text-[10px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours sur ce match</span>
+                            <span className="text-[10px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours</span>
                           </div>
                         </div>
                       )}
