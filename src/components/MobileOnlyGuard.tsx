@@ -29,7 +29,8 @@ const isMobileOrTablet = () => {
  * - Any browser (mobile or desktop) → BLOCKED
  */
 const isAllowed = () => {
-  return true;
+  if (isCapacitorNative()) return true;
+  return false;
 };
 
 interface MobileOnlyGuardProps {
