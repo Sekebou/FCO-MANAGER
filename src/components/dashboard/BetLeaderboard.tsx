@@ -18,8 +18,11 @@ const BetLeaderboard: React.FC = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data: points } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('balance', { ascending: false }).limit(10);
-      if (!points || points.length === 0) { setLoading(false); return; }
+      const { data: allPoints } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('balance', { ascending: false }).limit(20);
+      if (!allPoints || allPoints.length === 0) { setLoading(false); return; }
+      // Only show users who have actually placed bets
+      const points = allPoints.filter(p => p.total_bet > 0);
+      if (points.length === 0) { setLoading(false); return; }
 
       const userIds = points.map(p => p.user_id);
       const { data: profiles } = await supabase.from('profiles').select('id, name, photo_url').in('id', userIds);

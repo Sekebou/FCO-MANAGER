@@ -433,19 +433,6 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         {nextMatch.time ? ` • ${nextMatch.time}` : ''}
                       </p>
 
-                      {/* Odds row */}
-                      <div className="flex items-center justify-center gap-2 mb-3">
-                        {[
-                          { label: '1', value: odds.home },
-                          { label: 'N', value: odds.draw },
-                          { label: '2', value: odds.away },
-                        ].map(o => (
-                          <div key={o.label} className="bg-secondary/60 rounded-lg px-3 py-2 text-center flex-1 max-w-[80px]">
-                            <div className="text-[9px] text-muted-foreground/60 font-medium">{o.label}</div>
-                            <div className="text-sm font-black text-foreground">{o.value}</div>
-                          </div>
-                        ))}
-                      </div>
 
                       {/* Pending bets count */}
                       {matchBets.length > 0 && (
