@@ -68,6 +68,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
+  const [profilePhotos, setProfilePhotos] = useState<Record<string, string | null>>({});
 
   // Countdown
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
