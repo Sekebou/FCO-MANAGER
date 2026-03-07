@@ -102,6 +102,22 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
 
+  // Load profile photos for bettors
+  useEffect(() => {
+    if (!bets.length) return;
+    const userIds = [...new Set(bets.map(b => b.userId))].filter(id => !(id in profilePhotos));
+    if (!userIds.length) return;
+    supabase.from('profiles').select('id, photo_url').in('id', userIds).then(({ data }) => {
+      if (data) {
+        setProfilePhotos(prev => {
+          const next = { ...prev };
+          data.forEach(p => { next[p.id] = p.photo_url; });
+          return next;
+        });
+      }
+    });
+  }, [bets]);
+
   // Load FFF data for selected team
   useEffect(() => {
     if (teamData[selectedTeam] && !teamData[selectedTeam].loading) return; // already loaded
