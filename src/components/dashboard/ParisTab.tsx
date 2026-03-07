@@ -505,9 +505,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         const isMe = bet.userId === currentUser?.uid;
                         return (
                           <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
-                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                              {bet.userName.charAt(0).toUpperCase()}
-                            </div>
+                            {profilePhotos[bet.userId] ? (
+                              <img src={profilePhotos[bet.userId]!} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-border/30" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                                {bet.userName.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
