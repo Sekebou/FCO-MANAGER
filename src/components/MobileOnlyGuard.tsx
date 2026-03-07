@@ -30,8 +30,7 @@ const isMobileOrTablet = () => {
  */
 const isAllowed = () => {
   if (isCapacitorNative()) return true;
-  // TODO: TEMP - allow web preview for testing, re-enable before production
-  return true;
+  return false;
 };
 
 interface MobileOnlyGuardProps {
