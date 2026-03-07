@@ -68,6 +68,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
+  const [profilePhotos, setProfilePhotos] = useState<Record<string, string | null>>({});
 
   // Countdown
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -100,6 +101,22 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
+
+  // Load profile photos for bettors
+  useEffect(() => {
+    if (!bets.length) return;
+    const userIds = [...new Set(bets.map(b => b.userId))].filter(id => !(id in profilePhotos));
+    if (!userIds.length) return;
+    supabase.from('profiles').select('id, photo_url').in('id', userIds).then(({ data }) => {
+      if (data) {
+        setProfilePhotos(prev => {
+          const next = { ...prev };
+          data.forEach(p => { next[p.id] = p.photo_url; });
+          return next;
+        });
+      }
+    });
+  }, [bets]);
 
   // Load FFF data for selected team
   useEffect(() => {
@@ -436,10 +453,21 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
                       {/* Pending bets count */}
                       {matchBets.length > 0 && (
-                        <div className="flex items-center justify-center gap-1.5 mb-3">
+                        <div className="flex items-center justify-center gap-2 mb-3">
+                          <div className="flex -space-x-2">
+                            {matchBets.slice(0, 5).map(bet => (
+                              profilePhotos[bet.userId] ? (
+                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-card" />
+                              ) : (
+                                <div key={bet.id} className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[8px] font-bold text-muted-foreground ring-2 ring-card">
+                                  {bet.userName.charAt(0).toUpperCase()}
+                                </div>
+                              )
+                            ))}
+                          </div>
                           <div className="flex items-center gap-1 bg-accent/10 text-accent rounded-full px-3 py-1">
                             <Ticket size={12} />
-                            <span className="text-[10px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours sur ce match</span>
+                            <span className="text-[10px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours</span>
                           </div>
                         </div>
                       )}
@@ -488,9 +516,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         const isMe = bet.userId === currentUser?.uid;
                         return (
                           <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
-                            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                              {bet.userName.charAt(0).toUpperCase()}
-                            </div>
+                            {profilePhotos[bet.userId] ? (
+                              <img src={profilePhotos[bet.userId]!} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-border/30" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                                {bet.userName.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
