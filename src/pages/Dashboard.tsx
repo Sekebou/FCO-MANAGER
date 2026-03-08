@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket
 } from 'lucide-react';
-import clubLogo from '@/assets/logo-start.png';
+import clubLogo from '@/assets/logo.png';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
 import StatsTab from '@/components/dashboard/StatsTab';
