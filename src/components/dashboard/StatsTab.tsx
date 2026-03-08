@@ -406,15 +406,25 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                       )}
                     </div>
                   </div>
-                  {/* Radar toggle button */}
+                  {/* Action buttons */}
                   {isCoachOrAdmin && (
-                    <button
-                      onClick={() => setExpandedRadar(isExpanded ? null : player.id)}
-                      className={`flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
-                    >
-                      <ChartNoAxesCombined size={15} />
-                      <span className="text-[8px] leading-tight">Stats avancées</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => exportPlayerCard(player, cards, events, attendanceRecords, members)}
+                        className="flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2 py-1.5 rounded-lg transition-all text-muted-foreground hover:bg-secondary"
+                        title="Exporter fiche joueur (PDF)"
+                      >
+                        <Download size={14} />
+                        <span className="text-[8px] leading-tight">PDF</span>
+                      </button>
+                      <button
+                        onClick={() => setExpandedRadar(isExpanded ? null : player.id)}
+                        className={`flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+                      >
+                        <ChartNoAxesCombined size={15} />
+                        <span className="text-[8px] leading-tight">Stats avancées</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
