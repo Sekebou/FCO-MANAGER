@@ -542,7 +542,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       )}
 
                       {/* Bet button */}
-                      {currentUser && !live && !alreadyBet && (
+                      {currentUser && !live && !waiting && !alreadyBet && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
