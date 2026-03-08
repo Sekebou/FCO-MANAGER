@@ -1,8 +1,37 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
 import logoUrl from '@/assets/logo.png';
+
+// Save PDF: on native use Filesystem + Share, on web use doc.save()
+async function savePdf(doc: jsPDF, filename: string) {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const base64 = doc.output('datauristring').split(',')[1];
+      const savedFile = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      await Share.share({
+        title: filename,
+        url: savedFile.uri,
+      });
+    } catch (e) {
+      console.error('PDF save/share error:', e);
+      // Fallback: try blob URL
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }
+  } else {
+    doc.save(filename);
+  }
+}
 
 const CLUB_NAME = 'FC Oisemont';
 const PRIMARY_COLOR: [number, number, number] = [14, 43, 160]; // #0e2ba0
@@ -204,7 +233,7 @@ export async function exportPlayerCard(
   }
   
   addFooter(doc);
-  doc.save(`Fiche_${player.name.replace(/\s+/g, '_')}.pdf`);
+  await savePdf(doc, `Fiche_${player.name.replace(/\s+/g, '_')}.pdf`);
 }
 
 // ─── 2. BILAN SAISON ───
@@ -333,7 +362,7 @@ export async function exportSeasonReport(
   }
   
   addFooter(doc);
-  doc.save(`Bilan_Saison_${seasonLabel}.pdf`);
+  await savePdf(doc, `Bilan_Saison_${seasonLabel}.pdf`);
 }
 
 // ─── 3. FEUILLE DE MATCH ───
@@ -460,7 +489,7 @@ export async function exportMatchSheet(
   });
   
   addFooter(doc);
-  doc.save(`Feuille_Match_${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.date}.pdf`);
+  await savePdf(doc, `Feuille_Match_${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.date}.pdf`);
 }
 
 // ─── 4. RAPPORT DE PRÉSENCES ───
@@ -561,5 +590,5 @@ export async function exportAttendanceReport(
   });
   
   addFooter(doc);
-  doc.save(`Rapport_Presences_${new Date().toISOString().split('T')[0]}.pdf`);
+  await savePdf(doc, `Rapport_Presences_${new Date().toISOString().split('T')[0]}.pdf`);
 }
