@@ -768,6 +768,24 @@ const ChampionnatTab: React.FC<Props> = ({
           </div>
         </div>
 
+        {/* Refresh button for live classement */}
+        {!isLoadingLive && liveClassement.length > 0 && (
+          <div className="flex justify-end px-1 -mb-1">
+            <button
+              onClick={() => {
+                clearFFFCache();
+                try { localStorage.removeItem(`fco_champ_live_${selectedTeam}`); } catch {}
+                setForceRefreshLive(prev => prev + 1);
+                toast.success('Actualisation en cours...');
+              }}
+              className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-accent transition-colors py-1 px-2 rounded-lg hover:bg-accent/10"
+            >
+              <RefreshCw size={12} />
+              <span>Actualiser</span>
+            </button>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {isLoadingLive ? (
             <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center gap-3 py-16">
