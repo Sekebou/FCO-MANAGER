@@ -30,6 +30,7 @@ const isMobileOrTablet = () => {
  */
 const isAllowed = () => {
   if (isCapacitorNative()) return true;
+  if (isMobileOrTablet()) return true;
   return false;
 };
 
