@@ -104,14 +104,14 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
             onClick={e => e.stopPropagation()}
           >
             {/* Glow effect behind */}
-            <div className="absolute -inset-8 bg-gradient-to-b from-amber-400/30 via-amber-500/10 to-transparent rounded-full blur-3xl" />
+            <div className="absolute -inset-8 bg-gradient-to-b from-primary/30 via-primary/10 to-transparent rounded-full blur-3xl" />
 
-            <div className="relative bg-gradient-to-b from-card via-card to-card/95 rounded-3xl border border-amber-500/30 shadow-2xl shadow-amber-500/20 overflow-hidden">
+            <div className="relative bg-gradient-to-b from-card via-card to-card/95 rounded-3xl border border-primary/30 shadow-2xl shadow-primary/20 overflow-hidden">
               {/* Top shimmer */}
               <motion.div
                 animate={{ x: ['-100%', '200%'] }}
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-transparent via-amber-400/10 to-transparent pointer-events-none"
+                className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-transparent via-primary/10 to-transparent pointer-events-none"
               />
 
               {/* Close button */}
@@ -133,10 +133,10 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute inset-0 bg-amber-400/20 rounded-full blur-xl"
+                    className="absolute inset-0 bg-primary/20 rounded-full blur-xl"
                   />
-                  <div className="relative w-20 h-20 bg-gradient-to-br from-amber-400 via-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/40">
-                    <Trophy size={36} className="text-white drop-shadow-md" />
+                  <div className="relative w-20 h-20 bg-gradient-to-br from-primary via-primary to-accent rounded-full flex items-center justify-center shadow-lg shadow-primary/40">
+                    <Trophy size={36} className="text-primary-foreground drop-shadow-md" />
                   </div>
                   {/* Sparkles around */}
                   <motion.div
@@ -144,9 +144,9 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                     transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
                     className="absolute -inset-3"
                   >
-                    <Sparkles size={16} className="absolute top-0 right-1 text-amber-400" />
-                    <Sparkles size={12} className="absolute bottom-0 left-0 text-orange-400" />
-                    <Sparkles size={14} className="absolute top-1/2 -right-2 text-yellow-300" />
+                    <Sparkles size={16} className="absolute top-0 right-1 text-primary" />
+                    <Sparkles size={12} className="absolute bottom-0 left-0 text-accent" />
+                    <Sparkles size={14} className="absolute top-1/2 -right-2 text-primary/70" />
                   </motion.div>
                 </motion.div>
 
@@ -172,17 +172,17 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.7 }}
-                  className="py-5 px-6 bg-gradient-to-br from-amber-500/15 via-amber-400/10 to-orange-500/10 rounded-2xl border border-amber-500/20"
+                  className="py-5 px-6 bg-gradient-to-br from-primary/15 via-primary/10 to-accent/10 rounded-2xl border border-primary/20"
                 >
                   <div className="flex items-center justify-center gap-2 mb-1">
-                    <Coins size={20} className="text-amber-400" />
-                    <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">Points gagnés</span>
+                    <Coins size={20} className="text-primary" />
+                    <span className="text-xs font-bold text-primary uppercase tracking-widest">Points gagnés</span>
                   </div>
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: [0, 1.3, 1] }}
                     transition={{ delay: 0.9, duration: 0.6, ease: 'easeOut' }}
-                    className="block text-5xl font-black bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 bg-clip-text text-transparent"
+                    className="block text-5xl font-black bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent"
                   >
                     +{totalWon}
                   </motion.span>
@@ -198,7 +198,7 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                   transition={{ delay: 1.1 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={handleClose}
-                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-amber-500/30 hover:brightness-110 transition-all"
+                  className="w-full py-3.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-2xl font-bold text-sm shadow-lg shadow-primary/30 hover:brightness-110 transition-all"
                 >
                   Encaisser 💰
                 </motion.button>
