@@ -118,9 +118,26 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     });
   }, [bets]);
 
-  // Load FFF data for selected team
+  // Load FFF data for selected team — with localStorage cache to avoid redundant API calls
   useEffect(() => {
-    if (teamData[selectedTeam] && !teamData[selectedTeam].loading) return; // already loaded
+    if (teamData[selectedTeam] && !teamData[selectedTeam].loading) return; // already loaded in memory
+
+    const LOCAL_CACHE_KEY = `paris_fff_${selectedTeam}`;
+    const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 min local cache
+
+    // Try localStorage first
+    try {
+      const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        if (Date.now() - ts < LOCAL_CACHE_TTL && data) {
+          const classement = data.classement && Array.isArray(data.classement)
+            ? mapClassementToStandings(data.classement) : [];
+          setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: data.upcoming || [], classement, loading: false } }));
+          return;
+        }
+      }
+    } catch {}
 
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
@@ -140,7 +157,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       }
     }
 
-    // Check cache
+    // Check DB cache (24h)
     const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
     const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
@@ -150,6 +167,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       const classement = cache.classement && Array.isArray(cache.classement)
         ? mapClassementToStandings(cache.classement) : [];
       setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: cache.upcoming || [], classement, loading: false } }));
+      // Save to localStorage
+      try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: cache, ts: Date.now() })); } catch {}
       return;
     }
 
@@ -171,11 +190,17 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         ]);
         if (cancelled) return;
         let classement: ScrapedStanding[] = [];
+        let rawClassement: any = null;
         if (classementData) {
           const members = classementData?.['hydra:member'] || classementData;
-          if (Array.isArray(members)) classement = mapClassementToStandings(members);
+          if (Array.isArray(members)) {
+            classement = mapClassementToStandings(members);
+            rawClassement = members;
+          }
         }
         setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming, classement, loading: false } }));
+        // Save to localStorage
+        try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: { upcoming, classement: rawClassement }, ts: Date.now() })); } catch {}
       } catch (err) {
         console.error(`Error loading FFF for team ${selectedTeam}:`, err);
         if (!cancelled) setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: false } }));
