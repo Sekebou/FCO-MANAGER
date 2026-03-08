@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
       }
     : {}),
   android: {
-    webContentsDebuggingEnabled: true,
+    webContentsDebuggingEnabled: false,
   },
   plugins: {
     SplashScreen: {
