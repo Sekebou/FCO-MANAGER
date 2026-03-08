@@ -212,11 +212,33 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   // Current team data
   const currentData = teamData[selectedTeam] || { upcoming: [], classement: [], loading: true };
 
-  // Next match for selected team
+  // Helper: check if a match date+time is finished (3h after kickoff)
+  const isMatchFinished = (matchDate: string, matchTime?: string): boolean => {
+    if (!matchDate) return false;
+    const mDate = new Date(matchDate);
+    const now = new Date();
+    // If match day is in the past, it's finished
+    if (mDate.toISOString().split('T')[0] < now.toISOString().split('T')[0]) return true;
+    // If same day, check time
+    if (mDate.toISOString().split('T')[0] === now.toISOString().split('T')[0] && matchTime) {
+      const timeParts = matchTime.replace('H', ':').split(':');
+      const kickoffHour = parseInt(timeParts[0], 10);
+      const kickoffMin = parseInt(timeParts[1] || '0', 10);
+      if (!isNaN(kickoffHour)) {
+        const kickoff = new Date(now);
+        kickoff.setHours(kickoffHour, kickoffMin, 0, 0);
+        // Consider finished 3h after kickoff
+        if ((now.getTime() - kickoff.getTime()) / 60000 > 180) return true;
+      }
+    }
+    return false;
+  };
+
+  // Next match for selected team (skip finished matches)
   const nextMatch: FFFLiveMatch | null = useMemo(() => {
     for (const group of currentData.upcoming) {
       for (const m of group.matchs) {
-        if (m.date) return m;
+        if (m.date && !isMatchFinished(m.date, m.time)) return m;
       }
     }
     return null;
