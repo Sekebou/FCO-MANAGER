@@ -1762,6 +1762,15 @@ const Dashboard = () => {
           mandatory={tutorialMandatory}
         />
       )}
+
+      {/* Win celebration popup */}
+      {winCelebration && (
+        <WinCelebration
+          totalWon={winCelebration.totalWon}
+          matchCount={winCelebration.matchCount}
+          onClose={() => setWinCelebration(null)}
+        />
+      )}
     </div>
   );
 };
