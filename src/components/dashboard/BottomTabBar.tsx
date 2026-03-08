@@ -17,10 +17,10 @@ const allTabs: Tab[] = [
   { id: 'presences', label: 'Présences', icon: ClipboardCheck },
   { id: 'championnat', label: 'Champ', icon: Trophy },
   { id: 'paris', label: 'Paris', icon: Ticket },
+  { id: 'calendar', label: 'Calendrier', icon: Calendar },
+  { id: 'stats', label: 'Stats', icon: TrendingUp },
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'news', label: 'Actus', icon: Bell },
-  { id: 'stats', label: 'Stats', icon: TrendingUp },
-  { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'members', label: 'Membres', icon: UserCheck },
   { id: 'discussions', label: 'Discussions', icon: MessageCircle },
 ];
