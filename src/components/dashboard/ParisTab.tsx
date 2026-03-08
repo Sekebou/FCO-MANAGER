@@ -242,10 +242,35 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return () => clearInterval(interval);
   }, [nextMatch?.date]);
 
-  const isMatchLive = (matchDate: string) => {
+  // Match status: 'live' (during 100min window), 'waiting' (after 100min, same day), false (not today)
+  const getMatchStatus = (matchDate: string, matchTime?: string): 'live' | 'waiting' | false => {
     const today = new Date().toISOString().split('T')[0];
     const mDate = new Date(matchDate).toISOString().split('T')[0];
-    return today === mDate;
+    if (today !== mDate) return false;
+
+    if (!matchTime) return 'live'; // No time info → assume live all day
+
+    // Parse time like "15H00" or "15:00"
+    const timeParts = matchTime.replace('H', ':').split(':');
+    const kickoffHour = parseInt(timeParts[0], 10);
+    const kickoffMin = parseInt(timeParts[1] || '0', 10);
+    if (isNaN(kickoffHour)) return 'live';
+
+    const now = new Date();
+    const kickoff = new Date(now);
+    kickoff.setHours(kickoffHour, kickoffMin, 0, 0);
+
+    const diffMin = (now.getTime() - kickoff.getTime()) / 60000;
+
+    if (diffMin < 0) return false; // Before kickoff
+    if (diffMin <= 100) return 'live'; // During match (~90min + extra time)
+    return 'waiting'; // Match over, waiting for result
+  };
+
+  // Backward compat helper
+  const isMatchLive = (matchDate: string, matchTime?: string) => {
+    const status = getMatchStatus(matchDate, matchTime);
+    return status === 'live';
   };
 
   const myBets = useMemo(() => bets.filter(b => b.userId === currentUser?.uid), [bets, currentUser]);

@@ -186,11 +186,33 @@ const ChampionnatTab: React.FC<Props> = ({
   };
 
 
-  // Check if match is live (today)
-  const isMatchLive = (matchDate: string) => {
+  // Match status: 'live' (during 100min window), 'waiting' (after 100min, same day), false (not today)
+  const getMatchStatus = (matchDate: string, matchTime?: string): 'live' | 'waiting' | false => {
     const today = new Date().toISOString().split('T')[0];
     const mDate = new Date(matchDate).toISOString().split('T')[0];
-    return today === mDate;
+    if (today !== mDate) return false;
+
+    if (!matchTime) return 'live';
+
+    const timeParts = matchTime.replace('H', ':').split(':');
+    const kickoffHour = parseInt(timeParts[0], 10);
+    const kickoffMin = parseInt(timeParts[1] || '0', 10);
+    if (isNaN(kickoffHour)) return 'live';
+
+    const now = new Date();
+    const kickoff = new Date(now);
+    kickoff.setHours(kickoffHour, kickoffMin, 0, 0);
+
+    const diffMin = (now.getTime() - kickoff.getTime()) / 60000;
+
+    if (diffMin < 0) return false;
+    if (diffMin <= 100) return 'live';
+    return 'waiting';
+  };
+
+  const isMatchLive = (matchDate: string, matchTime?: string) => {
+    const status = getMatchStatus(matchDate, matchTime);
+    return status === 'live';
   };
 
   // Load FFF competitions when the modal opens
