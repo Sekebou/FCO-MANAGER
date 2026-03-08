@@ -197,19 +197,24 @@ const readCache = <T,>(key: string): T | null => {
 };
 // Small component showing points in header
 const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
-  const [pts, setPts] = useState<number | null>(null);
+  const [pts, setPts] = useState<number | null>(() => {
+    // Restore from cache instantly
+    try { const c = localStorage.getItem(`fco_pts_${userId}`); if (c) return parseInt(c, 10); } catch {} return null;
+  });
   const [showInfo, setShowInfo] = useState(false);
   useEffect(() => {
     if (!userId) return;
     supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle().then(({ data }) => {
-      setPts(data?.balance ?? 100);
+      const b = data?.balance ?? 100;
+      setPts(b);
+      try { localStorage.setItem(`fco_pts_${userId}`, String(b)); } catch {}
     });
     // Subscribe to realtime updates for this user's points
     const channel = supabase
       .channel(`user_points_${userId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${userId}` }, (payload: any) => {
         const newBalance = payload.new?.balance;
-        if (typeof newBalance === 'number') setPts(newBalance);
+        if (typeof newBalance === 'number') { setPts(newBalance); try { localStorage.setItem(`fco_pts_${userId}`, String(newBalance)); } catch {} }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -331,8 +336,7 @@ const Dashboard = () => {
 
     const channel = supabase
       .channel('discussions-unread')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, fetchUnread)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_messages' }, fetchUnread)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, fetchUnread)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
@@ -624,8 +628,8 @@ const Dashboard = () => {
         } catch (err) { console.warn('iOS cold poll error:', err); }
       };
 
-      const hotInterval = setInterval(fetchHot, 1000);
-      const coldInterval = setInterval(fetchCold, 3000);
+      const hotInterval = setInterval(fetchHot, 5000);
+      const coldInterval = setInterval(fetchCold, 30000);
 
       return () => { clearInterval(hotInterval); clearInterval(coldInterval); };
     }

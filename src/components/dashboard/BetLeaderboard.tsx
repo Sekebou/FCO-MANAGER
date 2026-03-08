@@ -12,15 +12,25 @@ interface LeaderboardEntry {
   total_bet: number;
 }
 
+const CACHE_KEY = 'fco_leaderboard';
+const CACHE_TTL = 15 * 60 * 1000; // 15 min
+
 const BetLeaderboard: React.FC = () => {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>(() => {
+    try { const c = localStorage.getItem(CACHE_KEY); if (c) { const { ts, data } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) return data; } } catch {} return [];
+  });
+  const [loading, setLoading] = useState(entries.length === 0);
 
   useEffect(() => {
+    // Skip fetch if cache is fresh
+    try {
+      const c = localStorage.getItem(CACHE_KEY);
+      if (c) { const { ts } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) { setLoading(false); return; } }
+    } catch {}
+
     const fetch = async () => {
       const { data: allPoints } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('balance', { ascending: false }).limit(20);
       if (!allPoints || allPoints.length === 0) { setLoading(false); return; }
-      // Only show users who have actually placed bets
       const points = allPoints.filter(p => p.total_bet > 0);
       if (points.length === 0) { setLoading(false); return; }
 
@@ -29,11 +39,13 @@ const BetLeaderboard: React.FC = () => {
       const profileMap: Record<string, { name: string; photo_url: string | null }> = {};
       profiles?.forEach(p => { profileMap[p.id] = { name: p.name, photo_url: p.photo_url }; });
 
-      setEntries(points.map(p => ({
+      const result = points.map(p => ({
         ...p,
         user_name: profileMap[p.user_id]?.name || 'Joueur',
         photo_url: profileMap[p.user_id]?.photo_url || null,
-      })));
+      }));
+      setEntries(result);
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: result })); } catch {}
       setLoading(false);
     };
     fetch();
