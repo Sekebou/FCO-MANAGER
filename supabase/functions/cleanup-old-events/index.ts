@@ -30,23 +30,13 @@ Deno.serve(async (req) => {
     if (!eventsRes.ok) throw new Error(`Failed to fetch events: ${await eventsRes.text()}`);
     const pastEvents = await eventsRes.json();
 
-    // Filter: remove training next day (anytime) + match next day after 12h
+    // Remove events the next day after 3h du matin (Paris time)
     const oldEvents = pastEvents.filter((e: any) => {
       const eventDate = new Date(e.date + 'T00:00:00');
       const daysSince = Math.floor((now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (e.type === 'training') {
-        // Remove training the next day (daysSince >= 1)
-        return daysSince >= 1;
-      }
-      if (e.type === 'match') {
-        // Remove match the next day after 12h
-        return daysSince > 1 || (daysSince === 1 && currentHour >= 12);
-      }
-      return false;
+      // Delete if more than 1 day old, or exactly 1 day old and it's past 3am
+      return daysSince > 1 || (daysSince === 1 && currentHour >= 3);
     });
-    if (!eventsRes.ok) throw new Error(`Failed to fetch events: ${await eventsRes.text()}`);
-    const oldEvents = await eventsRes.json();
 
     if (oldEvents.length === 0) {
       return new Response(JSON.stringify({ success: true, deleted: 0, archived: 0 }), {
