@@ -35,11 +35,6 @@ const ConfettiIcon: React.FC<{ delay: number; left: number; color: string; Icon:
   </motion.div>
 );
 
-const CONFETTI_COLORS = [
-  '#FFD700', '#FF6B35', '#00E676', '#2979FF', '#FF4081',
-  '#E040FB', '#FFAB00', '#00BCD4', '#76FF03', '#FF1744',
-  '#651FFF', '#F50057', '#00E5FF', '#AEEA00',
-];
 
 const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, onClose }) => {
   const [show, setShow] = useState(true);
