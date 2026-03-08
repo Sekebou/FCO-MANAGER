@@ -624,8 +624,8 @@ const Dashboard = () => {
         } catch (err) { console.warn('iOS cold poll error:', err); }
       };
 
-      const hotInterval = setInterval(fetchHot, 1000);
-      const coldInterval = setInterval(fetchCold, 3000);
+      const hotInterval = setInterval(fetchHot, 5000);
+      const coldInterval = setInterval(fetchCold, 30000);
 
       return () => { clearInterval(hotInterval); clearInterval(coldInterval); };
     }
