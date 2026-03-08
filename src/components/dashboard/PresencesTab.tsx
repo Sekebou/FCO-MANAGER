@@ -744,7 +744,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const isMatch = !!matchInfo;
 
               return (
-                <div key={event.id} className="mb-4">
+                <div key={event.id} className="mb-6">
               <div
                 className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
