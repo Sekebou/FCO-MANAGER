@@ -343,10 +343,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {albumPhotos.map(photo => {
-            const liked = isLiked(photo);
-            const likeCount = getPhotoLikes(photo).length;
-            return (
+          {albumPhotos.map(photo => (
               <div key={photo.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openLightbox(photo)}>
                   <img src={photo.url} alt={photo.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
@@ -355,29 +352,11 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   </div>
                 </div>
                 <div className="p-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <Calendar size={10} />
-                      <span>{new Date(photo.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
-                      <span className="text-muted-foreground/50">•</span>
-                      <span className="truncate">{photo.uploaderName}</span>
-                    </div>
-                  </div>
-                  {/* Like & comment row */}
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleLike(photo.id); }}
-                      className={`flex items-center gap-1 text-[11px] font-medium transition-all ${liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
-                    >
-                      <Heart size={13} className={liked ? 'fill-current' : ''} />
-                      {likeCount > 0 && <span>{likeCount}</span>}
-                    </button>
-                    <button
-                      onClick={() => openLightbox(photo)}
-                      className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-accent transition-all"
-                    >
-                      <MessageCircle size={13} />
-                    </button>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1.5">
+                    <Calendar size={10} />
+                    <span>{new Date(photo.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-muted-foreground/50">•</span>
+                    <span className="truncate">{photo.uploaderName}</span>
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => handleDownload(photo)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-secondary hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-[10px] font-medium text-muted-foreground">
@@ -391,9 +370,8 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
       )}
 
       {/* Lightbox with swipe & comments */}
