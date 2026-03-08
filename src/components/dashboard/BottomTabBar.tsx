@@ -56,9 +56,10 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/50"
-            style={{ WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)' }}
+            className="fixed inset-0 z-[55] bg-black/50 touch-none"
+            style={{ WebkitBackdropFilter: 'blur(4px)', backdropFilter: 'blur(4px)', overscrollBehavior: 'none' }}
             onClick={() => setMoreOpen(false)}
+            onTouchMove={(e) => e.preventDefault()}
           />
         )}
       </AnimatePresence>
