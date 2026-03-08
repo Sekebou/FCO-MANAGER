@@ -437,28 +437,38 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                       )}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {players.slice(0, 8).map(p => (
-                        <button
-                          key={p.id}
-                          onClick={() => setSelectedPlayerId(p.id)}
-                          className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-secondary/50 transition-colors"
-                        >
-                          <PlayerAvatar player={p} members={members} size={32} className="rounded-lg" />
-                          <span className="text-[9px] font-medium text-foreground truncate w-full text-center">{p.name.split(' ')[0]}</span>
-                        </button>
-                      ))}
-                      {players.length > 8 && (
+                    <div className="flex items-center gap-1">
+                      {players.slice(0, 3).map((p, i) => {
+                        const m = members.find(mb => mb.playerId === p.id);
+                        const photo = m?.photoURL;
+                        const init = p.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => setSelectedPlayerId(p.id)}
+                            className="shrink-0 hover:scale-110 transition-transform"
+                            style={{ marginLeft: i > 0 ? -6 : 0, zIndex: 3 - i }}
+                          >
+                            {photo ? (
+                              <img src={photo} alt={p.name} className="w-9 h-9 rounded-full object-cover ring-2 ring-background" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center ring-2 ring-background">
+                                <span className="text-[9px] font-bold text-foreground">{init}</span>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                      {players.length > 3 && (
                         <button
                           onClick={() => setPlayerSearch(' ')}
-                          className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-secondary/50 transition-colors"
+                          className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center ring-2 ring-background shrink-0 hover:scale-110 transition-transform"
+                          style={{ marginLeft: -6, zIndex: 0 }}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                            <Users size={14} className="text-muted-foreground" />
-                          </div>
-                          <span className="text-[9px] font-medium text-muted-foreground">+{players.length - 8}</span>
+                          <span className="text-[10px] font-bold text-accent">+{players.length - 3}</span>
                         </button>
                       )}
+                      <span className="text-[10px] text-muted-foreground ml-2">Cliquer ou rechercher</span>
                     </div>
                   )}
                 </div>
