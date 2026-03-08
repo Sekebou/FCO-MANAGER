@@ -208,10 +208,35 @@ const ChampionnatTab: React.FC<Props> = ({
       .finally(() => setIsLoadingEquipes(false));
   }, [showAddChamp]);
 
-  // Auto-fetch live classement AND matches — use DB cache first, fallback to API
+  // Auto-fetch live classement AND matches — use localStorage > DB cache > API
   useEffect(() => {
     if (!dataLoaded) return; // Wait for DB data before deciding cache vs API
     let cancelled = false;
+
+    const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
+    const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 min local cache
+
+    // 1. Try localStorage first (fastest, zero cloud calls)
+    try {
+      const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+      if (cached) {
+        const { data: cache, ts } = JSON.parse(cached);
+        if (Date.now() - ts < LOCAL_CACHE_TTL && cache) {
+          if (cache.classement && Array.isArray(cache.classement)) {
+            setLiveClassement(mapClassementToStandings(cache.classement));
+            const logosFromClassement: Record<number, string> = {};
+            for (const entry of cache.classement) { const clNo = entry.equipe?.club?.cl_no; const logo = entry.equipe?.club?.logo; if (clNo && logo) logosFromClassement[clNo] = logo; }
+            setLiveLogos(prev => ({ ...logosFromClassement, ...(cache.logos || {}), ...prev }));
+          } else { setLiveError('Classement non disponible'); }
+          setLiveUpcoming(cache.upcoming || []);
+          setLiveResults(cache.results || []);
+          setIsLoadingLive(false);
+          setIsLoadingMatches(false);
+          return;
+        }
+      }
+    } catch {}
+
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
       'B': { categoryCode: 'SEM', code: 2 },
@@ -239,7 +264,7 @@ const ChampionnatTab: React.FC<Props> = ({
       }
     }
 
-    // Check if any championship for this team has a valid DB cache (< 24h)
+    // 2. Check DB cache (24h)
     const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
     const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
@@ -268,6 +293,8 @@ const ChampionnatTab: React.FC<Props> = ({
       setLiveResults(cache.results || []);
       setIsLoadingLive(false);
       setIsLoadingMatches(false);
+      // Save to localStorage for next visit
+      try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: cache, ts: Date.now() })); } catch {}
       return;
     }
 
