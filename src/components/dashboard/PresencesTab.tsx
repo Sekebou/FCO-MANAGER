@@ -788,7 +788,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                               <Shield size={22} className="text-muted-foreground" />
                             </div>
                           )}
-                          <span className="text-[10px] font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
+                          <span className="text-xs font-bold text-foreground text-center leading-tight line-clamp-2">{matchInfo.homeName}</span>
                         </div>
                         <div className="flex flex-col items-center shrink-0">
                           <span className="text-2xl font-black text-accent drop-shadow-sm">VS</span>
