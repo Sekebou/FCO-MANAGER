@@ -436,41 +436,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                         <p className="text-xs text-muted-foreground text-center py-3">Aucun joueur trouvé</p>
                       )}
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-1">
-                      {players.slice(0, 3).map((p, i) => {
-                        const m = members.find(mb => mb.playerId === p.id);
-                        const photo = m?.photoURL;
-                        const init = p.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                        return (
-                          <button
-                            key={p.id}
-                            onClick={() => setSelectedPlayerId(p.id)}
-                            className="shrink-0 hover:scale-110 transition-transform"
-                            style={{ marginLeft: i > 0 ? -6 : 0, zIndex: 3 - i }}
-                          >
-                            {photo ? (
-                              <img src={photo} alt={p.name} className="w-9 h-9 rounded-full object-cover ring-2 ring-background" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                            ) : (
-                              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center ring-2 ring-background">
-                                <span className="text-[9px] font-bold text-foreground">{init}</span>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                      {players.length > 3 && (
-                        <button
-                          onClick={() => setPlayerSearch(' ')}
-                          className="w-9 h-9 rounded-full bg-accent/15 flex items-center justify-center ring-2 ring-background shrink-0 hover:scale-110 transition-transform"
-                          style={{ marginLeft: -6, zIndex: 0 }}
-                        >
-                          <span className="text-[10px] font-bold text-accent">+{players.length - 3}</span>
-                        </button>
-                      )}
-                      <span className="text-[10px] text-muted-foreground ml-2">Cliquer ou rechercher</span>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* ── Section: Tops joueurs ── */}
