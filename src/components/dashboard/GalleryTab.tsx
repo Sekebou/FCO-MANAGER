@@ -496,7 +496,8 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-foreground/95 backdrop-blur-xl flex flex-col z-50"
-            onClick={() => setLightboxPhoto(null)}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setLightboxPhoto(null); }}
+            onTouchEnd={(e) => { if (e.target === e.currentTarget) setLightboxPhoto(null); }}
           >
             {/* Top bar */}
             <div className="flex items-center justify-between p-4 shrink-0" onClick={e => e.stopPropagation()}>
@@ -530,9 +531,12 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
             {/* Image area with navigation */}
             <div
               className="flex-1 flex items-center justify-center relative min-h-0 px-4"
-              onClick={() => setLightboxPhoto(null)}
+              onMouseDown={(e) => { if (e.target === e.currentTarget) setLightboxPhoto(null); }}
               onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
+              onTouchEnd={(e) => {
+                handleTouchEnd(e);
+                if (e.target === e.currentTarget) setLightboxPhoto(null);
+              }}
             >
               {lightboxIndex > 0 && (
                 <button
