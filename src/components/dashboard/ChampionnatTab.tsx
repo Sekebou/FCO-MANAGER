@@ -153,6 +153,7 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Refresh result modal
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
+  const [forceRefreshLive, setForceRefreshLive] = useState(0);
 
 
   const filteredChampionships = championships.filter(c => (c.team || 'A') === selectedTeam);
