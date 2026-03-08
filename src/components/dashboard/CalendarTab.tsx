@@ -76,16 +76,18 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              {event.type === 'match' && (event.homeLogo || event.awayLogo) && (
-                <div className="flex items-center gap-1 shrink-0">
-                  {event.homeLogo && <img src={event.homeLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white" />}
-                  <span className="text-[9px] text-muted-foreground font-medium">vs</span>
-                  {event.awayLogo && <img src={event.awayLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white" />}
-                </div>
-              )}
-              <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} truncate`}>{event.title}</h4>
+              <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} line-clamp-2`}>{event.title}</h4>
               <StatusBadge status={status} />
             </div>
+            {event.type === 'match' && (event.homeLogo || event.awayLogo) && (
+              <div className="flex items-center gap-1.5 mt-1">
+                {event.homeLogo && <img src={event.homeLogo} alt="" className="w-4 h-4 rounded-full object-contain bg-white shrink-0" />}
+                <span className="text-[11px] text-muted-foreground truncate">{event.title.split(/\s*[-–vs]+\s*/i)[0]?.trim()}</span>
+                <span className="text-[9px] text-muted-foreground/60 font-medium shrink-0">vs</span>
+                <span className="text-[11px] text-muted-foreground truncate">{event.title.split(/\s*[-–vs]+\s*/i)[1]?.trim()}</span>
+                {event.awayLogo && <img src={event.awayLogo} alt="" className="w-4 h-4 rounded-full object-contain bg-white shrink-0" />}
+              </div>
+            )}
             <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 space-y-0.5">
               <span className="block">{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}{event.time ? ` à ${event.time}` : ''}</span>
               {event.createdByName && (
