@@ -1436,7 +1436,7 @@ const Dashboard = () => {
                       await supabase.functions.invoke('send-push-notification', {
                         body: {
                           title: '✅ Convocation',
-                          body: `Tu es sélectionné pour ${event.title} le ${eventDate} ! Confirme ta présence sur l'app.`,
+                          body: `Tu es convoqué pour ${event.title} le ${eventDate}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`,
                           tokens,
                           data: { type: 'convocation', eventId: event.id },
                         },
