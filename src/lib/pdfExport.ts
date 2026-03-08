@@ -69,8 +69,11 @@ function addFooter(doc: jsPDF) {
   }
 }
 
+// Ensure logo is loaded before generating PDF
+async function ensureLogo() { await logoPromise; }
+
 // ─── 1. FICHE JOUEUR ───
-export function exportPlayerCard(
+export async function exportPlayerCard(
   player: Player,
   cards: Card[],
   events: Event[],
