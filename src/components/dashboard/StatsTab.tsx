@@ -546,35 +546,52 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                       </div>
                     )}
 
-                    {/* Full ranking list */}
-                    <div className="space-y-1.5">
-                      {attendanceStats.map((item, index) => {
-                        const rate = item.attendance!.rate;
-                        const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
-                        const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
-                        return (
-                          <div
-                            key={item.player.id}
-                            className="flex items-center gap-2 p-2.5 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors cursor-pointer"
-                            onClick={() => setSelectedPlayerId(item.player.id)}
-                          >
-                            <div className={`w-6 h-6 rounded-lg ${colorClass} flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0`}>
-                              {index + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-semibold text-foreground truncate">{item.player.name}</div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className={`text-sm font-black ${textColor} w-7 text-right`}>{item.attendance!.present}</span>
-                              <div className="w-16 h-1.5 bg-border/50 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
-                              </div>
-                              <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap w-[4.5rem]">{item.attendance!.present}/{item.attendance!.total} entraîn.</span>
-                            </div>
+                    {/* Ranking list (6 visible + expand) */}
+                    {(() => {
+                      const VISIBLE_COUNT = 6;
+                      const visibleItems = showAllAttendance ? attendanceStats : attendanceStats.slice(0, VISIBLE_COUNT);
+                      return (
+                        <>
+                          <div className="space-y-1.5">
+                            {visibleItems.map((item, index) => {
+                              const rate = item.attendance!.rate;
+                              const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
+                              const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
+                              return (
+                                <div
+                                  key={item.player.id}
+                                  className="flex items-center gap-2 p-2.5 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors cursor-pointer"
+                                  onClick={() => setSelectedPlayerId(item.player.id)}
+                                >
+                                  <div className={`w-6 h-6 rounded-lg ${colorClass} flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0`}>
+                                    {index + 1}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-semibold text-foreground truncate">{item.player.name}</div>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className={`text-sm font-black ${textColor} w-7 text-right`}>{item.attendance!.present}</span>
+                                    <div className="w-16 h-1.5 bg-border/50 rounded-full overflow-hidden">
+                                      <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
+                                    </div>
+                                    <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap w-[4.5rem]">{item.attendance!.present}/{item.attendance!.total} entraîn.</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
-                    </div>
+                          {attendanceStats.length > VISIBLE_COUNT && (
+                            <button
+                              onClick={() => setShowAllAttendance(v => !v)}
+                              className="w-full mt-2 py-2 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1"
+                            >
+                              <ChevronDown size={14} className={`transition-transform ${showAllAttendance ? 'rotate-180' : ''}`} />
+                              {showAllAttendance ? 'Voir moins' : `Afficher tout (${attendanceStats.length})`}
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </>
