@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Coins, X, Sparkles } from 'lucide-react';
+import { Trophy, Coins, X, Sparkles, Star, Zap, Crown, Flame, Heart, Medal, Gem, PartyPopper, CircleDollarSign, Award } from 'lucide-react';
 
 interface WinCelebrationProps {
   totalWon: number;
@@ -9,27 +9,30 @@ interface WinCelebrationProps {
   onClose: () => void;
 }
 
-/** Single confetti piece */
-const Confetti: React.FC<{ delay: number; left: number; color: string; size: number }> = ({ delay, left, color, size }) => (
+const CONFETTI_ICONS = [Star, Zap, Crown, Flame, Heart, Medal, Gem, PartyPopper, CircleDollarSign, Award, Trophy, Sparkles];
+const CONFETTI_COLORS = [
+  'text-amber-400', 'text-primary', 'text-accent', 'text-emerald-400',
+  'text-pink-400', 'text-orange-400', 'text-sky-400', 'text-violet-400',
+  'text-yellow-300', 'text-rose-400', 'text-lime-400', 'text-cyan-400',
+];
+
+/** Single confetti icon */
+const ConfettiIcon: React.FC<{ delay: number; left: number; color: string; Icon: React.ElementType; size: number }> = ({ delay, left, color, Icon, size }) => (
   <motion.div
-    initial={{ y: -20, x: 0, opacity: 1, rotate: 0, scale: 0 }}
+    initial={{ y: -30, x: 0, opacity: 1, rotate: 0, scale: 0 }}
     animate={{
-      y: [0, 600, 900],
-      x: [0, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 300],
+      y: [0, 500, 800],
+      x: [0, (Math.random() - 0.5) * 180, (Math.random() - 0.5) * 280],
       opacity: [1, 1, 0],
-      rotate: [0, 360 + Math.random() * 720],
-      scale: [0, 1, 0.5],
+      rotate: [0, 360 + Math.random() * 540],
+      scale: [0, 1.2, 0.4],
     }}
     transition={{ duration: 2.5 + Math.random() * 1.5, delay, ease: 'easeOut' }}
-    className="absolute top-0 pointer-events-none"
-    style={{
-      left: `${left}%`,
-      width: size,
-      height: size * (Math.random() > 0.5 ? 1 : 2.5),
-      backgroundColor: color,
-      borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-    }}
-  />
+    className={`absolute top-0 pointer-events-none ${color}`}
+    style={{ left: `${left}%` }}
+  >
+    <Icon size={size} strokeWidth={2.5} />
+  </motion.div>
 );
 
 const CONFETTI_COLORS = [
