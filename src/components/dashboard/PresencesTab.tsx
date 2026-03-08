@@ -744,7 +744,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const isMatch = !!matchInfo;
 
               return (
-                <div key={event.id} className="mb-6">
+                <div key={event.id}>
+                  <div className="flex items-center gap-3 my-1">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                    <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest shrink-0">
+                      {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+                  </div>
               <div
                 className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
