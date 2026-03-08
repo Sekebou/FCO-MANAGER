@@ -48,12 +48,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [comments, setComments] = useState<PhotoComment[]>([]);
-  const [commentText, setCommentText] = useState('');
-  const [showComments, setShowComments] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const commentInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateAlbum = async () => {
     if (!albumName.trim()) {
