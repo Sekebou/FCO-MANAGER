@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined } from 'lucide-react';
+import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined, Download } from 'lucide-react';
+import { exportPlayerCard, exportSeasonReport, exportAttendanceReport } from '@/lib/pdfExport';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import RoleBadge from '@/components/ui/role-badge';
 import PlayerRadarChart from './PlayerRadarChart';
@@ -13,6 +15,8 @@ interface Props {
   cards: Card[];
   attendanceRecords: AttendanceRecord[];
   members: Member[];
+  championships?: Championship[];
+  champMatches?: Match[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
   updatePlayerStats: (playerId: string, field: string, value: string) => void;
@@ -53,7 +57,7 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
   month: 'Ce mois',
 };
 
-const StatsTab = ({ players, events, cards, attendanceRecords, members, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
+const StatsTab = ({ players, events, cards, attendanceRecords, members, championships, champMatches, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
   const [expandedRadar, setExpandedRadar] = useState<string | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
@@ -144,11 +148,31 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-          <TrendingUp className="text-accent" size={18} />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <TrendingUp className="text-accent" size={18} />
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
         </div>
-        <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
+        {isCoachOrAdmin && players.length > 0 && (
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => exportAttendanceReport(players, events, attendanceRecords)}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground transition-all"
+              title="Rapport de présences (PDF)"
+            >
+              <Download size={12} /> Présences
+            </button>
+            <button
+              onClick={() => exportSeasonReport(players, events, cards, championships || [], champMatches || [])}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold rounded-lg bg-accent/10 hover:bg-accent/20 text-accent transition-all"
+              title="Bilan saison (PDF)"
+            >
+              <Download size={12} /> Bilan
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Button to open KPI/Attendance modal */}
@@ -382,15 +406,25 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, currentU
                       )}
                     </div>
                   </div>
-                  {/* Radar toggle button */}
+                  {/* Action buttons */}
                   {isCoachOrAdmin && (
-                    <button
-                      onClick={() => setExpandedRadar(isExpanded ? null : player.id)}
-                      className={`flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
-                    >
-                      <ChartNoAxesCombined size={15} />
-                      <span className="text-[8px] leading-tight">Stats avancées</span>
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => exportPlayerCard(player, cards, events, attendanceRecords, members)}
+                        className="flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2 py-1.5 rounded-lg transition-all text-muted-foreground hover:bg-secondary"
+                        title="Exporter fiche joueur (PDF)"
+                      >
+                        <Download size={14} />
+                        <span className="text-[8px] leading-tight">PDF</span>
+                      </button>
+                      <button
+                        onClick={() => setExpandedRadar(isExpanded ? null : player.id)}
+                        className={`flex flex-col items-center gap-0.5 text-[10px] sm:text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all ${isExpanded ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-secondary'}`}
+                      >
+                        <ChartNoAxesCombined size={15} />
+                        <span className="text-[8px] leading-tight">Stats avancées</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 

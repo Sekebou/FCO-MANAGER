@@ -4,7 +4,8 @@ import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User } from 'lucide-react';
+import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Repeat, CircleDot, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download } from 'lucide-react';
+import { exportMatchSheet } from '@/lib/pdfExport';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
@@ -161,12 +162,23 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     return (
       <div className="space-y-4 animate-fade-in">
         {/* Back button */}
-        <button
-          onClick={() => { setSelectedEventId(null); setConvocationMode(null); window.scrollTo(0, 0); onResetHeader?.(); }}
-          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
-        >
-          <ArrowLeft size={16} /> Retour aux événements
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => { setSelectedEventId(null); setConvocationMode(null); window.scrollTo(0, 0); onResetHeader?.(); }}
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
+            <ArrowLeft size={16} /> Retour aux événements
+          </button>
+          {canManage() && (
+            <button
+              onClick={() => exportMatchSheet(event, players, members)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-accent/10 hover:bg-accent/20 text-accent transition-all"
+              title="Exporter feuille de match (PDF)"
+            >
+              <Download size={13} /> PDF
+            </button>
+          )}
+        </div>
 
         {/* Event header card */}
         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
