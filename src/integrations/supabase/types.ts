@@ -917,6 +917,7 @@ export type Database = {
         }
         Returns: Json
       }
+      toggle_photo_like: { Args: { p_photo_id: string }; Returns: undefined }
       update_event_presence: {
         Args: { p_event_id: string; p_status: string }
         Returns: undefined
