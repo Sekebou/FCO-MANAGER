@@ -153,7 +153,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     }
   };
 
-  const isLiked = (photo: Photo) => currentUser ? (photo.likes || []).includes(currentUser.uid) : false;
+  const isLiked = (photo: Photo) => currentUser ? getPhotoLikes(photo).includes(currentUser.uid) : false;
 
   // Comments
   const loadComments = async (photoId: string) => {
