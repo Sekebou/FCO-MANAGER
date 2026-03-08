@@ -153,6 +153,8 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
       </div>
     </div>
   );
-};
+});
+
+PitchView.displayName = 'PitchView';
 
 export default PitchView;
