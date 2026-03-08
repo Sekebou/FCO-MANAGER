@@ -156,7 +156,7 @@ const allSteps: TutorialStep[] = [
     icon: Coins,
     title: 'Accumule des points',
     subtitle: 'Système de récompenses',
-    description: 'Pour gagner des points il suffit de : répondre présent/absent (+5 pts), commenter une actu (+5 pts), liker (+1 pt) et te connecter chaque jour (+1 pt).',
+    description: 'Pour gagner des points il suffit de : répondre présent/absent (+5 pts), commenter une actu (+5 pts), liker (+1 pt).',
     color: 'bg-amber-500/15',
     iconColor: 'text-amber-500',
   },

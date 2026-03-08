@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Sparkles, Trophy, ChevronRight } from 'lucide-react';
+import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Trophy, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -289,10 +289,6 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                 <Heart size={11} className="text-pink-400 shrink-0" />
                 <span><b className="text-foreground">+1 pt</b> — Liker une actu</span>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                <Sparkles size={11} className="text-amber-400 shrink-0" />
-                <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien</span>
               </div>
             </div>
           </details>
