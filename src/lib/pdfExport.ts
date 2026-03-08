@@ -2,10 +2,22 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
+import logoUrl from '@/assets/logo.png';
 
 const CLUB_NAME = 'FC Oisemont';
-const PRIMARY_COLOR: [number, number, number] = [15, 26, 62]; // #0f1a3e
+const PRIMARY_COLOR: [number, number, number] = [14, 43, 160]; // #0e2ba0
 const ACCENT_COLOR: [number, number, number] = [34, 197, 94]; // green-500
+
+// Preload logo as base64 for PDF embedding
+let logoBase64: string | null = null;
+const logoPromise = fetch(logoUrl)
+  .then(r => r.blob())
+  .then(blob => new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => { logoBase64 = reader.result as string; resolve(logoBase64); };
+    reader.readAsDataURL(blob);
+  }))
+  .catch(() => { logoBase64 = null; });
 
 function addHeader(doc: jsPDF, title: string, subtitle?: string) {
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -14,16 +26,24 @@ function addHeader(doc: jsPDF, title: string, subtitle?: string) {
   doc.setFillColor(...PRIMARY_COLOR);
   doc.rect(0, 0, pageWidth, 28, 'F');
   
+  // Logo
+  const textStartX = logoBase64 ? 28 : 14;
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', 6, 3, 20, 22);
+    } catch { /* logo load failed, skip */ }
+  }
+  
   // Club name
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text(CLUB_NAME, 14, 12);
+  doc.text(CLUB_NAME, textStartX, 12);
   
   // Title
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(title, 14, 20);
+  doc.text(title, textStartX, 20);
   
   // Date
   doc.setFontSize(8);
