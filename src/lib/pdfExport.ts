@@ -233,7 +233,7 @@ export async function exportPlayerCard(
   }
   
   addFooter(doc);
-  doc.save(`Fiche_${player.name.replace(/\s+/g, '_')}.pdf`);
+  await savePdf(doc, `Fiche_${player.name.replace(/\s+/g, '_')}.pdf`);
 }
 
 // ─── 2. BILAN SAISON ───
