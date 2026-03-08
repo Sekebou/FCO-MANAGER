@@ -773,7 +773,7 @@ const ChampionnatTab: React.FC<Props> = ({
           <div className="flex justify-end px-1 -mb-1">
             <button
               onClick={() => {
-                clearFFFCache();
+                // Only clear local cache — DB cache will be reused if fresh (<5min)
                 try { localStorage.removeItem(`fco_champ_live_${selectedTeam}`); } catch {}
                 setForceRefreshLive(prev => prev + 1);
                 toast.success('Actualisation en cours...');
