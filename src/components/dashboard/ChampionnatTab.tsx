@@ -960,13 +960,15 @@ const ChampionnatTab: React.FC<Props> = ({
                     const isImminent = diffDays <= 3 && diffDays >= 0;
                     const locationLink = buildLocationLink(match.terrain);
                     const locationLabel = [match.terrain?.name, match.terrain?.city].filter(Boolean).join(', ');
-                    const live = match.date && isMatchLive(match.date);
+                    const matchSt = match.date ? getMatchStatus(match.date, match.time) : false;
+                    const live = matchSt === 'live';
+                    const waiting = matchSt === 'waiting';
                     
                     return (
                       <motion.div 
                         key={`${match.date}-${idx}`} 
                         variants={fadeUp}
-                        className={`px-5 py-4 transition-all ${live ? 'bg-red-500/5' : isImminent ? 'bg-accent/5' : 'hover:bg-secondary/30'}`}
+                        className={`px-5 py-4 transition-all ${live ? 'bg-red-500/5' : waiting ? 'bg-amber-500/5' : isImminent ? 'bg-accent/5' : 'hover:bg-secondary/30'}`}
                       >
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-[11px] font-medium text-muted-foreground">
@@ -979,7 +981,12 @@ const ChampionnatTab: React.FC<Props> = ({
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> LIVE
                               </span>
                             )}
-                            {!live && isImminent && (
+                            {waiting && (
+                              <span className="flex items-center gap-1 text-[9px] font-bold uppercase text-amber-500">
+                                <Clock size={10} /> En attente
+                              </span>
+                            )}
+                            {!live && !waiting && isImminent && (
                               <span className="text-[9px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded-full">
                                 {diffDays <= 0 ? "Auj." : diffDays === 1 ? 'Demain' : `J-${diffDays}`}
                               </span>
