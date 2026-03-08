@@ -489,7 +489,7 @@ export async function exportMatchSheet(
   });
   
   addFooter(doc);
-  doc.save(`Feuille_Match_${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.date}.pdf`);
+  await savePdf(doc, `Feuille_Match_${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_${event.date}.pdf`);
 }
 
 // ─── 4. RAPPORT DE PRÉSENCES ───
