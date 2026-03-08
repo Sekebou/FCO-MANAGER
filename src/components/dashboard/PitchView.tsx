@@ -49,7 +49,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
   return result;
 }
 
-const PitchView: React.FC<Props> = ({ convocations, players }) => {
+const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
   const convokedPlayers = Object.entries(convocations)
