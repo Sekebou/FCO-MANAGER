@@ -76,6 +76,13 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
+              {event.type === 'match' && (event.homeLogo || event.awayLogo) && (
+                <div className="flex items-center gap-1 shrink-0">
+                  {event.homeLogo && <img src={event.homeLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white" />}
+                  <span className="text-[9px] text-muted-foreground font-medium">vs</span>
+                  {event.awayLogo && <img src={event.awayLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white" />}
+                </div>
+              )}
               <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} truncate`}>{event.title}</h4>
               <StatusBadge status={status} />
             </div>
