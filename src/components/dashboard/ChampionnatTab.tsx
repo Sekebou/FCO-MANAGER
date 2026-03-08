@@ -425,7 +425,7 @@ const ChampionnatTab: React.FC<Props> = ({
     
     fetchAll();
     return () => { cancelled = true; };
-  }, [selectedTeam, championships.length, dataLoaded]);
+  }, [selectedTeam, championships.length, dataLoaded, forceRefreshLive]);
 
   const handleImportCompetition = async (comp: FFFCompetition) => {
     setSelectedCompetition(comp);
