@@ -509,7 +509,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${isLiked(lightboxPhoto) ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/70 hover:text-white'}`}
                 >
                   <Heart size={16} className={isLiked(lightboxPhoto) ? 'fill-current' : ''} />
-                  {(lightboxPhoto.likes || []).length > 0 && <span>{(lightboxPhoto.likes || []).length}</span>}
+                  {getPhotoLikes(lightboxPhoto).length > 0 && <span>{getPhotoLikes(lightboxPhoto).length}</span>}
                 </button>
                 <button
                   onClick={() => setShowComments(!showComments)}
