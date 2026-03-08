@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import type { AppUser } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { 
   Camera, Plus, FolderPlus, Trash2, Download, X, Image, Calendar, 
-  ChevronLeft, Upload, Loader2, ZoomIn, FolderOpen, Heart, MessageCircle, Send, ChevronRight
+  ChevronLeft, Upload, Loader2, ZoomIn, FolderOpen, ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,17 +25,6 @@ export interface Photo {
   uploadedAt: string;
   uploadedBy: string;
   uploaderName: string;
-  likes?: string[];
-}
-
-interface PhotoComment {
-  id: string;
-  photoId: string;
-  authorUid: string;
-  authorName: string;
-  authorPhoto?: string;
-  content: string;
-  createdAt: string;
 }
 
 interface Props {
@@ -59,12 +47,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [comments, setComments] = useState<PhotoComment[]>([]);
-  const [commentText, setCommentText] = useState('');
-  const [showComments, setShowComments] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const commentInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateAlbum = async () => {
     if (!albumName.trim()) {
@@ -126,76 +109,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     }
   };
 
-  // Likes — optimistic update via onLikesChanged callback
-  const [localLikes, setLocalLikes] = useState<Record<string, string[]>>({});
-
-  const getPhotoLikes = (photo: Photo): string[] => {
-    return localLikes[photo.id] ?? photo.likes ?? [];
-  };
-
-  const toggleLike = async (photoId: string) => {
-    if (!currentUser) return;
-    // Optimistic update
-    const photo = photos.find(p => p.id === photoId);
-    const currentLikes = localLikes[photoId] ?? photo?.likes ?? [];
-    const uid = currentUser.uid;
-    const newLikes = currentLikes.includes(uid)
-      ? currentLikes.filter(id => id !== uid)
-      : [...currentLikes, uid];
-    setLocalLikes(prev => ({ ...prev, [photoId]: newLikes }));
-    
-    try {
-      await supabase.rpc('toggle_photo_like', { p_photo_id: photoId });
-    } catch {
-      // Revert on error
-      setLocalLikes(prev => ({ ...prev, [photoId]: currentLikes }));
-      toast.error('Erreur');
-    }
-  };
-
-  const isLiked = (photo: Photo) => currentUser ? getPhotoLikes(photo).includes(currentUser.uid) : false;
-
-  // Comments
-  const loadComments = async (photoId: string) => {
-    setLoadingComments(true);
-    const { data } = await supabase
-      .from('photo_comments')
-      .select('*')
-      .eq('photo_id', photoId)
-      .order('created_at', { ascending: true });
-    if (data) {
-      setComments(data.map((c: any) => ({
-        id: c.id,
-        photoId: c.photo_id,
-        authorUid: c.author_uid,
-        authorName: c.author_name,
-        authorPhoto: c.author_photo,
-        content: c.content,
-        createdAt: c.created_at,
-      })));
-    }
-    setLoadingComments(false);
-  };
-
-  const addComment = async (photoId: string) => {
-    if (!commentText.trim() || !currentUser) return;
-    const text = commentText.trim();
-    setCommentText('');
-    await supabase.from('photo_comments').insert({
-      photo_id: photoId,
-      author_uid: currentUser.uid,
-      author_name: currentUser.name,
-      author_photo: currentUser.photoURL || null,
-      content: text,
-    });
-    await loadComments(photoId);
-  };
-
-  const deleteComment = async (commentId: string, photoId: string) => {
-    await supabase.from('photo_comments').delete().eq('id', commentId);
-    await loadComments(photoId);
-  };
-
   // Lightbox navigation
   const albumPhotos = selectedAlbum ? photos.filter(p => p.albumId === selectedAlbum.id).sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()) : [];
   
@@ -203,9 +116,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     const idx = albumPhotos.findIndex(p => p.id === photo.id);
     setLightboxIndex(idx >= 0 ? idx : 0);
     setLightboxPhoto(photo);
-    setShowComments(false);
-    setComments([]);
-    loadComments(photo.id);
   };
 
   const navigateLightbox = (dir: 1 | -1) => {
@@ -214,9 +124,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
       setLightboxIndex(newIdx);
       const newPhoto = albumPhotos[newIdx];
       setLightboxPhoto(newPhoto);
-      setComments([]);
-      setShowComments(false);
-      loadComments(newPhoto.id);
     }
   };
 
@@ -435,10 +342,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {albumPhotos.map(photo => {
-            const liked = isLiked(photo);
-            const likeCount = getPhotoLikes(photo).length;
-            return (
+          {albumPhotos.map(photo => (
               <div key={photo.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openLightbox(photo)}>
                   <img src={photo.url} alt={photo.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
@@ -447,29 +351,11 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   </div>
                 </div>
                 <div className="p-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <Calendar size={10} />
-                      <span>{new Date(photo.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
-                      <span className="text-muted-foreground/50">•</span>
-                      <span className="truncate">{photo.uploaderName}</span>
-                    </div>
-                  </div>
-                  {/* Like & comment row */}
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); toggleLike(photo.id); }}
-                      className={`flex items-center gap-1 text-[11px] font-medium transition-all ${liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
-                    >
-                      <Heart size={13} className={liked ? 'fill-current' : ''} />
-                      {likeCount > 0 && <span>{likeCount}</span>}
-                    </button>
-                    <button
-                      onClick={() => openLightbox(photo)}
-                      className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-accent transition-all"
-                    >
-                      <MessageCircle size={13} />
-                    </button>
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mb-1.5">
+                    <Calendar size={10} />
+                    <span>{new Date(photo.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                    <span className="text-muted-foreground/50">•</span>
+                    <span className="truncate">{photo.uploaderName}</span>
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => handleDownload(photo)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-secondary hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-[10px] font-medium text-muted-foreground">
@@ -483,12 +369,11 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
       )}
 
-      {/* Lightbox with swipe & comments */}
+      {/* Lightbox with swipe */}
       <AnimatePresence>
         {lightboxPhoto && (
           <motion.div
@@ -500,26 +385,12 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
             onTouchEnd={(e) => { if (e.target === e.currentTarget) setLightboxPhoto(null); }}
           >
             {/* Top bar */}
-            <div className="flex items-center justify-between p-4 shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 shrink-0">
               <div className="text-white/70 text-xs">
                 {lightboxIndex + 1} / {albumPhotos.length}
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => toggleLike(lightboxPhoto.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${isLiked(lightboxPhoto) ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/70 hover:text-white'}`}
-                >
-                  <Heart size={16} className={isLiked(lightboxPhoto) ? 'fill-current' : ''} />
-                  {getPhotoLikes(lightboxPhoto).length > 0 && <span>{getPhotoLikes(lightboxPhoto).length}</span>}
-                </button>
-                <button
-                  onClick={() => setShowComments(!showComments)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${showComments ? 'bg-accent/20 text-accent' : 'bg-white/10 text-white/70 hover:text-white'}`}
-                >
-                  <MessageCircle size={16} />
-                  {comments.length > 0 && <span>{comments.length}</span>}
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDownload(lightboxPhoto); }} className="bg-white/10 hover:bg-white/20 text-white/70 hover:text-white px-3 py-1.5 rounded-full text-sm transition-all">
+                <button onClick={() => handleDownload(lightboxPhoto)} className="bg-white/10 hover:bg-white/20 text-white/70 hover:text-white px-3 py-1.5 rounded-full text-sm transition-all">
                   <Download size={16} />
                 </button>
                 <button className="text-white/70 hover:text-white transition-colors" onClick={() => setLightboxPhoto(null)}>
@@ -550,7 +421,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                 src={lightboxPhoto.url} 
                 alt={lightboxPhoto.title || ''} 
                 className="max-w-full max-h-full object-contain rounded-xl"
-                onClick={e => e.stopPropagation()}
               />
               {lightboxIndex < albumPhotos.length - 1 && (
                 <button
@@ -563,86 +433,11 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
             </div>
 
             {/* Bottom info */}
-            <div className="p-4 shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="p-4 shrink-0">
               <div className="text-white/60 text-xs text-center">
                 {lightboxPhoto.uploaderName} • {new Date(lightboxPhoto.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
             </div>
-
-            {/* Comments panel */}
-            <AnimatePresence>
-              {showComments && (
-                <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl border-t border-border max-h-[60vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-                    <h4 className="text-sm font-bold text-foreground">Commentaires ({comments.length})</h4>
-                    <button onClick={() => setShowComments(false)} className="text-muted-foreground hover:text-foreground">
-                      <X size={18} />
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {loadingComments ? (
-                      <div className="text-center py-4"><Loader2 size={20} className="animate-spin mx-auto text-muted-foreground" /></div>
-                    ) : comments.length === 0 ? (
-                      <p className="text-center text-sm text-muted-foreground py-4">Aucun commentaire</p>
-                    ) : (
-                      comments.map(c => (
-                        <div key={c.id} className="flex gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center shrink-0 text-[10px] font-bold text-accent overflow-hidden">
-                            {c.authorPhoto ? (
-                              <img src={c.authorPhoto} className="w-full h-full object-cover" alt="" />
-                            ) : c.authorName[0]?.toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-foreground">{c.authorName}</span>
-                              <span className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                              {currentUser && (c.authorUid === currentUser.uid || currentUser.role === 'admin+' || currentUser.role === 'admin') && (
-                                <button onClick={() => deleteComment(c.id, lightboxPhoto.id)} className="text-muted-foreground/50 hover:text-destructive ml-auto">
-                                  <Trash2 size={11} />
-                                </button>
-                              )}
-                            </div>
-                            <p className="text-sm text-foreground/80 mt-0.5 break-words">{c.content}</p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  {currentUser && (
-                    <div className="flex gap-2 p-4 border-t border-border shrink-0">
-                      <input
-                        ref={commentInputRef}
-                        value={commentText}
-                        onChange={e => setCommentText(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addComment(lightboxPhoto.id); } }}
-                        onFocus={e => e.stopPropagation()}
-                        onMouseDown={e => e.stopPropagation()}
-                        onTouchStart={e => e.stopPropagation()}
-                        placeholder="Ajouter un commentaire..."
-                        className="flex-1 px-3 py-2.5 bg-secondary border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-                        style={{ fontSize: '16px' }}
-                        autoComplete="off"
-                        enterKeyHint="send"
-                      />
-                      <button
-                        onClick={() => addComment(lightboxPhoto.id)}
-                        disabled={!commentText.trim()}
-                        className="p-2.5 bg-accent text-accent-foreground rounded-xl disabled:opacity-30 hover:bg-accent/90 transition-all"
-                      >
-                        <Send size={16} />
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
