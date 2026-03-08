@@ -444,9 +444,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </span>
                           )}
                           {waiting && (
-                            <span className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
-                              <Clock size={10} />
-                              EN ATTENTE
+                            <span className="flex items-center gap-1 bg-amber-500/10 text-amber-500 text-[9px] font-semibold px-2 py-0.5 rounded-full">
+                              <Clock size={9} />
+                              En attente
                             </span>
                           )}
                           {alreadyBet && (
