@@ -43,6 +43,8 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/dl-app-x7k9" element={<Download />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="*" element={
               <AuthProvider>
                 <MobileOnlyGuard>
