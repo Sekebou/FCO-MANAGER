@@ -164,12 +164,13 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
               >
                 {/* Active indicator line */}
                 {isActive && (
-                  <motion.div
-                    layoutId="tab-indicator"
-                    className="absolute top-0 w-6 h-[3px] rounded-full bg-primary"
-                    style={{ left: '50%', transform: 'translateX(-50%)' }}
-                    transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                  />
+                  <div className="absolute top-0 left-0 right-0 flex justify-center">
+                    <motion.div
+                      layoutId="tab-indicator"
+                      className="w-6 h-[3px] rounded-full bg-primary"
+                      transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                    />
+                  </div>
                 )}
                 <motion.div
                   initial={false}
@@ -203,12 +204,13 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
           >
             {/* Show active indicator if current tab is in "more" */}
             {isActiveInMore && !moreOpen && (
-              <motion.div
-                layoutId="tab-indicator"
-                className="absolute top-0 w-6 h-[3px] rounded-full bg-primary"
-                style={{ left: '50%', transform: 'translateX(-50%)' }}
-                transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              />
+              <div className="absolute top-0 left-0 right-0 flex justify-center">
+                <motion.div
+                  layoutId="tab-indicator"
+                  className="w-6 h-[3px] rounded-full bg-primary"
+                  transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                />
+              </div>
             )}
             <motion.div
               animate={{ rotate: moreOpen ? 45 : 0 }}
