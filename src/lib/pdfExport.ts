@@ -342,6 +342,7 @@ export async function exportMatchSheet(
   players: Player[],
   members: Member[]
 ) {
+  await ensureLogo();
   const doc = new jsPDF();
   addHeader(doc, `Feuille de Match`);
   
