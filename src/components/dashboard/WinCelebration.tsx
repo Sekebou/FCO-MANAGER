@@ -198,9 +198,9 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                   transition={{ delay: 1.1 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={handleClose}
-                  className="w-full py-3.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-2xl font-bold text-sm shadow-lg shadow-primary/30 hover:brightness-110 transition-all"
+                  className="w-full py-3.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-2xl font-bold text-sm shadow-lg shadow-primary/30 hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
-                  Encaisser 💰
+                  <Wallet size={16} /> Encaisser
                 </motion.button>
               </div>
             </div>
