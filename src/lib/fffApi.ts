@@ -69,7 +69,8 @@ export async function getTousMatchsAvenir(cpNo: number, phase = 1, poule = 1, cl
         );
         const members = Array.isArray(data) ? data : data?.['hydra:member'] || [];
         const matchs = members.filter(
-          (match: any) => match.home?.club?.cl_no === clubId || match.away?.club?.cl_no === clubId
+          (match: any) => (match.home?.club?.cl_no === clubId || match.away?.club?.cl_no === clubId)
+            && match.home_score == null && match.away_score == null
         );
         return { mois: m.label, matchs };
       } catch {
