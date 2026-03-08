@@ -38,6 +38,54 @@ import InvitePlayerForm from '@/components/modals/InvitePlayerForm';
 import SendPushNotifForm from '@/components/modals/SendPushNotifForm';
 import WinCelebration from '@/components/dashboard/WinCelebration';
 
+  // Win celebration state
+  const [winCelebration, setWinCelebration] = useState<{ amount: number; matchLabel: string; prediction: string } | null>(null);
+  const seenWonBetsRef = useRef<Set<string>>(new Set());
+
+  // Check for newly won bets
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Load already seen won bets from localStorage
+    const storageKey = `fco_seen_wins_${currentUser.uid}`;
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) seenWonBetsRef.current = new Set(JSON.parse(saved));
+    } catch {}
+
+    const checkWonBets = async () => {
+      const { data: wonBets } = await supabase
+        .from('bets')
+        .select('id, home_team, away_team, prediction, payout')
+        .eq('user_id', currentUser.uid)
+        .eq('status', 'won')
+        .order('settled_at', { ascending: false })
+        .limit(10);
+
+      if (!wonBets || wonBets.length === 0) return;
+
+      // Find first unseen won bet
+      for (const bet of wonBets) {
+        if (!seenWonBetsRef.current.has(bet.id)) {
+          seenWonBetsRef.current.add(bet.id);
+          try { localStorage.setItem(storageKey, JSON.stringify([...seenWonBetsRef.current])); } catch {}
+
+          const predLabel = bet.prediction === 'home' ? bet.home_team : bet.prediction === 'away' ? bet.away_team : 'Nul';
+          setWinCelebration({
+            amount: bet.payout,
+            matchLabel: `${bet.home_team} vs ${bet.away_team}`,
+            prediction: predLabel,
+          });
+          break; // Show one at a time
+        }
+      }
+    };
+
+    // Check on mount and periodically
+    checkWonBets();
+    const interval = setInterval(checkWonBets, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser]);
 
 export interface Player {
   id: string;
