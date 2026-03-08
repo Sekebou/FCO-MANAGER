@@ -36,6 +36,7 @@ import AvatarModal from '@/components/modals/AvatarModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import InvitePlayerForm from '@/components/modals/InvitePlayerForm';
 import SendPushNotifForm from '@/components/modals/SendPushNotifForm';
+import WinCelebration from '@/components/dashboard/WinCelebration';
 
 
 export interface Player {
