@@ -39,25 +39,27 @@ const ConfettiIcon: React.FC<{ delay: number; left: number; color: string; Icon:
 const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, onClose }) => {
   const [show, setShow] = useState(true);
 
-  // Generate confetti pieces once
+  // Generate confetti icons once
   const confettiPieces = useMemo(() =>
-    Array.from({ length: 80 }, (_, i) => ({
+    Array.from({ length: 60 }, (_, i) => ({
       id: i,
       delay: Math.random() * 0.8,
       left: Math.random() * 100,
       color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      size: 6 + Math.random() * 8,
+      Icon: CONFETTI_ICONS[Math.floor(Math.random() * CONFETTI_ICONS.length)],
+      size: 14 + Math.random() * 10,
     })),
   []);
 
-  // Second wave of confetti
+  // Second wave
   const confettiWave2 = useMemo(() =>
-    Array.from({ length: 50 }, (_, i) => ({
+    Array.from({ length: 40 }, (_, i) => ({
       id: i + 100,
       delay: 0.6 + Math.random() * 0.8,
       left: Math.random() * 100,
       color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      size: 5 + Math.random() * 7,
+      Icon: CONFETTI_ICONS[Math.floor(Math.random() * CONFETTI_ICONS.length)],
+      size: 12 + Math.random() * 8,
     })),
   []);
 
@@ -88,8 +90,8 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
 
           {/* Confetti layer */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {confettiPieces.map(c => <Confetti key={c.id} {...c} />)}
-            {confettiWave2.map(c => <Confetti key={c.id} {...c} />)}
+            {confettiPieces.map(c => <ConfettiIcon key={c.id} {...c} />)}
+            {confettiWave2.map(c => <ConfettiIcon key={c.id} {...c} />)}
           </div>
 
           {/* Main card */}
