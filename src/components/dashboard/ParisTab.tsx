@@ -486,7 +486,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       </div>
 
                       {/* Countdown */}
-                      {!live && (
+                      {!live && !waiting && (
                         <div className="flex items-center justify-center gap-1 mb-3">
                           {[
                             { val: countdown.days, label: 'J' },
@@ -502,6 +502,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                               </div>
                             </React.Fragment>
                           ))}
+                        </div>
+                      )}
+
+                      {/* Waiting for result */}
+                      {waiting && (
+                        <div className="flex items-center justify-center gap-2 mb-3 py-2">
+                          <Clock size={14} className="text-amber-500" />
+                          <span className="text-xs font-semibold text-amber-500">En attente du résultat FFF</span>
                         </div>
                       )}
 
