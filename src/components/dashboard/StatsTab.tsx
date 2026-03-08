@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined } from 'lucide-react';
+import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined, Download } from 'lucide-react';
+import { exportPlayerCard, exportSeasonReport, exportAttendanceReport } from '@/lib/pdfExport';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import RoleBadge from '@/components/ui/role-badge';
 import PlayerRadarChart from './PlayerRadarChart';
