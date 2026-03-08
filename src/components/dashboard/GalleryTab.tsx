@@ -437,7 +437,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {albumPhotos.map(photo => {
             const liked = isLiked(photo);
-            const likeCount = (photo.likes || []).length;
+            const likeCount = getPhotoLikes(photo).length;
             return (
               <div key={photo.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openLightbox(photo)}>
