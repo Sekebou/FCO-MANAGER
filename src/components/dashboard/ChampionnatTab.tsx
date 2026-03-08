@@ -153,6 +153,7 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Refresh result modal
   const [refreshResult, setRefreshResult] = useState<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string; champName?: string } | null>(null);
+  const [forceRefreshLive, setForceRefreshLive] = useState(0);
 
 
   const filteredChampionships = championships.filter(c => (c.team || 'A') === selectedTeam);
@@ -216,26 +217,47 @@ const ChampionnatTab: React.FC<Props> = ({
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
     const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 min local cache
 
-    // 1. Try localStorage first (fastest, zero cloud calls)
-    try {
-      const cached = localStorage.getItem(LOCAL_CACHE_KEY);
-      if (cached) {
-        const { data: cache, ts } = JSON.parse(cached);
-        if (Date.now() - ts < LOCAL_CACHE_TTL && cache) {
-          if (cache.classement && Array.isArray(cache.classement)) {
-            setLiveClassement(mapClassementToStandings(cache.classement));
-            const logosFromClassement: Record<number, string> = {};
-            for (const entry of cache.classement) { const clNo = entry.equipe?.club?.cl_no; const logo = entry.equipe?.club?.logo; if (clNo && logo) logosFromClassement[clNo] = logo; }
-            setLiveLogos(prev => ({ ...logosFromClassement, ...(cache.logos || {}), ...prev }));
-          } else { setLiveError('Classement non disponible'); }
-          setLiveUpcoming(cache.upcoming || []);
-          setLiveResults(cache.results || []);
-          setIsLoadingLive(false);
-          setIsLoadingMatches(false);
-          return;
-        }
+    // Helper: check if a cache has enough logos (at least 50% of teams)
+    const cacheHasLogos = (cache: any): boolean => {
+      if (!cache?.classement || !Array.isArray(cache.classement)) return false;
+      const totalTeams = cache.classement.length;
+      if (totalTeams === 0) return false;
+      let logosCount = 0;
+      const cacheLogos = cache.logos || {};
+      for (const entry of cache.classement) {
+        const clNo = entry.equipe?.club?.cl_no;
+        const logo = entry.equipe?.club?.logo;
+        if ((clNo && logo) || (clNo && cacheLogos[clNo])) logosCount++;
       }
-    } catch {}
+      return logosCount >= totalTeams * 0.5;
+    };
+
+    // Skip caches if force refresh requested
+    if (forceRefreshLive === 0) {
+      // 1. Try localStorage first (fastest, zero cloud calls)
+      try {
+        const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+        if (cached) {
+          const { data: cache, ts } = JSON.parse(cached);
+          if (Date.now() - ts < LOCAL_CACHE_TTL && cache && cacheHasLogos(cache)) {
+            if (cache.classement && Array.isArray(cache.classement)) {
+              setLiveClassement(mapClassementToStandings(cache.classement));
+              const logosFromClassement: Record<number, string> = {};
+              for (const entry of cache.classement) { const clNo = entry.equipe?.club?.cl_no; const logo = entry.equipe?.club?.logo; if (clNo && logo) logosFromClassement[clNo] = logo; }
+              setLiveLogos(prev => ({ ...logosFromClassement, ...(cache.logos || {}), ...prev }));
+            } else { setLiveError('Classement non disponible'); }
+            setLiveUpcoming(cache.upcoming || []);
+            setLiveResults(cache.results || []);
+            setIsLoadingLive(false);
+            setIsLoadingMatches(false);
+            return;
+          }
+        }
+      } catch {}
+    } else {
+      // Clear local cache on force refresh
+      try { localStorage.removeItem(LOCAL_CACHE_KEY); } catch {}
+    }
 
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
@@ -264,12 +286,12 @@ const ChampionnatTab: React.FC<Props> = ({
       }
     }
 
-    // 2. Check DB cache (24h)
+    // 2. Check DB cache (24h) — skip if force refresh or logos missing
     const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
     const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
 
-    if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
+    if (forceRefreshLive === 0 && teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE && cacheHasLogos(teamChamp.fffLiveCache)) {
       // Use DB cache — zero API calls!
       const cache = teamChamp.fffLiveCache;
       
@@ -403,7 +425,7 @@ const ChampionnatTab: React.FC<Props> = ({
     
     fetchAll();
     return () => { cancelled = true; };
-  }, [selectedTeam, championships.length, dataLoaded]);
+  }, [selectedTeam, championships.length, dataLoaded, forceRefreshLive]);
 
   const handleImportCompetition = async (comp: FFFCompetition) => {
     setSelectedCompetition(comp);
@@ -745,6 +767,24 @@ const ChampionnatTab: React.FC<Props> = ({
             })()}
           </div>
         </div>
+
+        {/* Refresh button for live classement */}
+        {!isLoadingLive && liveClassement.length > 0 && (
+          <div className="flex justify-end px-1 -mb-1">
+            <button
+              onClick={() => {
+                clearFFFCache();
+                try { localStorage.removeItem(`fco_champ_live_${selectedTeam}`); } catch {}
+                setForceRefreshLive(prev => prev + 1);
+                toast.success('Actualisation en cours...');
+              }}
+              className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-accent transition-colors py-1 px-2 rounded-lg hover:bg-accent/10"
+            >
+              <RefreshCw size={12} />
+              <span>Actualiser</span>
+            </button>
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {isLoadingLive ? (
