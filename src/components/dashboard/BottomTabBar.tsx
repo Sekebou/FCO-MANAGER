@@ -75,6 +75,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
             style={{
               background: 'hsl(var(--card))',
               boxShadow: '0 -8px 40px -8px hsl(var(--primary) / 0.2)',
+              maxHeight: '60vh',
             }}
           >
             {/* Handle bar */}
@@ -93,40 +94,42 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
               </button>
             </div>
 
-            {/* Grid of extra tabs */}
-            <div className="grid grid-cols-3 gap-2 px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-              {moreTabs.map((tab, i) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                const hasUnread = tab.id === 'discussions' && unreadDiscussions > 0;
-                return (
-                  <motion.button
-                    key={tab.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04, duration: 0.25 }}
-                    onClick={() => handleTap(tab.id)}
-                    className={cn(
-                      "relative flex flex-col items-center gap-1.5 py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-95",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted/60 text-foreground"
-                    )}
-                  >
-                    <div className="relative">
-                      <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
-                      {hasUnread && !isActive && (
-                        <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive flex items-center justify-center px-0.5">
-                          <span className="text-[9px] font-black text-destructive-foreground leading-none">
-                            {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
-                          </span>
-                        </span>
+            {/* Scrollable grid of extra tabs */}
+            <div className="overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]" style={{ maxHeight: 'calc(60vh - 80px)' }}>
+              <div className="grid grid-cols-3 gap-2">
+                {moreTabs.map((tab, i) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  const hasUnread = tab.id === 'discussions' && unreadDiscussions > 0;
+                  return (
+                    <motion.button
+                      key={tab.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.25 }}
+                      onClick={() => handleTap(tab.id)}
+                      className={cn(
+                        "relative flex flex-col items-center gap-1.5 py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-95",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/60 text-foreground"
                       )}
-                    </div>
-                    <span className="text-[11px]">{tab.label}</span>
-                  </motion.button>
-                );
-              })}
+                    >
+                      <div className="relative">
+                        <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+                        {hasUnread && !isActive && (
+                          <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive flex items-center justify-center px-0.5">
+                            <span className="text-[9px] font-black text-destructive-foreground leading-none">
+                              {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px]">{tab.label}</span>
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
           </motion.div>
         )}
@@ -148,7 +151,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
           }}
         />
 
-        <div className="relative flex items-end justify-around px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        <div className="relative grid grid-cols-5 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {bottomTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -156,14 +159,15 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
               <button
                 key={tab.id}
                 onClick={() => { setMoreOpen(false); handleTap(tab.id); }}
-                className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 outline-none select-none"
+                className="relative flex flex-col items-center justify-center gap-0.5 py-2 outline-none select-none"
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
-                {/* Active indicator dot */}
+                {/* Active indicator line */}
                 {isActive && (
                   <motion.div
                     layoutId="tab-indicator"
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-primary"
+                    className="absolute top-0 w-6 h-[3px] rounded-full bg-primary"
+                    style={{ left: '50%', transform: 'translateX(-50%)' }}
                     transition={{ type: 'spring', damping: 20, stiffness: 300 }}
                   />
                 )}
@@ -182,7 +186,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
                   />
                 </motion.div>
                 <span className={cn(
-                  'text-[10px] leading-none tracking-tight whitespace-nowrap transition-colors duration-200',
+                  'text-[10px] leading-none tracking-tight text-center transition-colors duration-200',
                   isActive ? 'font-bold text-primary' : 'font-medium text-muted-foreground'
                 )}>
                   {tab.label}
@@ -194,14 +198,15 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
           {/* Plus button */}
           <button
             onClick={() => setMoreOpen(true)}
-            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 outline-none select-none"
+            className="relative flex flex-col items-center justify-center gap-0.5 py-2 outline-none select-none"
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             {/* Show active indicator if current tab is in "more" */}
             {isActiveInMore && !moreOpen && (
               <motion.div
                 layoutId="tab-indicator"
-                className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full bg-primary"
+                className="absolute top-0 w-6 h-[3px] rounded-full bg-primary"
+                style={{ left: '50%', transform: 'translateX(-50%)' }}
                 transition={{ type: 'spring', damping: 20, stiffness: 300 }}
               />
             )}
@@ -219,7 +224,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
               />
             </motion.div>
             <span className={cn(
-              'text-[10px] leading-none tracking-tight whitespace-nowrap transition-colors duration-200',
+              'text-[10px] leading-none tracking-tight text-center transition-colors duration-200',
               isActiveInMore ? 'font-bold text-primary' : 'font-medium text-muted-foreground'
             )}>
               Plus
