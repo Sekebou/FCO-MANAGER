@@ -371,6 +371,8 @@ const ChampionnatTab: React.FC<Props> = ({
               if (clNo && logo) liveLogosCache[clNo] = logo;
             }
             if (Object.keys(liveLogosCache).length > 0) liveCache.logos = liveLogosCache;
+            // Save to localStorage
+            try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: liveCache, ts: Date.now() })); } catch {}
             if (champToCache) {
               supabase
                 .from('championships')
