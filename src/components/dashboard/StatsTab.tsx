@@ -61,6 +61,8 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
   const [expandedRadar, setExpandedRadar] = useState<string | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [playerSearch, setPlayerSearch] = useState('');
 
   // Period filtering helpers
   const now = new Date();
