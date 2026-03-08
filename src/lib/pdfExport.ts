@@ -80,6 +80,7 @@ export async function exportPlayerCard(
   attendanceRecords: AttendanceRecord[],
   members: Member[]
 ) {
+  await ensureLogo();
   const doc = new jsPDF();
   addHeader(doc, `Fiche Joueur — ${player.name}`);
   
