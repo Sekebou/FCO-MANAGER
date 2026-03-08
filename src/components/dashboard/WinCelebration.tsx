@@ -156,8 +156,8 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <h2 className="text-2xl font-black text-foreground tracking-tight">
-                    🎉 Bravo !
+                  <h2 className="text-2xl font-black text-foreground tracking-tight flex items-center justify-center gap-2">
+                    <PartyPopper size={24} className="text-primary" /> Bravo ! <PartyPopper size={24} className="text-primary" />
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     {matchCount > 1
