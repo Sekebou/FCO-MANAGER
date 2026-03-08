@@ -272,6 +272,60 @@ Deno.serve(async (req) => {
           });
         }
 
+        // ═══ AUTO-SETTLE BETS FROM FFF RESULTS ═══
+        // Look at past results and settle any pending bets that match
+        if (pastResults && (pastResults as any[]).length > 0) {
+          for (const group of pastResults as any[]) {
+            for (const m of group.matchs || []) {
+              const homeScore = m.home_score ?? m.score_home ?? null;
+              const awayScore = m.away_score ?? m.score_away ?? null;
+              const homeName = m.home?.short_name || m.home?.name || '';
+              const awayName = m.away?.short_name || m.away?.name || '';
+              let matchDate = '';
+              if (m.date) {
+                const d = new Date(m.date);
+                if (!isNaN(d.getTime())) matchDate = d.toISOString().split('T')[0];
+                else matchDate = m.date;
+              }
+
+              // Only settle if we have scores and team names
+              if (homeScore !== null && awayScore !== null && homeName && awayName && matchDate) {
+                try {
+                  // Check if there are pending bets for this match
+                  const checkRes = await fetch(
+                    `${supabaseUrl}/rest/v1/bets?home_team=eq.${encodeURIComponent(homeName)}&away_team=eq.${encodeURIComponent(awayName)}&match_date=eq.${encodeURIComponent(matchDate)}&status=eq.pending&select=id&limit=1`,
+                    { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                  );
+                  const pendingBets = await checkRes.json();
+
+                  if (Array.isArray(pendingBets) && pendingBets.length > 0) {
+                    // Call settle_match_bets RPC
+                    const settleRes = await fetch(`${supabaseUrl}/rest/v1/rpc/settle_match_bets`, {
+                      method: 'POST',
+                      headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        p_home_team: homeName,
+                        p_away_team: awayName,
+                        p_match_date: matchDate,
+                        p_home_score: Number(homeScore),
+                        p_away_score: Number(awayScore),
+                      }),
+                    });
+                    const settleResult = await settleRes.json();
+                    console.log(`Settled bets for ${homeName} vs ${awayName} (${matchDate}):`, settleResult);
+                  }
+                } catch (settleErr) {
+                  console.error(`Error settling bets for ${homeName} vs ${awayName}:`, settleErr);
+                }
+              }
+            }
+          }
+        }
+
         console.log(`Successfully refreshed: ${champ.name}`);
         results.push({ id: champ.id, name: champ.name, success: true });
       } catch (err) {
