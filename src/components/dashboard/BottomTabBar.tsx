@@ -139,7 +139,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
                         )}
                       </div>
                       <span className="text-[11px]">{tab.label}</span>
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
