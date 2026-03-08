@@ -362,7 +362,7 @@ export async function exportSeasonReport(
   }
   
   addFooter(doc);
-  doc.save(`Bilan_Saison_${seasonLabel}.pdf`);
+  await savePdf(doc, `Bilan_Saison_${seasonLabel}.pdf`);
 }
 
 // ─── 3. FEUILLE DE MATCH ───
