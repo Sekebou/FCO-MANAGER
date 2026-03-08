@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Event, Member } from '@/pages/Dashboard';
 import RoleBadge from '@/components/ui/role-badge';
-import { Swords, Dumbbell, CalendarDays, Repeat, CircleDot } from 'lucide-react';
+import { Swords, Dumbbell, CalendarDays } from 'lucide-react';
 
 interface AppUser {
   uid: string;
