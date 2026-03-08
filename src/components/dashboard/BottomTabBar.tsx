@@ -14,11 +14,11 @@ interface Tab {
 
 const allTabs: Tab[] = [
   { id: 'home', label: 'Accueil', icon: Home },
-  { id: 'news', label: 'Actus', icon: Bell },
+  { id: 'presences', label: 'Présences', icon: ClipboardCheck },
   { id: 'championnat', label: 'Champ', icon: Trophy },
   { id: 'paris', label: 'Paris', icon: Ticket },
   { id: 'gallery', label: 'Galerie', icon: Camera },
-  { id: 'presences', label: 'Présences', icon: ClipboardCheck },
+  { id: 'news', label: 'Actus', icon: Bell },
   { id: 'stats', label: 'Stats', icon: TrendingUp },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'members', label: 'Membres', icon: UserCheck },
