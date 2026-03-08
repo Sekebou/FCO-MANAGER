@@ -1,16 +1,16 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
 import logoUrl from '@/assets/logo.png';
 
-// Save PDF: on native use Filesystem + Share, on web use doc.save()
+// Save PDF: on native use Filesystem + Share (dynamic import), on web use doc.save()
 async function savePdf(doc: jsPDF, filename: string) {
   if (Capacitor.isNativePlatform()) {
     try {
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
+      const { Share } = await import('@capacitor/share');
       const base64 = doc.output('datauristring').split(',')[1];
       const savedFile = await Filesystem.writeFile({
         path: filename,
@@ -23,7 +23,6 @@ async function savePdf(doc: jsPDF, filename: string) {
       });
     } catch (e) {
       console.error('PDF save/share error:', e);
-      // Fallback: try blob URL
       const blob = doc.output('blob');
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
