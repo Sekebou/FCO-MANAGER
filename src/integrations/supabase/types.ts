@@ -491,6 +491,7 @@ export type Database = {
         Row: {
           album_id: string
           id: string
+          likes: string[] | null
           storage_path: string
           title: string | null
           uploaded_at: string
@@ -501,6 +502,7 @@ export type Database = {
         Insert: {
           album_id: string
           id?: string
+          likes?: string[] | null
           storage_path: string
           title?: string | null
           uploaded_at?: string
@@ -511,6 +513,7 @@ export type Database = {
         Update: {
           album_id?: string
           id?: string
+          likes?: string[] | null
           storage_path?: string
           title?: string | null
           uploaded_at?: string
@@ -640,6 +643,44 @@ export type Database = {
             columns: ["news_id"]
             isOneToOne: false
             referencedRelation: "news"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_comments: {
+        Row: {
+          author_name: string
+          author_photo: string | null
+          author_uid: string
+          content: string
+          created_at: string
+          id: string
+          photo_id: string
+        }
+        Insert: {
+          author_name: string
+          author_photo?: string | null
+          author_uid: string
+          content: string
+          created_at?: string
+          id?: string
+          photo_id: string
+        }
+        Update: {
+          author_name?: string
+          author_photo?: string | null
+          author_uid?: string
+          content?: string
+          created_at?: string
+          id?: string
+          photo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_comments_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "gallery_photos"
             referencedColumns: ["id"]
           },
         ]
@@ -876,6 +917,7 @@ export type Database = {
         }
         Returns: Json
       }
+      toggle_photo_like: { Args: { p_photo_id: string }; Returns: undefined }
       update_event_presence: {
         Args: { p_event_id: string; p_status: string }
         Returns: undefined

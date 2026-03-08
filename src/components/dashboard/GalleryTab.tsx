@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { AppUser } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Camera, Plus, FolderPlus, Trash2, Download, X, Image, Calendar, 
-  ChevronLeft, Upload, Loader2, ZoomIn, FolderOpen
+  ChevronLeft, Upload, Loader2, ZoomIn, FolderOpen, Heart, MessageCircle, Send, ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export interface Album {
   id: string;
@@ -24,6 +26,17 @@ export interface Photo {
   uploadedAt: string;
   uploadedBy: string;
   uploaderName: string;
+  likes?: string[];
+}
+
+interface PhotoComment {
+  id: string;
+  photoId: string;
+  authorUid: string;
+  authorName: string;
+  authorPhoto?: string;
+  content: string;
+  createdAt: string;
 }
 
 interface Props {
@@ -43,8 +56,15 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
   const [albumName, setAlbumName] = useState('');
   const [albumDesc, setAlbumDesc] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<Photo | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [comments, setComments] = useState<PhotoComment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [showComments, setShowComments] = useState(false);
+  const [loadingComments, setLoadingComments] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateAlbum = async () => {
     if (!albumName.trim()) {
@@ -66,7 +86,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     if (!selectedAlbum || !e.target.files?.length) return;
     const files = Array.from(e.target.files);
     
-    // Sur iOS, les images HEIC sont valides aussi
     const validFiles = files.filter(f => f.type.startsWith('image/') || /\.(heic|heif|jpg|jpeg|png|gif|webp)$/i.test(f.name));
     if (validFiles.length !== files.length) {
       toast.warning('Seules les images sont acceptées');
@@ -74,13 +93,18 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     if (validFiles.length === 0) return;
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: validFiles.length });
     try {
-      await onUploadPhotos(selectedAlbum.id, validFiles);
+      for (let i = 0; i < validFiles.length; i++) {
+        setUploadProgress({ current: i + 1, total: validFiles.length });
+        await onUploadPhotos(selectedAlbum.id, [validFiles[i]]);
+      }
       toast.success(`${validFiles.length} photo${validFiles.length > 1 ? 's' : ''} ajoutée${validFiles.length > 1 ? 's' : ''}`);
     } catch {
       toast.error('Erreur lors de l\'upload');
     } finally {
       setUploading(false);
+      setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -102,7 +126,92 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     }
   };
 
-  const albumPhotos = selectedAlbum ? photos.filter(p => p.albumId === selectedAlbum.id) : [];
+  // Likes
+  const toggleLike = async (photoId: string) => {
+    if (!currentUser) return;
+    try {
+      await supabase.rpc('toggle_photo_like', { p_photo_id: photoId });
+      // Optimistic update
+      // The realtime subscription will handle the actual update
+    } catch {
+      toast.error('Erreur');
+    }
+  };
+
+  const isLiked = (photo: Photo) => currentUser ? (photo.likes || []).includes(currentUser.uid) : false;
+
+  // Comments
+  const loadComments = async (photoId: string) => {
+    setLoadingComments(true);
+    const { data } = await supabase
+      .from('photo_comments')
+      .select('*')
+      .eq('photo_id', photoId)
+      .order('created_at', { ascending: true });
+    if (data) {
+      setComments(data.map((c: any) => ({
+        id: c.id,
+        photoId: c.photo_id,
+        authorUid: c.author_uid,
+        authorName: c.author_name,
+        authorPhoto: c.author_photo,
+        content: c.content,
+        createdAt: c.created_at,
+      })));
+    }
+    setLoadingComments(false);
+  };
+
+  const addComment = async (photoId: string) => {
+    if (!commentText.trim() || !currentUser) return;
+    const text = commentText.trim();
+    setCommentText('');
+    await supabase.from('photo_comments').insert({
+      photo_id: photoId,
+      author_uid: currentUser.uid,
+      author_name: currentUser.name,
+      author_photo: currentUser.photoURL || null,
+      content: text,
+    });
+    await loadComments(photoId);
+  };
+
+  const deleteComment = async (commentId: string, photoId: string) => {
+    await supabase.from('photo_comments').delete().eq('id', commentId);
+    await loadComments(photoId);
+  };
+
+  // Lightbox navigation
+  const albumPhotos = selectedAlbum ? photos.filter(p => p.albumId === selectedAlbum.id).sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()) : [];
+  
+  const openLightbox = (photo: Photo) => {
+    const idx = albumPhotos.findIndex(p => p.id === photo.id);
+    setLightboxIndex(idx >= 0 ? idx : 0);
+    setLightboxPhoto(photo);
+    setShowComments(false);
+    setComments([]);
+    loadComments(photo.id);
+  };
+
+  const navigateLightbox = (dir: 1 | -1) => {
+    const newIdx = lightboxIndex + dir;
+    if (newIdx >= 0 && newIdx < albumPhotos.length) {
+      setLightboxIndex(newIdx);
+      const newPhoto = albumPhotos[newIdx];
+      setLightboxPhoto(newPhoto);
+      setComments([]);
+      setShowComments(false);
+      loadComments(newPhoto.id);
+    }
+  };
+
+  // Touch swipe for lightbox
+  const touchStartX = useRef(0);
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 60) navigateLightbox(diff > 0 ? 1 : -1);
+  };
 
   // Album grid view
   if (!selectedAlbum) {
@@ -195,7 +304,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group"
                   onClick={() => setSelectedAlbum(album)}
                 >
-                  {/* Cover image */}
                   <div className="aspect-video bg-secondary relative overflow-hidden">
                     {cover ? (
                       <img src={cover.url} alt={album.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
@@ -214,8 +322,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                       </div>
                     </div>
                   </div>
-
-                  {/* Footer */}
                   <div className="p-3 flex items-center justify-between">
                     {album.description && (
                       <p className="text-xs text-muted-foreground truncate flex-1">{album.description}</p>
@@ -274,12 +380,30 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                 className="bg-accent text-accent-foreground px-4 py-2.5 rounded-xl flex items-center gap-2 hover:bg-accent/90 transition-all text-sm font-medium disabled:opacity-50"
               >
                 {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-                {uploading ? 'Upload...' : 'Ajouter des photos'}
+                {uploading && uploadProgress ? `${uploadProgress.current}/${uploadProgress.total}` : uploading ? 'Upload...' : 'Ajouter des photos'}
               </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Upload progress bar */}
+      {uploading && uploadProgress && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">Upload en cours...</span>
+            <span className="text-xs text-muted-foreground">{uploadProgress.current}/{uploadProgress.total}</span>
+          </div>
+          <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+            <motion.div
+              className="bg-accent h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        </div>
+      )}
 
       {albumPhotos.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
@@ -296,63 +420,207 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {albumPhotos
-            .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-            .map(photo => (
-            <div key={photo.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
-              <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => setLightboxPhoto(photo)}>
-                <img src={photo.url} alt={photo.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <ZoomIn size={24} className="text-white" />
+          {albumPhotos.map(photo => {
+            const liked = isLiked(photo);
+            const likeCount = (photo.likes || []).length;
+            return (
+              <div key={photo.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+                <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openLightbox(photo)}>
+                  <img src={photo.url} alt={photo.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <ZoomIn size={24} className="text-white" />
+                  </div>
                 </div>
-              </div>
-              <div className="p-2.5">
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <Calendar size={10} />
-                  <span>{new Date(photo.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
-                  <span className="text-muted-foreground/50">•</span>
-                  <span className="truncate">{photo.uploaderName}</span>
-                </div>
-                <div className="flex gap-1 mt-1.5">
-                  <button onClick={() => handleDownload(photo)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-secondary hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-[10px] font-medium text-muted-foreground">
-                    <Download size={11} /> Télécharger
-                  </button>
-                  {canManagePhotos() && (
-                    <button onClick={() => onDeletePhoto(photo)} className="flex items-center justify-center px-2 py-1.5 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive rounded-lg transition-all">
-                      <Trash2 size={11} />
+                <div className="p-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <Calendar size={10} />
+                      <span>{new Date(photo.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                      <span className="text-muted-foreground/50">•</span>
+                      <span className="truncate">{photo.uploaderName}</span>
+                    </div>
+                  </div>
+                  {/* Like & comment row */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleLike(photo.id); }}
+                      className={`flex items-center gap-1 text-[11px] font-medium transition-all ${liked ? 'text-red-500' : 'text-muted-foreground hover:text-red-400'}`}
+                    >
+                      <Heart size={13} className={liked ? 'fill-current' : ''} />
+                      {likeCount > 0 && <span>{likeCount}</span>}
                     </button>
-                  )}
+                    <button
+                      onClick={() => openLightbox(photo)}
+                      className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-accent transition-all"
+                    >
+                      <MessageCircle size={13} />
+                    </button>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => handleDownload(photo)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-secondary hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-[10px] font-medium text-muted-foreground">
+                      <Download size={11} /> Télécharger
+                    </button>
+                    {canManagePhotos() && (
+                      <button onClick={() => onDeletePhoto(photo)} className="flex items-center justify-center px-2 py-1.5 bg-destructive/5 hover:bg-destructive hover:text-destructive-foreground text-destructive rounded-lg transition-all">
+                        <Trash2 size={11} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Lightbox */}
-      {lightboxPhoto && (
-        <div className="fixed inset-0 bg-foreground/90 backdrop-blur-xl flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setLightboxPhoto(null)}>
-          <button className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors" onClick={() => setLightboxPhoto(null)}>
-            <X size={28} />
-          </button>
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-            <div className="text-white/70 text-sm">
-              <span>{lightboxPhoto.uploaderName}</span>
-              <span className="mx-2">•</span>
-              <span>{new Date(lightboxPhoto.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+      {/* Lightbox with swipe & comments */}
+      <AnimatePresence>
+        {lightboxPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-foreground/95 backdrop-blur-xl flex flex-col z-50"
+            onClick={() => setLightboxPhoto(null)}
+          >
+            {/* Top bar */}
+            <div className="flex items-center justify-between p-4 shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="text-white/70 text-xs">
+                {lightboxIndex + 1} / {albumPhotos.length}
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => toggleLike(lightboxPhoto.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${isLiked(lightboxPhoto) ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/70 hover:text-white'}`}
+                >
+                  <Heart size={16} className={isLiked(lightboxPhoto) ? 'fill-current' : ''} />
+                  {(lightboxPhoto.likes || []).length > 0 && <span>{(lightboxPhoto.likes || []).length}</span>}
+                </button>
+                <button
+                  onClick={() => setShowComments(!showComments)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${showComments ? 'bg-accent/20 text-accent' : 'bg-white/10 text-white/70 hover:text-white'}`}
+                >
+                  <MessageCircle size={16} />
+                  {comments.length > 0 && <span>{comments.length}</span>}
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); handleDownload(lightboxPhoto); }} className="bg-white/10 hover:bg-white/20 text-white/70 hover:text-white px-3 py-1.5 rounded-full text-sm transition-all">
+                  <Download size={16} />
+                </button>
+                <button className="text-white/70 hover:text-white transition-colors" onClick={() => setLightboxPhoto(null)}>
+                  <X size={24} />
+                </button>
+              </div>
             </div>
-            <button onClick={(e) => { e.stopPropagation(); handleDownload(lightboxPhoto); }} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm transition-all">
-              <Download size={16} /> Télécharger
-            </button>
-          </div>
-          <img 
-            src={lightboxPhoto.url} 
-            alt={lightboxPhoto.title || ''} 
-            className="max-w-full max-h-[80vh] object-contain rounded-xl"
-            onClick={e => e.stopPropagation()}
-          />
-        </div>
-      )}
+
+            {/* Image area with navigation */}
+            <div
+              className="flex-1 flex items-center justify-center relative min-h-0 px-4"
+              onClick={() => setLightboxPhoto(null)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {lightboxIndex > 0 && (
+                <button
+                  onClick={e => { e.stopPropagation(); navigateLightbox(-1); }}
+                  className="absolute left-2 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hidden sm:block"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+              )}
+              <img 
+                src={lightboxPhoto.url} 
+                alt={lightboxPhoto.title || ''} 
+                className="max-w-full max-h-full object-contain rounded-xl"
+                onClick={e => e.stopPropagation()}
+              />
+              {lightboxIndex < albumPhotos.length - 1 && (
+                <button
+                  onClick={e => { e.stopPropagation(); navigateLightbox(1); }}
+                  className="absolute right-2 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hidden sm:block"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              )}
+            </div>
+
+            {/* Bottom info */}
+            <div className="p-4 shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="text-white/60 text-xs text-center">
+                {lightboxPhoto.uploaderName} • {new Date(lightboxPhoto.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+            </div>
+
+            {/* Comments panel */}
+            <AnimatePresence>
+              {showComments && (
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl border-t border-border max-h-[50vh] flex flex-col"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
+                    <h4 className="text-sm font-bold text-foreground">Commentaires ({comments.length})</h4>
+                    <button onClick={() => setShowComments(false)} className="text-muted-foreground hover:text-foreground">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {loadingComments ? (
+                      <div className="text-center py-4"><Loader2 size={20} className="animate-spin mx-auto text-muted-foreground" /></div>
+                    ) : comments.length === 0 ? (
+                      <p className="text-center text-sm text-muted-foreground py-4">Aucun commentaire</p>
+                    ) : (
+                      comments.map(c => (
+                        <div key={c.id} className="flex gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center shrink-0 text-[10px] font-bold text-accent overflow-hidden">
+                            {c.authorPhoto ? (
+                              <img src={c.authorPhoto} className="w-full h-full object-cover" alt="" />
+                            ) : c.authorName[0]?.toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-foreground">{c.authorName}</span>
+                              <span className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                              {currentUser && (c.authorUid === currentUser.uid || currentUser.role === 'admin+' || currentUser.role === 'admin') && (
+                                <button onClick={() => deleteComment(c.id, lightboxPhoto.id)} className="text-muted-foreground/50 hover:text-destructive ml-auto">
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-sm text-foreground/80 mt-0.5 break-words">{c.content}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {currentUser && (
+                    <div className="flex gap-2 p-4 border-t border-border shrink-0">
+                      <input
+                        ref={commentInputRef}
+                        value={commentText}
+                        onChange={e => setCommentText(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && addComment(lightboxPhoto.id)}
+                        placeholder="Ajouter un commentaire..."
+                        className="flex-1 px-3 py-2.5 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                      />
+                      <button
+                        onClick={() => addComment(lightboxPhoto.id)}
+                        disabled={!commentText.trim()}
+                        className="p-2.5 bg-accent text-accent-foreground rounded-xl disabled:opacity-30 hover:bg-accent/90 transition-all"
+                      >
+                        <Send size={16} />
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

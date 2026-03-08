@@ -164,7 +164,7 @@ const mapComment = (r: any): NewsComment => ({ id: r.id, newsId: r.news_id, auth
 const mapChamp = (r: any): Championship => ({ id: r.id, name: r.name, season: r.season, teams: r.teams || [], fffUrl: r.fff_url, fffStandings: r.fff_standings || [], teamLogos: r.team_logos || {}, team: r.team, createdAt: r.created_at, fffLiveCache: r.fff_live_cache, fffRefreshedAt: r.fff_refreshed_at });
 const mapMatch = (r: any): Match => ({ id: r.id, championshipId: r.championship_id, homeTeam: r.home_team, awayTeam: r.away_team, homeScore: r.home_score, awayScore: r.away_score, date: r.date, journee: r.journee, played: r.played ?? false });
 const mapAlbum = (r: any): Album => ({ id: r.id, name: r.name, description: r.description, createdAt: r.created_at, createdBy: r.created_by, coverUrl: r.cover_url });
-const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url, storagePath: r.storage_path, title: r.title, uploadedAt: r.uploaded_at, uploadedBy: r.uploaded_by, uploaderName: r.uploader_name });
+const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url, storagePath: r.storage_path, title: r.title, uploadedAt: r.uploaded_at, uploadedBy: r.uploaded_by, uploaderName: r.uploader_name, likes: r.likes || [] });
 
 // Generate signed URLs for photos (bucket is private)
 const getSignedPhotoUrls = async (photos: Photo[]): Promise<Photo[]> => {
