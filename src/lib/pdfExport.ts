@@ -590,5 +590,5 @@ export async function exportAttendanceReport(
   });
   
   addFooter(doc);
-  doc.save(`Rapport_Presences_${new Date().toISOString().split('T')[0]}.pdf`);
+  await savePdf(doc, `Rapport_Presences_${new Date().toISOString().split('T')[0]}.pdf`);
 }
