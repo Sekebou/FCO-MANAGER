@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       .from('events')
       .select('*')
       .in('date', [todayStr, tomorrowStr])
-      .in('type', ['match', 'training']);
+      .eq('type', 'training');
 
     if (evError) throw evError;
     if (!events || events.length === 0) {
