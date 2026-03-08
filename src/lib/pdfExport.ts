@@ -337,7 +337,7 @@ export async function exportSeasonReport(
 }
 
 // ─── 3. FEUILLE DE MATCH ───
-export function exportMatchSheet(
+export async function exportMatchSheet(
   event: Event,
   players: Player[],
   members: Member[]
