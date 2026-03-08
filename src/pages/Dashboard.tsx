@@ -24,6 +24,7 @@ import ParisTab from '@/components/dashboard/ParisTab';
 // FloatingChatBubble removed — discussions is now a tab
 import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
+import WinCelebration from '@/components/dashboard/WinCelebration';
 import HomeTab from '@/components/dashboard/HomeTab';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
