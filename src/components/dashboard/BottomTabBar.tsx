@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Bell, Trophy, Ticket, Camera, ClipboardCheck,
-  TrendingUp, Calendar, UserCheck, MessageCircle, Plus, X
+  TrendingUp, Calendar, UserCheck, MessageCircle, Plus, X,
+  Settings2, GripVertical, ArrowLeftRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,8 +26,29 @@ const allTabs: Tab[] = [
   { id: 'discussions', label: 'Discussions', icon: MessageCircle },
 ];
 
-const bottomTabs = allTabs.slice(0, 4);
-const moreTabs = allTabs.slice(4);
+const DEFAULT_BOTTOM_IDS = ['home', 'presences', 'championnat', 'paris'];
+const STORAGE_KEY = 'fco_bottom_tabs';
+const BOTTOM_COUNT = 4;
+
+function loadBottomIds(): string[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const ids: string[] = JSON.parse(stored);
+      // Validate: must be exactly 4 valid tab ids
+      const validIds = allTabs.map(t => t.id);
+      const filtered = ids.filter(id => validIds.includes(id));
+      if (filtered.length === BOTTOM_COUNT && new Set(filtered).size === BOTTOM_COUNT) {
+        return filtered;
+      }
+    }
+  } catch {}
+  return DEFAULT_BOTTOM_IDS;
+}
+
+function saveBottomIds(ids: string[]) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ids)); } catch {}
+}
 
 interface BottomTabBarProps {
   activeTab: string;
@@ -36,15 +58,84 @@ interface BottomTabBarProps {
 
 const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomTabBarProps) => {
   const [moreOpen, setMoreOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [bottomIds, setBottomIds] = useState<string[]>(loadBottomIds);
+  const [swapSource, setSwapSource] = useState<string | null>(null);
+
+  const bottomTabs = useMemo(() => bottomIds.map(id => allTabs.find(t => t.id === id)!), [bottomIds]);
+  const moreTabs = useMemo(() => allTabs.filter(t => !bottomIds.includes(t.id)), [bottomIds]);
+
+  const isActiveInMore = moreTabs.some(t => t.id === activeTab);
 
   const handleTap = useCallback((tabId: string) => {
+    if (editMode) return;
     if (tabId === activeTab && !moreOpen) return;
     if ('vibrate' in navigator) navigator.vibrate(5);
     onTabChange(tabId);
     setMoreOpen(false);
-  }, [activeTab, onTabChange, moreOpen]);
+  }, [activeTab, onTabChange, moreOpen, editMode]);
 
-  const isActiveInMore = moreTabs.some(t => t.id === activeTab);
+  // Swap logic: tap a bottom tab, then tap a "more" tab to swap them
+  const handleSwap = useCallback((tappedId: string, isFromMore: boolean) => {
+    if (!editMode) return;
+    if ('vibrate' in navigator) navigator.vibrate(10);
+
+    if (!swapSource) {
+      // First tap — select source
+      setSwapSource(tappedId);
+      return;
+    }
+
+    // Second tap — perform swap
+    const sourceIsBottom = bottomIds.includes(swapSource);
+    const targetIsBottom = bottomIds.includes(tappedId);
+
+    if (swapSource === tappedId) {
+      // Deselect
+      setSwapSource(null);
+      return;
+    }
+
+    // If both are from the same zone, reorder within bottom bar
+    if (sourceIsBottom && targetIsBottom) {
+      const newIds = [...bottomIds];
+      const srcIdx = newIds.indexOf(swapSource);
+      const tgtIdx = newIds.indexOf(tappedId);
+      [newIds[srcIdx], newIds[tgtIdx]] = [newIds[tgtIdx], newIds[srcIdx]];
+      setBottomIds(newIds);
+      saveBottomIds(newIds);
+      setSwapSource(null);
+      return;
+    }
+
+    // Swap between bottom and more
+    if (sourceIsBottom && !targetIsBottom) {
+      const newIds = bottomIds.map(id => id === swapSource ? tappedId : id);
+      setBottomIds(newIds);
+      saveBottomIds(newIds);
+      setSwapSource(null);
+      return;
+    }
+
+    if (!sourceIsBottom && targetIsBottom) {
+      const newIds = bottomIds.map(id => id === tappedId ? swapSource : id);
+      setBottomIds(newIds);
+      saveBottomIds(newIds);
+      setSwapSource(null);
+      return;
+    }
+
+    // Both from more — just deselect
+    setSwapSource(null);
+  }, [editMode, swapSource, bottomIds]);
+
+  // Exit edit mode when closing more panel
+  useEffect(() => {
+    if (!moreOpen) {
+      setEditMode(false);
+      setSwapSource(null);
+    }
+  }, [moreOpen]);
 
   // Lock body scroll when more panel is open
   useEffect(() => {
@@ -60,6 +151,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
       document.body.style.touchAction = '';
     };
   }, [moreOpen]);
+
   return (
     <>
       {/* Backdrop overlay */}
@@ -91,7 +183,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
             style={{
               background: 'hsl(var(--card))',
               boxShadow: '0 -8px 40px -8px hsl(var(--primary) / 0.2)',
-              maxHeight: '60vh',
+              maxHeight: '70vh',
             }}
           >
             {/* Handle bar */}
@@ -102,35 +194,107 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
             {/* Header */}
             <div className="flex items-center justify-between px-5 pb-3">
               <span className="text-base font-bold text-foreground">Plus</span>
-              <button
-                onClick={() => setMoreOpen(false)}
-                className="h-8 w-8 rounded-full bg-muted flex items-center justify-center active:scale-90 transition-transform"
-              >
-                <X size={16} className="text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setEditMode(!editMode); setSwapSource(null); }}
+                  className={cn(
+                    "h-8 px-3 rounded-full flex items-center gap-1.5 text-xs font-semibold transition-all active:scale-90",
+                    editMode
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  <ArrowLeftRight size={14} />
+                  {editMode ? 'Terminé' : 'Modifier'}
+                </button>
+                <button
+                  onClick={() => setMoreOpen(false)}
+                  className="h-8 w-8 rounded-full bg-muted flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <X size={16} className="text-muted-foreground" />
+                </button>
+              </div>
             </div>
 
+            {/* Edit mode instructions */}
+            {editMode && (
+              <div className="mx-4 mb-3 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20">
+                <p className="text-[11px] text-primary font-medium text-center">
+                  Touchez un onglet ci-dessous, puis un onglet de la barre pour les échanger
+                </p>
+              </div>
+            )}
+
+            {/* Current bottom tabs (only visible in edit mode) */}
+            {editMode && (
+              <div className="px-4 mb-3">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Barre principale</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {bottomTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isSelected = swapSource === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleSwap(tab.id, false)}
+                        className={cn(
+                          "relative flex flex-col items-center gap-1 py-2.5 rounded-2xl font-semibold text-xs transition-all active:scale-95 border-2",
+                          isSelected
+                            ? "bg-primary/15 border-primary text-primary scale-[1.03]"
+                            : "bg-muted/60 border-transparent text-foreground"
+                        )}
+                      >
+                        <Icon size={20} strokeWidth={isSelected ? 2.4 : 1.8} />
+                        <span className="text-[10px]">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Separator */}
+            {editMode && (
+              <div className="px-4 mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <ArrowLeftRight size={12} className="text-muted-foreground/50" />
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              </div>
+            )}
+
+            {/* More tabs label in edit mode */}
+            {editMode && (
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-5">Onglets disponibles</p>
+            )}
+
             {/* Scrollable grid of extra tabs */}
-            <div className="overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]" style={{ maxHeight: 'calc(60vh - 80px)' }}>
+            <div className="overflow-y-auto overscroll-contain px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]" style={{ maxHeight: editMode ? 'calc(70vh - 280px)' : 'calc(60vh - 80px)' }}>
               <div className="grid grid-cols-3 gap-2">
-                {moreTabs.map((tab, i) => {
+                {moreTabs.map((tab) => {
                   const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
+                  const isActive = activeTab === tab.id && !editMode;
+                  const isSelected = swapSource === tab.id;
                   const hasUnread = tab.id === 'discussions' && unreadDiscussions > 0;
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => handleTap(tab.id)}
+                      onClick={() => editMode ? handleSwap(tab.id, true) : handleTap(tab.id)}
                       className={cn(
                         "relative flex flex-col items-center gap-1.5 py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-95",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted/60 text-foreground"
+                        editMode && isSelected
+                          ? "bg-primary/15 border-2 border-primary text-primary scale-[1.03]"
+                          : editMode
+                            ? "bg-muted/60 border-2 border-dashed border-border text-foreground"
+                            : isActive
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted/60 text-foreground"
                       )}
                     >
                       <div className="relative">
-                        <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
-                        {hasUnread && !isActive && (
+                        <Icon size={22} strokeWidth={isActive || isSelected ? 2.2 : 1.8} />
+                        {hasUnread && !isActive && !editMode && (
                           <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive flex items-center justify-center px-0.5">
                             <span className="text-[9px] font-black text-destructive-foreground leading-none">
                               {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
@@ -168,6 +332,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
           {bottomTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
+            const hasUnread = tab.id === 'discussions' && unreadDiscussions > 0;
             return (
               <button
                 key={tab.id}
@@ -189,6 +354,7 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
                   initial={false}
                   animate={{ scale: isActive ? 1.1 : 1 }}
                   transition={{ type: 'spring', damping: 15, stiffness: 400 }}
+                  className="relative"
                 >
                   <Icon
                     size={22}
@@ -198,6 +364,13 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
                       isActive ? 'text-primary' : 'text-muted-foreground'
                     )}
                   />
+                  {hasUnread && !isActive && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] rounded-full bg-destructive flex items-center justify-center px-0.5">
+                      <span className="text-[9px] font-black text-destructive-foreground leading-none">
+                        {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
+                      </span>
+                    </span>
+                  )}
                 </motion.div>
                 <span className={cn(
                   'text-[10px] leading-none tracking-tight text-center transition-colors duration-200',
@@ -245,8 +418,8 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
               Plus
             </span>
 
-            {/* Unread badge on Plus when discussions has unread */}
-            {!isActiveInMore && unreadDiscussions > 0 && activeTab !== 'discussions' && (
+            {/* Unread badge on Plus when discussions has unread and is in more */}
+            {!isActiveInMore && unreadDiscussions > 0 && activeTab !== 'discussions' && moreTabs.some(t => t.id === 'discussions') && (
               <span className="absolute top-1 right-1/4 min-w-[16px] h-[16px] rounded-full bg-destructive flex items-center justify-center px-0.5">
                 <span className="text-[9px] font-black text-destructive-foreground leading-none">
                   {unreadDiscussions > 99 ? '99+' : unreadDiscussions}
