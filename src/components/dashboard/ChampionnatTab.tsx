@@ -579,14 +579,18 @@ const ChampionnatTab: React.FC<Props> = ({
               <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
             </motion.button>
           ) : (
-            <motion.button 
-              whileHover={{ scale: 1.05 }} 
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { setShowAddChamp(true); }} 
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
-            >
-              <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
-            </motion.button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <motion.button 
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+                >
+                  <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
+                </motion.button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="end" className="w-56 p-3 text-xs text-muted-foreground text-center">
+                🚧 Prévu dans l'app version jeune
+              </PopoverContent>
+            </Popover>
           )
         )}
       </motion.div>
