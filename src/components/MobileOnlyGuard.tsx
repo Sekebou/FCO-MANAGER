@@ -32,6 +32,8 @@ const isAllowed = () => {
   if (isCapacitorNative()) return true;
   // Allow Lovable preview access
   if (typeof window !== "undefined" && window.location.search.includes("__lovable_token")) return true;
+  // Allow mobile browsers
+  if (isMobileOrTablet()) return true;
   return false;
 };
 
