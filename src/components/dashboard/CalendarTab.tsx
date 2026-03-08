@@ -19,8 +19,26 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
   const now = new Date();
   const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
+  // Helper inlined before sorting so we can filter terminated events
+  const isTerminated = (event: Event): boolean => {
+    if (event.date > todayStr) return false;
+    if (event.date < todayStr) return true;
+    if (!event.time) {
+      const duration = (event.duration || 90) * 60 * 1000;
+      // No time set: consider terminated after duration from midnight
+      const midnightStart = new Date(now);
+      midnightStart.setHours(0, 0, 0, 0);
+      return now.getTime() > midnightStart.getTime() + duration;
+    }
+    const [h, m] = event.time.replace('H', ':').replace('h', ':').split(':').map(Number);
+    const eventStart = new Date(now);
+    eventStart.setHours(h || 0, m || 0, 0, 0);
+    const duration = (event.duration || 90) * 60 * 1000;
+    return now.getTime() > eventStart.getTime() + duration;
+  };
+
   const sorted = [...events]
-    .filter(e => e.date >= todayStr)
+    .filter(e => e.date >= todayStr && !isTerminated(e))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Find closest date (could have multiple events on the same day)
