@@ -126,14 +126,29 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     }
   };
 
-  // Likes
+  // Likes — optimistic update via onLikesChanged callback
+  const [localLikes, setLocalLikes] = useState<Record<string, string[]>>({});
+
+  const getPhotoLikes = (photo: Photo): string[] => {
+    return localLikes[photo.id] ?? photo.likes ?? [];
+  };
+
   const toggleLike = async (photoId: string) => {
     if (!currentUser) return;
+    // Optimistic update
+    const photo = photos.find(p => p.id === photoId);
+    const currentLikes = localLikes[photoId] ?? photo?.likes ?? [];
+    const uid = currentUser.uid;
+    const newLikes = currentLikes.includes(uid)
+      ? currentLikes.filter(id => id !== uid)
+      : [...currentLikes, uid];
+    setLocalLikes(prev => ({ ...prev, [photoId]: newLikes }));
+    
     try {
       await supabase.rpc('toggle_photo_like', { p_photo_id: photoId });
-      // Optimistic update
-      // The realtime subscription will handle the actual update
     } catch {
+      // Revert on error
+      setLocalLikes(prev => ({ ...prev, [photoId]: currentLikes }));
       toast.error('Erreur');
     }
   };
