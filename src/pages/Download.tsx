@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 // Expiration : 24h après ce timestamp (date de déploiement)
 const UPLOAD_DATE = new Date("2026-03-08T22:00:00Z");
-const EXPIRY_DATE = new Date(UPLOAD_DATE.getTime() + 24 * 60 * 60 * 1000);
+const EXPIRY_DATE = new Date(UPLOAD_DATE.getTime() + 48 * 60 * 60 * 1000);
 
 const DownloadPage = () => {
   const isExpired = new Date() > EXPIRY_DATE;
