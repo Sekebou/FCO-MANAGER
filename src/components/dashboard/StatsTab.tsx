@@ -198,26 +198,14 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
               <div className="text-[10px] text-muted-foreground">KPIs, podium, taux de présence</div>
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {/* 3 player avatars stacked + remaining count */}
-            {players.slice(0, 3).map((p, i) => {
-              const m = members.find(mb => mb.playerId === p.id);
-              const photo = m?.photoURL;
-              const init = p.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-              return photo ? (
-                <img key={p.id} src={photo} alt="" className="w-7 h-7 rounded-full object-cover ring-2 ring-background" style={{ marginLeft: i > 0 ? -8 : 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              ) : (
-                <div key={p.id} className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center ring-2 ring-background" style={{ marginLeft: i > 0 ? -8 : 0 }}>
-                  <span className="text-[8px] font-bold text-foreground">{init}</span>
-                </div>
-              );
-            })}
-            {players.length > 3 && (
-              <div className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center ring-2 ring-background" style={{ marginLeft: -8 }}>
-                <span className="text-[9px] font-bold text-accent">+{players.length - 3}</span>
+          <div className="flex items-center gap-2">
+            {topScorer && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-secondary px-2.5 py-1 rounded-lg">
+                <Target size={12} className="text-accent" />
+                {topScorer.name.split(' ')[0]} · {topScorer.goals || 0} buts
               </div>
             )}
-            <ChevronDown size={16} className="text-muted-foreground group-hover:text-foreground transition-colors -rotate-90 ml-1" />
+            <ChevronDown size={16} className="text-muted-foreground group-hover:text-foreground transition-colors -rotate-90" />
           </div>
         </button>
       )}
