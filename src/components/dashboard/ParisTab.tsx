@@ -242,10 +242,35 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return () => clearInterval(interval);
   }, [nextMatch?.date]);
 
-  const isMatchLive = (matchDate: string) => {
+  // Match status: 'live' (during 100min window), 'waiting' (after 100min, same day), false (not today)
+  const getMatchStatus = (matchDate: string, matchTime?: string): 'live' | 'waiting' | false => {
     const today = new Date().toISOString().split('T')[0];
     const mDate = new Date(matchDate).toISOString().split('T')[0];
-    return today === mDate;
+    if (today !== mDate) return false;
+
+    if (!matchTime) return 'live'; // No time info → assume live all day
+
+    // Parse time like "15H00" or "15:00"
+    const timeParts = matchTime.replace('H', ':').split(':');
+    const kickoffHour = parseInt(timeParts[0], 10);
+    const kickoffMin = parseInt(timeParts[1] || '0', 10);
+    if (isNaN(kickoffHour)) return 'live';
+
+    const now = new Date();
+    const kickoff = new Date(now);
+    kickoff.setHours(kickoffHour, kickoffMin, 0, 0);
+
+    const diffMin = (now.getTime() - kickoff.getTime()) / 60000;
+
+    if (diffMin < 0) return false; // Before kickoff
+    if (diffMin <= 100) return 'live'; // During match (~90min + extra time)
+    return 'waiting'; // Match over, waiting for result
+  };
+
+  // Backward compat helper
+  const isMatchLive = (matchDate: string, matchTime?: string) => {
+    const status = getMatchStatus(matchDate, matchTime);
+    return status === 'live';
   };
 
   const myBets = useMemo(() => bets.filter(b => b.userId === currentUser?.uid), [bets, currentUser]);
@@ -362,7 +387,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                 <p className="text-xs mt-1">Les prochains matchs de l'équipe {selectedTeam} apparaîtront ici</p>
               </div>
             ) : (() => {
-              const live = nextMatch.date ? isMatchLive(nextMatch.date) : false;
+              const matchStatus = nextMatch.date ? getMatchStatus(nextMatch.date, nextMatch.time) : false;
+              const live = matchStatus === 'live';
+              const waiting = matchStatus === 'waiting';
               const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
               const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
               const homeLogo = nextMatch.home?.club?.logo;
@@ -388,11 +415,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={`relative rounded-2xl overflow-hidden border shadow-sm ${
-                      live ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-border/60'
+                      live ? 'border-red-500/50 ring-1 ring-red-500/30' : waiting ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-border/60'
                     } bg-card`}
                   >
                     {live && (
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse" />
+                    )}
+                    {waiting && (
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500" />
                     )}
 
                     <div className="px-5 py-5">
@@ -411,6 +441,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             <span className="flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full animate-pulse">
                               <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                               LIVE
+                            </span>
+                          )}
+                          {waiting && (
+                            <span className="flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-amber-500 text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
+                              <Clock size={10} />
+                              EN ATTENTE
                             </span>
                           )}
                           {alreadyBet && (
@@ -450,7 +486,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       </div>
 
                       {/* Countdown */}
-                      {!live && (
+                      {!live && !waiting && (
                         <div className="flex items-center justify-center gap-1 mb-3">
                           {[
                             { val: countdown.days, label: 'J' },
@@ -466,6 +502,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                               </div>
                             </React.Fragment>
                           ))}
+                        </div>
+                      )}
+
+                      {/* Waiting for result */}
+                      {waiting && (
+                        <div className="flex items-center justify-center gap-2 mb-3 py-2">
+                          <Clock size={14} className="text-amber-500" />
+                          <span className="text-xs font-semibold text-amber-500">En attente du résultat FFF</span>
                         </div>
                       )}
 
@@ -498,7 +542,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       )}
 
                       {/* Bet button */}
-                      {currentUser && !live && !alreadyBet && (
+                      {currentUser && !live && !waiting && !alreadyBet && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
