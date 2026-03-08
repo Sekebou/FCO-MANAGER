@@ -17,9 +17,10 @@ interface Props {
 
 const CalendarTab = ({ events, members, currentUser }: Props) => {
   const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
-  const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const past = sorted.filter(e => e.date < todayStr);
-  const future = sorted.filter(e => e.date >= todayStr);
+  const sorted = [...events]
+    .filter(e => e.date >= todayStr) // Hide past events (cleaned at midnight)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const future = sorted;
 
   const nextEvent = future[0] || null;
 
