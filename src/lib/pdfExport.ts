@@ -464,11 +464,12 @@ export async function exportMatchSheet(
 }
 
 // ─── 4. RAPPORT DE PRÉSENCES ───
-export function exportAttendanceReport(
+export async function exportAttendanceReport(
   players: Player[],
   events: Event[],
   attendanceRecords: AttendanceRecord[]
 ) {
+  await ensureLogo();
   const doc = new jsPDF('landscape');
   addHeader(doc, 'Rapport de Présences — Entraînements');
   
