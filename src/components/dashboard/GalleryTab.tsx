@@ -117,9 +117,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     const idx = albumPhotos.findIndex(p => p.id === photo.id);
     setLightboxIndex(idx >= 0 ? idx : 0);
     setLightboxPhoto(photo);
-    setShowComments(false);
-    setComments([]);
-    loadComments(photo.id);
   };
 
   const navigateLightbox = (dir: 1 | -1) => {
