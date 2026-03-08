@@ -1,8 +1,37 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
 import logoUrl from '@/assets/logo.png';
+
+// Save PDF: on native use Filesystem + Share, on web use doc.save()
+async function savePdf(doc: jsPDF, filename: string) {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const base64 = doc.output('datauristring').split(',')[1];
+      const savedFile = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache,
+      });
+      await Share.share({
+        title: filename,
+        url: savedFile.uri,
+      });
+    } catch (e) {
+      console.error('PDF save/share error:', e);
+      // Fallback: try blob URL
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    }
+  } else {
+    doc.save(filename);
+  }
+}
 
 const CLUB_NAME = 'FC Oisemont';
 const PRIMARY_COLOR: [number, number, number] = [14, 43, 160]; // #0e2ba0
