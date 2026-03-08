@@ -866,6 +866,16 @@ export type Database = {
         }
         Returns: Json
       }
+      settle_match_bets: {
+        Args: {
+          p_away_score: number
+          p_away_team: string
+          p_home_score: number
+          p_home_team: string
+          p_match_date: string
+        }
+        Returns: Json
+      }
       update_event_presence: {
         Args: { p_event_id: string; p_status: string }
         Returns: undefined
