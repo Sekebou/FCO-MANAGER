@@ -125,9 +125,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
       setLightboxIndex(newIdx);
       const newPhoto = albumPhotos[newIdx];
       setLightboxPhoto(newPhoto);
-      setComments([]);
-      setShowComments(false);
-      loadComments(newPhoto.id);
     }
   };
 
