@@ -17,9 +17,10 @@ interface Props {
 
 const CalendarTab = ({ events, members, currentUser }: Props) => {
   const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
-  const sorted = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const past = sorted.filter(e => e.date < todayStr);
-  const future = sorted.filter(e => e.date >= todayStr);
+  const sorted = [...events]
+    .filter(e => e.date >= todayStr) // Hide past events (cleaned at midnight)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const future = sorted;
 
   const nextEvent = future[0] || null;
 
@@ -116,23 +117,6 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
             {future.filter(e => e.id !== nextEvent?.id).map((e, i, arr) => (
               <React.Fragment key={e.id}>
                 <EventCard event={e} />
-                {i < arr.length - 1 && <div className="h-px bg-border/30 mx-2" />}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="h-px bg-border/60" />
-
-      <div>
-        <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Passés</h3>
-        {past.length === 0 ? (
-          <p className="text-muted-foreground italic text-sm">Aucun événement passé</p>
-        ) : (
-          <div className="space-y-2">
-            {[...past].reverse().map((e, i, arr) => (
-              <React.Fragment key={e.id}>
-                <EventCard event={e} isPast />
                 {i < arr.length - 1 && <div className="h-px bg-border/30 mx-2" />}
               </React.Fragment>
             ))}
