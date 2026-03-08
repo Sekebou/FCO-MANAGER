@@ -13,6 +13,8 @@ const Register = lazy(() => import("./pages/Register"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Download = lazy(() => import("./pages/Download"));
 const Support = lazy(() => import("./pages/Support"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,8 @@ const App = () => {
             <Route path="/register" element={<Register />} />
             <Route path="/dl-app-x7k9" element={<Download />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="*" element={
               <AuthProvider>
                 <MobileOnlyGuard>
