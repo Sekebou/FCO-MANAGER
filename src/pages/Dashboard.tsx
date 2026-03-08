@@ -420,10 +420,59 @@ const Dashboard = () => {
   const [avatarFocusLicense, setAvatarFocusLicense] = useState(false);
   const [showLicenseReminder, setShowLicenseReminder] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
-  const [showInvitePlayer, setShowInvitePlayer] = useState(false);
+   const [showInvitePlayer, setShowInvitePlayer] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ email: string; link: string } | null>(null);
   const [playerCreatedResult, setPlayerCreatedResult] = useState<{ name: string; email?: string; password?: string; withAccount: boolean } | null>(null);
   const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
+
+  // ═══ WIN CELEBRATION ═══
+  const [winCelebration, setWinCelebration] = useState<{ totalWon: number; matchCount: number } | null>(null);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const checkUnseenWins = async () => {
+      const lastSeenKey = `fco_last_win_seen_${currentUser.uid}`;
+      const lastSeen = localStorage.getItem(lastSeenKey) || '1970-01-01T00:00:00Z';
+
+      const { data: wonBets } = await supabase
+        .from('bets')
+        .select('payout, settled_at')
+        .eq('user_id', currentUser.uid)
+        .eq('status', 'won')
+        .gt('settled_at', lastSeen);
+
+      if (wonBets && wonBets.length > 0) {
+        const totalWon = wonBets.reduce((sum, b) => sum + (b.payout || 0), 0);
+        if (totalWon > 0) {
+          setWinCelebration({ totalWon, matchCount: wonBets.length });
+          // Mark as seen with the latest settled_at
+          const latest = wonBets.reduce((max, b) => b.settled_at && b.settled_at > max ? b.settled_at : max, lastSeen);
+          localStorage.setItem(lastSeenKey, latest);
+        }
+      }
+    };
+
+    // Check after a small delay to let the app load first
+    const timer = setTimeout(checkUnseenWins, 1500);
+
+    // Also listen for realtime bet updates (in case user is on the app when settlement happens)
+    const channel = supabase
+      .channel(`win-celebration-${currentUser.uid}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bets',
+        filter: `user_id=eq.${currentUser.uid}`,
+      }, (payload: any) => {
+        if (payload.new?.status === 'won' && payload.old?.status === 'pending') {
+          // Delay slightly to batch multiple settlements
+          setTimeout(checkUnseenWins, 2000);
+        }
+      })
+      .subscribe();
+
+    return () => { clearTimeout(timer); supabase.removeChannel(channel); };
+  }, [currentUser]);
 
   const canManage = () => currentUser && (currentUser.role === 'admin+' || currentUser.role === 'admin' || currentUser.role === 'entraineur');
   const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin+' || currentUser.role === 'admin' || currentUser.role === 'photographe'));
