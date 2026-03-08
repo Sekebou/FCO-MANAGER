@@ -17,7 +17,7 @@ const CACHE_TTL = 15 * 60 * 1000; // 15 min
 
 const BetLeaderboard: React.FC = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>(() => {
-    try { const c = localStorage.getItem(CACHE_KEY); if (c) { const { ts, data } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) return data; } } catch {} return [];
+    try { const c = localStorage.getItem(CACHE_KEY); if (c) { const { ts, data } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) return (data as LeaderboardEntry[]).filter(p => p.user_name && p.user_name !== 'Joueur'); } } catch {} return [];
   });
   const [loading, setLoading] = useState(entries.length === 0);
 
