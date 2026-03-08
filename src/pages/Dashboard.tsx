@@ -1763,14 +1763,6 @@ const Dashboard = () => {
         />
       )}
 
-      {/* WIN CELEBRATION TEST BUTTON — À RETIRER */}
-      <button
-        onClick={() => setWinCelebration({ totalWon: 247, matchCount: 3 })}
-        className="fixed bottom-24 right-4 z-[60] bg-amber-500 text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg"
-      >
-        🎉 Test Win
-      </button>
-
       {/* Win celebration popup */}
       {winCelebration && (
         <WinCelebration
