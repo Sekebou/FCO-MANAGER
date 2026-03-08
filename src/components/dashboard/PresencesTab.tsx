@@ -732,7 +732,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
           </div>
         ) : (
-        <div className="space-y-0 max-w-3xl mx-auto">
+        <div className="space-y-4 max-w-3xl mx-auto">
           {(() => {
             const renderCard = (event: Event) => {
               const presences = event.presences || {};
