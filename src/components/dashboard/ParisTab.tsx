@@ -387,7 +387,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                 <p className="text-xs mt-1">Les prochains matchs de l'équipe {selectedTeam} apparaîtront ici</p>
               </div>
             ) : (() => {
-              const live = nextMatch.date ? isMatchLive(nextMatch.date) : false;
+              const matchStatus = nextMatch.date ? getMatchStatus(nextMatch.date, nextMatch.time) : false;
+              const live = matchStatus === 'live';
+              const waiting = matchStatus === 'waiting';
               const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
               const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
               const homeLogo = nextMatch.home?.club?.logo;
