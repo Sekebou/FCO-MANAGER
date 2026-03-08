@@ -170,7 +170,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
       photo_id: photoId,
       author_uid: currentUser.uid,
       author_name: currentUser.name,
-      author_photo: currentUser.photoUrl || null,
+      author_photo: currentUser.photoURL || null,
       content: text,
     });
     await loadComments(photoId);
