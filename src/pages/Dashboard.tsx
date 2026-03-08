@@ -331,8 +331,7 @@ const Dashboard = () => {
 
     const channel = supabase
       .channel('discussions-unread')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, fetchUnread)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_messages' }, fetchUnread)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' }, fetchUnread)
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
