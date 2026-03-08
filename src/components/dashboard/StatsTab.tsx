@@ -229,10 +229,11 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
             {!selectedPlayerId && (
               <button
                 onClick={() => exportSeasonReport(players, events, cards, championships || [], champMatches || [])}
-                className="w-9 h-9 rounded-xl bg-accent/15 hover:bg-accent/25 flex items-center justify-center transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent/15 hover:bg-accent/25 transition-colors shrink-0"
                 title="Télécharger bilan complet (PDF)"
               >
-                <Download size={16} className="text-accent" />
+                <Download size={14} className="text-accent" />
+                <span className="text-[11px] font-semibold text-accent">Exporter stats globales</span>
               </button>
             )}
             {selectedPlayerId && (
@@ -241,10 +242,11 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                   const sp = players.find(p => p.id === selectedPlayerId);
                   if (sp) exportPlayerCard(sp, cards, events, attendanceRecords, members);
                 }}
-                className="w-9 h-9 rounded-xl bg-accent/15 hover:bg-accent/25 flex items-center justify-center transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent/15 hover:bg-accent/25 transition-colors shrink-0"
                 title="Télécharger fiche joueur (PDF)"
               >
-                <Download size={16} className="text-accent" />
+                <Download size={14} className="text-accent" />
+                <span className="text-[11px] font-semibold text-accent">Récap joueur</span>
               </button>
             )}
           </div>
