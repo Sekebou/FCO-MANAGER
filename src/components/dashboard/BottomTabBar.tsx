@@ -15,7 +15,7 @@ interface Tab {
 const allTabs: Tab[] = [
   { id: 'home', label: 'Accueil', icon: Home },
   { id: 'news', label: 'Actus', icon: Bell },
-  { id: 'championnat', label: 'Champ.', icon: Trophy },
+  { id: 'championnat', label: 'Champ', icon: Trophy },
   { id: 'paris', label: 'Paris', icon: Ticket },
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'presences', label: 'Présences', icon: ClipboardCheck },
