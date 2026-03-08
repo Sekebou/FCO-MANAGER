@@ -17,15 +17,34 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
-    // Calculate 48h ago date string (events.date is stored as text YYYY-MM-DD)
-    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
-    const cutoffDate = cutoff.toISOString().split('T')[0];
+    // Current time in Europe/Paris
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentHour = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' })).getHours();
 
-    // 1. Find old events (match or training) with date < cutoff
+    // Fetch all past events (match or training) with date < today
     const eventsRes = await fetch(
-      `${supabaseUrl}/rest/v1/events?date=lt.${cutoffDate}&type=in.(match,training)&select=id,type,date,presences`,
+      `${supabaseUrl}/rest/v1/events?date=lt.${today}&type=in.(match,training)&select=id,type,date,presences,time`,
       { headers }
     );
+    if (!eventsRes.ok) throw new Error(`Failed to fetch events: ${await eventsRes.text()}`);
+    const pastEvents = await eventsRes.json();
+
+    // Filter: remove training next day (anytime) + match next day after 12h
+    const oldEvents = pastEvents.filter((e: any) => {
+      const eventDate = new Date(e.date + 'T00:00:00');
+      const daysSince = Math.floor((now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (e.type === 'training') {
+        // Remove training the next day (daysSince >= 1)
+        return daysSince >= 1;
+      }
+      if (e.type === 'match') {
+        // Remove match the next day after 12h
+        return daysSince > 1 || (daysSince === 1 && currentHour >= 12);
+      }
+      return false;
+    });
     if (!eventsRes.ok) throw new Error(`Failed to fetch events: ${await eventsRes.text()}`);
     const oldEvents = await eventsRes.json();
 
