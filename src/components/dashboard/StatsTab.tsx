@@ -210,159 +210,390 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
           {/* Header */}
           <div className="p-4 pb-3 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur-md z-10 flex items-center gap-3">
             <button
-              onClick={() => setShowStatsModal(false)}
+              onClick={() => {
+                if (selectedPlayerId) { setSelectedPlayerId(null); setPlayerSearch(''); }
+                else setShowStatsModal(false);
+              }}
               className="w-9 h-9 rounded-xl bg-secondary/80 hover:bg-secondary flex items-center justify-center transition-colors shrink-0"
             >
               <ArrowLeft size={18} className="text-foreground" />
             </button>
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-base font-bold text-foreground">Tableau de bord</DialogTitle>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Performances & présences de l'équipe</p>
+              <DialogTitle className="text-base font-bold text-foreground">
+                {selectedPlayerId ? (players.find(p => p.id === selectedPlayerId)?.name || 'Joueur') : 'Tableau de bord'}
+              </DialogTitle>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {selectedPlayerId ? 'Statistiques détaillées' : 'Performances & présences de l\'équipe'}
+              </p>
             </div>
+            {!selectedPlayerId && (
+              <button
+                onClick={() => exportSeasonReport(players, events, cards, championships || [], champMatches || [])}
+                className="w-9 h-9 rounded-xl bg-accent/15 hover:bg-accent/25 flex items-center justify-center transition-colors shrink-0"
+                title="Télécharger bilan complet (PDF)"
+              >
+                <Download size={16} className="text-accent" />
+              </button>
+            )}
+            {selectedPlayerId && (
+              <button
+                onClick={() => {
+                  const sp = players.find(p => p.id === selectedPlayerId);
+                  if (sp) exportPlayerCard(sp, cards, events, attendanceRecords, members);
+                }}
+                className="w-9 h-9 rounded-xl bg-accent/15 hover:bg-accent/25 flex items-center justify-center transition-colors shrink-0"
+                title="Télécharger fiche joueur (PDF)"
+              >
+                <Download size={16} className="text-accent" />
+              </button>
+            )}
           </div>
 
           <div className="p-4 space-y-5">
 
-            {/* ── Section 1 : Tops joueurs ── */}
-            <div>
-              <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                <Trophy size={12} className="text-accent" />
-                Tops joueurs
-                <span className="flex-1 h-px bg-border/50" />
-              </h4>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: 'Buteur', player: topScorer, value: `${topScorer?.goals || 0}`, unit: 'buts', Icon: Target, gradient: 'from-accent/15 to-accent/5' },
-                  { label: 'Passeur', player: topAssister, value: `${topAssister?.assists || 0}`, unit: 'passes', Icon: Zap, gradient: 'from-primary/15 to-primary/5' },
-                  { label: 'Assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present}/${topAttendance.attendance!.total}` : '—', unit: 'entraîn.', Icon: Calendar, gradient: 'from-accent/10 to-accent/5' },
-                ].map((kpi, i) => {
-                  const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
-                  const photoURL = member?.photoURL;
-                  const initials = kpi.player?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-                  return (
-                    <div key={i} className={`flex flex-col items-center p-3 bg-gradient-to-b ${kpi.gradient} border border-border/40 rounded-xl text-center`}>
-                      <div className="relative mb-2">
-                        {photoURL ? (
-                          <img src={photoURL} alt="" className="w-11 h-11 rounded-xl object-cover ring-1 ring-border/50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        ) : (
-                          <div className="w-11 h-11 rounded-xl bg-secondary flex items-center justify-center ring-1 ring-border/50">
-                            <span className="text-xs font-bold text-foreground">{initials}</span>
-                          </div>
-                        )}
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-background border border-border/50 flex items-center justify-center shadow-sm">
-                          <kpi.Icon size={10} className="text-accent" />
+            {/* ── Player Detail View ── */}
+            {selectedPlayerId && (() => {
+              const sp = players.find(p => p.id === selectedPlayerId);
+              if (!sp) return null;
+              const spAttendance = calculateAttendanceRate(sp.id);
+              const spDiscipline = getDisciplineScore(sp.id);
+              const spCards = filteredCards.filter(c => c.playerId === sp.id);
+              const spMember = members.find(m => m.playerId === sp.id);
+              const spGoals = sp.goals || 0;
+              const spAssists = sp.assists || 0;
+              const spMatches = sp.matches || 0;
+              const spAvgGoals = spMatches > 0 ? (spGoals / spMatches).toFixed(2) : '—';
+
+              return (
+                <>
+                  {/* Player header card */}
+                  <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl border border-border/40">
+                    <PlayerAvatar player={sp} members={members} size={48} className="rounded-xl" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-foreground">{sp.name}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] font-medium text-muted-foreground px-2 py-0.5 bg-secondary rounded-md">{sp.position}</span>
+                        {spMember && <RoleBadge role={spMember.role} displayRole={spMember.displayRole} size="sm" subtle />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats grid */}
+                  <div>
+                    <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                      <Activity size={12} className="text-accent" />
+                      Statistiques
+                      <span className="flex-1 h-px bg-border/50" />
+                    </h4>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { icon: Activity, label: 'Matchs', value: spMatches, color: 'text-accent' },
+                        { icon: Target, label: 'Buts', value: spGoals, color: 'text-accent' },
+                        { icon: Zap, label: 'PD', value: spAssists, color: 'text-accent' },
+                        { icon: TrendingUp, label: 'Moy/M', value: spAvgGoals, color: 'text-muted-foreground' },
+                      ].map((s) => (
+                        <div key={s.label} className="flex flex-col items-center p-2.5 bg-secondary/30 border border-border/40 rounded-xl text-center">
+                          <s.icon size={14} className={`${s.color} mb-1`} />
+                          <span className="text-[8px] text-muted-foreground uppercase tracking-wider font-semibold">{s.label}</span>
+                          <span className="text-lg font-black text-foreground leading-tight">{s.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Radar */}
+                  <div>
+                    <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                      <ChartNoAxesCombined size={12} className="text-accent" />
+                      Radar de performance
+                      <span className="flex-1 h-px bg-border/50" />
+                    </h4>
+                    <div className="bg-secondary/30 rounded-xl p-2 border border-border/50">
+                      <PlayerRadarChart
+                        name={sp.name}
+                        goals={spGoals}
+                        assists={spAssists}
+                        matches={spMatches}
+                        attendanceRate={spAttendance?.rate ?? null}
+                        disciplineScore={spDiscipline}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Attendance */}
+                  <div>
+                    <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                      <Calendar size={12} className="text-accent" />
+                      Assiduité entraînements
+                      <span className="flex-1 h-px bg-border/50" />
+                    </h4>
+                    {spAttendance ? (
+                      <div className="bg-secondary/30 rounded-xl p-4 border border-border/40">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-bold text-foreground">{spAttendance.present} / {spAttendance.total}</span>
+                          <span className={`text-sm font-black ${spAttendance.rate >= 80 ? 'text-accent' : spAttendance.rate >= 50 ? 'text-warning' : 'text-destructive'}`}>
+                            {spAttendance.rate.toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="w-full h-2.5 bg-border/50 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${spAttendance.rate >= 80 ? 'bg-accent' : spAttendance.rate >= 50 ? 'bg-warning' : 'bg-destructive'}`}
+                            style={{ width: `${Math.round(spAttendance.rate)}%` }}
+                          />
                         </div>
                       </div>
-                      <div className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">{kpi.label}</div>
-                      <div className="text-xs font-bold text-foreground truncate w-full">{kpi.player?.name.split(' ')[0] || '—'}</div>
-                      <div className="text-lg font-black text-accent leading-tight mt-0.5">{kpi.value}</div>
-                      <div className="text-[8px] text-muted-foreground font-medium">{kpi.unit}</div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground bg-secondary/30 rounded-xl p-3">Aucune donnée de présence</p>
+                    )}
+                  </div>
+
+                  {/* Discipline / Cards */}
+                  <div>
+                    <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                      <Shield size={12} className="text-accent" />
+                      Discipline ({spDiscipline}%)
+                      <span className="flex-1 h-px bg-border/50" />
+                    </h4>
+                    {spCards.length === 0 ? (
+                      <div className="flex items-center gap-2 py-2.5 px-3 bg-secondary/30 rounded-xl border border-border/40">
+                        <Check size={14} className="text-accent" />
+                        <p className="text-xs text-muted-foreground font-medium">Aucun carton — Discipline exemplaire</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {spCards.map(card => (
+                          <div key={card.id} className={`flex items-center gap-3 p-2.5 rounded-xl border ${card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'}`}>
+                            <AlertTriangle size={14} className={card.type === 'yellow' ? 'text-warning' : 'text-destructive'} />
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-[10px] font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
+                                {card.type === 'yellow' ? 'JAUNE' : 'ROUGE'}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground ml-2">{new Date(card.date).toLocaleDateString('fr-FR')}</span>
+                              <p className="text-[10px] text-foreground truncate">{card.reason}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* ── Team Overview (when no player selected) ── */}
+            {!selectedPlayerId && (
+              <>
+                {/* Player search/selector */}
+                <div>
+                  <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                    <User size={12} className="text-accent" />
+                    Voir un joueur en détail
+                    <span className="flex-1 h-px bg-border/50" />
+                  </h4>
+                  <div className="relative mb-2">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Rechercher un joueur..."
+                      value={playerSearch}
+                      onChange={(e) => setPlayerSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl bg-secondary/50 border border-border/50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30"
+                    />
+                  </div>
+                  {playerSearch.trim() ? (
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {players
+                        .filter(p => p.name.toLowerCase().includes(playerSearch.trim().toLowerCase()))
+                        .map(p => {
+                          const att = calculateAttendanceRate(p.id);
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => { setSelectedPlayerId(p.id); setPlayerSearch(''); }}
+                              className="w-full flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-secondary/50 transition-colors text-left"
+                            >
+                              <PlayerAvatar player={p} members={members} size={32} className="rounded-lg" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-semibold text-foreground truncate">{p.name}</div>
+                                <div className="text-[10px] text-muted-foreground">{p.position}</div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="text-xs font-bold text-foreground">{p.goals || 0} <span className="text-[9px] text-muted-foreground">buts</span></div>
+                                {att && <div className="text-[9px] text-muted-foreground">{att.present}/{att.total} entr.</div>}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      {players.filter(p => p.name.toLowerCase().includes(playerSearch.trim().toLowerCase())).length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-3">Aucun joueur trouvé</p>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {players.slice(0, 8).map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => setSelectedPlayerId(p.id)}
+                          className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-secondary/50 transition-colors"
+                        >
+                          <PlayerAvatar player={p} members={members} size={32} className="rounded-lg" />
+                          <span className="text-[9px] font-medium text-foreground truncate w-full text-center">{p.name.split(' ')[0]}</span>
+                        </button>
+                      ))}
+                      {players.length > 8 && (
+                        <button
+                          onClick={() => setPlayerSearch(' ')}
+                          className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-secondary/50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                            <Users size={14} className="text-muted-foreground" />
+                          </div>
+                          <span className="text-[9px] font-medium text-muted-foreground">+{players.length - 8}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-            {/* ── Section 2 : Présences entraînements ── */}
-            {attendanceStats.length > 0 && (
-              <div>
-                <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                  <BarChart3 size={12} className="text-accent" />
-                  Présences entraînements
-                  <span className="flex-1 h-px bg-border/50" />
-                </h4>
+                {/* ── Section: Tops joueurs ── */}
+                <div>
+                  <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                    <Trophy size={12} className="text-accent" />
+                    Tops joueurs
+                    <span className="flex-1 h-px bg-border/50" />
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: 'Buteur', player: topScorer, value: `${topScorer?.goals || 0}`, unit: 'buts', Icon: Target, gradient: 'from-accent/15 to-accent/5' },
+                      { label: 'Passeur', player: topAssister, value: `${topAssister?.assists || 0}`, unit: 'passes', Icon: Zap, gradient: 'from-primary/15 to-primary/5' },
+                      { label: 'Assidu', player: topAttendance?.player, value: topAttendance ? `${topAttendance.attendance!.present}/${topAttendance.attendance!.total}` : '—', unit: 'entraîn.', Icon: Calendar, gradient: 'from-accent/10 to-accent/5' },
+                    ].map((kpi, i) => {
+                      const member = kpi.player ? members.find(m => m.playerId === kpi.player!.id) : null;
+                      const photoURL = member?.photoURL;
+                      const initials = kpi.player?.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+                      return (
+                        <div
+                          key={i}
+                          className={`flex flex-col items-center p-3 bg-gradient-to-b ${kpi.gradient} border border-border/40 rounded-xl text-center cursor-pointer hover:ring-2 hover:ring-accent/20 transition-all`}
+                          onClick={() => kpi.player && setSelectedPlayerId(kpi.player.id)}
+                        >
+                          <div className="relative mb-2">
+                            {photoURL ? (
+                              <img src={photoURL} alt="" className="w-11 h-11 rounded-xl object-cover ring-1 ring-border/50" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            ) : (
+                              <div className="w-11 h-11 rounded-xl bg-secondary flex items-center justify-center ring-1 ring-border/50">
+                                <span className="text-xs font-bold text-foreground">{initials}</span>
+                              </div>
+                            )}
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-background border border-border/50 flex items-center justify-center shadow-sm">
+                              <kpi.Icon size={10} className="text-accent" />
+                            </div>
+                          </div>
+                          <div className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">{kpi.label}</div>
+                          <div className="text-xs font-bold text-foreground truncate w-full">{kpi.player?.name.split(' ')[0] || '—'}</div>
+                          <div className="text-lg font-black text-accent leading-tight mt-0.5">{kpi.value}</div>
+                          <div className="text-[8px] text-muted-foreground font-medium">{kpi.unit}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                {/* Modern Podium */}
-                {attendanceStats.length >= 3 && (
-                  <div className="relative bg-gradient-to-b from-accent/5 to-transparent rounded-2xl border border-border/40 p-4 pt-5 mb-4 overflow-hidden">
-                    {/* Decorative background */}
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/8 via-transparent to-transparent pointer-events-none" />
-                    
-                    <div className="relative flex items-end justify-center gap-2 sm:gap-4 pb-2">
-                      {[1, 0, 2].map((podiumIdx) => {
-                        const item = attendanceStats[podiumIdx];
-                        if (!item) return null;
-                        const rate = item.attendance!.rate;
-                        const isFirst = podiumIdx === 0;
-                        const member = members.find(m => m.playerId === item.player.id);
-                        const photoURL = member?.photoURL;
-                        const initials = item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                {/* ── Section: Présences entraînements ── */}
+                {attendanceStats.length > 0 && (
+                  <div>
+                    <h4 className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+                      <BarChart3 size={12} className="text-accent" />
+                      Présences entraînements
+                      <span className="flex-1 h-px bg-border/50" />
+                    </h4>
 
-                        // podiumIdx = index in attendanceStats (0=1st, 1=2nd, 2=3rd)
-                        const podiumConfig = [
-                          { rank: 1, medal: '🥇', height: 'h-20', avatarSize: 'w-14 h-14', ringColor: 'ring-accent/50', bg: 'bg-accent/10', textColor: 'text-accent' },
-                          { rank: 2, medal: '🥈', height: 'h-14', avatarSize: 'w-12 h-12', ringColor: 'ring-muted-foreground/30', bg: 'bg-secondary/60', textColor: 'text-muted-foreground' },
-                          { rank: 3, medal: '🥉', height: 'h-10', avatarSize: 'w-11 h-11', ringColor: 'ring-muted-foreground/20', bg: 'bg-secondary/40', textColor: 'text-muted-foreground' },
-                        ][podiumIdx];
-
-                        return (
-                          <div key={item.player.id} className={`flex flex-col items-center flex-1 max-w-[110px] ${podiumIdx === 0 ? 'order-2' : podiumIdx === 1 ? 'order-1' : 'order-3'}`}>
-                            {/* Medal */}
-                            <span className={`text-lg ${isFirst ? 'text-2xl mb-1' : 'mb-0.5'}`}>{podiumConfig.medal}</span>
-                            
-                            {/* Avatar */}
-                            <div className={`relative mb-1.5 ${isFirst ? 'scale-105' : ''}`}>
-                              {photoURL ? (
-                                <img src={photoURL} alt={item.player.name} className={`${podiumConfig.avatarSize} rounded-full object-cover ring-2 ${podiumConfig.ringColor} shadow-md`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                              ) : (
-                                <div className={`${podiumConfig.avatarSize} rounded-full bg-secondary border-2 border-border flex items-center justify-center shadow-md`}>
-                                  <span className={`font-bold text-foreground ${isFirst ? 'text-sm' : 'text-[10px]'}`}>{initials}</span>
+                    {/* Modern Podium */}
+                    {attendanceStats.length >= 3 && (
+                      <div className="relative bg-gradient-to-b from-accent/5 to-transparent rounded-2xl border border-border/40 p-4 pt-5 mb-4 overflow-hidden">
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/8 via-transparent to-transparent pointer-events-none" />
+                        <div className="relative flex items-end justify-center gap-2 sm:gap-4 pb-2">
+                          {[1, 0, 2].map((podiumIdx) => {
+                            const item = attendanceStats[podiumIdx];
+                            if (!item) return null;
+                            const rate = item.attendance!.rate;
+                            const isFirst = podiumIdx === 0;
+                            const member = members.find(m => m.playerId === item.player.id);
+                            const photoURL = member?.photoURL;
+                            const initials = item.player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                            const podiumConfig = [
+                              { rank: 1, medal: '🥇', height: 'h-20', avatarSize: 'w-14 h-14', ringColor: 'ring-accent/50', bg: 'bg-accent/10', textColor: 'text-accent' },
+                              { rank: 2, medal: '🥈', height: 'h-14', avatarSize: 'w-12 h-12', ringColor: 'ring-muted-foreground/30', bg: 'bg-secondary/60', textColor: 'text-muted-foreground' },
+                              { rank: 3, medal: '🥉', height: 'h-10', avatarSize: 'w-11 h-11', ringColor: 'ring-muted-foreground/20', bg: 'bg-secondary/40', textColor: 'text-muted-foreground' },
+                            ][podiumIdx];
+                            return (
+                              <div
+                                key={item.player.id}
+                                className={`flex flex-col items-center flex-1 max-w-[110px] cursor-pointer ${podiumIdx === 0 ? 'order-2' : podiumIdx === 1 ? 'order-1' : 'order-3'}`}
+                                onClick={() => setSelectedPlayerId(item.player.id)}
+                              >
+                                <span className={`text-lg ${isFirst ? 'text-2xl mb-1' : 'mb-0.5'}`}>{podiumConfig.medal}</span>
+                                <div className={`relative mb-1.5 ${isFirst ? 'scale-105' : ''}`}>
+                                  {photoURL ? (
+                                    <img src={photoURL} alt={item.player.name} className={`${podiumConfig.avatarSize} rounded-full object-cover ring-2 ${podiumConfig.ringColor} shadow-md`} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  ) : (
+                                    <div className={`${podiumConfig.avatarSize} rounded-full bg-secondary border-2 border-border flex items-center justify-center shadow-md`}>
+                                      <span className={`font-bold text-foreground ${isFirst ? 'text-sm' : 'text-[10px]'}`}>{initials}</span>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                                <div className={`font-semibold text-foreground text-center truncate w-full ${isFirst ? 'text-xs' : 'text-[10px]'}`}>
+                                  {item.player.name.split(' ')[0]}
+                                </div>
+                                <div className={`font-black ${podiumConfig.textColor} ${isFirst ? 'text-xl' : 'text-base'} leading-tight`}>
+                                  {item.attendance!.present}
+                                </div>
+                                <div className="text-[9px] text-muted-foreground font-medium leading-tight mb-1.5">
+                                  sur {item.attendance!.total} entraîn. ({rate.toFixed(0)}%)
+                                </div>
+                                <div className={`w-full ${podiumConfig.height} rounded-t-xl ${podiumConfig.bg} border border-border/30 border-b-0 flex items-center justify-center`}>
+                                  <span className={`text-xl font-black ${podiumConfig.textColor} opacity-40`}>{podiumConfig.rank}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="h-px bg-border/50 -mx-4" />
+                      </div>
+                    )}
+
+                    {/* Full ranking list */}
+                    <div className="space-y-1.5">
+                      {attendanceStats.map((item, index) => {
+                        const rate = item.attendance!.rate;
+                        const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
+                        const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
+                        return (
+                          <div
+                            key={item.player.id}
+                            className="flex items-center gap-2 p-2.5 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors cursor-pointer"
+                            onClick={() => setSelectedPlayerId(item.player.id)}
+                          >
+                            <div className={`w-6 h-6 rounded-lg ${colorClass} flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0`}>
+                              {index + 1}
                             </div>
-                            
-                            {/* Name */}
-                            <div className={`font-semibold text-foreground text-center truncate w-full ${isFirst ? 'text-xs' : 'text-[10px]'}`}>
-                              {item.player.name.split(' ')[0]}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-semibold text-foreground truncate">{item.player.name}</div>
                             </div>
-                            
-                            {/* Stats */}
-                            <div className={`font-black ${podiumConfig.textColor} ${isFirst ? 'text-xl' : 'text-base'} leading-tight`}>
-                              {item.attendance!.present}
-                            </div>
-                            <div className="text-[9px] text-muted-foreground font-medium leading-tight mb-1.5">
-                              sur {item.attendance!.total} entraîn. ({rate.toFixed(0)}%)
-                            </div>
-                            
-                            {/* Podium bar */}
-                            <div className={`w-full ${podiumConfig.height} rounded-t-xl ${podiumConfig.bg} border border-border/30 border-b-0 flex items-center justify-center`}>
-                              <span className={`text-xl font-black ${podiumConfig.textColor} opacity-40`}>{podiumConfig.rank}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`text-sm font-black ${textColor} w-7 text-right`}>{item.attendance!.present}</span>
+                              <div className="w-16 h-1.5 bg-border/50 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
+                              </div>
+                              <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap w-[4.5rem]">{item.attendance!.present}/{item.attendance!.total} entraîn.</span>
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                    {/* Bottom line */}
-                    <div className="h-px bg-border/50 -mx-4" />
                   </div>
                 )}
-
-                {/* Full ranking list */}
-                <div className="space-y-1.5">
-                  {attendanceStats.map((item, index) => {
-                    const rate = item.attendance!.rate;
-                    const colorClass = rate >= 80 ? 'bg-accent' : rate >= 60 ? 'bg-accent/70' : rate >= 40 ? 'bg-warning' : 'bg-destructive';
-                    const textColor = rate >= 80 ? 'text-accent' : rate >= 60 ? 'text-accent' : rate >= 40 ? 'text-warning' : 'text-destructive';
-                    return (
-                      <div key={item.player.id} className="flex items-center gap-2 p-2.5 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
-                        <div className={`w-6 h-6 rounded-lg ${colorClass} flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0`}>
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-semibold text-foreground truncate">{item.player.name}</div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={`text-sm font-black ${textColor} w-7 text-right`}>{item.attendance!.present}</span>
-                          <div className="w-16 h-1.5 bg-border/50 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all duration-500 ${colorClass}`} style={{ width: `${Math.round(rate)}%` }} />
-                          </div>
-                          <span className="text-[9px] text-muted-foreground text-right whitespace-nowrap w-[4.5rem]">{item.attendance!.present}/{item.attendance!.total} entraîn.</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              </>
             )}
           </div>
         </DialogContent>
