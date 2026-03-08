@@ -188,7 +188,13 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
               <Trophy size={20} className="text-accent" />
             </div>
             <div className="text-left">
-              <div className="text-sm font-bold text-foreground">Performances & Présences</div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-foreground">Performances & Présences</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+                  <Shield size={9} className="text-primary" />
+                  <span className="text-[8px] font-bold text-primary uppercase tracking-wider">Staff</span>
+                </span>
+              </div>
               <div className="text-[10px] text-muted-foreground">KPIs, podium, taux de présence</div>
             </div>
           </div>
