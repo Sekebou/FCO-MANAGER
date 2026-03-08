@@ -570,19 +570,19 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         })}
                         {hiddenCount > 0 && (
                           <div className="flex items-center justify-center">
-                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/50 rounded-full px-3 py-1.5">
-                              <div className="flex -space-x-1.5">
+                            <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground bg-secondary/50 rounded-full px-4 py-2">
+                              <div className="flex -space-x-2">
                                 {matchBets.slice(MAX_VISIBLE, MAX_VISIBLE + 3).map(bet => (
                                   profilePhotos[bet.userId] ? (
-                                    <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-4 h-4 rounded-full object-cover ring-1 ring-secondary" />
+                                    <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-7 h-7 rounded-full object-cover ring-2 ring-secondary" />
                                   ) : (
-                                    <div key={bet.id} className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[7px] font-bold text-muted-foreground ring-1 ring-secondary">
+                                    <div key={bet.id} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground ring-2 ring-secondary">
                                       {bet.userName.charAt(0).toUpperCase()}
                                     </div>
                                   )
                                 ))}
                               </div>
-                              <span>+{hiddenCount} autre{hiddenCount > 1 ? 's' : ''}</span>
+                              <span className="font-medium">+{hiddenCount} autre{hiddenCount > 1 ? 's' : ''}</span>
                             </div>
                           </div>
                         )}
