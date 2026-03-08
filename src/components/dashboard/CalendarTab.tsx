@@ -76,6 +76,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} truncate`}>{event.title}</h4>
+              <StatusBadge status={status} />
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 space-y-0.5">
               <span className="block">{new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}{event.time ? ` à ${event.time}` : ''}</span>
@@ -90,8 +91,7 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
               )}
             </div>
           </div>
-          <div className="flex flex-wrap gap-1.5 items-center shrink-0 justify-end">
-            <StatusBadge status={status} />
+          <div className="flex gap-1.5 items-center shrink-0">
             {event.recurrence === 'recurring' ? (
               <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary">
                 <Repeat className="w-3 h-3" /> Récurrent
