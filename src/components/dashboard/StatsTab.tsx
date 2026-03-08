@@ -148,11 +148,31 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-          <TrendingUp className="text-accent" size={18} />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
+            <TrendingUp className="text-accent" size={18} />
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
         </div>
-        <h2 className="text-lg sm:text-xl font-bold text-foreground">Statistiques</h2>
+        {isCoachOrAdmin && players.length > 0 && (
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => exportAttendanceReport(players, events, attendanceRecords)}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground transition-all"
+              title="Rapport de présences (PDF)"
+            >
+              <Download size={12} /> Présences
+            </button>
+            <button
+              onClick={() => exportSeasonReport(players, events, cards, championships || [], champMatches || [])}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold rounded-lg bg-accent/10 hover:bg-accent/20 text-accent transition-all"
+              title="Bilan saison (PDF)"
+            >
+              <Download size={12} /> Bilan
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Button to open KPI/Attendance modal */}
