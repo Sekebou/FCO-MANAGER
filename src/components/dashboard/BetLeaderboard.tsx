@@ -39,11 +39,13 @@ const BetLeaderboard: React.FC = () => {
       const profileMap: Record<string, { name: string; photo_url: string | null }> = {};
       profiles?.forEach(p => { profileMap[p.id] = { name: p.name, photo_url: p.photo_url }; });
 
-      const result = points.map(p => ({
-        ...p,
-        user_name: profileMap[p.user_id]?.name || 'Joueur',
-        photo_url: profileMap[p.user_id]?.photo_url || null,
-      }));
+      const result = points
+        .map(p => ({
+          ...p,
+          user_name: profileMap[p.user_id]?.name || '',
+          photo_url: profileMap[p.user_id]?.photo_url || null,
+        }))
+        .filter(p => p.user_name && p.user_name !== 'Joueur');
       setEntries(result);
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: result })); } catch {}
       setLoading(false);
