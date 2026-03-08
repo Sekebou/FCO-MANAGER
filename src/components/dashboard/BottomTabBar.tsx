@@ -34,7 +34,8 @@ interface BottomTabBarProps {
   unreadDiscussions?: number;
 }
 
-const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomTabBarProps) => {
+const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions: _unread = 0 }: BottomTabBarProps) => {
+  const unreadDiscussions = 3; // TEMP: demo badge
   const [moreOpen, setMoreOpen] = useState(false);
 
   const handleTap = useCallback((tabId: string) => {
