@@ -26,17 +26,6 @@ export interface Photo {
   uploadedAt: string;
   uploadedBy: string;
   uploaderName: string;
-  likes?: string[];
-}
-
-interface PhotoComment {
-  id: string;
-  photoId: string;
-  authorUid: string;
-  authorName: string;
-  authorPhoto?: string;
-  content: string;
-  createdAt: string;
 }
 
 interface Props {
