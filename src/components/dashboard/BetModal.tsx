@@ -290,10 +290,6 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
                 <Heart size={11} className="text-pink-400 shrink-0" />
                 <span><b className="text-foreground">+1 pt</b> — Liker une actu</span>
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                <Sparkles size={11} className="text-amber-400 shrink-0" />
-                <span><b className="text-foreground">+1 pt/jour</b> — Bonus quotidien</span>
-              </div>
             </div>
           </details>
         </div>
