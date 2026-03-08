@@ -66,8 +66,8 @@ const BetLeaderboard: React.FC = () => {
           <Trophy size={17} className="text-yellow-600" />
         </div>
         <div>
-          <h3 className="font-bold text-foreground text-sm">Classement Parieurs</h3>
-          <p className="text-[11px] text-muted-foreground">Top 10 meilleurs parieurs</p>
+          <h3 className="font-bold text-foreground text-sm">Classement Points</h3>
+          <p className="text-[11px] text-muted-foreground">Top 10 — Le plus de points</p>
         </div>
       </div>
       <div className="divide-y divide-border/20">
