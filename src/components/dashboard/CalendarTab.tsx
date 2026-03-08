@@ -16,15 +16,54 @@ interface Props {
 }
 
 const CalendarTab = ({ events, members, currentUser }: Props) => {
-  const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
-  const sorted = [...events]
-    .filter(e => e.date >= todayStr) // Hide past events (cleaned at midnight)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const future = sorted;
+  const now = new Date();
+  const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
-  const nextEvent = future[0] || null;
+  const sorted = [...events]
+    .filter(e => e.date >= todayStr)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Find closest date (could have multiple events on the same day)
+  const closestDate = sorted[0]?.date || null;
+  const closestEvents = closestDate ? sorted.filter(e => e.date === closestDate) : [];
+  const restEvents = closestDate ? sorted.filter(e => e.date !== closestDate) : [];
+
+  // Determine event status based on date + time
+  const getEventStatus = (event: Event): 'terminé' | 'en cours' | 'à venir' => {
+    if (event.date > todayStr) return 'à venir';
+    if (event.date < todayStr) return 'terminé';
+    // Today: check time
+    if (!event.time) return 'en cours';
+    const [h, m] = event.time.replace('H', ':').replace('h', ':').split(':').map(Number);
+    const eventStart = new Date(now);
+    eventStart.setHours(h || 0, m || 0, 0, 0);
+    const duration = (event.duration || 90) * 60 * 1000;
+    const eventEnd = new Date(eventStart.getTime() + duration);
+    if (now < eventStart) return 'à venir';
+    if (now <= eventEnd) return 'en cours';
+    return 'terminé';
+  };
+
+  const StatusBadge = ({ status }: { status: 'terminé' | 'en cours' | 'à venir' }) => {
+    const styles = {
+      'terminé': 'bg-muted text-muted-foreground',
+      'en cours': 'bg-green-500/15 text-green-600',
+      'à venir': 'bg-accent/10 text-accent',
+    };
+    const labels = {
+      'terminé': 'Terminé',
+      'en cours': '● En cours',
+      'à venir': 'À venir',
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${styles[status]}`}>
+        {labels[status]}
+      </span>
+    );
+  };
 
   const EventCard = ({ event, isPast, highlight }: { event: Event; isPast?: boolean; highlight?: boolean }) => {
+    const status = getEventStatus(event);
     return (
       <div className={`border-l-4 rounded-r-xl transition-all ${
         highlight
@@ -51,7 +90,8 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
               )}
             </div>
           </div>
-          <div className="flex gap-1.5 items-center shrink-0">
+          <div className="flex flex-wrap gap-1.5 items-center shrink-0 justify-end">
+            <StatusBadge status={status} />
             {event.recurrence === 'recurring' ? (
               <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary">
                 <Repeat className="w-3 h-3" /> Récurrent
@@ -89,40 +129,47 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
         <h2 className="text-lg sm:text-xl font-bold text-foreground">Calendrier</h2>
       </div>
 
-      {/* Prochain événement en premier, plus gros */}
-      {nextEvent && (
+      {/* Événements les plus proches (même date) */}
+      {closestEvents.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold mb-2 text-accent uppercase tracking-wider flex items-center gap-1.5">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-60" />
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent" />
             </span>
-            Événement le plus proche
+            {closestEvents.length > 1 ? 'Événements les plus proches' : 'Événement le plus proche'}
           </h3>
-          <EventCard event={nextEvent} highlight />
+          <div className="space-y-2">
+            {closestEvents.map(e => (
+              <EventCard key={e.id} event={e} highlight />
+            ))}
+          </div>
         </div>
       )}
 
       {/* Séparateur */}
-      {nextEvent && future.filter(e => e.id !== nextEvent.id).length > 0 && (
+      {closestEvents.length > 0 && restEvents.length > 0 && (
         <div className="h-px bg-border/60" />
       )}
 
-      <div>
-        <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wider">À venir</h3>
-        {future.filter(e => e.id !== nextEvent?.id).length === 0 ? (
-          <p className="text-muted-foreground italic text-sm">Aucun autre événement planifié</p>
-        ) : (
+      {/* À venir */}
+      {restEvents.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold mb-3 text-accent uppercase tracking-wider">À venir</h3>
           <div className="space-y-2">
-            {future.filter(e => e.id !== nextEvent?.id).map((e, i, arr) => (
+            {restEvents.map((e, i, arr) => (
               <React.Fragment key={e.id}>
                 <EventCard event={e} />
                 {i < arr.length - 1 && <div className="h-px bg-border/30 mx-2" />}
               </React.Fragment>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {sorted.length === 0 && (
+        <p className="text-muted-foreground italic text-sm text-center py-8">Aucun événement à venir</p>
+      )}
     </div>
   );
 };
