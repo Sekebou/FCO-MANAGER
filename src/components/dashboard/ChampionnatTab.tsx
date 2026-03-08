@@ -286,12 +286,12 @@ const ChampionnatTab: React.FC<Props> = ({
       }
     }
 
-    // 2. Check DB cache (24h)
+    // 2. Check DB cache (24h) — skip if force refresh or logos missing
     const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
     const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
 
-    if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
+    if (forceRefreshLive === 0 && teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE && cacheHasLogos(teamChamp.fffLiveCache)) {
       // Use DB cache — zero API calls!
       const cache = teamChamp.fffLiveCache;
       
