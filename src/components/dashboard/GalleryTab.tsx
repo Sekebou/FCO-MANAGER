@@ -126,19 +126,34 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
     }
   };
 
-  // Likes
+  // Likes — optimistic update via onLikesChanged callback
+  const [localLikes, setLocalLikes] = useState<Record<string, string[]>>({});
+
+  const getPhotoLikes = (photo: Photo): string[] => {
+    return localLikes[photo.id] ?? photo.likes ?? [];
+  };
+
   const toggleLike = async (photoId: string) => {
     if (!currentUser) return;
+    // Optimistic update
+    const photo = photos.find(p => p.id === photoId);
+    const currentLikes = localLikes[photoId] ?? photo?.likes ?? [];
+    const uid = currentUser.uid;
+    const newLikes = currentLikes.includes(uid)
+      ? currentLikes.filter(id => id !== uid)
+      : [...currentLikes, uid];
+    setLocalLikes(prev => ({ ...prev, [photoId]: newLikes }));
+    
     try {
       await supabase.rpc('toggle_photo_like', { p_photo_id: photoId });
-      // Optimistic update
-      // The realtime subscription will handle the actual update
     } catch {
+      // Revert on error
+      setLocalLikes(prev => ({ ...prev, [photoId]: currentLikes }));
       toast.error('Erreur');
     }
   };
 
-  const isLiked = (photo: Photo) => currentUser ? (photo.likes || []).includes(currentUser.uid) : false;
+  const isLiked = (photo: Photo) => currentUser ? getPhotoLikes(photo).includes(currentUser.uid) : false;
 
   // Comments
   const loadComments = async (photoId: string) => {
@@ -422,7 +437,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {albumPhotos.map(photo => {
             const liked = isLiked(photo);
-            const likeCount = (photo.likes || []).length;
+            const likeCount = getPhotoLikes(photo).length;
             return (
               <div key={photo.id} className="group relative bg-card border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div className="aspect-square relative overflow-hidden cursor-pointer" onClick={() => openLightbox(photo)}>
@@ -494,7 +509,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${isLiked(lightboxPhoto) ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/70 hover:text-white'}`}
                 >
                   <Heart size={16} className={isLiked(lightboxPhoto) ? 'fill-current' : ''} />
-                  {(lightboxPhoto.likes || []).length > 0 && <span>{(lightboxPhoto.likes || []).length}</span>}
+                  {getPhotoLikes(lightboxPhoto).length > 0 && <span>{getPhotoLikes(lightboxPhoto).length}</span>}
                 </button>
                 <button
                   onClick={() => setShowComments(!showComments)}
@@ -558,7 +573,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                   animate={{ y: 0 }}
                   exit={{ y: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl border-t border-border max-h-[50vh] flex flex-col"
+                  className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl border-t border-border max-h-[60vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
                   onClick={e => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
@@ -602,9 +617,15 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                         ref={commentInputRef}
                         value={commentText}
                         onChange={e => setCommentText(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && addComment(lightboxPhoto.id)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addComment(lightboxPhoto.id); } }}
+                        onFocus={e => e.stopPropagation()}
+                        onMouseDown={e => e.stopPropagation()}
+                        onTouchStart={e => e.stopPropagation()}
                         placeholder="Ajouter un commentaire..."
-                        className="flex-1 px-3 py-2.5 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        className="flex-1 px-3 py-2.5 bg-secondary border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        style={{ fontSize: '16px' }}
+                        autoComplete="off"
+                        enterKeyHint="send"
                       />
                       <button
                         onClick={() => addComment(lightboxPhoto.id)}
