@@ -533,39 +533,62 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                   </motion.div>
 
                   {/* Public pending bets on this match */}
-                  {matchBets.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Paris en cours sur ce match</h3>
-                      {matchBets.map(bet => {
-                        const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
-                        const isMe = bet.userId === currentUser?.uid;
-                        return (
-                          <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
-                            {profilePhotos[bet.userId] ? (
-                              <img src={profilePhotos[bet.userId]!} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-border/30" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                                {bet.userName.charAt(0).toUpperCase()}
+                  {matchBets.length > 0 && (() => {
+                    const MAX_VISIBLE = 4;
+                    const visibleBets = matchBets.slice(0, MAX_VISIBLE);
+                    const hiddenCount = matchBets.length - MAX_VISIBLE;
+                    return (
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Paris en cours sur ce match</h3>
+                        {visibleBets.map(bet => {
+                          const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                          const isMe = bet.userId === currentUser?.uid;
+                          return (
+                            <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
+                              {profilePhotos[bet.userId] ? (
+                                <img src={profilePhotos[bet.userId]!} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-border/30" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                                  {bet.userName.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
+                                  {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds} • Mise {bet.amount}
+                                </p>
                               </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
-                                {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
+                              <div className="text-right shrink-0">
+                                <div className="text-xs font-black text-foreground">→ {Math.round(bet.amount * bet.odds)}</div>
+                                <div className="text-[9px] text-muted-foreground">pts</div>
                               </div>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds} • Mise {bet.amount}
-                              </p>
                             </div>
-                            <div className="text-right shrink-0">
-                              <div className="text-xs font-black text-foreground">→ {Math.round(bet.amount * bet.odds)}</div>
-                              <div className="text-[9px] text-muted-foreground">pts</div>
+                          );
+                        })}
+                        {hiddenCount > 0 && (
+                          <div className="flex items-center justify-center">
+                            <div className="flex items-center gap-2 text-[10px] text-muted-foreground bg-secondary/50 rounded-full px-3 py-1.5">
+                              <div className="flex -space-x-1.5">
+                                {matchBets.slice(MAX_VISIBLE, MAX_VISIBLE + 3).map(bet => (
+                                  profilePhotos[bet.userId] ? (
+                                    <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-4 h-4 rounded-full object-cover ring-1 ring-secondary" />
+                                  ) : (
+                                    <div key={bet.id} className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[7px] font-bold text-muted-foreground ring-1 ring-secondary">
+                                      {bet.userName.charAt(0).toUpperCase()}
+                                    </div>
+                                  )
+                                ))}
+                              </div>
+                              <span>+{hiddenCount} autre{hiddenCount > 1 ? 's' : ''}</span>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    );
+                  })()}
                 </>
               );
             })()}
