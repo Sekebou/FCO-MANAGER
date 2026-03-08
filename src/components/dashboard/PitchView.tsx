@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import type { Convocation } from '@/pages/Dashboard';
 
 interface Player {
