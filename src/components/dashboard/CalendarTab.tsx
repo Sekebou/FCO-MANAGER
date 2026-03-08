@@ -100,15 +100,6 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
             </div>
           </div>
           <div className="flex gap-1.5 items-center shrink-0">
-            {event.recurrence === 'recurring' ? (
-              <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary">
-                <Repeat className="w-3 h-3" /> Récurrent
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted text-muted-foreground">
-                <CircleDot className="w-3 h-3" /> Ponctuel
-              </span>
-            )}
             <span className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium shrink-0 ${
               event.type === 'match' ? 'bg-accent/10 text-accent' :
               event.type === 'training' ? 'bg-purple-100 text-purple-700' :

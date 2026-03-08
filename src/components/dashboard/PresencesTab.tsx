@@ -201,11 +201,6 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               </div>
             </div>
             <div className="flex gap-1 items-center shrink-0">
-              {event.recurrence === 'recurring' && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary inline-flex items-center gap-1">
-                  <Repeat size={10} /> Récurrent
-                </span>
-              )}
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                 event.type === 'match' ? 'bg-accent/10 text-accent' :
                 event.type === 'training' ? 'bg-purple-100 text-purple-700' :
