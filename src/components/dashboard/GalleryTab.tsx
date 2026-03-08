@@ -374,7 +374,7 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
           </div>
       )}
 
-      {/* Lightbox with swipe & comments */}
+      {/* Lightbox with swipe */}
       <AnimatePresence>
         {lightboxPhoto && (
           <motion.div
@@ -386,26 +386,12 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
             onTouchEnd={(e) => { if (e.target === e.currentTarget) setLightboxPhoto(null); }}
           >
             {/* Top bar */}
-            <div className="flex items-center justify-between p-4 shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 shrink-0">
               <div className="text-white/70 text-xs">
                 {lightboxIndex + 1} / {albumPhotos.length}
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => toggleLike(lightboxPhoto.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${isLiked(lightboxPhoto) ? 'bg-red-500/20 text-red-400' : 'bg-white/10 text-white/70 hover:text-white'}`}
-                >
-                  <Heart size={16} className={isLiked(lightboxPhoto) ? 'fill-current' : ''} />
-                  {getPhotoLikes(lightboxPhoto).length > 0 && <span>{getPhotoLikes(lightboxPhoto).length}</span>}
-                </button>
-                <button
-                  onClick={() => setShowComments(!showComments)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${showComments ? 'bg-accent/20 text-accent' : 'bg-white/10 text-white/70 hover:text-white'}`}
-                >
-                  <MessageCircle size={16} />
-                  {comments.length > 0 && <span>{comments.length}</span>}
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDownload(lightboxPhoto); }} className="bg-white/10 hover:bg-white/20 text-white/70 hover:text-white px-3 py-1.5 rounded-full text-sm transition-all">
+                <button onClick={() => handleDownload(lightboxPhoto)} className="bg-white/10 hover:bg-white/20 text-white/70 hover:text-white px-3 py-1.5 rounded-full text-sm transition-all">
                   <Download size={16} />
                 </button>
                 <button className="text-white/70 hover:text-white transition-colors" onClick={() => setLightboxPhoto(null)}>
@@ -436,7 +422,6 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                 src={lightboxPhoto.url} 
                 alt={lightboxPhoto.title || ''} 
                 className="max-w-full max-h-full object-contain rounded-xl"
-                onClick={e => e.stopPropagation()}
               />
               {lightboxIndex < albumPhotos.length - 1 && (
                 <button
@@ -449,86 +434,11 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
             </div>
 
             {/* Bottom info */}
-            <div className="p-4 shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="p-4 shrink-0">
               <div className="text-white/60 text-xs text-center">
                 {lightboxPhoto.uploaderName} • {new Date(lightboxPhoto.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
             </div>
-
-            {/* Comments panel */}
-            <AnimatePresence>
-              {showComments && (
-                <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="absolute bottom-0 left-0 right-0 bg-card rounded-t-2xl border-t border-border max-h-[60vh] flex flex-col pb-[env(safe-area-inset-bottom)]"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-                    <h4 className="text-sm font-bold text-foreground">Commentaires ({comments.length})</h4>
-                    <button onClick={() => setShowComments(false)} className="text-muted-foreground hover:text-foreground">
-                      <X size={18} />
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {loadingComments ? (
-                      <div className="text-center py-4"><Loader2 size={20} className="animate-spin mx-auto text-muted-foreground" /></div>
-                    ) : comments.length === 0 ? (
-                      <p className="text-center text-sm text-muted-foreground py-4">Aucun commentaire</p>
-                    ) : (
-                      comments.map(c => (
-                        <div key={c.id} className="flex gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center shrink-0 text-[10px] font-bold text-accent overflow-hidden">
-                            {c.authorPhoto ? (
-                              <img src={c.authorPhoto} className="w-full h-full object-cover" alt="" />
-                            ) : c.authorName[0]?.toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-foreground">{c.authorName}</span>
-                              <span className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                              {currentUser && (c.authorUid === currentUser.uid || currentUser.role === 'admin+' || currentUser.role === 'admin') && (
-                                <button onClick={() => deleteComment(c.id, lightboxPhoto.id)} className="text-muted-foreground/50 hover:text-destructive ml-auto">
-                                  <Trash2 size={11} />
-                                </button>
-                              )}
-                            </div>
-                            <p className="text-sm text-foreground/80 mt-0.5 break-words">{c.content}</p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  {currentUser && (
-                    <div className="flex gap-2 p-4 border-t border-border shrink-0">
-                      <input
-                        ref={commentInputRef}
-                        value={commentText}
-                        onChange={e => setCommentText(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addComment(lightboxPhoto.id); } }}
-                        onFocus={e => e.stopPropagation()}
-                        onMouseDown={e => e.stopPropagation()}
-                        onTouchStart={e => e.stopPropagation()}
-                        placeholder="Ajouter un commentaire..."
-                        className="flex-1 px-3 py-2.5 bg-secondary border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
-                        style={{ fontSize: '16px' }}
-                        autoComplete="off"
-                        enterKeyHint="send"
-                      />
-                      <button
-                        onClick={() => addComment(lightboxPhoto.id)}
-                        disabled={!commentText.trim()}
-                        className="p-2.5 bg-accent text-accent-foreground rounded-xl disabled:opacity-30 hover:bg-accent/90 transition-all"
-                      >
-                        <Send size={16} />
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
