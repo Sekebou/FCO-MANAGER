@@ -17,7 +17,7 @@ const CACHE_TTL = 15 * 60 * 1000; // 15 min
 
 const BetLeaderboard: React.FC = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>(() => {
-    try { const c = localStorage.getItem(CACHE_KEY); if (c) { const { ts, data } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) return data; } } catch {} return [];
+    try { const c = localStorage.getItem(CACHE_KEY); if (c) { const { ts, data } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) return (data as LeaderboardEntry[]).filter(p => p.user_name && p.user_name !== 'Joueur'); } } catch {} return [];
   });
   const [loading, setLoading] = useState(entries.length === 0);
 
@@ -39,11 +39,13 @@ const BetLeaderboard: React.FC = () => {
       const profileMap: Record<string, { name: string; photo_url: string | null }> = {};
       profiles?.forEach(p => { profileMap[p.id] = { name: p.name, photo_url: p.photo_url }; });
 
-      const result = points.map(p => ({
-        ...p,
-        user_name: profileMap[p.user_id]?.name || 'Joueur',
-        photo_url: profileMap[p.user_id]?.photo_url || null,
-      }));
+      const result = points
+        .map(p => ({
+          ...p,
+          user_name: profileMap[p.user_id]?.name || '',
+          photo_url: profileMap[p.user_id]?.photo_url || null,
+        }))
+        .filter(p => p.user_name && p.user_name !== 'Joueur');
       setEntries(result);
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: result })); } catch {}
       setLoading(false);
@@ -64,8 +66,8 @@ const BetLeaderboard: React.FC = () => {
           <Trophy size={17} className="text-yellow-600" />
         </div>
         <div>
-          <h3 className="font-bold text-foreground text-sm">Classement Parieurs</h3>
-          <p className="text-[11px] text-muted-foreground">Top 10 meilleurs parieurs</p>
+          <h3 className="font-bold text-foreground text-sm">Classement Points</h3>
+          <p className="text-[11px] text-muted-foreground">Top 10 — Le plus de points</p>
         </div>
       </div>
       <div className="divide-y divide-border/20">
