@@ -217,26 +217,47 @@ const ChampionnatTab: React.FC<Props> = ({
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
     const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 min local cache
 
-    // 1. Try localStorage first (fastest, zero cloud calls)
-    try {
-      const cached = localStorage.getItem(LOCAL_CACHE_KEY);
-      if (cached) {
-        const { data: cache, ts } = JSON.parse(cached);
-        if (Date.now() - ts < LOCAL_CACHE_TTL && cache) {
-          if (cache.classement && Array.isArray(cache.classement)) {
-            setLiveClassement(mapClassementToStandings(cache.classement));
-            const logosFromClassement: Record<number, string> = {};
-            for (const entry of cache.classement) { const clNo = entry.equipe?.club?.cl_no; const logo = entry.equipe?.club?.logo; if (clNo && logo) logosFromClassement[clNo] = logo; }
-            setLiveLogos(prev => ({ ...logosFromClassement, ...(cache.logos || {}), ...prev }));
-          } else { setLiveError('Classement non disponible'); }
-          setLiveUpcoming(cache.upcoming || []);
-          setLiveResults(cache.results || []);
-          setIsLoadingLive(false);
-          setIsLoadingMatches(false);
-          return;
-        }
+    // Helper: check if a cache has enough logos (at least 50% of teams)
+    const cacheHasLogos = (cache: any): boolean => {
+      if (!cache?.classement || !Array.isArray(cache.classement)) return false;
+      const totalTeams = cache.classement.length;
+      if (totalTeams === 0) return false;
+      let logosCount = 0;
+      const cacheLogos = cache.logos || {};
+      for (const entry of cache.classement) {
+        const clNo = entry.equipe?.club?.cl_no;
+        const logo = entry.equipe?.club?.logo;
+        if ((clNo && logo) || (clNo && cacheLogos[clNo])) logosCount++;
       }
-    } catch {}
+      return logosCount >= totalTeams * 0.5;
+    };
+
+    // Skip caches if force refresh requested
+    if (forceRefreshLive === 0) {
+      // 1. Try localStorage first (fastest, zero cloud calls)
+      try {
+        const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+        if (cached) {
+          const { data: cache, ts } = JSON.parse(cached);
+          if (Date.now() - ts < LOCAL_CACHE_TTL && cache && cacheHasLogos(cache)) {
+            if (cache.classement && Array.isArray(cache.classement)) {
+              setLiveClassement(mapClassementToStandings(cache.classement));
+              const logosFromClassement: Record<number, string> = {};
+              for (const entry of cache.classement) { const clNo = entry.equipe?.club?.cl_no; const logo = entry.equipe?.club?.logo; if (clNo && logo) logosFromClassement[clNo] = logo; }
+              setLiveLogos(prev => ({ ...logosFromClassement, ...(cache.logos || {}), ...prev }));
+            } else { setLiveError('Classement non disponible'); }
+            setLiveUpcoming(cache.upcoming || []);
+            setLiveResults(cache.results || []);
+            setIsLoadingLive(false);
+            setIsLoadingMatches(false);
+            return;
+          }
+        }
+      } catch {}
+    } else {
+      // Clear local cache on force refresh
+      try { localStorage.removeItem(LOCAL_CACHE_KEY); } catch {}
+    }
 
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
