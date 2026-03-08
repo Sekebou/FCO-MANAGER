@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import type { AppUser } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { 
   Camera, Plus, FolderPlus, Trash2, Download, X, Image, Calendar, 
   ChevronLeft, Upload, Loader2, ZoomIn, FolderOpen, ChevronRight
