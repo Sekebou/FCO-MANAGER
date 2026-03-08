@@ -55,8 +55,9 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
       'en cours': '● En cours',
       'à venir': 'À venir',
     };
+    if (status === 'à venir') return null;
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${styles[status]}`}>
+      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold whitespace-nowrap ${styles[status]}`}>
         {labels[status]}
       </span>
     );
