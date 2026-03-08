@@ -415,11 +415,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className={`relative rounded-2xl overflow-hidden border shadow-sm ${
-                      live ? 'border-red-500/50 ring-1 ring-red-500/30' : 'border-border/60'
+                      live ? 'border-red-500/50 ring-1 ring-red-500/30' : waiting ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-border/60'
                     } bg-card`}
                   >
                     {live && (
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse" />
+                    )}
+                    {waiting && (
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500" />
                     )}
 
                     <div className="px-5 py-5">
