@@ -3,7 +3,7 @@ import type { AppUser } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Camera, Plus, FolderPlus, Trash2, Download, X, Image, Calendar, 
-  ChevronLeft, Upload, Loader2, ZoomIn, FolderOpen, Heart, MessageCircle, Send, ChevronRight
+  ChevronLeft, Upload, Loader2, ZoomIn, FolderOpen, ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
