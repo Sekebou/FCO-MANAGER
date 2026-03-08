@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Coins, X, Sparkles, Star, Zap, Crown, Flame, Heart, Medal, Gem, PartyPopper, CircleDollarSign, Award } from 'lucide-react';
+import { Trophy, Coins, X, Sparkles, Star, Zap, Crown, Flame, Heart, Medal, Gem, PartyPopper, CircleDollarSign, Award, Wallet } from 'lucide-react';
 
 interface WinCelebrationProps {
   totalWon: number;
@@ -9,57 +9,57 @@ interface WinCelebrationProps {
   onClose: () => void;
 }
 
-const CONFETTI_ICONS = [Star, Zap, Crown, Flame, Heart, Medal, Gem, PartyPopper, CircleDollarSign, Award, Trophy, Sparkles];
 const CONFETTI_COLORS = [
-  'text-amber-400', 'text-primary', 'text-accent', 'text-emerald-400',
-  'text-pink-400', 'text-orange-400', 'text-sky-400', 'text-violet-400',
-  'text-yellow-300', 'text-rose-400', 'text-lime-400', 'text-cyan-400',
+  '#FFD700', '#FF6B35', '#00E676', '#2979FF', '#FF4081',
+  '#E040FB', '#FFAB00', '#00BCD4', '#76FF03', '#FF1744',
+  '#651FFF', '#F50057', '#00E5FF', '#AEEA00',
 ];
 
-/** Single confetti icon */
-const ConfettiIcon: React.FC<{ delay: number; left: number; color: string; Icon: React.ElementType; size: number }> = ({ delay, left, color, Icon, size }) => (
+/** Single confetti piece */
+const Confetti: React.FC<{ delay: number; left: number; color: string; size: number }> = ({ delay, left, color, size }) => (
   <motion.div
-    initial={{ y: -30, x: 0, opacity: 1, rotate: 0, scale: 0 }}
+    initial={{ y: -20, x: 0, opacity: 1, rotate: 0, scale: 0 }}
     animate={{
-      y: [0, 500, 800],
-      x: [0, (Math.random() - 0.5) * 180, (Math.random() - 0.5) * 280],
+      y: [0, 600, 900],
+      x: [0, (Math.random() - 0.5) * 200, (Math.random() - 0.5) * 300],
       opacity: [1, 1, 0],
-      rotate: [0, 360 + Math.random() * 540],
-      scale: [0, 1.2, 0.4],
+      rotate: [0, 360 + Math.random() * 720],
+      scale: [0, 1, 0.5],
     }}
     transition={{ duration: 2.5 + Math.random() * 1.5, delay, ease: 'easeOut' }}
-    className={`absolute top-0 pointer-events-none ${color}`}
-    style={{ left: `${left}%` }}
-  >
-    <Icon size={size} strokeWidth={2.5} />
-  </motion.div>
+    className="absolute top-0 pointer-events-none"
+    style={{
+      left: `${left}%`,
+      width: size,
+      height: size * (Math.random() > 0.5 ? 1 : 2.5),
+      backgroundColor: color,
+      borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+    }}
+  />
 );
 
 
 const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, onClose }) => {
   const [show, setShow] = useState(true);
 
-  // Generate confetti icons once
   const confettiPieces = useMemo(() =>
-    Array.from({ length: 60 }, (_, i) => ({
+    Array.from({ length: 80 }, (_, i) => ({
       id: i,
       delay: Math.random() * 0.8,
       left: Math.random() * 100,
       color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      Icon: CONFETTI_ICONS[Math.floor(Math.random() * CONFETTI_ICONS.length)],
-      size: 14 + Math.random() * 10,
+      size: 6 + Math.random() * 8,
     })),
   []);
 
   // Second wave
   const confettiWave2 = useMemo(() =>
-    Array.from({ length: 40 }, (_, i) => ({
+    Array.from({ length: 50 }, (_, i) => ({
       id: i + 100,
       delay: 0.6 + Math.random() * 0.8,
       left: Math.random() * 100,
       color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      Icon: CONFETTI_ICONS[Math.floor(Math.random() * CONFETTI_ICONS.length)],
-      size: 12 + Math.random() * 8,
+      size: 5 + Math.random() * 7,
     })),
   []);
 
@@ -90,8 +90,8 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
 
           {/* Confetti layer */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {confettiPieces.map(c => <ConfettiIcon key={c.id} {...c} />)}
-            {confettiWave2.map(c => <ConfettiIcon key={c.id} {...c} />)}
+            {confettiPieces.map(c => <Confetti key={c.id} {...c} />)}
+            {confettiWave2.map(c => <Confetti key={c.id} {...c} />)}
           </div>
 
           {/* Main card */}
@@ -156,8 +156,8 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <h2 className="text-2xl font-black text-foreground tracking-tight">
-                    🎉 Bravo !
+                  <h2 className="text-2xl font-black text-foreground tracking-tight flex items-center justify-center gap-2">
+                    <PartyPopper size={24} className="text-primary" /> Bravo ! <PartyPopper size={24} className="text-primary" />
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     {matchCount > 1
@@ -198,9 +198,9 @@ const WinCelebration: React.FC<WinCelebrationProps> = ({ totalWon, matchCount, o
                   transition={{ delay: 1.1 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={handleClose}
-                  className="w-full py-3.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-2xl font-bold text-sm shadow-lg shadow-primary/30 hover:brightness-110 transition-all"
+                  className="w-full py-3.5 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-2xl font-bold text-sm shadow-lg shadow-primary/30 hover:brightness-110 transition-all flex items-center justify-center gap-2"
                 >
-                  Encaisser 💰
+                  <Wallet size={16} /> Encaisser
                 </motion.button>
               </div>
             </div>
