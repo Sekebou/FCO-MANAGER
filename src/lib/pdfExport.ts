@@ -215,6 +215,7 @@ export async function exportSeasonReport(
   championships: Championship[],
   matches: Match[]
 ) {
+  await ensureLogo();
   const doc = new jsPDF();
   const now = new Date();
   const seasonYear = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
