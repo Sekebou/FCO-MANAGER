@@ -617,9 +617,15 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
                         ref={commentInputRef}
                         value={commentText}
                         onChange={e => setCommentText(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && addComment(lightboxPhoto.id)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addComment(lightboxPhoto.id); } }}
+                        onFocus={e => e.stopPropagation()}
+                        onMouseDown={e => e.stopPropagation()}
+                        onTouchStart={e => e.stopPropagation()}
                         placeholder="Ajouter un commentaire..."
-                        className="flex-1 px-3 py-2.5 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        className="flex-1 px-3 py-2.5 bg-secondary border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50"
+                        style={{ fontSize: '16px' }}
+                        autoComplete="off"
+                        enterKeyHint="send"
                       />
                       <button
                         onClick={() => addComment(lightboxPhoto.id)}
