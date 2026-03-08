@@ -118,11 +118,8 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
                   const isActive = activeTab === tab.id;
                   const hasUnread = tab.id === 'discussions' && unreadDiscussions > 0;
                   return (
-                    <motion.button
+                    <button
                       key={tab.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04, duration: 0.25 }}
                       onClick={() => handleTap(tab.id)}
                       className={cn(
                         "relative flex flex-col items-center gap-1.5 py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-95",
