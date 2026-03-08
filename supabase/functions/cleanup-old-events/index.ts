@@ -18,35 +18,44 @@ Deno.serve(async (req) => {
     };
 
     // Current time in Europe/Paris
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const currentHour = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' })).getHours();
+    const parisNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+    const todayStr = parisNow.toISOString().split('T')[0];
 
-    // Fetch all past events (match or training) with date < today
+    // Fetch all match/training events up to today
     const eventsRes = await fetch(
-      `${supabaseUrl}/rest/v1/events?date=lt.${today}&type=in.(match,training)&select=id,type,date,presences,time`,
+      `${supabaseUrl}/rest/v1/events?date=lte.${todayStr}&type=in.(match,training)&select=id,type,date,presences,time,duration`,
       { headers }
     );
     if (!eventsRes.ok) throw new Error(`Failed to fetch events: ${await eventsRes.text()}`);
-    const pastEvents = await eventsRes.json();
+    const events = await eventsRes.json();
 
-    // Remove events the next day after 3h du matin (Paris time)
-    const oldEvents = pastEvents.filter((e: any) => {
-      const eventDate = new Date(e.date + 'T00:00:00');
-      const daysSince = Math.floor((now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24));
-      // Delete if more than 1 day old, or exactly 1 day old and it's past 3am
-      return daysSince > 1 || (daysSince === 1 && currentHour >= 3);
+    // Determine which events are terminated
+    const terminatedEvents = events.filter((e: any) => {
+      if (e.date < todayStr) return true; // past days → always terminated
+      // Today: check if event end time has passed
+      if (!e.time) {
+        // No time set → consider terminated after default duration from start of day
+        const duration = (e.duration || 90) * 60 * 1000;
+        const dayStart = new Date(parisNow);
+        dayStart.setHours(0, 0, 0, 0);
+        return parisNow.getTime() > dayStart.getTime() + duration;
+      }
+      const [h, m] = e.time.replace('H', ':').replace('h', ':').split(':').map(Number);
+      const eventStart = new Date(parisNow);
+      eventStart.setHours(h || 0, m || 0, 0, 0);
+      const duration = (e.duration || 90) * 60 * 1000;
+      return parisNow.getTime() > eventStart.getTime() + duration;
     });
 
-    if (oldEvents.length === 0) {
+    if (terminatedEvents.length === 0) {
       return new Response(JSON.stringify({ success: true, deleted: 0, archived: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // 2. Archive presences into attendance_records (if not already there)
+    // Archive presences into attendance_records
     const attendanceRecords: any[] = [];
-    for (const event of oldEvents) {
+    for (const event of terminatedEvents) {
       const presences = event.presences || {};
       for (const [playerId, status] of Object.entries(presences)) {
         if (status && typeof status === 'string') {
@@ -62,9 +71,8 @@ Deno.serve(async (req) => {
     }
 
     if (attendanceRecords.length > 0) {
-      // Use upsert-like approach: insert ignoring duplicates by checking existing
       const existingRes = await fetch(
-        `${supabaseUrl}/rest/v1/attendance_records?event_id=in.(${oldEvents.map((e: any) => e.id).join(',')})&select=event_id,player_id`,
+        `${supabaseUrl}/rest/v1/attendance_records?event_id=in.(${terminatedEvents.map((e: any) => e.id).join(',')})&select=event_id,player_id`,
         { headers }
       );
       const existing = existingRes.ok ? await existingRes.json() : [];
@@ -80,8 +88,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Delete old events
-    const eventIds = oldEvents.map((e: any) => e.id);
+    // Delete terminated events
+    const eventIds = terminatedEvents.map((e: any) => e.id);
     await fetch(
       `${supabaseUrl}/rest/v1/events?id=in.(${eventIds.join(',')})`,
       { method: 'DELETE', headers }

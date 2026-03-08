@@ -587,6 +587,9 @@ const Dashboard = () => {
 
     fetchAll();
 
+    // Trigger cleanup of terminated match/training events (fire & forget)
+    supabase.functions.invoke('cleanup-old-events').catch(() => {});
+
     // Daily bonus removed — was generating too many DB rows
 
     // Detect iOS Capacitor (Realtime WebSocket doesn't work reliably on iOS native)
