@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Bell, Trophy, Ticket, Camera, ClipboardCheck,
@@ -46,6 +46,20 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
 
   const isActiveInMore = moreTabs.some(t => t.id === activeTab);
 
+  // Lock body scroll when more panel is open
+  useEffect(() => {
+    if (moreOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [moreOpen]);
   return (
     <>
       {/* Backdrop overlay */}
@@ -72,7 +86,8 @@ const BottomTabBar = ({ activeTab, onTabChange, unreadDiscussions = 0 }: BottomT
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl overflow-hidden"
+            className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl overflow-hidden touch-none"
+            onTouchMove={(e) => e.stopPropagation()}
             style={{
               background: 'hsl(var(--card))',
               boxShadow: '0 -8px 40px -8px hsl(var(--primary) / 0.2)',
