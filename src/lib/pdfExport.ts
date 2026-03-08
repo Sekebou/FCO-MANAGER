@@ -208,7 +208,7 @@ export async function exportPlayerCard(
 }
 
 // ─── 2. BILAN SAISON ───
-export function exportSeasonReport(
+export async function exportSeasonReport(
   players: Player[],
   events: Event[],
   cards: Card[],
