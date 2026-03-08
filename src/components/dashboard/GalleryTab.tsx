@@ -531,9 +531,12 @@ const GalleryTab = ({ albums, photos, currentUser, canManagePhotos, onCreateAlbu
             {/* Image area with navigation */}
             <div
               className="flex-1 flex items-center justify-center relative min-h-0 px-4"
-              onClick={() => setLightboxPhoto(null)}
+              onMouseDown={(e) => { if (e.target === e.currentTarget) setLightboxPhoto(null); }}
               onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
+              onTouchEnd={(e) => {
+                handleTouchEnd(e);
+                if (e.target === e.currentTarget) setLightboxPhoto(null);
+              }}
             >
               {lightboxIndex > 0 && (
                 <button
