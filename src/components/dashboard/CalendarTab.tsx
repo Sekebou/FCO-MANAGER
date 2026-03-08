@@ -123,23 +123,6 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
           </div>
         )}
       </div>
-      <div className="h-px bg-border/60" />
-
-      <div>
-        <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Passés</h3>
-        {past.length === 0 ? (
-          <p className="text-muted-foreground italic text-sm">Aucun événement passé</p>
-        ) : (
-          <div className="space-y-2">
-            {[...past].reverse().map((e, i, arr) => (
-              <React.Fragment key={e.id}>
-                <EventCard event={e} isPast />
-                {i < arr.length - 1 && <div className="h-px bg-border/30 mx-2" />}
-              </React.Fragment>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 };
