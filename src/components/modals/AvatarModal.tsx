@@ -191,12 +191,12 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
                   <Loader2 size={14} className="animate-spin" /> Chargement...
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <div className="flex-1">
+                <div className="flex gap-2 w-full">
+                  <div className="flex-1 min-w-0">
                     <NativeDatePicker value={licenseExpiry} onChange={setLicenseExpiry} placeholder="Date d'expiration" />
                   </div>
                   <button onClick={handleSaveLicense} disabled={savingLicense}
-                    className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all disabled:opacity-50 text-sm flex items-center gap-1.5">
+                    className="shrink-0 px-3 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-all disabled:opacity-50 text-sm flex items-center gap-1.5">
                     {savingLicense ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                     OK
                   </button>
