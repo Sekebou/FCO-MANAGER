@@ -45,12 +45,16 @@ const App = () => {
             <Route path="/support" element={<Support />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/auth" element={
+              <AuthProvider>
+                <Auth />
+              </AuthProvider>
+            } />
             <Route path="*" element={
               <AuthProvider>
                 <MobileOnlyGuard>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/auth" element={<Auth />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </MobileOnlyGuard>
