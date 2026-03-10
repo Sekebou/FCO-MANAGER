@@ -131,6 +131,41 @@ const Auth = () => {
     }
   };
 
+  const handleRecoverySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (newPassword.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas");
+      return;
+    }
+    setRecoveryLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        if (error.message.includes("weak") || error.message.includes("pwned")) {
+          throw new Error("Ce mot de passe est trop courant. Choisissez-en un plus sécurisé.");
+        }
+        throw error;
+      }
+      setRecoverySuccess(true);
+      toast.success("Mot de passe modifié avec succès !");
+      // Sign out to force re-login with new password
+      await supabase.auth.signOut();
+      setTimeout(() => {
+        setRecoveryMode(false);
+        setRecoverySuccess(false);
+      }, 3000);
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la modification");
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
   return (
     <div className="h-[100dvh] flex relative overflow-hidden">
       {/* Decorative side - blue club */}
