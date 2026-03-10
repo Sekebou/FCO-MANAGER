@@ -30,8 +30,15 @@ const isMobileOrTablet = () => {
  */
 const isAllowed = () => {
   if (isCapacitorNative()) return true;
-  // Allow Lovable preview access
-  if (typeof window !== "undefined" && window.location.search.includes("__lovable_token")) return true;
+  if (typeof window !== "undefined") {
+    // Allow Lovable preview access
+    if (window.location.search.includes("__lovable_token")) return true;
+    // Allow password reset flow (recovery link from email)
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery") || hash.includes("type=magiclink")) return true;
+    // Also allow if on /auth with recovery token in URL
+    if (window.location.pathname === "/auth" && (hash.includes("access_token") || window.location.search.includes("type=recovery"))) return true;
+  }
   return false;
 };
 
