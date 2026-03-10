@@ -362,7 +362,7 @@ const Auth = () => {
                   {loading && "Connexion..."}
                 </button>
               </form>
-            }
+            )}
           </div>
 
           {/* Features description (mobile) - hidden on small screens to fit */}
