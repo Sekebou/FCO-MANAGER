@@ -246,13 +246,59 @@ const Auth = () => {
 
           {/* Header */}
           <div className="mb-4 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
-            <h2 className="text-xl font-bold text-foreground">Connexion</h2>
-            <p className="text-muted-foreground text-xs mt-0.5">Application officielle du Football Club d'Oisemont</p>
+            <h2 className="text-xl font-bold text-foreground">
+              {recoveryMode ? "Nouveau mot de passe" : "Connexion"}
+            </h2>
+            <p className="text-muted-foreground text-xs mt-0.5">
+              {recoveryMode ? "Choisissez votre nouveau mot de passe" : "Application officielle du Football Club d'Oisemont"}
+            </p>
           </div>
 
           {/* Form card */}
           <div className="bg-card rounded-2xl p-5 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
-            {forgotMode ?
+            {recoveryMode ? (
+              recoverySuccess ? (
+                <div className="text-center py-6 space-y-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-success/10 rounded-full border border-success/20">
+                    <Check size={32} className="text-success" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Mot de passe modifié !</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleRecoverySubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nouveau mot de passe</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "newpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <Lock className={`shrink-0 transition-colors duration-200 ${focused === "newpw" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                      <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} onFocus={() => setFocused("newpw")} onBlur={() => setFocused(null)}
+                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        placeholder="Min. 8 caractères" required minLength={8} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confirmer le mot de passe</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "confirmpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <Lock className={`shrink-0 transition-colors duration-200 ${focused === "confirmpw" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                      <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onFocus={() => setFocused("confirmpw")} onBlur={() => setFocused(null)}
+                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        placeholder="Répéter le mot de passe" required minLength={8} />
+                    </div>
+                  </div>
+                  {error && (
+                    <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                      <Shield size={16} className="shrink-0" /> {error}
+                    </div>
+                  )}
+                  <button type="submit" disabled={recoveryLoading}
+                    className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {recoveryLoading ? <><Loader2 className="animate-spin" size={20} /> Modification...</> : <>Modifier le mot de passe <ChevronRight size={18} /></>}
+                  </button>
+                </form>
+              )
+            ) : forgotMode ?
             <form onSubmit={handleForgotPassword} className="space-y-5">
                 <button type="button" onClick={() => {setForgotMode(false);setError("");}}
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2">
