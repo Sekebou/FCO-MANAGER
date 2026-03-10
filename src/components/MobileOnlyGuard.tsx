@@ -33,11 +33,17 @@ const isAllowed = () => {
   if (typeof window !== "undefined") {
     // Allow Lovable preview access
     if (window.location.search.includes("__lovable_token")) return true;
-    // Allow password reset flow (recovery link from email)
+    
+    const fullUrl = window.location.href;
     const hash = window.location.hash;
-    if (hash.includes("type=recovery") || hash.includes("type=magiclink")) return true;
-    // Also allow if on /auth with recovery token in URL
-    if (window.location.pathname === "/auth" && (hash.includes("access_token") || window.location.search.includes("type=recovery"))) return true;
+    const pathname = window.location.pathname;
+    
+    // Allow password reset / recovery flow from email link
+    if (fullUrl.includes("type=recovery") || fullUrl.includes("type=magiclink")) return true;
+    if (hash.includes("access_token")) return true;
+    
+    // Allow /auth page when there's any hash fragment (Supabase auth redirects)
+    if (pathname === "/auth" && hash.length > 1) return true;
   }
   return false;
 };
