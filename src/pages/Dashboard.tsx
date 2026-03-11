@@ -1295,6 +1295,24 @@ const Dashboard = () => {
         album_id: albumId, url, storage_path: path,
         title: file.name.replace(/\.[^/.]+$/, ''), uploaded_by: currentUser!.uid, uploader_name: currentUser!.name,
       });
+      // Optimistically add photo to state so it appears immediately
+      const newPhoto: Photo = {
+        id: crypto.randomUUID(),
+        albumId,
+        url,
+        storagePath: path,
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: currentUser!.uid,
+        uploaderName: currentUser!.name,
+      };
+      setGalleryPhotos(prev => [newPhoto, ...prev]);
+    }
+    // After all uploads, refresh with signed URLs
+    const { data: photosData } = await supabase.from('gallery_photos').select('*');
+    if (photosData) {
+      const mapped = photosData.map(mapPhoto);
+      getSignedPhotoUrls(mapped).then(signed => setGalleryPhotos(signed));
     }
   };
 
