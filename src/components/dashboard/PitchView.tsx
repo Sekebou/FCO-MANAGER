@@ -13,16 +13,16 @@ interface Props {
 }
 
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
-  'Attaquant':          { x: 50, y: 7 },
-  'Ailier gauche':      { x: 14, y: 13 },
-  'Ailier droit':       { x: 86, y: 13 },
-  'Milieu offensif':    { x: 50, y: 27 },
-  'Milieu central':     { x: 50, y: 40 },
-  'Milieu défensif':    { x: 50, y: 50 },
-  'Latéral gauche':     { x: 12, y: 64 },
-  'Latéral droit':      { x: 88, y: 64 },
+  'Attaquant':          { x: 50, y: 10 },
+  'Ailier gauche':      { x: 18, y: 16 },
+  'Ailier droit':       { x: 82, y: 16 },
+  'Milieu offensif':    { x: 50, y: 30 },
+  'Milieu central':     { x: 50, y: 42 },
+  'Milieu défensif':    { x: 50, y: 52 },
+  'Latéral gauche':     { x: 16, y: 64 },
+  'Latéral droit':      { x: 84, y: 64 },
   'Défenseur central':  { x: 50, y: 67 },
-  'Gardien':            { x: 50, y: 88 },
+  'Gardien':            { x: 50, y: 85 },
 };
 
 function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
@@ -42,7 +42,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
       const spread = Math.min(30, 18 * (group.length - 1));
       group.forEach((p, i) => {
         const offset = -spread / 2 + (spread / (group.length - 1)) * i;
-        result.push({ ...p, x: Math.max(8, Math.min(92, base.x + offset)), y: base.y });
+        result.push({ ...p, x: Math.max(14, Math.min(86, base.x + offset)), y: base.y });
       });
     }
   });
