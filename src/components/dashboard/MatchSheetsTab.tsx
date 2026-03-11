@@ -113,13 +113,25 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
             const isExpanded = expandedId === ms.id;
             const isPast = new Date(ms.date) < now;
             const isLocked = !isManager && !isPast;
-            const hasVs = ms.homeTeam && ms.awayTeam;
             const hasScore = ms.homeScore != null && ms.awayScore != null;
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
 
-            // Resolve logos: match sheet → championship lookup
-            const homeLogo = ms.homeLogo || (ms.homeTeam ? getChampLogo(ms.homeTeam) : null);
-            const awayLogo = ms.awayLogo || (ms.awayTeam ? getChampLogo(ms.awayTeam) : null);
+            // Parse home/away from title if awayTeam is missing
+            let resolvedHome = ms.homeTeam || null;
+            let resolvedAway = ms.awayTeam || null;
+            if (!resolvedAway && ms.title) {
+              const vsParts = ms.title.split(/\s+vs\s+/i);
+              if (vsParts.length === 2) {
+                resolvedHome = vsParts[0].trim();
+                resolvedAway = vsParts[1].trim();
+              }
+            }
+
+            const hasVs = resolvedHome && resolvedAway;
+
+            // Resolve logos: match sheet → championship lookup → event
+            const homeLogo = ms.homeLogo || (resolvedHome ? getChampLogo(resolvedHome) : null);
+            const awayLogo = ms.awayLogo || (resolvedAway ? getChampLogo(resolvedAway) : null);
 
             const convokedPlayers = Object.entries(ms.convocations)
               .filter(([, c]) => c.status === 'convoque')
@@ -170,15 +182,15 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
                           {homeLogo ? (
-                            <img src={homeLogo} alt={ms.homeTeam || ''} className="w-11 h-11 object-contain" />
+                            <img src={homeLogo} alt={resolvedHome || ''} className="w-11 h-11 object-contain" />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-[10px] font-black text-primary/60 text-center leading-none">{(ms.homeTeam || '?').slice(0, 3).toUpperCase()}</span>
+                              <span className="text-[10px] font-black text-primary/60 text-center leading-none">{(resolvedHome || '?').slice(0, 3).toUpperCase()}</span>
                             </div>
                           )}
                         </div>
                         <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
-                          {ms.homeTeam?.toLowerCase()}
+                          {resolvedHome?.toLowerCase()}
                         </span>
                       </div>
 
@@ -201,15 +213,15 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
                           {awayLogo ? (
-                            <img src={awayLogo} alt={ms.awayTeam || ''} className="w-11 h-11 object-contain" />
+                            <img src={awayLogo} alt={resolvedAway || ''} className="w-11 h-11 object-contain" />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center">
-                              <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(ms.awayTeam || '?').slice(0, 3).toUpperCase()}</span>
+                              <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(resolvedAway || '?').slice(0, 3).toUpperCase()}</span>
                             </div>
                           )}
                         </div>
                         <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
-                          {ms.awayTeam?.toLowerCase()}
+                          {resolvedAway?.toLowerCase()}
                         </span>
                       </div>
                     </div>
@@ -300,7 +312,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                               <div className="flex items-center justify-center gap-3 py-2">
                                 <div className="flex items-center gap-2">
                                   {homeLogo && <img src={homeLogo} alt="" className="w-5 h-5 object-contain" />}
-                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.homeTeam}</span>
+                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{resolvedHome}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 bg-secondary rounded-lg px-3 py-1.5">
                                   <span className="text-lg font-black text-foreground">{ms.homeScore}</span>
@@ -308,7 +320,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                                   <span className="text-lg font-black text-foreground">{ms.awayScore}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.awayTeam}</span>
+                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{resolvedAway}</span>
                                   {awayLogo && <img src={awayLogo} alt="" className="w-5 h-5 object-contain" />}
                                 </div>
                               </div>
