@@ -5,6 +5,7 @@ import {
   Calendar, Newspaper, BarChart3
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
+import type { MatchSheet } from './MatchSheetsTab';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface HomeTabProps {
@@ -13,6 +14,7 @@ interface HomeTabProps {
   players: Player[];
   news: NewsItem[];
   members: Member[];
+  matchSheets?: MatchSheet[];
   onNavigate: (tab: string, eventId?: string) => void;
 }
 
@@ -28,7 +30,7 @@ function getGreeting(): string {
   return 'Bonsoir';
 }
 
-const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, members, onNavigate }) => {
+const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, members, matchSheets = [], onNavigate }) => {
   const isCoach = currentUser && ['admin+', 'admin', 'entraineur'].includes(currentUser.role);
 
   const today = new Date();
@@ -43,6 +45,14 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   const nextMatches = useMemo(() => upcomingEvents.filter(e => e.type === 'match').slice(0, 3), [upcomingEvents]);
   const nextTrainings = useMemo(() => upcomingEvents.filter(e => e.type === 'training').slice(0, 2), [upcomingEvents]);
 
+  // Recent results: past match sheets with scores
+  const recentResults = useMemo(() =>
+    matchSheets
+      .filter(ms => ms.homeScore != null && ms.awayScore != null)
+      .slice(0, 3),
+    [matchSheets]
+  );
+
   const myPlayer = useMemo(() => {
     if (!currentUser?.playerId) return null;
     return players.find(p => p.id === currentUser.playerId) || null;
@@ -52,6 +62,15 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   const totalPlayers = players.length;
 
   const initials = currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+
+  // Managers go to matchsheets, players go to presences
+  const handleMatchClick = (matchId: string) => {
+    if (isCoach) {
+      onNavigate('matchsheets');
+    } else {
+      onNavigate('presences', matchId);
+    }
+  };
 
   return (
     <div className="space-y-4 pb-6">
@@ -108,7 +127,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         </div>
       )}
 
-      {/* ── Next Matches (VS style with logos) ── */}
+      {/* ── Next Matches ── */}
       {nextMatches.length > 0 && (
         <div>
           <SectionHeader icon={Trophy} title={`Prochain${nextMatches.length > 1 ? 's' : ''} match${nextMatches.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
@@ -116,7 +135,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
             {nextMatches.map((match) => (
               <button
                 key={match.id}
-                onClick={() => onNavigate('presences', match.id)}
+                onClick={() => handleMatchClick(match.id)}
                 className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
               >
                 <div className="flex items-center gap-3">
@@ -149,6 +168,58 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 </div>
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Recent Results ── */}
+      {recentResults.length > 0 && (
+        <div>
+          <SectionHeader icon={BarChart3} title="Derniers résultats" onAction={() => onNavigate('matchsheets')} actionLabel="Voir tout" />
+          <div className="space-y-2">
+            {recentResults.map((ms) => {
+              const vsParts = ms.title.split(/\s+vs\s+/i);
+              const home = ms.homeTeam || (vsParts.length === 2 ? vsParts[0].trim() : ms.title);
+              const away = ms.awayTeam || (vsParts.length === 2 ? vsParts[1].trim() : '');
+              const homeLogo = ms.homeLogo;
+              const awayLogo = ms.awayLogo;
+              const isWin = ms.homeScore != null && ms.awayScore != null && ms.homeScore > ms.awayScore;
+              const isDraw = ms.homeScore === ms.awayScore;
+              const resultColor = isWin ? 'text-emerald-500' : isDraw ? 'text-amber-500' : 'text-destructive';
+              const resultBg = isWin ? 'bg-emerald-500/10' : isDraw ? 'bg-amber-500/10' : 'bg-destructive/10';
+
+              return (
+                <button
+                  key={ms.id}
+                  onClick={() => onNavigate('matchsheets')}
+                  className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      {homeLogo ? (
+                        <img src={homeLogo} alt="" className="w-7 h-7 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                      ) : (
+                        <Trophy size={18} className="text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-foreground truncate">
+                        {away ? `${home} vs ${away}` : ms.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Calendar size={10} /> {formatDate(ms.date)}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${resultColor} ${resultBg} px-1.5 py-0.5 rounded-md`}>
+                          {ms.homeScore} - {ms.awayScore}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
