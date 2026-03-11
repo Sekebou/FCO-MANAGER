@@ -31,10 +31,11 @@ function getGreeting(): string {
 const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, members, onNavigate }) => {
   const isCoach = currentUser && ['admin+', 'admin', 'entraineur'].includes(currentUser.role);
 
-  const now = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const upcomingEvents = useMemo(() =>
     events
-      .filter(e => new Date(e.date) >= now)
+      .filter(e => new Date(e.date) >= today)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [events]
   );
