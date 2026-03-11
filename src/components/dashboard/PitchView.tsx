@@ -49,6 +49,49 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
   return result;
 }
 
+/** Inline SVG jersey icon */
+const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected?: boolean }> = ({ number, isGk, isSelected }) => (
+  <svg viewBox="0 0 40 44" width="36" height="40" className={`drop-shadow-lg transition-transform ${isSelected ? 'scale-110' : ''}`}>
+    {/* Jersey shape */}
+    <path
+      d={`
+        M 8 0
+        L 0 8
+        L 0 16
+        L 6 14
+        L 6 42
+        Q 6 44 8 44
+        L 32 44
+        Q 34 44 34 42
+        L 34 14
+        L 40 16
+        L 40 8
+        L 32 0
+        L 26 6
+        Q 23 9 20 9
+        Q 17 9 14 6
+        Z
+      `}
+      fill={isGk ? 'hsl(85 60% 45%)' : 'hsl(230 50% 22%)'}
+      stroke={isSelected ? 'hsl(45 100% 60%)' : 'rgba(255,255,255,0.3)'}
+      strokeWidth={isSelected ? 2 : 0.8}
+    />
+    {/* Number */}
+    <text
+      x="20"
+      y="30"
+      textAnchor="middle"
+      fill="white"
+      fontSize="16"
+      fontWeight="800"
+      fontFamily="system-ui, sans-serif"
+      style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+    >
+      {number}
+    </text>
+  </svg>
+);
+
 const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
 
@@ -66,51 +109,53 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
   const selected = selectedPlayer ? positioned.find(p => p.id === selectedPlayer) : null;
 
   return (
-    <div>
+    <div ref={ref}>
       <div
-        className="relative w-full max-w-sm mx-auto rounded-xl overflow-hidden border border-border"
-        style={{ aspectRatio: '68 / 52.5' }}
+        className="relative w-full max-w-sm mx-auto rounded-2xl overflow-hidden border border-border/50 shadow-lg"
+        style={{ aspectRatio: '9 / 13' }}
         onClick={() => setSelectedPlayer(null)}
       >
-        {/* Vertical grass stripes */}
-        <div className="absolute inset-0 flex">
-          {[...Array(10)].map((_, i) => (
+        {/* Horizontal grass stripes */}
+        <div className="absolute inset-0 flex flex-col">
+          {[...Array(16)].map((_, i) => (
             <div
               key={i}
-              className="h-full"
+              className="w-full"
               style={{
                 flex: 1,
-                backgroundColor: i % 2 === 0 ? 'hsl(142 40% 38%)' : 'hsl(142 40% 33%)',
+                backgroundColor: i % 2 === 0 ? 'hsl(120 35% 42%)' : 'hsl(120 35% 37%)',
               }}
             />
           ))}
         </div>
 
         {/* Half-pitch markings */}
-        <svg viewBox="0 0 68 52.5" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
+        <svg viewBox="0 0 68 95" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
           {/* Outline */}
-          <rect x="1" y="0" width="66" height="51.5" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
+          <rect x="3" y="2" width="62" height="91" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.5" rx="0.5" />
           {/* Midfield line (top) */}
-          <line x1="1" y1="0.5" x2="67" y2="0.5" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
-          {/* Center circle (half) - visible arc going downward */}
-          <path d="M 24.85 0.5 A 9.15 9.15 0 0 1 43.15 0.5" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5" />
-          {/* Center spot on the line */}
-          <circle cx="34" cy="0.5" r="0.6" fill="rgba(255,255,255,0.7)" />
+          <line x1="3" y1="2.5" x2="65" y2="2.5" stroke="rgba(255,255,255,0.45)" strokeWidth="0.5" />
+          {/* Center circle (half) */}
+          <path d="M 24.85 2.5 A 9.15 9.15 0 0 1 43.15 2.5" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.5" />
+          {/* Center spot */}
+          <circle cx="34" cy="2.5" r="0.6" fill="rgba(255,255,255,0.6)" />
           {/* Penalty area */}
-          <rect x="13.84" y="35" width="40.32" height="16.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
+          <rect x="13.84" y="68" width="40.32" height="25" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
           {/* Goal area */}
-          <rect x="22.14" y="46" width="23.72" height="5.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
+          <rect x="22.14" y="82" width="23.72" height="11" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
           {/* Penalty spot */}
-          <circle cx="34" cy="40" r="0.5" fill="rgba(255,255,255,0.5)" />
+          <circle cx="34" cy="74" r="0.5" fill="rgba(255,255,255,0.4)" />
           {/* Penalty arc */}
-          <path d="M 25 35 A 9.15 9.15 0 0 0 43 35" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
+          <path d="M 25 68 A 9.15 9.15 0 0 0 43 68" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
           {/* Goal */}
-          <rect x="27" y="51.5" width="14" height="2" rx="0.3" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" />
+          <rect x="27" y="93" width="14" height="2.5" rx="0.3" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.5" />
         </svg>
 
         {/* Players */}
         {positioned.map(p => {
           const isSelected = selectedPlayer === p.id;
+          const isGk = p.conv.position === 'Gardien';
+          const lastName = p.name.split(' ').pop() || p.name;
           return (
             <div
               key={p.id}
@@ -118,15 +163,13 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
               onClick={(e) => { e.stopPropagation(); setSelectedPlayer(isSelected ? null : p.id); }}
             >
-              <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm transition-all border-2 ${
-                isSelected 
-                  ? 'bg-primary text-primary-foreground border-primary shadow-lg scale-110' 
-                  : 'bg-accent text-accent-foreground border-accent/50 shadow-md hover:scale-105'
-              }`}>
-                {p.conv.number || '?'}
-              </div>
-              <span className="mt-0.5 text-[9px] sm:text-[10px] font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.7)] text-center leading-tight max-w-[60px] truncate">
-                {p.name.split(' ').pop()}
+              <JerseyIcon
+                number={p.conv.number || '?'}
+                isGk={isGk}
+                isSelected={isSelected}
+              />
+              <span className="mt-0.5 text-[9px] sm:text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)] text-center leading-tight max-w-[65px] truncate">
+                {lastName}
               </span>
             </div>
           );
@@ -135,17 +178,17 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
         {/* Player detail popup */}
         {selected && (
           <div
-            className="absolute z-20 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl p-3 min-w-[140px] -translate-x-1/2 animate-fade-in"
+            className="absolute z-20 bg-popover/95 text-popover-foreground border border-border rounded-xl shadow-2xl p-3 min-w-[150px] -translate-x-1/2 animate-fade-in backdrop-blur-sm"
             style={{
-              left: `${Math.max(20, Math.min(80, selected.x))}%`,
-              top: `${Math.max(0, selected.y - 22)}%`,
+              left: `${Math.max(22, Math.min(78, selected.x))}%`,
+              top: `${Math.max(2, selected.y - 18)}%`,
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <p className="font-bold text-sm">{selected.name}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{selected.conv.position}</p>
             {selected.conv.number && (
-              <p className="text-xs font-semibold text-accent mt-0.5">N° {selected.conv.number}</p>
+              <p className="text-xs font-semibold text-primary mt-0.5">N° {selected.conv.number}</p>
             )}
           </div>
         )}
