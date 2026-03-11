@@ -28,7 +28,7 @@ function getGreeting(): string {
   return 'Bonsoir';
 }
 
-const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, members, matchSheets = [], onNavigate }) => {
+const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, members, onNavigate }) => {
   const isCoach = currentUser && ['admin+', 'admin', 'entraineur'].includes(currentUser.role);
 
   const today = new Date();
