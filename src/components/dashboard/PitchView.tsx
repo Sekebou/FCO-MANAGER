@@ -112,13 +112,23 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
         stroke={isGk ? 'rgba(255,255,255,0.3)' : 'hsl(225 70% 45%)'}
         strokeWidth="0.8"
       />
+      {/* Club logo */}
+      <image
+        href="/logo.png"
+        x="10"
+        y="12"
+        width="10"
+        height="10"
+        opacity={0.85}
+        style={{ filter: 'drop-shadow(0 0.5px 1px rgba(0,0,0,0.2))' }}
+      />
       {/* Number */}
       <text
         x="20"
         y="31"
         textAnchor="middle"
         fill={isGk ? 'white' : 'hsl(225 80% 35%)'}
-        fontSize="15"
+        fontSize="14"
         fontWeight="900"
         fontFamily="system-ui, -apple-system, sans-serif"
         letterSpacing="0.5"
