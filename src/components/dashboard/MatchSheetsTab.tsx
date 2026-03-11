@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Eye } from 'lucide-react';
+import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
 import type { Convocation, Player } from '@/pages/Dashboard';
+import type { Championship } from './ChampionnatTab';
 
 export interface MatchSheet {
   id: string;
@@ -28,6 +29,7 @@ interface Props {
   matchSheets: MatchSheet[];
   players: Player[];
   isManager?: boolean;
+  championships?: Championship[];
 }
 
 const teamColors: Record<string, string> = {
@@ -36,11 +38,22 @@ const teamColors: Record<string, string> = {
   C: 'bg-amber-500/15 text-amber-500 border-amber-500/30',
 };
 
-const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false }) => {
+const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [] }) => {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const now = new Date();
+
+  // Build a logo lookup from championships teamLogos
+  const getChampLogo = (teamName: string): string | null => {
+    if (!teamName) return null;
+    for (const champ of championships) {
+      if (!champ.teamLogos) continue;
+      const logo = champ.teamLogos[teamName.toUpperCase()] || champ.teamLogos[teamName];
+      if (logo) return logo;
+    }
+    return null;
+  };
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -102,9 +115,11 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
             const isLocked = !isManager && !isPast;
             const hasVs = ms.homeTeam && ms.awayTeam;
             const hasScore = ms.homeScore != null && ms.awayScore != null;
-            // Composition is available if not locked and has convocations
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
-            const compositionAvailable = !isLocked && hasConvocations;
+
+            // Resolve logos: match sheet → championship lookup
+            const homeLogo = ms.homeLogo || (ms.homeTeam ? getChampLogo(ms.homeTeam) : null);
+            const awayLogo = ms.awayLogo || (ms.awayTeam ? getChampLogo(ms.awayTeam) : null);
 
             const convokedPlayers = Object.entries(ms.convocations)
               .filter(([, c]) => c.status === 'convoque')
@@ -119,12 +134,11 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                 key={ms.id}
                 className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm"
               >
-                {/* Card Header — VS style */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : ms.id)}
                   className="w-full text-left relative"
                 >
-                  {/* Gradient accent strip at top */}
+                  {/* Gradient accent strip */}
                   <div className="h-1 w-full bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
 
                   {/* Top meta bar */}
@@ -145,23 +159,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Green pulse dot for available composition */}
-                      {compositionAvailable && !isExpanded && (
-                        <div className="relative flex items-center gap-1">
-                          <span className="relative flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
-                          </span>
-                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wide hidden min-[340px]:inline">Compo</span>
-                        </div>
-                      )}
-                      {isLocked ? (
-                        <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-                          <Lock size={12} className="text-muted-foreground" />
-                        </div>
-                      ) : (
-                        isExpanded ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />
-                      )}
+                      {isExpanded ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
                     </div>
                   </div>
 
@@ -171,8 +169,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       {/* Home */}
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
-                          {ms.homeLogo ? (
-                            <img src={ms.homeLogo} alt={ms.homeTeam || ''} className="w-11 h-11 object-contain" />
+                          {homeLogo ? (
+                            <img src={homeLogo} alt={ms.homeTeam || ''} className="w-11 h-11 object-contain" />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
                               <span className="text-[10px] font-black text-primary/60 text-center leading-none">{(ms.homeTeam || '?').slice(0, 3).toUpperCase()}</span>
@@ -202,8 +200,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       {/* Away */}
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
-                          {ms.awayLogo ? (
-                            <img src={ms.awayLogo} alt={ms.awayTeam || ''} className="w-11 h-11 object-contain" />
+                          {awayLogo ? (
+                            <img src={awayLogo} alt={ms.awayTeam || ''} className="w-11 h-11 object-contain" />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center">
                               <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(ms.awayTeam || '?').slice(0, 3).toUpperCase()}</span>
@@ -216,7 +214,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       </div>
                     </div>
                   ) : (
-                    /* ── Simple title layout ── */
                     <div className="flex items-center gap-3 px-4 py-3">
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                         <Trophy size={20} className="text-primary" />
@@ -225,22 +222,45 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     </div>
                   )}
 
-                  {/* Location + convoked count bottom bar */}
+                  {/* Bottom bar: location + status badge */}
                   <div className="flex items-center justify-between px-4 pb-3 -mt-0.5">
-                    {ms.location ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <MapPin size={9} /> <span className="truncate capitalize max-w-[160px]">{ms.location.toLowerCase()}</span>
-                      </span>
-                    ) : <span />}
+                    <div className="flex items-center gap-2">
+                      {ms.location && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <MapPin size={9} /> <span className="truncate capitalize max-w-[140px]">{ms.location.toLowerCase()}</span>
+                        </span>
+                      )}
+                    </div>
+                    {/* Status badge: orange locked / green available */}
                     {hasConvocations && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
-                        <Users size={9} /> {convokedPlayers.length} convoqué{convokedPlayers.length > 1 ? 's' : ''}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {isLocked ? (
+                          <>
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                            </span>
+                            <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wide">
+                              Composition après match
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                            </span>
+                            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wide">
+                              Composition disponible
+                            </span>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 </button>
 
-                {/* Expanded: pitch + info */}
+                {/* Expanded content */}
                 <AnimatePresence initial={false}>
                   {isExpanded && (
                     <motion.div
@@ -251,7 +271,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       className="border-t border-border overflow-hidden"
                     >
                       <div className={`p-4 relative ${isLocked ? 'select-none' : ''}`}>
-                        {/* Lock overlay */}
                         {isLocked && (
                           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/60 backdrop-blur-sm rounded-b-2xl">
                             <Lock size={28} className="text-muted-foreground mb-2" />
@@ -280,7 +299,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                             {hasScore && hasVs && (
                               <div className="flex items-center justify-center gap-3 py-2">
                                 <div className="flex items-center gap-2">
-                                  {ms.homeLogo && <img src={ms.homeLogo} alt="" className="w-5 h-5 object-contain" />}
+                                  {homeLogo && <img src={homeLogo} alt="" className="w-5 h-5 object-contain" />}
                                   <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.homeTeam}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 bg-secondary rounded-lg px-3 py-1.5">
@@ -290,7 +309,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.awayTeam}</span>
-                                  {ms.awayLogo && <img src={ms.awayLogo} alt="" className="w-5 h-5 object-contain" />}
+                                  {awayLogo && <img src={awayLogo} alt="" className="w-5 h-5 object-contain" />}
                                 </div>
                               </div>
                             )}
