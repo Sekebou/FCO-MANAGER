@@ -700,6 +700,45 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Min players alert modal */}
+        <AnimatePresence>
+          {showMinPlayersAlert && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[80] flex items-center justify-center px-6"
+              onClick={() => setShowMinPlayersAlert(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.85, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="bg-card rounded-2xl border border-border shadow-2xl p-6 w-full max-w-sm text-center"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="w-14 h-14 bg-warning/15 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Users size={28} className="text-warning" />
+                </div>
+                <h3 className="font-bold text-lg text-foreground mb-2">Convocations indisponibles</h3>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Il faut au minimum <span className="font-bold text-foreground">11 joueurs présents</span> pour pouvoir gérer les convocations.
+                </p>
+                <p className="text-xs text-muted-foreground/70 mb-5">
+                  Actuellement : <span className="font-semibold text-warning">{minPlayersCount} présent{minPlayersCount > 1 ? 's' : ''}</span> sur 11 requis
+                </p>
+                <button
+                  onClick={() => setShowMinPlayersAlert(false)}
+                  className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-all"
+                >
+                  Compris
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
