@@ -144,7 +144,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
         onClick={() => setSelectedPlayer(null)}
       >
         {/* Horizontal grass stripes with subtle gradient */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 rounded-2xl overflow-hidden">
           {[...Array(18)].map((_, i) => (
             <div
               key={i}
