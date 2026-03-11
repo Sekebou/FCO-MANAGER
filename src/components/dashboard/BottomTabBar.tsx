@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Bell, Trophy, Ticket, Camera, ClipboardCheck,
   TrendingUp, Calendar, UserCheck, MessageCircle, Plus, X,
-  Settings2, GripVertical, ArrowLeftRight
+  Settings2, GripVertical, ArrowLeftRight, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
