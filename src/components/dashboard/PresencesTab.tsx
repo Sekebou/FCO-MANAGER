@@ -333,11 +333,18 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         )}
 
         {/* Convocation button - BELOW reminder, for match events */}
-        {event.type === 'match' && !isEventPast(event) && !event.convocationsPublished && canManage() && (
-          <button onClick={() => startConvocationMode(event.id, event)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 text-sm font-semibold transition-all border border-accent/20">
-            <Shield size={14} /> Gérer les convocations
-          </button>
-        )}
+        {event.type === 'match' && !isEventPast(event) && !event.convocationsPublished && canManage() && (() => {
+          const presentCount2 = Object.values(event.presences || {}).filter(p => p === 'present').length;
+          return presentCount2 >= 11 ? (
+            <button onClick={() => startConvocationMode(event.id, event)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 text-sm font-semibold transition-all border border-accent/20">
+              <Shield size={14} /> Gérer les convocations
+            </button>
+          ) : (
+            <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-muted/60 text-muted-foreground text-sm font-medium border border-border/50">
+              <Shield size={14} className="opacity-50" /> Impossible de convoquer — moins de 11 présents ({presentCount2}/11)
+            </div>
+          );
+        })()}
 
         {/* Past event banner */}
         {isEventPast(event) && (
