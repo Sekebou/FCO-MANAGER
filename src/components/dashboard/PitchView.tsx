@@ -66,8 +66,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
   const selected = selectedPlayer ? positioned.find(p => p.id === selectedPlayer) : null;
 
   return (
-    <div className="mt-4">
-      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Composition</h4>
+    <div>
       <div
         className="relative w-full max-w-sm mx-auto rounded-xl overflow-hidden border border-border"
         style={{ aspectRatio: '68 / 52.5' }}
