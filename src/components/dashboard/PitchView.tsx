@@ -192,50 +192,86 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
 
         {/* Corner flags with wind animation */}
         {[
-          { x: '5%', y: '1%' },
-          { x: '93%', y: '1%' },
-          { x: '5%', y: '95%' },
-          { x: '93%', y: '95%' },
+          { x: '4%', y: '0.5%', flip: false },
+          { x: '89%', y: '0.5%', flip: true },
+          { x: '4%', y: '92%', flip: false },
+          { x: '89%', y: '92%', flip: true },
         ].map((pos, i) => (
-          <div key={`flag-${i}`} className="absolute" style={{ left: pos.x, top: pos.y, zIndex: 5 }}>
+          <div key={`flag-${i}`} className="absolute" style={{ left: pos.x, top: pos.y, zIndex: 15 }}>
             {/* Pole */}
-            <div className="w-[2px] h-[18px] bg-white/60 rounded-full mx-auto" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
-            {/* Flag with wind keyframes */}
+            <div
+              className="rounded-full mx-auto"
+              style={{
+                width: 3,
+                height: 32,
+                background: 'linear-gradient(to bottom, hsl(45 90% 75%), hsl(35 60% 50%))',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
+              }}
+            />
+            {/* Flag with wind animation */}
             <motion.div
-              className="absolute -top-[1px] left-[2px] origin-left"
+              className="absolute top-[1px]"
+              style={{
+                left: pos.flip ? 'auto' : 3,
+                right: pos.flip ? 3 : 'auto',
+                transformOrigin: pos.flip ? 'right top' : 'left top',
+                transform: pos.flip ? 'scaleX(-1)' : undefined,
+              }}
               animate={{
-                rotateZ: [0, 8, -4, 6, -2, 0],
-                scaleX: [1, 1.08, 0.95, 1.05, 0.98, 1],
-                skewY: [0, 3, -2, 2, -1, 0],
+                rotateZ: [0, 15, -8, 12, -5, 0],
+                scaleX: [1, 1.15, 0.9, 1.1, 0.95, 1],
               }}
               transition={{
-                duration: 2.5 + i * 0.3,
+                duration: 1.8 + i * 0.2,
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
             >
-              <svg width="14" height="10" viewBox="0 0 14 10">
+              <svg width="26" height="18" viewBox="0 0 26 18">
                 <defs>
-                  <linearGradient id={`flag-g-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="hsl(0 80% 50%)" />
-                    <stop offset="100%" stopColor="hsl(0 70% 40%)" />
+                  <linearGradient id={`flag-g-${i}`} x1="0%" y1="0%" x2="100%" y2="50%">
+                    <stop offset="0%" stopColor="hsl(0 85% 55%)" />
+                    <stop offset="50%" stopColor="hsl(0 80% 48%)" />
+                    <stop offset="100%" stopColor="hsl(0 70% 38%)" />
                   </linearGradient>
+                  <filter id={`flag-shadow-${i}`}>
+                    <feDropShadow dx="1" dy="1" stdDeviation="1" floodOpacity="0.3" />
+                  </filter>
                 </defs>
                 <motion.path
-                  d="M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z"
                   fill={`url(#flag-g-${i})`}
-                  stroke="rgba(255,255,255,0.2)"
-                  strokeWidth="0.3"
+                  stroke="hsl(0 60% 30%)"
+                  strokeWidth="0.4"
+                  filter={`url(#flag-shadow-${i})`}
                   animate={{
                     d: [
-                      "M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z",
-                      "M 0 0 Q 4 -1 8 1 Q 11 2 14 0.5 L 13.5 5.5 Q 10 4 7 5.5 Q 3 7 0 5 Z",
-                      "M 0 0 Q 5 2 7 0.5 Q 10 -1 14 1.5 L 12.5 5 Q 9 6 7 4.5 Q 4 3 0 5 Z",
-                      "M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z",
+                      "M 0 0 Q 8 3 13 0 Q 19 -2 26 2 L 25 10 Q 19 13 13 10 Q 7 7 0 10 Z",
+                      "M 0 0 Q 6 -2 14 2 Q 20 5 26 1 L 25.5 11 Q 18 8 13 11 Q 5 14 0 10 Z",
+                      "M 0 0 Q 9 4 13 1 Q 18 -2 26 3 L 24 10.5 Q 17 13 13 9 Q 8 6 0 10 Z",
+                      "M 0 0 Q 7 -1 14 3 Q 21 5 26 0.5 L 25 11.5 Q 19 9 13 12 Q 6 14 0 10 Z",
+                      "M 0 0 Q 8 3 13 0 Q 19 -2 26 2 L 25 10 Q 19 13 13 10 Q 7 7 0 10 Z",
                     ],
                   }}
                   transition={{
-                    duration: 2.5 + i * 0.3,
+                    duration: 1.8 + i * 0.2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+                {/* Highlight stripe */}
+                <motion.path
+                  fill="rgba(255,255,255,0.15)"
+                  animate={{
+                    d: [
+                      "M 0 0 Q 8 3 13 0 Q 19 -2 26 2 L 25.5 5 Q 19 7 13 4 Q 7 2 0 4 Z",
+                      "M 0 0 Q 6 -2 14 2 Q 20 5 26 1 L 25.8 5.5 Q 18 3 13 5.5 Q 5 7 0 4 Z",
+                      "M 0 0 Q 9 4 13 1 Q 18 -2 26 3 L 24.5 5 Q 17 7 13 3.5 Q 8 2 0 4 Z",
+                      "M 0 0 Q 7 -1 14 3 Q 21 5 26 0.5 L 25.5 5 Q 19 3 13 6 Q 6 7 0 4 Z",
+                      "M 0 0 Q 8 3 13 0 Q 19 -2 26 2 L 25.5 5 Q 19 7 13 4 Q 7 2 0 4 Z",
+                    ],
+                  }}
+                  transition={{
+                    duration: 1.8 + i * 0.2,
                     repeat: Infinity,
                     ease: 'easeInOut',
                   }}
@@ -244,7 +280,6 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
             </motion.div>
           </div>
         ))}
-
         {/* Players */}
         {positioned.map((p, idx) => {
           const isSelected = selectedPlayer === p.id;
