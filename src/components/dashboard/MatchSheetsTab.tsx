@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield } from 'lucide-react';
+import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
 import PitchView from './PitchView';
 import type { Convocation, Player } from '@/pages/Dashboard';
 
@@ -93,7 +93,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
             const isPast = new Date(ms.date) < now;
@@ -111,13 +111,12 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
               <motion.div
                 key={ms.id}
                 layout
-                className={`bg-card border border-border rounded-2xl overflow-hidden transition-all ${isLocked ? 'opacity-50' : ''}`}
+                className="bg-card border border-border rounded-2xl overflow-hidden"
               >
-                {/* Card Header */}
+                {/* Card Header - always clickable */}
                 <button
-                  onClick={() => !isLocked && setExpandedId(isExpanded ? null : ms.id)}
+                  onClick={() => setExpandedId(isExpanded ? null : ms.id)}
                   className="w-full text-left p-4"
-                  disabled={isLocked}
                 >
                   <div className="flex items-center gap-3">
                     {/* Team badge */}
@@ -158,12 +157,12 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                       </div>
                     </div>
 
-                    {/* Score or lock */}
+                    {/* Score or lock indicator */}
                     {isLocked ? (
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="text-[9px] font-bold text-muted-foreground uppercase">À venir</span>
                         <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                          <Shield size={14} className="text-muted-foreground" />
+                          <Lock size={14} className="text-muted-foreground" />
                         </div>
                       </div>
                     ) : ms.homeScore != null && ms.awayScore != null ? (
@@ -173,30 +172,41 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                         <span className="text-base font-black text-foreground">{ms.awayScore}</span>
                       </div>
                     ) : (
-                      !isLocked && (isExpanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />)
+                      isExpanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />
                     )}
                   </div>
                 </button>
 
-                {/* Expanded: Terrain + Composition */}
-                {isExpanded && !isLocked && (
+                {/* Expanded content: always show but blur if locked */}
+                {isExpanded && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     className="border-t border-border"
                   >
-                    <div className="p-4 space-y-4">
-                      {/* Pitch View */}
-                      {convokedPlayers.length > 0 && (
-                        <PitchView
-                          convocations={ms.convocations}
-                          players={players}
-                        />
+                    <div className={`p-4 space-y-4 relative ${isLocked ? 'select-none' : ''}`}>
+                      {/* Blur overlay for locked matches */}
+                      {isLocked && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/60 backdrop-blur-sm rounded-b-2xl">
+                          <Lock size={28} className="text-muted-foreground mb-2" />
+                          <p className="text-sm font-semibold text-muted-foreground">Composition verrouillée</p>
+                          <p className="text-xs text-muted-foreground/70 mt-0.5">Disponible après le match</p>
+                        </div>
                       )}
 
-                      {/* Player list */}
-                      <div>
+                      {/* Pitch View - shown but blurred if locked */}
+                      {convokedPlayers.length > 0 && (
+                        <div className={isLocked ? 'filter blur-md' : ''}>
+                          <PitchView
+                            convocations={ms.convocations}
+                            players={players}
+                          />
+                        </div>
+                      )}
+
+                      {/* Player list - shown but blurred if locked */}
+                      <div className={isLocked ? 'filter blur-md' : ''}>
                         <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                           <Users size={12} /> Composition ({convokedPlayers.length} joueurs)
                         </h4>

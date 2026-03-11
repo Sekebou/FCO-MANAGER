@@ -1439,26 +1439,31 @@ const Dashboard = () => {
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} initialSelectedEventId={pendingEventId} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(null); }}
               onPublishAndNotifyConvocations={async (eventId, event, convocations) => {
                 try {
-                  // 1. Save convocations to DB
-                  await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId);
+                  // Parse home/away from title (uses "vs" separator)
+                  const vsParts = event.title.split(/\s+vs\s+/i);
+                  const homeTeam = (vsParts[0] || event.title).trim();
+                  const awayTeam = vsParts.length > 1 ? vsParts[1].trim() : null;
 
-                  // 2. Save match sheet for archival
-                  await supabase.from('match_sheets').insert({
-                    event_id: eventId,
-                    title: event.title,
-                    date: event.date,
-                    time: event.time || null,
-                    location: event.location || null,
-                    team: event.team || null,
-                    home_team: event.title.split(' - ')[0]?.trim() || event.title,
-                    away_team: event.title.split(' - ')[1]?.trim() || null,
-                    home_logo: event.homeLogo || null,
-                    away_logo: event.awayLogo || null,
-                    convocations: convocations as any,
-                    created_by: currentUser?.uid,
-                  } as any);
+                  // 1. Save convocations + create match sheet in parallel
+                  const [, matchSheetResult] = await Promise.all([
+                    supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId),
+                    supabase.from('match_sheets').insert({
+                      event_id: eventId,
+                      title: event.title,
+                      date: event.date,
+                      time: event.time || null,
+                      location: event.location || null,
+                      team: event.team || null,
+                      home_team: homeTeam,
+                      away_team: awayTeam,
+                      home_logo: event.homeLogo || null,
+                      away_logo: event.awayLogo || null,
+                      convocations: convocations as any,
+                      created_by: currentUser?.uid,
+                    } as any),
+                  ]);
 
-                  // 3. Notify only convoked players
+                  // 2. Notify convoked players (fire & forget for speed)
                   const convokedPlayerIds = Object.entries(convocations)
                     .filter(([, c]) => c.status === 'convoque')
                     .map(([playerId]) => playerId);
@@ -1467,33 +1472,28 @@ const Dashboard = () => {
                     .filter(m => m.playerId && convokedPlayerIds.includes(m.playerId))
                     .map(m => m.id);
 
+                  // Don't await notifications — redirect immediately
                   if (convokedMemberIds.length > 0) {
-                    const { data: tokenRows } = await supabase
-                      .from('fcm_tokens')
-                      .select('token')
-                      .in('user_id', convokedMemberIds);
-
-                    const tokens = tokenRows?.map(r => r.token) || [];
-
-                    if (tokens.length > 0) {
-                      const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-                      await supabase.functions.invoke('send-push-notification', {
-                        body: {
-                          title: '✅ Convocation',
-                          body: `Tu es convoqué pour ${event.title} le ${eventDate}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`,
-                          tokens,
-                          data: { type: 'convocation', eventId: event.id },
-                        },
-                      });
-                      toast.success(`Convocations publiées et ${tokens.length} joueur(s) notifié(s) !`);
-                    } else {
-                      toast.success('Convocations publiées ! (aucun appareil enregistré pour les convoqués)');
-                    }
+                    supabase.from('fcm_tokens').select('token').in('user_id', convokedMemberIds).then(({ data: tokenRows }) => {
+                      const tokens = tokenRows?.map(r => r.token) || [];
+                      if (tokens.length > 0) {
+                        const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+                        supabase.functions.invoke('send-push-notification', {
+                          body: {
+                            title: '✅ Convocation',
+                            body: `Tu es convoqué pour ${event.title} le ${eventDate}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`,
+                            tokens,
+                            data: { type: 'convocation', eventId: event.id },
+                          },
+                        }).catch(e => console.error('Push error:', e));
+                      }
+                    });
+                    toast.success(`Convocations publiées et joueurs notifiés !`);
                   } else {
                     toast.success('Convocations publiées !');
                   }
 
-                  // 4. Redirect to match sheets tab
+                  // 3. Redirect to match sheets tab immediately
                   handleTabChange('matchsheets');
                 } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}
