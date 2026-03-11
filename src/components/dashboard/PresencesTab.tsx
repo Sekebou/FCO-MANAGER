@@ -552,94 +552,164 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     </div>
                     <div>
                       <h3 className="font-bold text-base text-foreground">Convocations</h3>
-                      <p className="text-[11px] text-muted-foreground">Sélectionnez les joueurs présents</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {(() => {
+                          const convokedCount = Object.values(draftConvocations).filter(c => c.status === 'convoque').length;
+                          return convokedCount > 0 ? `${convokedCount} convoqué${convokedCount > 1 ? 's' : ''}` : 'Sélectionnez les joueurs';
+                        })()}
+                      </p>
                     </div>
                   </div>
-                  <button onClick={() => setConvocationMode(null)} className="w-9 h-9 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center">
+                  <button onClick={() => { setConvocationMode(null); setConvocationSearch(''); }} className="w-9 h-9 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center">
                     <X size={18} className="text-muted-foreground" />
                   </button>
                 </div>
 
+                {/* Search bar + quick actions */}
+                <div className="px-4 pt-3 pb-1 shrink-0 space-y-2">
+                  {(() => {
+                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
+                    return presentPlayers.length > 6 ? (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Rechercher un joueur…"
+                          value={convocationSearch}
+                          onChange={e => setConvocationSearch(e.target.value)}
+                          className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
+                          style={{ fontSize: 16 }}
+                        />
+                        <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                        {convocationSearch && (
+                          <button onClick={() => setConvocationSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                            <X size={12} className="text-muted-foreground" />
+                          </button>
+                        )}
+                      </div>
+                    ) : null;
+                  })()}
+                  {/* Quick select all / deselect all */}
+                  {(() => {
+                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
+                    if (presentPlayers.length === 0) return null;
+                    const allConvoked = presentPlayers.every(p => draftConvocations[p.id]?.status === 'convoque');
+                    return (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const updates: Record<string, Convocation> = { ...draftConvocations };
+                            presentPlayers.forEach(p => { updates[p.id] = { ...updates[p.id], status: 'convoque' } as Convocation; });
+                            setDraftConvocations(updates);
+                          }}
+                          className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${allConvoked ? 'bg-accent/15 text-accent border border-accent/30' : 'bg-secondary/50 text-muted-foreground border border-border/50 hover:border-accent/30'}`}
+                        >
+                          <UserCheck size={13} /> Tous Oui
+                        </button>
+                        <button
+                          onClick={() => {
+                            const updates: Record<string, Convocation> = { ...draftConvocations };
+                            presentPlayers.forEach(p => { updates[p.id] = { ...updates[p.id], status: 'non_convoque' } as Convocation; });
+                            setDraftConvocations(updates);
+                          }}
+                          className="flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-secondary/50 text-muted-foreground border border-border/50 hover:border-destructive/30 transition-all"
+                        >
+                          <UserX size={13} /> Tous Non
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 {/* Modal body - scrollable */}
-                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-                  <div className="text-xs text-muted-foreground/70 bg-muted/40 rounded-xl px-3 py-2 flex items-center gap-2 mb-1">
-                    <UserCheck size={12} className="shrink-0 text-muted-foreground/50" />
-                    <span>Seuls les joueurs ayant répondu <b className="text-foreground">Présent</b> sont affichés</span>
-                  </div>
+                <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
                   {eventPlayers.filter(p => presences[p.id] === 'present').length === 0 && (
                     <p className="text-center text-sm text-muted-foreground py-8">Aucun joueur n'a encore répondu présent.</p>
                   )}
-                  {eventPlayers.filter(p => presences[p.id] === 'present').map(player => {
-                    const conv = draftConvocations[player.id];
-                    const isConvoked = conv?.status === 'convoque';
-                    const isNotConvoked = conv?.status === 'non_convoque';
-                    return (
-                      <div key={player.id} className={`p-3 rounded-2xl border transition-all ${
-                        isConvoked ? 'bg-accent/8 border-accent/30' :
-                        isNotConvoked ? 'bg-destructive/5 border-destructive/20' :
-                        'bg-secondary/30 border-transparent'
-                      }`}>
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {(() => {
-                              const member = members.find(m => m.playerId === player.id);
-                              const photoURL = member?.photoURL;
-                              const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                              if (photoURL) return <img src={photoURL} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />;
-                              return (
-                                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                  <span className="text-primary text-xs font-bold">{initials}</span>
-                                </div>
-                              );
-                            })()}
-                            {(() => {
-                              const [firstName, ...rest] = player.name.split(' ');
-                              const lastName = rest.join(' ');
-                              return (
-                                <div className="flex flex-col leading-tight min-w-0">
-                                  <span className="font-semibold text-sm text-foreground">{firstName}</span>
-                                  {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                          {/* Bigger convoke/non-convoke buttons */}
-                          <div className="flex gap-1.5 shrink-0">
-                            <motion.button
-                              onClick={() => updateDraft(player.id, { status: 'convoque' })}
-                              whileTap={{ scale: 0.9 }}
-                              className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isConvoked ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'}`}
-                            >
-                              <UserCheck size={14} /> Oui
-                            </motion.button>
-                            <motion.button
-                              onClick={() => updateDraft(player.id, { status: 'non_convoque' })}
-                              whileTap={{ scale: 0.9 }}
-                              className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isNotConvoked ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'}`}
-                            >
-                              <UserX size={14} /> Non
-                            </motion.button>
-                          </div>
-                        </div>
-                        {/* Position + number - bigger selectors */}
-                        {isConvoked && (
-                          <div className="mt-2.5 flex gap-2 items-center">
-                            <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
-                              <span className="text-sm font-medium text-foreground flex-1 truncate">
-                                {conv?.position || <span className="text-muted-foreground">Poste</span>}
-                              </span>
-                              <ChevronDown size={12} className="text-muted-foreground shrink-0" />
-                              <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
-                                <option value="">Poste</option>
-                                {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-                              </select>
+                  {(() => {
+                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
+                    const search = convocationSearch.toLowerCase().trim();
+                    const filtered = search ? presentPlayers.filter(p => p.name.toLowerCase().includes(search)) : presentPlayers;
+                    // Sort: convoqués first, then non-convoqués, then undecided
+                    const sorted = [...filtered].sort((a, b) => {
+                      const order = (id: string) => {
+                        const s = draftConvocations[id]?.status;
+                        return s === 'convoque' ? 0 : s === 'non_convoque' ? 2 : 1;
+                      };
+                      return order(a.id) - order(b.id);
+                    });
+                    if (search && sorted.length === 0) {
+                      return <p className="text-center text-sm text-muted-foreground py-6">Aucun résultat pour "{convocationSearch}"</p>;
+                    }
+                    return sorted.map(player => {
+                      const conv = draftConvocations[player.id];
+                      const isConvoked = conv?.status === 'convoque';
+                      const isNotConvoked = conv?.status === 'non_convoque';
+                      return (
+                        <div key={player.id} className={`p-3 rounded-2xl border transition-all ${
+                          isConvoked ? 'bg-accent/8 border-accent/30' :
+                          isNotConvoked ? 'bg-destructive/5 border-destructive/20' :
+                          'bg-secondary/30 border-transparent'
+                        }`}>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {(() => {
+                                const member = members.find(m => m.playerId === player.id);
+                                const photoURL = member?.photoURL;
+                                const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                if (photoURL) return <img src={photoURL} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />;
+                                return (
+                                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                    <span className="text-primary text-xs font-bold">{initials}</span>
+                                  </div>
+                                );
+                              })()}
+                              {(() => {
+                                const [firstName, ...rest] = player.name.split(' ');
+                                const lastName = rest.join(' ');
+                                return (
+                                  <div className="flex flex-col leading-tight min-w-0">
+                                    <span className="font-semibold text-sm text-foreground">{firstName}</span>
+                                    {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
+                                  </div>
+                                );
+                              })()}
                             </div>
-                            <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
+                            <div className="flex gap-1.5 shrink-0">
+                              <motion.button
+                                onClick={() => updateDraft(player.id, { status: 'convoque' })}
+                                whileTap={{ scale: 0.9 }}
+                                className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isConvoked ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'}`}
+                              >
+                                <UserCheck size={14} /> Oui
+                              </motion.button>
+                              <motion.button
+                                onClick={() => updateDraft(player.id, { status: 'non_convoque' })}
+                                whileTap={{ scale: 0.9 }}
+                                className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isNotConvoked ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'}`}
+                              >
+                                <UserX size={14} /> Non
+                              </motion.button>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {isConvoked && (
+                            <div className="mt-2.5 flex gap-2 items-center">
+                              <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
+                                <span className="text-sm font-medium text-foreground flex-1 truncate">
+                                  {conv?.position || <span className="text-muted-foreground">Poste</span>}
+                                </span>
+                                <ChevronDown size={12} className="text-muted-foreground shrink-0" />
+                                <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
+                                  <option value="">Poste</option>
+                                  {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                                </select>
+                              </div>
+                              <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
 
                 {/* Modal footer */}
