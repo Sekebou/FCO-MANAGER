@@ -42,7 +42,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
       const spread = Math.min(30, 18 * (group.length - 1));
       group.forEach((p, i) => {
         const offset = -spread / 2 + (spread / (group.length - 1)) * i;
-        result.push({ ...p, x: Math.max(8, Math.min(92, base.x + offset)), y: base.y });
+        result.push({ ...p, x: Math.max(14, Math.min(86, base.x + offset)), y: base.y });
       });
     }
   });
