@@ -545,7 +545,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center"
+              className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center overflow-hidden touch-none"
               onMouseDown={(e) => { if (e.target === e.currentTarget) setConvocationMode(null); }}
             >
               <motion.div
