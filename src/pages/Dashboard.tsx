@@ -26,6 +26,7 @@ import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
 import WinCelebration from '@/components/dashboard/WinCelebration';
 import HomeTab from '@/components/dashboard/HomeTab';
+import MatchSheetsTab, { type MatchSheet } from '@/components/dashboard/MatchSheetsTab';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
