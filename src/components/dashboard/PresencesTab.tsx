@@ -53,6 +53,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [publishing, setPublishing] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [convocationSearch, setConvocationSearch] = useState('');
+  const [showMinPlayersAlert, setShowMinPlayersAlert] = useState(false);
+  const [minPlayersCount, setMinPlayersCount] = useState(0);
 
   // React to navigation with a specific event ID
   useEffect(() => {
