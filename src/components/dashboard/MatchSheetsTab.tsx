@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
 import PitchView from './PitchView';
+import { Separator } from '@/components/ui/separator';
 import type { Convocation, Player } from '@/pages/Dashboard';
 
 export interface MatchSheet {
@@ -26,6 +27,7 @@ export interface MatchSheet {
 interface Props {
   matchSheets: MatchSheet[];
   players: Player[];
+  isManager?: boolean;
 }
 
 const teamColors: Record<string, string> = {
@@ -34,7 +36,7 @@ const teamColors: Record<string, string> = {
   C: 'bg-amber-500/15 text-amber-500 border-amber-500/30',
 };
 
-const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
+const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false }) => {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -97,7 +99,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
             const isPast = new Date(ms.date) < now;
-            const isLocked = !isPast;
+            // Managers (admin, admin+, entraineur) can always see; players only after the date
+            const isLocked = !isManager && !isPast;
 
             const convokedPlayers = Object.entries(ms.convocations)
               .filter(([, c]) => c.status === 'convoque')
@@ -113,20 +116,18 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                 layout
                 className="bg-card border border-border rounded-2xl overflow-hidden"
               >
-                {/* Card Header - always clickable */}
+                {/* Card Header */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : ms.id)}
                   className="w-full text-left p-4"
                 >
                   <div className="flex items-center gap-3">
-                    {/* Team badge */}
                     {ms.team && (
                       <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${teamColors[ms.team] || 'bg-muted text-muted-foreground border-border'}`}>
                         {ms.team}
                       </span>
                     )}
                     <div className="flex-1 min-w-0">
-                      {/* Logos + Title */}
                       <div className="flex items-center gap-2">
                         {ms.homeLogo && (
                           <img src={ms.homeLogo} alt="" className="w-6 h-6 object-contain rounded" />
@@ -138,8 +139,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                           <img src={ms.awayLogo} alt="" className="w-6 h-6 object-contain rounded" />
                         )}
                       </div>
-
-                      {/* Meta */}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <Calendar size={10} /> {formatDate(ms.date)}
@@ -149,15 +148,10 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                             <Clock size={10} /> {ms.time}
                           </span>
                         )}
-                        {ms.location && (
-                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin size={10} /> <span className="truncate max-w-[120px]">{ms.location}</span>
-                          </span>
-                        )}
                       </div>
                     </div>
 
-                    {/* Score or lock indicator */}
+                    {/* Score or lock or chevron */}
                     {isLocked ? (
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="text-[9px] font-bold text-muted-foreground uppercase">À venir</span>
@@ -177,7 +171,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                   </div>
                 </button>
 
-                {/* Expanded content: always show but blur if locked */}
+                {/* Expanded: pitch + info */}
                 {isExpanded && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -185,8 +179,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                     exit={{ height: 0, opacity: 0 }}
                     className="border-t border-border"
                   >
-                    <div className={`p-4 space-y-4 relative ${isLocked ? 'select-none' : ''}`}>
-                      {/* Blur overlay for locked matches */}
+                    <div className={`p-4 relative ${isLocked ? 'select-none' : ''}`}>
+                      {/* Lock overlay for non-managers on future matches */}
                       {isLocked && (
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/60 backdrop-blur-sm rounded-b-2xl">
                           <Lock size={28} className="text-muted-foreground mb-2" />
@@ -195,38 +189,71 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players }) => {
                         </div>
                       )}
 
-                      {/* Pitch View - shown but blurred if locked */}
-                      {convokedPlayers.length > 0 && (
-                        <div className={isLocked ? 'filter blur-md' : ''}>
+                      <div className={isLocked ? 'filter blur-md' : ''}>
+                        {/* Pitch View directly */}
+                        {convokedPlayers.length > 0 ? (
                           <PitchView
                             convocations={ms.convocations}
                             players={players}
                           />
-                        </div>
-                      )}
+                        ) : (
+                          <div className="text-center py-8">
+                            <Users size={32} className="mx-auto text-muted-foreground/50 mb-2" />
+                            <p className="text-sm text-muted-foreground">Aucun joueur convoqué</p>
+                          </div>
+                        )}
 
-                      {/* Player list - shown but blurred if locked */}
-                      <div className={isLocked ? 'filter blur-md' : ''}>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                          <Users size={12} /> Composition ({convokedPlayers.length} joueurs)
-                        </h4>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {convokedPlayers
-                            .sort((a, b) => {
-                              const posOrder = ['Gardien', 'Défenseur central', 'Latéral droit', 'Latéral gauche', 'Milieu défensif', 'Milieu central', 'Milieu offensif', 'Ailier droit', 'Ailier gauche', 'Attaquant'];
-                              return (posOrder.indexOf(a.conv.position || '') - posOrder.indexOf(b.conv.position || ''));
-                            })
-                            .map(p => (
-                              <div key={p.id} className="flex items-center gap-2 bg-secondary/60 rounded-lg px-2.5 py-2 border border-border/50">
-                                <span className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-black text-primary shrink-0">
-                                  {p.conv.number || '?'}
-                                </span>
-                                <div className="min-w-0">
-                                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                                  <p className="text-[9px] text-muted-foreground truncate">{p.conv.position || 'N/A'}</p>
-                                </div>
+                        {/* Separator */}
+                        <div className="my-4 flex items-center gap-3">
+                          <Separator className="flex-1" />
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Infos match</span>
+                          <Separator className="flex-1" />
+                        </div>
+
+                        {/* Match info below */}
+                        <div className="space-y-2">
+                          {/* Score if available */}
+                          {ms.homeScore != null && ms.awayScore != null && (
+                            <div className="flex items-center justify-center gap-3 py-2">
+                              <div className="flex items-center gap-2">
+                                {ms.homeLogo && <img src={ms.homeLogo} alt="" className="w-5 h-5 object-contain" />}
+                                <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.homeTeam}</span>
                               </div>
-                            ))}
+                              <div className="flex items-center gap-1.5 bg-secondary rounded-lg px-3 py-1.5">
+                                <span className="text-lg font-black text-foreground">{ms.homeScore}</span>
+                                <span className="text-xs text-muted-foreground">-</span>
+                                <span className="text-lg font-black text-foreground">{ms.awayScore}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.awayTeam}</span>
+                                {ms.awayLogo && <img src={ms.awayLogo} alt="" className="w-5 h-5 object-contain" />}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Details */}
+                          <div className="grid grid-cols-1 gap-1.5">
+                            {ms.location && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
+                                <MapPin size={12} className="shrink-0" />
+                                <span className="truncate">{ms.location}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
+                              <span className="inline-flex items-center gap-1.5">
+                                <Calendar size={12} /> {formatDate(ms.date)}
+                              </span>
+                              {ms.time && (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Clock size={12} /> {ms.time}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
+                              <Users size={12} className="shrink-0" />
+                              <span>{convokedPlayers.length} joueur{convokedPlayers.length > 1 ? 's' : ''} convoqué{convokedPlayers.length > 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
