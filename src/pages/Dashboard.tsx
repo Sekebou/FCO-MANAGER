@@ -317,6 +317,7 @@ const Dashboard = () => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
   const [unreadDiscussions, setUnreadDiscussions] = useState(0);
+  const [matchSheets, setMatchSheets] = useState<MatchSheet[]>([]);
 
   // Fetch unread discussions count
   useEffect(() => {
