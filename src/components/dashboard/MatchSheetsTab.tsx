@@ -213,15 +213,15 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
                           {awayLogo ? (
-                            <img src={awayLogo} alt={ms.awayTeam || ''} className="w-11 h-11 object-contain" />
+                            <img src={awayLogo} alt={resolvedAway || ''} className="w-11 h-11 object-contain" />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center">
-                              <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(ms.awayTeam || '?').slice(0, 3).toUpperCase()}</span>
+                              <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(resolvedAway || '?').slice(0, 3).toUpperCase()}</span>
                             </div>
                           )}
                         </div>
                         <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
-                          {ms.awayTeam?.toLowerCase()}
+                          {resolvedAway?.toLowerCase()}
                         </span>
                       </div>
                     </div>
