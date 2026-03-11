@@ -714,7 +714,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
                 {/* Modal footer */}
                 <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 flex gap-2">
-                  <button onClick={() => setConvocationMode(null)} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
+                  <button onClick={() => { setConvocationMode(null); setConvocationSearch(''); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
                   <button onClick={() => publishConvocations(event.id)} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20">
                     <Send size={15} /> Publier & Notifier
                   </button>
