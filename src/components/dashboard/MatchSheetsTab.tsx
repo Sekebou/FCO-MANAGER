@@ -312,7 +312,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                               <div className="flex items-center justify-center gap-3 py-2">
                                 <div className="flex items-center gap-2">
                                   {homeLogo && <img src={homeLogo} alt="" className="w-5 h-5 object-contain" />}
-                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.homeTeam}</span>
+                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{resolvedHome}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 bg-secondary rounded-lg px-3 py-1.5">
                                   <span className="text-lg font-black text-foreground">{ms.homeScore}</span>
@@ -320,7 +320,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                                   <span className="text-lg font-black text-foreground">{ms.awayScore}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.awayTeam}</span>
+                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{resolvedAway}</span>
                                   {awayLogo && <img src={awayLogo} alt="" className="w-5 h-5 object-contain" />}
                                 </div>
                               </div>
