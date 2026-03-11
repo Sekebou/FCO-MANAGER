@@ -5,7 +5,6 @@ import {
   Calendar, Newspaper, BarChart3
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
-import type { MatchSheet } from './MatchSheetsTab';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface HomeTabProps {
@@ -14,7 +13,6 @@ interface HomeTabProps {
   players: Player[];
   news: NewsItem[];
   members: Member[];
-  matchSheets?: MatchSheet[];
   onNavigate: (tab: string, eventId?: string) => void;
 }
 
