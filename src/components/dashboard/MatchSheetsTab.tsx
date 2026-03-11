@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
+import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Eye } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
 import type { Convocation, Player } from '@/pages/Dashboard';
@@ -95,13 +95,16 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
             const isPast = new Date(ms.date) < now;
             const isLocked = !isManager && !isPast;
             const hasVs = ms.homeTeam && ms.awayTeam;
             const hasScore = ms.homeScore != null && ms.awayScore != null;
+            // Composition is available if not locked and has convocations
+            const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
+            const compositionAvailable = !isLocked && hasConvocations;
 
             const convokedPlayers = Object.entries(ms.convocations)
               .filter(([, c]) => c.status === 'convoque')
@@ -114,19 +117,22 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
             return (
               <div
                 key={ms.id}
-                className="bg-card border border-border rounded-2xl overflow-hidden"
+                className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm"
               >
                 {/* Card Header — VS style */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : ms.id)}
-                  className="w-full text-left"
+                  className="w-full text-left relative"
                 >
+                  {/* Gradient accent strip at top */}
+                  <div className="h-1 w-full bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+
                   {/* Top meta bar */}
-                  <div className="flex items-center justify-between px-4 pt-3 pb-1">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between px-4 pt-2.5 pb-1">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {ms.team && (
                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${teamColors[ms.team] || 'bg-muted text-muted-foreground border-border'}`}>
-                          {ms.team}
+                          Équipe {ms.team}
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
@@ -138,25 +144,39 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                         </span>
                       )}
                     </div>
-                    {isLocked ? (
-                      <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-                        <Lock size={12} className="text-muted-foreground" />
-                      </div>
-                    ) : (
-                      isExpanded ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />
-                    )}
+                    <div className="flex items-center gap-2">
+                      {/* Green pulse dot for available composition */}
+                      {compositionAvailable && !isExpanded && (
+                        <div className="relative flex items-center gap-1">
+                          <span className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                          </span>
+                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wide hidden min-[340px]:inline">Compo</span>
+                        </div>
+                      )}
+                      {isLocked ? (
+                        <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                          <Lock size={12} className="text-muted-foreground" />
+                        </div>
+                      ) : (
+                        isExpanded ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
 
                   {hasVs ? (
-                    /* ── VS Layout with logos ── */
+                    /* ── VS Layout with large logos ── */
                     <div className="flex items-center justify-between px-4 py-3">
                       {/* Home */}
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-14 h-14 rounded-2xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
                           {ms.homeLogo ? (
-                            <img src={ms.homeLogo} alt="" className="w-10 h-10 object-contain" />
+                            <img src={ms.homeLogo} alt={ms.homeTeam || ''} className="w-11 h-11 object-contain" />
                           ) : (
-                            <Shield size={24} className="text-primary/40" />
+                            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
+                              <span className="text-[10px] font-black text-primary/60 text-center leading-none">{(ms.homeTeam || '?').slice(0, 3).toUpperCase()}</span>
+                            </div>
                           )}
                         </div>
                         <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
@@ -165,27 +185,29 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       </div>
 
                       {/* Score or VS */}
-                      <div className="shrink-0 mx-2 flex flex-col items-center gap-1">
+                      <div className="shrink-0 mx-1 flex flex-col items-center gap-1">
                         {hasScore ? (
-                          <div className="flex items-center gap-1.5 bg-secondary rounded-xl px-4 py-2">
-                            <span className="text-xl font-black text-foreground">{ms.homeScore}</span>
+                          <div className="flex items-center gap-2 bg-gradient-to-br from-secondary to-muted rounded-2xl px-4 py-2.5 shadow-sm">
+                            <span className="text-2xl font-black text-foreground">{ms.homeScore}</span>
                             <span className="text-sm text-muted-foreground font-bold">-</span>
-                            <span className="text-xl font-black text-foreground">{ms.awayScore}</span>
+                            <span className="text-2xl font-black text-foreground">{ms.awayScore}</span>
                           </div>
                         ) : (
-                          <div className="w-11 h-11 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                            <span className="text-xs font-black text-primary tracking-tight">VS</span>
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 border-2 border-primary/25 flex items-center justify-center shadow-sm">
+                            <span className="text-sm font-black text-primary tracking-tight">VS</span>
                           </div>
                         )}
                       </div>
 
                       {/* Away */}
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-14 h-14 rounded-2xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
                           {ms.awayLogo ? (
-                            <img src={ms.awayLogo} alt="" className="w-10 h-10 object-contain" />
+                            <img src={ms.awayLogo} alt={ms.awayTeam || ''} className="w-11 h-11 object-contain" />
                           ) : (
-                            <Shield size={24} className="text-muted-foreground/40" />
+                            <div className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center">
+                              <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(ms.awayTeam || '?').slice(0, 3).toUpperCase()}</span>
+                            </div>
                           )}
                         </div>
                         <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
@@ -196,24 +218,29 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                   ) : (
                     /* ── Simple title layout ── */
                     <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <Trophy size={18} className="text-primary" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <Trophy size={20} className="text-primary" />
                       </div>
                       <h3 className="text-sm font-bold text-foreground truncate flex-1">{ms.title}</h3>
                     </div>
                   )}
 
-                  {/* Location in header */}
-                  {ms.location && (
-                    <div className="px-4 pb-2.5 -mt-1">
+                  {/* Location + convoked count bottom bar */}
+                  <div className="flex items-center justify-between px-4 pb-3 -mt-0.5">
+                    {ms.location ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <MapPin size={9} /> <span className="truncate capitalize">{ms.location.toLowerCase()}</span>
+                        <MapPin size={9} /> <span className="truncate capitalize max-w-[160px]">{ms.location.toLowerCase()}</span>
                       </span>
-                    </div>
-                  )}
+                    ) : <span />}
+                    {hasConvocations && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                        <Users size={9} /> {convokedPlayers.length} convoqué{convokedPlayers.length > 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
                 </button>
 
-                {/* Expanded: pitch + info — no layout animation to prevent stretching */}
+                {/* Expanded: pitch + info */}
                 <AnimatePresence initial={false}>
                   {isExpanded && (
                     <motion.div
