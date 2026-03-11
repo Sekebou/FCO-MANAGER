@@ -533,7 +533,7 @@ const Dashboard = () => {
           { data: playersData }, { data: eventsData }, { data: newsData },
           { data: membersData }, { data: cardsData }, { data: attendanceData },
           { data: commentsData }, { data: champsData }, { data: matchesData },
-          { data: albumsData }
+          { data: albumsData }, { data: matchSheetsData }
         ] = await Promise.all([
           supabase.from('players').select('*'),
           supabase.from('events').select('*').order('date', { ascending: false }),
@@ -545,6 +545,7 @@ const Dashboard = () => {
           supabase.from('championships').select('*'),
           supabase.from('championship_matches').select('*'),
           supabase.from('albums').select('*').order('created_at', { ascending: false }),
+          supabase.from('match_sheets').select('*').order('date', { ascending: false }),
         ]);
 
         const freshPlayers = sortPlayersStable((playersData || []).map(mapPlayer));
