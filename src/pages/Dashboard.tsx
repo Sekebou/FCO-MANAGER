@@ -1442,7 +1442,23 @@ const Dashboard = () => {
                   // 1. Save convocations to DB
                   await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId);
 
-                  // 2. Notify only convoked players
+                  // 2. Save match sheet for archival
+                  await supabase.from('match_sheets').insert({
+                    event_id: eventId,
+                    title: event.title,
+                    date: event.date,
+                    time: event.time || null,
+                    location: event.location || null,
+                    team: event.team || null,
+                    home_team: event.title.split(' - ')[0]?.trim() || event.title,
+                    away_team: event.title.split(' - ')[1]?.trim() || null,
+                    home_logo: event.homeLogo || null,
+                    away_logo: event.awayLogo || null,
+                    convocations: convocations as any,
+                    created_by: currentUser?.uid,
+                  } as any);
+
+                  // 3. Notify only convoked players
                   const convokedPlayerIds = Object.entries(convocations)
                     .filter(([, c]) => c.status === 'convoque')
                     .map(([playerId]) => playerId);
@@ -1476,6 +1492,9 @@ const Dashboard = () => {
                   } else {
                     toast.success('Convocations publiées !');
                   }
+
+                  // 4. Redirect to match sheets tab
+                  handleTabChange('matchsheets');
                 } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}
               onSendReminder={async (event) => {
