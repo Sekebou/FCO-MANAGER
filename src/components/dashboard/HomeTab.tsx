@@ -165,57 +165,8 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         </div>
       )}
 
-      {/* ── Recent Results ── */}
-      {recentResults.length > 0 && (
-        <div>
-          <SectionHeader icon={BarChart3} title="Derniers résultats" onAction={() => onNavigate('matchsheets')} actionLabel="Voir tout" />
-          <div className="space-y-2">
-            {recentResults.map((ms) => {
-              const vsParts = ms.title.split(/\s+vs\s+/i);
-              const home = ms.homeTeam || (vsParts.length === 2 ? vsParts[0].trim() : ms.title);
-              const away = ms.awayTeam || (vsParts.length === 2 ? vsParts[1].trim() : '');
-              const homeLogo = ms.homeLogo;
-              const awayLogo = ms.awayLogo;
-              const isWin = ms.homeScore != null && ms.awayScore != null && ms.homeScore > ms.awayScore;
-              const isDraw = ms.homeScore === ms.awayScore;
-              const resultColor = isWin ? 'text-emerald-500' : isDraw ? 'text-amber-500' : 'text-destructive';
-              const resultBg = isWin ? 'bg-emerald-500/10' : isDraw ? 'bg-amber-500/10' : 'bg-destructive/10';
 
-              return (
-                <button
-                  key={ms.id}
-                  onClick={() => onNavigate('matchsheets')}
-                  className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      {homeLogo ? (
-                        <img src={homeLogo} alt="" className="w-7 h-7 object-contain" style={{ mixBlendMode: 'multiply' }} />
-                      ) : (
-                        <Trophy size={18} className="text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-foreground truncate">
-                        {away ? `${home} vs ${away}` : ms.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                          <Calendar size={10} /> {formatDate(ms.date)}
-                        </span>
-                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${resultColor} ${resultBg} px-1.5 py-0.5 rounded-md`}>
-                          {ms.homeScore} - {ms.awayScore}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+
 
       {/* ── Next Trainings (up to 2) ── */}
       {nextTrainings.length > 0 && (
