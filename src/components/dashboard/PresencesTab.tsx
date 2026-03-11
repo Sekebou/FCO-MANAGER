@@ -566,58 +566,23 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </div>
 
                 {/* Search bar + quick actions */}
-                <div className="px-4 pt-3 pb-1 shrink-0 space-y-2">
-                  {(() => {
-                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
-                    return presentPlayers.length > 6 ? (
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="Rechercher un joueur…"
-                          value={convocationSearch}
-                          onChange={e => setConvocationSearch(e.target.value)}
-                          className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
-                          style={{ fontSize: 16 }}
-                        />
-                        <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
-                        {convocationSearch && (
-                          <button onClick={() => setConvocationSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                            <X size={12} className="text-muted-foreground" />
-                          </button>
-                        )}
-                      </div>
-                    ) : null;
-                  })()}
-                  {/* Quick select all / deselect all */}
-                  {(() => {
-                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
-                    if (presentPlayers.length === 0) return null;
-                    const allConvoked = presentPlayers.every(p => draftConvocations[p.id]?.status === 'convoque');
-                    return (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            const updates: Record<string, Convocation> = { ...draftConvocations };
-                            presentPlayers.forEach(p => { updates[p.id] = { ...updates[p.id], status: 'convoque' } as Convocation; });
-                            setDraftConvocations(updates);
-                          }}
-                          className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${allConvoked ? 'bg-accent/15 text-accent border border-accent/30' : 'bg-secondary/50 text-muted-foreground border border-border/50 hover:border-accent/30'}`}
-                        >
-                          <UserCheck size={13} /> Tous Oui
-                        </button>
-                        <button
-                          onClick={() => {
-                            const updates: Record<string, Convocation> = { ...draftConvocations };
-                            presentPlayers.forEach(p => { updates[p.id] = { ...updates[p.id], status: 'non_convoque' } as Convocation; });
-                            setDraftConvocations(updates);
-                          }}
-                          className="flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-secondary/50 text-muted-foreground border border-border/50 hover:border-destructive/30 transition-all"
-                        >
-                          <UserX size={13} /> Tous Non
-                        </button>
-                      </div>
-                    );
-                  })()}
+                <div className="px-4 pt-3 pb-1 shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Rechercher un joueur présent…"
+                      value={convocationSearch}
+                      onChange={e => setConvocationSearch(e.target.value)}
+                      className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
+                      style={{ fontSize: 16 }}
+                    />
+                    <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                    {convocationSearch && (
+                      <button onClick={() => setConvocationSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                        <X size={12} className="text-muted-foreground" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Modal body - scrollable */}
