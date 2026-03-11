@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Bell, Trophy, Ticket, Camera, ClipboardCheck,
   TrendingUp, Calendar, UserCheck, MessageCircle, Plus, X,
-  Settings2, GripVertical, ArrowLeftRight
+  Settings2, GripVertical, ArrowLeftRight, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +16,7 @@ interface Tab {
 const allTabs: Tab[] = [
   { id: 'home', label: 'Accueil', icon: Home },
   { id: 'presences', label: 'Présences', icon: ClipboardCheck },
+  { id: 'matchsheets', label: 'F. Match', icon: Shield },
   { id: 'championnat', label: 'Champ', icon: Trophy },
   { id: 'paris', label: 'Paris', icon: Ticket },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },

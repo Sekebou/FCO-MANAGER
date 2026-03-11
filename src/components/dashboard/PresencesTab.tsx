@@ -516,10 +516,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               </div>
             )}
 
-            {/* Pitch view */}
-            {event.convocationsPublished && event.convocations && !isConvocationMode && (new Date(event.date) < new Date() || canManage()) && (
-              <PitchView convocations={event.convocations} players={players} />
-            )}
+            {/* Pitch view removed — now in Feuille de match tab */}
 
             {/* Convocation mode (coach editing) */}
             {isConvocationMode && (

@@ -26,6 +26,7 @@ import BottomTabBar from '@/components/dashboard/BottomTabBar';
 import OnboardingTutorial from '@/components/dashboard/OnboardingTutorial';
 import WinCelebration from '@/components/dashboard/WinCelebration';
 import HomeTab from '@/components/dashboard/HomeTab';
+import MatchSheetsTab, { type MatchSheet } from '@/components/dashboard/MatchSheetsTab';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import AddPlayerForm from '@/components/modals/AddPlayerForm';
 import AddEventForm from '@/components/modals/AddEventForm';
@@ -165,6 +166,7 @@ const mapChamp = (r: any): Championship => ({ id: r.id, name: r.name, season: r.
 const mapMatch = (r: any): Match => ({ id: r.id, championshipId: r.championship_id, homeTeam: r.home_team, awayTeam: r.away_team, homeScore: r.home_score, awayScore: r.away_score, date: r.date, journee: r.journee, played: r.played ?? false });
 const mapAlbum = (r: any): Album => ({ id: r.id, name: r.name, description: r.description, createdAt: r.created_at, createdBy: r.created_by, coverUrl: r.cover_url });
 const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url, storagePath: r.storage_path, title: r.title, uploadedAt: r.uploaded_at, uploadedBy: r.uploaded_by, uploaderName: r.uploader_name });
+const mapMatchSheet = (r: any): MatchSheet => ({ id: r.id, eventId: r.event_id, title: r.title, date: r.date, time: r.time, location: r.location, team: r.team, homeTeam: r.home_team, awayTeam: r.away_team, homeLogo: r.home_logo, awayLogo: r.away_logo, homeScore: r.home_score, awayScore: r.away_score, convocations: r.convocations || {}, createdAt: r.created_at, createdBy: r.created_by });
 
 // Generate signed URLs for photos (bucket is private)
 const getSignedPhotoUrls = async (photos: Photo[]): Promise<Photo[]> => {
@@ -315,6 +317,7 @@ const Dashboard = () => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
   const [unreadDiscussions, setUnreadDiscussions] = useState(0);
+  const [matchSheets, setMatchSheets] = useState<MatchSheet[]>([]);
 
   // Fetch unread discussions count
   useEffect(() => {
@@ -530,7 +533,7 @@ const Dashboard = () => {
           { data: playersData }, { data: eventsData }, { data: newsData },
           { data: membersData }, { data: cardsData }, { data: attendanceData },
           { data: commentsData }, { data: champsData }, { data: matchesData },
-          { data: albumsData }
+          { data: albumsData }, { data: matchSheetsData }
         ] = await Promise.all([
           supabase.from('players').select('*'),
           supabase.from('events').select('*').order('date', { ascending: false }),
@@ -542,6 +545,7 @@ const Dashboard = () => {
           supabase.from('championships').select('*'),
           supabase.from('championship_matches').select('*'),
           supabase.from('albums').select('*').order('created_at', { ascending: false }),
+          supabase.from('match_sheets').select('*').order('date', { ascending: false }),
         ]);
 
         const freshPlayers = sortPlayersStable((playersData || []).map(mapPlayer));
@@ -554,7 +558,7 @@ const Dashboard = () => {
         const freshChamps = (champsData || []).map(mapChamp);
         const freshMatches = (matchesData || []).map(mapMatch);
         const freshAlbums = (albumsData || []).map(mapAlbum);
-
+        const freshMatchSheets = (matchSheetsData || []).map(mapMatchSheet);
         setPlayers(freshPlayers);
         setEvents(freshEvents);
         setNews(freshNews);
@@ -565,7 +569,7 @@ const Dashboard = () => {
         setChampionships(freshChamps);
         setChampMatches(freshMatches);
         setAlbums(freshAlbums);
-
+        setMatchSheets(freshMatchSheets);
         // Write to cache for next visit
         writeCache('players', freshPlayers);
         writeCache('events', freshEvents);
@@ -673,6 +677,9 @@ const Dashboard = () => {
         if (galleryLoadedRef.current) {
           supabase.from('gallery_photos').select('*').then(({ data }) => data && getSignedPhotoUrls(data.map(mapPhoto)).then(signed => setGalleryPhotos(signed)));
         }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_sheets' }, () => {
+        supabase.from('match_sheets').select('*').order('date', { ascending: false }).then(({ data }) => data && setMatchSheets(data.map(mapMatchSheet)));
       })
       .subscribe();
 
@@ -1288,6 +1295,24 @@ const Dashboard = () => {
         album_id: albumId, url, storage_path: path,
         title: file.name.replace(/\.[^/.]+$/, ''), uploaded_by: currentUser!.uid, uploader_name: currentUser!.name,
       });
+      // Optimistically add photo to state so it appears immediately
+      const newPhoto: Photo = {
+        id: crypto.randomUUID(),
+        albumId,
+        url,
+        storagePath: path,
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: currentUser!.uid,
+        uploaderName: currentUser!.name,
+      };
+      setGalleryPhotos(prev => [newPhoto, ...prev]);
+    }
+    // After all uploads, refresh with signed URLs
+    const { data: photosData } = await supabase.from('gallery_photos').select('*');
+    if (photosData) {
+      const mapped = photosData.map(mapPhoto);
+      getSignedPhotoUrls(mapped).then(signed => setGalleryPhotos(signed));
     }
   };
 
@@ -1417,7 +1442,23 @@ const Dashboard = () => {
                   // 1. Save convocations to DB
                   await supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId);
 
-                  // 2. Notify only convoked players
+                  // 2. Save match sheet for archival
+                  await supabase.from('match_sheets').insert({
+                    event_id: eventId,
+                    title: event.title,
+                    date: event.date,
+                    time: event.time || null,
+                    location: event.location || null,
+                    team: event.team || null,
+                    home_team: event.title.split(' - ')[0]?.trim() || event.title,
+                    away_team: event.title.split(' - ')[1]?.trim() || null,
+                    home_logo: event.homeLogo || null,
+                    away_logo: event.awayLogo || null,
+                    convocations: convocations as any,
+                    created_by: currentUser?.uid,
+                  } as any);
+
+                  // 3. Notify only convoked players
                   const convokedPlayerIds = Object.entries(convocations)
                     .filter(([, c]) => c.status === 'convoque')
                     .map(([playerId]) => playerId);
@@ -1451,6 +1492,9 @@ const Dashboard = () => {
                   } else {
                     toast.success('Convocations publiées !');
                   }
+
+                  // 4. Redirect to match sheets tab
+                  handleTabChange('matchsheets');
                 } catch (err: any) { toast.error('Erreur: ' + err.message); }
               }}
               onSendReminder={async (event) => {
@@ -1512,6 +1556,7 @@ const Dashboard = () => {
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryTab albums={albums} photos={galleryPhotos} currentUser={currentUser} canManagePhotos={canManagePhotos} onCreateAlbum={createAlbum} onDeleteAlbum={deleteAlbum} onUploadPhotos={uploadPhotos} onDeletePhoto={deletePhoto} />}
           {activeTab === 'paris' && <ParisTab currentUser={currentUser} championships={championships} />}
+          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} />}
           {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
