@@ -558,7 +558,7 @@ const Dashboard = () => {
         const freshChamps = (champsData || []).map(mapChamp);
         const freshMatches = (matchesData || []).map(mapMatch);
         const freshAlbums = (albumsData || []).map(mapAlbum);
-
+        const freshMatchSheets = (matchSheetsData || []).map(mapMatchSheet);
         setPlayers(freshPlayers);
         setEvents(freshEvents);
         setNews(freshNews);
