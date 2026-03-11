@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import {
   ChevronRight, Clock, MapPin, Trophy, Dumbbell,
-  Target, Shield, Swords, Users, TrendingUp,
+  Target, Shield, Swords, Users,
   Calendar, Newspaper, BarChart3
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
@@ -53,24 +52,10 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
 
   const initials = currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
-  const stagger = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.07 } },
-  };
-  const fadeUp = {
-    hidden: { opacity: 0, y: 12 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' as const } },
-  };
-
   return (
-    <motion.div
-      className="space-y-4 pb-6"
-      variants={stagger}
-      initial="hidden"
-      animate="show"
-    >
+    <div className="space-y-4 pb-6">
       {/* ── Greeting Header ── */}
-      <motion.div variants={fadeUp} className="flex items-center gap-3.5">
+      <div className="flex items-center gap-3.5">
         <div className="w-12 h-12 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden shrink-0">
           {currentUser?.photoURL ? (
             <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
@@ -86,11 +71,11 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
             {isCoach ? `${totalPlayers} joueurs dans l'effectif` : 'Prêt pour la prochaine ?'}
           </p>
         </div>
-      </motion.div>
+      </div>
 
       {/* ── Player Stats (joueur only) ── */}
       {!isCoach && myPlayer && (
-        <motion.div variants={fadeUp} className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2.5">
           {[
             { icon: Target, value: myPlayer.goals || 0, label: 'Buts', color: 'text-primary' },
             { icon: Swords, value: myPlayer.assists || 0, label: 'Passes D.', color: 'text-accent' },
@@ -102,12 +87,12 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{s.label}</div>
             </div>
           ))}
-        </motion.div>
+        </div>
       )}
 
       {/* ── Coach Stats ── */}
       {isCoach && (
-        <motion.div variants={fadeUp} className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2.5">
           {[
             { icon: Users, value: totalPlayers, label: 'Joueurs', color: 'text-primary' },
             { icon: Target, value: players.reduce((s, p) => s + (p.goals || 0), 0), label: 'Buts', color: 'text-accent' },
@@ -119,55 +104,117 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{s.label}</div>
             </div>
           ))}
-        </motion.div>
+        </div>
       )}
 
-      {/* ── Next Matches (up to 3) ── */}
+      {/* ── Next Matches (VS style with logos) ── */}
       {nextMatches.length > 0 && (
-        <motion.div variants={fadeUp}>
+        <div>
           <SectionHeader icon={Trophy} title={`Prochain${nextMatches.length > 1 ? 's' : ''} match${nextMatches.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
-          <div className="space-y-2">
-            {nextMatches.map((match) => (
-              <button
-                key={match.id}
-                onClick={() => onNavigate('presences', match.id)}
-                className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    {match.homeLogo ? (
-                      <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain rounded" />
-                    ) : (
-                      <Trophy size={18} className="text-primary" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-foreground truncate capitalize">{match.title.toLowerCase()}</h3>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+          <div className="space-y-2.5">
+            {nextMatches.map((match) => {
+              // Parse teams from title (format: "Team A - Team B" or just title)
+              const titleParts = match.title.split(/\s*[-–]\s*/);
+              const homeTeam = titleParts[0]?.trim() || match.title;
+              const awayTeam = titleParts[1]?.trim() || '';
+              const hasVs = awayTeam.length > 0;
+
+              return (
+                <button
+                  key={match.id}
+                  onClick={() => onNavigate('presences', match.id)}
+                  className="w-full bg-card border border-border/50 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
+                >
+                  {/* Top bar with date/time/team badge */}
+                  <div className="flex items-center justify-between px-3.5 pt-3 pb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
                         <Calendar size={10} /> {formatDate(match.date)}
                       </span>
                       {match.time && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
                           <Clock size={10} /> {match.time}
                         </span>
                       )}
-                      {match.team && (
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary">{match.team}</span>
-                      )}
                     </div>
+                    {match.team && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/10 text-primary">{match.team}</span>
+                    )}
                   </div>
-                  <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
-                </div>
-              </button>
-            ))}
+
+                  {hasVs ? (
+                    /* ── VS Layout with logos ── */
+                    <div className="flex items-center justify-between px-3.5 py-3">
+                      {/* Home team */}
+                      <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+                        <div className="w-12 h-12 rounded-xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
+                          {match.homeLogo ? (
+                            <img src={match.homeLogo} alt="" className="w-9 h-9 object-contain" />
+                          ) : (
+                            <Shield size={22} className="text-primary/40" />
+                          )}
+                        </div>
+                        <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[90px]">
+                          {homeTeam.toLowerCase()}
+                        </span>
+                      </div>
+
+                      {/* VS badge */}
+                      <div className="shrink-0 mx-2">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+                          <span className="text-xs font-black text-primary tracking-tight">VS</span>
+                        </div>
+                      </div>
+
+                      {/* Away team */}
+                      <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+                        <div className="w-12 h-12 rounded-xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
+                          {match.awayLogo ? (
+                            <img src={match.awayLogo} alt="" className="w-9 h-9 object-contain" />
+                          ) : (
+                            <Shield size={22} className="text-muted-foreground/40" />
+                          )}
+                        </div>
+                        <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[90px]">
+                          {awayTeam.toLowerCase()}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Simple layout (no VS) ── */
+                    <div className="flex items-center gap-3 px-3.5 py-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        {match.homeLogo ? (
+                          <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain rounded" />
+                        ) : (
+                          <Trophy size={18} className="text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-foreground truncate capitalize">{match.title.toLowerCase()}</h3>
+                      </div>
+                      <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                    </div>
+                  )}
+
+                  {/* Location bar */}
+                  {match.location && (
+                    <div className="px-3.5 pb-2.5 -mt-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <MapPin size={9} /> <span className="truncate capitalize">{match.location.toLowerCase()}</span>
+                      </span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* ── Next Trainings (up to 2) ── */}
       {nextTrainings.length > 0 && (
-        <motion.div variants={fadeUp}>
+        <div>
           <SectionHeader icon={Dumbbell} title={`Prochain${nextTrainings.length > 1 ? 's' : ''} entraînement${nextTrainings.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
           <div className="space-y-2">
             {nextTrainings.map((training) => (
@@ -203,11 +250,11 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
               </button>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* ── Quick Navigation ── */}
-      <motion.div variants={fadeUp}>
+      <div>
         <div className="grid grid-cols-4 gap-2">
           {[
             { icon: Calendar, label: 'Présences', tab: 'presences' },
@@ -225,11 +272,11 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
             </button>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       {/* ── Recent News ── */}
       {recentNews.length > 0 && (
-        <motion.div variants={fadeUp}>
+        <div>
           <SectionHeader icon={Newspaper} title="Dernières actus" onAction={() => onNavigate('news')} actionLabel="Voir tout" />
           <div className="space-y-2">
             {recentNews.map((n) => (
@@ -249,9 +296,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
               </button>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 };
 
