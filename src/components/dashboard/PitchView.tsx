@@ -245,34 +245,6 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
           </div>
         ))}
 
-        {/* Animated football */}
-        <motion.div
-          className="absolute z-[2] pointer-events-none"
-          style={{ width: 18, height: 18 }}
-          animate={{
-            left: ['12%', '75%', '60%', '25%', '50%', '80%', '35%', '12%'],
-            top: ['85%', '70%', '40%', '25%', '10%', '50%', '65%', '85%'],
-            rotate: [0, 180, 360, 540, 720, 900, 1080, 1260],
-          }}
-          transition={{
-            duration: 16,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            times: [0, 0.14, 0.28, 0.42, 0.56, 0.7, 0.85, 1],
-          }}
-        >
-          <svg viewBox="0 0 40 40" width="18" height="18" className="drop-shadow-md">
-            <circle cx="20" cy="20" r="19" fill="white" stroke="hsl(0 0% 80%)" strokeWidth="0.8" />
-            <path d="M20 1 L24.5 8 L31.5 6.5 L33 14 L39.5 17.5 L36.5 24.5 L39.5 31 L33 33 L28.5 39 L21 36.5 L14 39.5 L10.5 33 L3.5 31 L5 24 L1 18 L7 14 L8 7 L15 6.5 Z" fill="none" stroke="hsl(0 0% 75%)" strokeWidth="0.5" />
-            <polygon points="20,5 24,11 20,14 16,11" fill="hsl(0 0% 20%)" />
-            <polygon points="31,10 34,17 29,19 25,14" fill="hsl(0 0% 20%)" />
-            <polygon points="9,10 15,14 11,19 6,17" fill="hsl(0 0% 20%)" />
-            <polygon points="6,28 11,24 16,28 13,34" fill="hsl(0 0% 20%)" />
-            <polygon points="34,28 29,24 25,28 28,34" fill="hsl(0 0% 20%)" />
-            <polygon points="20,32 25,29 24,35 20,38 16,35 15,29" fill="hsl(0 0% 20%)" />
-          </svg>
-        </motion.div>
-
         {/* Players */}
         {positioned.map((p, idx) => {
           const isSelected = selectedPlayer === p.id;

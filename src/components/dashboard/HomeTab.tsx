@@ -111,103 +111,43 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
       {nextMatches.length > 0 && (
         <div>
           <SectionHeader icon={Trophy} title={`Prochain${nextMatches.length > 1 ? 's' : ''} match${nextMatches.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
-          <div className="space-y-2.5">
-            {nextMatches.map((match) => {
-              // Parse teams from title (format: "Team A - Team B" or just title)
-              const titleParts = match.title.split(/\s*[-–]\s*/);
-              const homeTeam = titleParts[0]?.trim() || match.title;
-              const awayTeam = titleParts[1]?.trim() || '';
-              const hasVs = awayTeam.length > 0;
-
-              return (
-                <button
-                  key={match.id}
-                  onClick={() => onNavigate('presences', match.id)}
-                  className="w-full bg-card border border-border/50 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
-                >
-                  {/* Top bar with date/time/team badge */}
-                  <div className="flex items-center justify-between px-3.5 pt-3 pb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+          <div className="space-y-2">
+            {nextMatches.map((match) => (
+              <button
+                key={match.id}
+                onClick={() => onNavigate('presences', match.id)}
+                className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    {match.homeLogo ? (
+                      <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                    ) : (
+                      <Trophy size={18} className="text-primary" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-foreground truncate">{match.title}</h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                         <Calendar size={10} /> {formatDate(match.date)}
                       </span>
                       {match.time && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                           <Clock size={10} /> {match.time}
                         </span>
                       )}
                     </div>
-                    {match.team && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/10 text-primary">{match.team}</span>
+                    {match.location && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                        <MapPin size={9} /> <span className="truncate max-w-[200px]">{match.location}</span>
+                      </span>
                     )}
                   </div>
-
-                  {hasVs ? (
-                    /* ── VS Layout with logos ── */
-                    <div className="flex items-center justify-between px-3.5 py-3">
-                      {/* Home team */}
-                      <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-12 h-12 rounded-xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
-                          {match.homeLogo ? (
-                            <img src={match.homeLogo} alt="" className="w-9 h-9 object-contain" />
-                          ) : (
-                            <Shield size={22} className="text-primary/40" />
-                          )}
-                        </div>
-                        <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[90px]">
-                          {homeTeam.toLowerCase()}
-                        </span>
-                      </div>
-
-                      {/* VS badge */}
-                      <div className="shrink-0 mx-2">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                          <span className="text-xs font-black text-primary tracking-tight">VS</span>
-                        </div>
-                      </div>
-
-                      {/* Away team */}
-                      <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-12 h-12 rounded-xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
-                          {match.awayLogo ? (
-                            <img src={match.awayLogo} alt="" className="w-9 h-9 object-contain" />
-                          ) : (
-                            <Shield size={22} className="text-muted-foreground/40" />
-                          )}
-                        </div>
-                        <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[90px]">
-                          {awayTeam.toLowerCase()}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    /* ── Simple layout (no VS) ── */
-                    <div className="flex items-center gap-3 px-3.5 py-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        {match.homeLogo ? (
-                          <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain rounded" />
-                        ) : (
-                          <Trophy size={18} className="text-primary" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-foreground truncate capitalize">{match.title.toLowerCase()}</h3>
-                      </div>
-                      <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
-                    </div>
-                  )}
-
-                  {/* Location bar */}
-                  {match.location && (
-                    <div className="px-3.5 pb-2.5 -mt-1">
-                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <MapPin size={9} /> <span className="truncate capitalize">{match.location.toLowerCase()}</span>
-                      </span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+                  <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       )}
