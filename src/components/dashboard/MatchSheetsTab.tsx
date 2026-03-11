@@ -182,15 +182,15 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
                           {homeLogo ? (
-                            <img src={homeLogo} alt={ms.homeTeam || ''} className="w-11 h-11 object-contain" />
+                            <img src={homeLogo} alt={resolvedHome || ''} className="w-11 h-11 object-contain" />
                           ) : (
                             <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-[10px] font-black text-primary/60 text-center leading-none">{(ms.homeTeam || '?').slice(0, 3).toUpperCase()}</span>
+                              <span className="text-[10px] font-black text-primary/60 text-center leading-none">{(resolvedHome || '?').slice(0, 3).toUpperCase()}</span>
                             </div>
                           )}
                         </div>
                         <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
-                          {ms.homeTeam?.toLowerCase()}
+                          {resolvedHome?.toLowerCase()}
                         </span>
                       </div>
 
