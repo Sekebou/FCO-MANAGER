@@ -678,6 +678,9 @@ const Dashboard = () => {
           supabase.from('gallery_photos').select('*').then(({ data }) => data && getSignedPhotoUrls(data.map(mapPhoto)).then(signed => setGalleryPhotos(signed)));
         }
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_sheets' }, () => {
+        supabase.from('match_sheets').select('*').order('date', { ascending: false }).then(({ data }) => data && setMatchSheets(data.map(mapMatchSheet)));
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
