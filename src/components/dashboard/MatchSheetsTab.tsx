@@ -113,13 +113,25 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
             const isExpanded = expandedId === ms.id;
             const isPast = new Date(ms.date) < now;
             const isLocked = !isManager && !isPast;
-            const hasVs = ms.homeTeam && ms.awayTeam;
             const hasScore = ms.homeScore != null && ms.awayScore != null;
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
 
-            // Resolve logos: match sheet → championship lookup
-            const homeLogo = ms.homeLogo || (ms.homeTeam ? getChampLogo(ms.homeTeam) : null);
-            const awayLogo = ms.awayLogo || (ms.awayTeam ? getChampLogo(ms.awayTeam) : null);
+            // Parse home/away from title if awayTeam is missing
+            let resolvedHome = ms.homeTeam || null;
+            let resolvedAway = ms.awayTeam || null;
+            if (!resolvedAway && ms.title) {
+              const vsParts = ms.title.split(/\s+vs\s+/i);
+              if (vsParts.length === 2) {
+                resolvedHome = vsParts[0].trim();
+                resolvedAway = vsParts[1].trim();
+              }
+            }
+
+            const hasVs = resolvedHome && resolvedAway;
+
+            // Resolve logos: match sheet → championship lookup → event
+            const homeLogo = ms.homeLogo || (resolvedHome ? getChampLogo(resolvedHome) : null);
+            const awayLogo = ms.awayLogo || (resolvedAway ? getChampLogo(resolvedAway) : null);
 
             const convokedPlayers = Object.entries(ms.convocations)
               .filter(([, c]) => c.status === 'convoque')
