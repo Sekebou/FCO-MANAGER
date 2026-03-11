@@ -6,6 +6,7 @@ import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
 import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download } from 'lucide-react';
 import { exportMatchSheet } from '@/lib/pdfExport';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
 
 interface AppUser {
