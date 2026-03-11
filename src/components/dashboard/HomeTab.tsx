@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   ChevronRight, Clock, MapPin, Trophy, Dumbbell,
-  Target, Swords, Users,
+  Target, Shield, Swords, Users,
   Calendar, Newspaper, BarChart3
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
