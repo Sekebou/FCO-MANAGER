@@ -176,16 +176,16 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                   </div>
 
                   {hasVs ? (
-                    /* ── VS Layout with large logos ── */
+                    /* ── VS Layout ── */
                     <div className="flex items-center justify-between px-4 py-3">
                       {/* Home */}
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden">
                           {homeLogo ? (
-                            <img src={homeLogo} alt={resolvedHome || ''} className="w-11 h-11 object-contain" />
+                            <img src={homeLogo} alt={resolvedHome || ''} className="w-12 h-12 object-contain drop-shadow-md" style={{ mixBlendMode: 'multiply' }} />
                           ) : (
-                            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-[10px] font-black text-primary/60 text-center leading-none">{(resolvedHome || '?').slice(0, 3).toUpperCase()}</span>
+                            <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center">
+                              <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(resolvedHome || '?').slice(0, 3).toUpperCase()}</span>
                             </div>
                           )}
                         </div>
@@ -203,19 +203,17 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                             <span className="text-2xl font-black text-foreground">{ms.awayScore}</span>
                           </div>
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 border-2 border-primary/25 flex items-center justify-center shadow-sm">
-                            <span className="text-sm font-black text-primary tracking-tight">VS</span>
-                          </div>
+                          <span className="text-xs font-black text-muted-foreground tracking-widest">VS</span>
                         )}
                       </div>
 
                       {/* Away */}
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-border/40 flex items-center justify-center overflow-hidden shadow-sm">
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden">
                           {awayLogo ? (
-                            <img src={awayLogo} alt={resolvedAway || ''} className="w-11 h-11 object-contain" />
+                            <img src={awayLogo} alt={resolvedAway || ''} className="w-12 h-12 object-contain drop-shadow-md" style={{ mixBlendMode: 'multiply' }} />
                           ) : (
-                            <div className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center">
                               <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(resolvedAway || '?').slice(0, 3).toUpperCase()}</span>
                             </div>
                           )}
