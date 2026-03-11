@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
     // Fetch all match/training events up to today
     const eventsRes = await fetch(
-      `${supabaseUrl}/rest/v1/events?date=lte.${todayStr}&type=in.(match,training)&select=id,type,date,presences,time,duration`,
+      `${supabaseUrl}/rest/v1/events?date=lte.${todayStr}&type=in.(match,training)&select=id,type,date,presences,time,duration,title,home_logo,away_logo`,
       { headers }
     );
     if (!eventsRes.ok) throw new Error(`Failed to fetch events: ${await eventsRes.text()}`);
@@ -31,10 +31,8 @@ Deno.serve(async (req) => {
 
     // Determine which events are terminated
     const terminatedEvents = events.filter((e: any) => {
-      if (e.date < todayStr) return true; // past days → always terminated
-      // Today: check if event end time has passed
+      if (e.date < todayStr) return true;
       if (!e.time) {
-        // No time set → consider terminated after default duration from start of day
         const duration = (e.duration || 90) * 60 * 1000;
         const dayStart = new Date(parisNow);
         dayStart.setHours(0, 0, 0, 0);
@@ -48,7 +46,7 @@ Deno.serve(async (req) => {
     });
 
     if (terminatedEvents.length === 0) {
-      return new Response(JSON.stringify({ success: true, deleted: 0, archived: 0 }), {
+      return new Response(JSON.stringify({ success: true, deleted: 0, archived: 0, scoresUpdated: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -88,6 +86,108 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Auto-fetch scores from FFF API for terminated match events ──
+    let scoresUpdated = 0;
+    const terminatedMatchEvents = terminatedEvents.filter((e: any) => e.type === 'match');
+
+    if (terminatedMatchEvents.length > 0) {
+      // Get match_sheets that need scores
+      const eventIds = terminatedMatchEvents.map((e: any) => e.id);
+      const msRes = await fetch(
+        `${supabaseUrl}/rest/v1/match_sheets?event_id=in.(${eventIds.join(',')})&select=id,event_id,home_team,away_team,home_score,away_score,date`,
+        { headers }
+      );
+      const matchSheets = msRes.ok ? await msRes.json() : [];
+      const sheetsNeedingScores = matchSheets.filter((ms: any) => ms.home_score == null || ms.away_score == null);
+
+      if (sheetsNeedingScores.length > 0) {
+        // Fetch all championships with FFF URL to query results
+        const champRes = await fetch(
+          `${supabaseUrl}/rest/v1/championships?fff_url=not.is.null&select=id,fff_url,team`,
+          { headers }
+        );
+        const championships = champRes.ok ? await champRes.json() : [];
+
+        // For each championship, fetch recent results from FFF API
+        const allFffResults: { homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; date: string }[] = [];
+
+        for (const champ of championships) {
+          if (!champ.fff_url?.startsWith('fff-api::')) continue;
+          const parts = champ.fff_url.split('::');
+          if (parts.length !== 4) continue;
+          const cpNo = parts[1];
+          const phase = parts[2];
+          const poule = parts[3];
+
+          try {
+            const fffUrl = `https://api-dofa.fff.fr/api/compets/${cpNo}/phases/${phase}/poules/${poule}/resultat`;
+            const fffRes = await fetch(fffUrl, {
+              headers: { 'Accept': 'application/json', 'User-Agent': 'FCO-Manager/1.0' },
+            });
+            if (fffRes.ok) {
+              const fffData = await fffRes.json();
+              const members = Array.isArray(fffData) ? fffData : fffData?.['hydra:member'] || [];
+              for (const m of members) {
+                if (m.home_score != null && m.away_score != null) {
+                  const homeName = m.home?.short_name || m.home?.name || '';
+                  const awayName = m.away?.short_name || m.away?.name || '';
+                  let date = '';
+                  if (m.date) {
+                    const d = new Date(m.date);
+                    date = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : m.date;
+                  }
+                  allFffResults.push({
+                    homeTeam: homeName,
+                    awayTeam: awayName,
+                    homeScore: Number(m.home_score),
+                    awayScore: Number(m.away_score),
+                    date,
+                  });
+                }
+              }
+            }
+          } catch (e) {
+            console.error(`Failed to fetch FFF results for champ ${champ.id}:`, e);
+          }
+        }
+
+        // Match FFF results to match_sheets and update scores
+        for (const ms of sheetsNeedingScores) {
+          const home = (ms.home_team || '').toUpperCase().trim();
+          const away = (ms.away_team || '').toUpperCase().trim();
+          if (!home || !away) continue;
+
+          const match = allFffResults.find(r => {
+            const rHome = r.homeTeam.toUpperCase().trim();
+            const rAway = r.awayTeam.toUpperCase().trim();
+            // Match by team names (flexible: check both directions) and date
+            return (
+              ((rHome === home && rAway === away) || (rHome === away && rAway === home)) &&
+              r.date === ms.date
+            );
+          });
+
+          if (match) {
+            // If teams are swapped in FFF vs match_sheet, swap scores accordingly
+            const rHome = match.homeTeam.toUpperCase().trim();
+            const isSwapped = rHome !== home;
+            const finalHomeScore = isSwapped ? match.awayScore : match.homeScore;
+            const finalAwayScore = isSwapped ? match.homeScore : match.awayScore;
+
+            const updateRes = await fetch(
+              `${supabaseUrl}/rest/v1/match_sheets?id=eq.${ms.id}`,
+              {
+                method: 'PATCH',
+                headers: { ...headers, 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ home_score: finalHomeScore, away_score: finalAwayScore }),
+              }
+            );
+            if (updateRes.ok) scoresUpdated++;
+          }
+        }
+      }
+    }
+
     // Delete terminated events
     const eventIds = terminatedEvents.map((e: any) => e.id);
     await fetch(
@@ -95,10 +195,10 @@ Deno.serve(async (req) => {
       { method: 'DELETE', headers }
     );
 
-    console.log(`Cleanup: archived ${attendanceRecords.length} presences, deleted ${eventIds.length} events`);
+    console.log(`Cleanup: archived ${attendanceRecords.length} presences, deleted ${eventIds.length} events, updated ${scoresUpdated} scores`);
 
     return new Response(
-      JSON.stringify({ success: true, deleted: eventIds.length, archived: attendanceRecords.length }),
+      JSON.stringify({ success: true, deleted: eventIds.length, archived: attendanceRecords.length, scoresUpdated }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
