@@ -139,7 +139,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
   return (
     <div ref={ref}>
       <div
-        className="relative w-full max-w-sm mx-auto rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
+        className="relative w-full max-w-sm mx-auto rounded-2xl overflow-visible shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
         style={{ aspectRatio: '9 / 13' }}
         onClick={() => setSelectedPlayer(null)}
       >
