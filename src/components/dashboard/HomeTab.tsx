@@ -122,75 +122,87 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         </motion.div>
       )}
 
-      {/* ── Next Match ── */}
-      {nextMatch && (
+      {/* ── Next Matches (up to 3) ── */}
+      {nextMatches.length > 0 && (
         <motion.div variants={fadeUp}>
-          <SectionHeader icon={Trophy} title="Prochain match" onAction={() => onNavigate('presences', nextMatch.id)} />
-          <button
-            onClick={() => onNavigate('presences', nextMatch.id)}
-            className="w-full text-left bg-card border border-border/50 rounded-2xl p-4 active:scale-[0.98] transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Trophy size={20} className="text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-foreground truncate capitalize" style={{ textTransform: 'capitalize' }}>{nextMatch.title.toLowerCase()}</h3>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar size={11} /> {formatDate(nextMatch.date)}
-                  </span>
-                  {nextMatch.time && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock size={11} /> {nextMatch.time}
-                    </span>
-                  )}
+          <SectionHeader icon={Trophy} title={`Prochain${nextMatches.length > 1 ? 's' : ''} match${nextMatches.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
+          <div className="space-y-2">
+            {nextMatches.map((match) => (
+              <button
+                key={match.id}
+                onClick={() => onNavigate('presences', match.id)}
+                className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    {match.homeLogo ? (
+                      <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain rounded" />
+                    ) : (
+                      <Trophy size={18} className="text-primary" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-foreground truncate capitalize">{match.title.toLowerCase()}</h3>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Calendar size={10} /> {formatDate(match.date)}
+                      </span>
+                      {match.time && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Clock size={10} /> {match.time}
+                        </span>
+                      )}
+                      {match.team && (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary">{match.team}</span>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
                 </div>
-                {nextMatch.location && (
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                    <MapPin size={11} /> <span className="truncate capitalize">{nextMatch.location.toLowerCase()}</span>
-                  </span>
-                )}
-              </div>
-              <ChevronRight size={16} className="text-muted-foreground/40 shrink-0" />
-            </div>
-          </button>
+              </button>
+            ))}
+          </div>
         </motion.div>
       )}
 
-      {/* ── Next Training ── */}
-      {nextTraining && nextTraining.id !== nextMatch?.id && (
+      {/* ── Next Trainings (up to 2) ── */}
+      {nextTrainings.length > 0 && (
         <motion.div variants={fadeUp}>
-          <SectionHeader icon={Dumbbell} title="Prochain entraînement" onAction={() => onNavigate('presences', nextTraining.id)} />
-          <button
-            onClick={() => onNavigate('presences', nextTraining.id)}
-            className="w-full text-left bg-card border border-border/50 rounded-2xl p-4 active:scale-[0.98] transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                <Dumbbell size={20} className="text-accent" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-foreground truncate capitalize">{nextTraining.title.toLowerCase()}</h3>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar size={11} /> {formatDate(nextTraining.date)}
-                  </span>
-                  {nextTraining.time && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock size={11} /> {nextTraining.time}
-                    </span>
-                  )}
+          <SectionHeader icon={Dumbbell} title={`Prochain${nextTrainings.length > 1 ? 's' : ''} entraînement${nextTrainings.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
+          <div className="space-y-2">
+            {nextTrainings.map((training) => (
+              <button
+                key={training.id}
+                onClick={() => onNavigate('presences', training.id)}
+                className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                    <Dumbbell size={18} className="text-accent" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-foreground truncate capitalize">{training.title.toLowerCase()}</h3>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Calendar size={10} /> {formatDate(training.date)}
+                      </span>
+                      {training.time && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Clock size={10} /> {training.time}
+                        </span>
+                      )}
+                    </div>
+                    {training.location && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                        <MapPin size={10} /> <span className="truncate capitalize">{training.location.toLowerCase()}</span>
+                      </span>
+                    )}
+                  </div>
+                  <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
                 </div>
-                {nextTraining.location && (
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                    <MapPin size={11} /> <span className="truncate capitalize">{nextTraining.location.toLowerCase()}</span>
-                  </span>
-                )}
-              </div>
-              <ChevronRight size={16} className="text-muted-foreground/40 shrink-0" />
-            </div>
-          </button>
+              </button>
+            ))}
+          </div>
         </motion.div>
       )}
 
