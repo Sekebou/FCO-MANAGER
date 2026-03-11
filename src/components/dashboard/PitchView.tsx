@@ -190,6 +190,61 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
           <path d="M 62 2 A 2 2 0 0 1 64 4" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.3" />
         </svg>
 
+        {/* Corner flags with wind animation */}
+        {[
+          { x: '5%', y: '1%' },
+          { x: '93%', y: '1%' },
+          { x: '5%', y: '95%' },
+          { x: '93%', y: '95%' },
+        ].map((pos, i) => (
+          <div key={`flag-${i}`} className="absolute" style={{ left: pos.x, top: pos.y, zIndex: 5 }}>
+            {/* Pole */}
+            <div className="w-[2px] h-[18px] bg-white/60 rounded-full mx-auto" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
+            {/* Flag with wind keyframes */}
+            <motion.div
+              className="absolute -top-[1px] left-[2px] origin-left"
+              animate={{
+                rotateZ: [0, 8, -4, 6, -2, 0],
+                scaleX: [1, 1.08, 0.95, 1.05, 0.98, 1],
+                skewY: [0, 3, -2, 2, -1, 0],
+              }}
+              transition={{
+                duration: 2.5 + i * 0.3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              <svg width="14" height="10" viewBox="0 0 14 10">
+                <defs>
+                  <linearGradient id={`flag-g-${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(0 80% 50%)" />
+                    <stop offset="100%" stopColor="hsl(0 70% 40%)" />
+                  </linearGradient>
+                </defs>
+                <motion.path
+                  d="M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z"
+                  fill={`url(#flag-g-${i})`}
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth="0.3"
+                  animate={{
+                    d: [
+                      "M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z",
+                      "M 0 0 Q 4 -1 8 1 Q 11 2 14 0.5 L 13.5 5.5 Q 10 4 7 5.5 Q 3 7 0 5 Z",
+                      "M 0 0 Q 5 2 7 0.5 Q 10 -1 14 1.5 L 12.5 5 Q 9 6 7 4.5 Q 4 3 0 5 Z",
+                      "M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z",
+                    ],
+                  }}
+                  transition={{
+                    duration: 2.5 + i * 0.3,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+              </svg>
+            </motion.div>
+          </div>
+        ))}
+
         {/* Players */}
         {positioned.map((p, idx) => {
           const isSelected = selectedPlayer === p.id;
