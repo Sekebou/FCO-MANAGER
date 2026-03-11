@@ -71,21 +71,15 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
             </>
           ) : (
             <>
-              <stop offset="0%" stopColor="hsl(0 0% 100%)" />
-              <stop offset="100%" stopColor="hsl(0 0% 88%)" />
+              <stop offset="0%" stopColor="hsl(230 75% 30%)" />
+              <stop offset="100%" stopColor="hsl(235 65% 18%)" />
             </>
           )}
         </linearGradient>
         <linearGradient id={`${id}-shine`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.35)" />
+          <stop offset="0%" stopColor="rgba(255,255,255,0.25)" />
           <stop offset="40%" stopColor="rgba(255,255,255,0)" />
         </linearGradient>
-        {/* Blue stripe for white jersey */}
-        {!isGk && (
-          <clipPath id={`${id}-clip`}>
-            <path d="M 9 0 L 0 9 L 0 17 L 7 14.5 L 7 41 Q 7 43 9 43 L 31 43 Q 33 43 33 41 L 33 14.5 L 40 17 L 40 9 L 31 0 L 26 5.5 Q 23 9 20 9 Q 17 9 14 5.5 Z" />
-          </clipPath>
-        )}
       </defs>
       {/* Shadow */}
       <ellipse cx="20" cy="43" rx="12" ry="2" fill="rgba(0,0,0,0.2)" />
@@ -93,13 +87,9 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
       <path
         d="M 9 0 L 0 9 L 0 17 L 7 14.5 L 7 41 Q 7 43 9 43 L 31 43 Q 33 43 33 41 L 33 14.5 L 40 17 L 40 9 L 31 0 L 26 5.5 Q 23 9 20 9 Q 17 9 14 5.5 Z"
         fill={`url(#${id})`}
-        stroke={isSelected ? 'hsl(45 100% 65%)' : isGk ? 'rgba(255,255,255,0.15)' : 'hsl(225 70% 45%)'}
-        strokeWidth={isSelected ? 1.8 : isGk ? 0.6 : 0.8}
+        stroke={isSelected ? 'hsl(45 100% 65%)' : 'rgba(255,255,255,0.15)'}
+        strokeWidth={isSelected ? 1.8 : 0.6}
       />
-      {/* Blue vertical stripe on white jersey */}
-      {!isGk && (
-        <rect x="15" y="0" width="10" height="44" fill="hsl(225 80% 42%)" clipPath={`url(#${id}-clip)`} />
-      )}
       {/* Shine overlay */}
       <path
         d="M 9 0 L 0 9 L 0 17 L 7 14.5 L 7 41 Q 7 43 9 43 L 31 43 Q 33 43 33 41 L 33 14.5 L 40 17 L 40 9 L 31 0 L 26 5.5 Q 23 9 20 9 Q 17 9 14 5.5 Z"
@@ -109,30 +99,20 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
       <path
         d="M 14 5.5 Q 17 9 20 9 Q 23 9 26 5.5"
         fill="none"
-        stroke={isGk ? 'rgba(255,255,255,0.3)' : 'hsl(225 70% 45%)'}
+        stroke="rgba(255,255,255,0.3)"
         strokeWidth="0.8"
-      />
-      {/* Club logo */}
-      <image
-        href="/logo.png"
-        x="10"
-        y="12"
-        width="10"
-        height="10"
-        opacity={0.85}
-        style={{ filter: 'drop-shadow(0 0.5px 1px rgba(0,0,0,0.2))' }}
       />
       {/* Number */}
       <text
         x="20"
         y="31"
         textAnchor="middle"
-        fill={isGk ? 'white' : 'hsl(225 80% 35%)'}
-        fontSize="14"
+        fill="white"
+        fontSize="15"
         fontWeight="900"
         fontFamily="system-ui, -apple-system, sans-serif"
         letterSpacing="0.5"
-        style={{ filter: `drop-shadow(0 1px 2px ${isGk ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.15)'})` }}
+        style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}
       >
         {number}
       </text>
