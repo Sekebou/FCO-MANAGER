@@ -579,6 +579,63 @@ export type Database = {
         }
         Relationships: []
       }
+      match_sheets: {
+        Row: {
+          away_logo: string | null
+          away_score: number | null
+          away_team: string | null
+          convocations: Json | null
+          created_at: string
+          created_by: string | null
+          date: string
+          event_id: string | null
+          home_logo: string | null
+          home_score: number | null
+          home_team: string | null
+          id: string
+          location: string | null
+          team: string | null
+          time: string | null
+          title: string
+        }
+        Insert: {
+          away_logo?: string | null
+          away_score?: number | null
+          away_team?: string | null
+          convocations?: Json | null
+          created_at?: string
+          created_by?: string | null
+          date: string
+          event_id?: string | null
+          home_logo?: string | null
+          home_score?: number | null
+          home_team?: string | null
+          id?: string
+          location?: string | null
+          team?: string | null
+          time?: string | null
+          title: string
+        }
+        Update: {
+          away_logo?: string | null
+          away_score?: number | null
+          away_team?: string | null
+          convocations?: Json | null
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          event_id?: string | null
+          home_logo?: string | null
+          home_score?: number | null
+          home_team?: string | null
+          id?: string
+          location?: string | null
+          team?: string | null
+          time?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       news: {
         Row: {
           author: string
