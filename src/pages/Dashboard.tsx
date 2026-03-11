@@ -569,7 +569,7 @@ const Dashboard = () => {
         setChampionships(freshChamps);
         setChampMatches(freshMatches);
         setAlbums(freshAlbums);
-
+        setMatchSheets(freshMatchSheets);
         // Write to cache for next visit
         writeCache('players', freshPlayers);
         writeCache('events', freshEvents);
