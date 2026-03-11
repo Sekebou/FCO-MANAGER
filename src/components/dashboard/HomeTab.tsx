@@ -43,13 +43,8 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   const nextMatches = useMemo(() => upcomingEvents.filter(e => e.type === 'match').slice(0, 3), [upcomingEvents]);
   const nextTrainings = useMemo(() => upcomingEvents.filter(e => e.type === 'training').slice(0, 2), [upcomingEvents]);
 
-  // Recent results: past match sheets with scores
-  const recentResults = useMemo(() =>
-    matchSheets
-      .filter(ms => ms.homeScore != null && ms.awayScore != null)
-      .slice(0, 3),
-    [matchSheets]
-  );
+
+
 
   const myPlayer = useMemo(() => {
     if (!currentUser?.playerId) return null;
