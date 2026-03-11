@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
@@ -99,8 +99,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
             const isPast = new Date(ms.date) < now;
-            // Managers (admin, admin+, entraineur) can always see; players only after the date
             const isLocked = !isManager && !isPast;
+            const hasVs = ms.homeTeam && ms.awayTeam;
+            const hasScore = ms.homeScore != null && ms.awayScore != null;
 
             const convokedPlayers = Object.entries(ms.convocations)
               .filter(([, c]) => c.status === 'convoque')
@@ -111,155 +112,191 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
             return (
-              <motion.div
+              <div
                 key={ms.id}
-                layout
                 className="bg-card border border-border rounded-2xl overflow-hidden"
               >
-                {/* Card Header */}
+                {/* Card Header — VS style */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : ms.id)}
-                  className="w-full text-left p-4"
+                  className="w-full text-left"
                 >
-                  <div className="flex items-center gap-3">
-                    {ms.team && (
-                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${teamColors[ms.team] || 'bg-muted text-muted-foreground border-border'}`}>
-                        {ms.team}
-                      </span>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {ms.homeLogo && (
-                          <img src={ms.homeLogo} alt="" className="w-6 h-6 object-contain rounded" />
-                        )}
-                        <h3 className="text-sm font-bold text-foreground truncate flex-1">
-                          {ms.homeTeam && ms.awayTeam ? `${ms.homeTeam} vs ${ms.awayTeam}` : ms.title}
-                        </h3>
-                        {ms.awayLogo && (
-                          <img src={ms.awayLogo} alt="" className="w-6 h-6 object-contain rounded" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar size={10} /> {formatDate(ms.date)}
+                  {/* Top meta bar */}
+                  <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                    <div className="flex items-center gap-2">
+                      {ms.team && (
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${teamColors[ms.team] || 'bg-muted text-muted-foreground border-border'}`}>
+                          {ms.team}
                         </span>
-                        {ms.time && (
-                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock size={10} /> {ms.time}
-                          </span>
-                        )}
-                      </div>
+                      )}
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                        <Calendar size={10} /> {formatDate(ms.date)}
+                      </span>
+                      {ms.time && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                          <Clock size={10} /> {ms.time}
+                        </span>
+                      )}
                     </div>
-
-                    {/* Score or lock or chevron */}
                     {isLocked ? (
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase">À venir</span>
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                          <Lock size={14} className="text-muted-foreground" />
-                        </div>
-                      </div>
-                    ) : ms.homeScore != null && ms.awayScore != null ? (
-                      <div className="flex items-center gap-1 bg-secondary rounded-xl px-3 py-2">
-                        <span className="text-base font-black text-foreground">{ms.homeScore}</span>
-                        <span className="text-xs text-muted-foreground">-</span>
-                        <span className="text-base font-black text-foreground">{ms.awayScore}</span>
+                      <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
+                        <Lock size={12} className="text-muted-foreground" />
                       </div>
                     ) : (
-                      isExpanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />
+                      isExpanded ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />
                     )}
                   </div>
+
+                  {hasVs ? (
+                    /* ── VS Layout with logos ── */
+                    <div className="flex items-center justify-between px-4 py-3">
+                      {/* Home */}
+                      <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+                        <div className="w-14 h-14 rounded-2xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
+                          {ms.homeLogo ? (
+                            <img src={ms.homeLogo} alt="" className="w-10 h-10 object-contain" />
+                          ) : (
+                            <Shield size={24} className="text-primary/40" />
+                          )}
+                        </div>
+                        <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
+                          {ms.homeTeam?.toLowerCase()}
+                        </span>
+                      </div>
+
+                      {/* Score or VS */}
+                      <div className="shrink-0 mx-2 flex flex-col items-center gap-1">
+                        {hasScore ? (
+                          <div className="flex items-center gap-1.5 bg-secondary rounded-xl px-4 py-2">
+                            <span className="text-xl font-black text-foreground">{ms.homeScore}</span>
+                            <span className="text-sm text-muted-foreground font-bold">-</span>
+                            <span className="text-xl font-black text-foreground">{ms.awayScore}</span>
+                          </div>
+                        ) : (
+                          <div className="w-11 h-11 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+                            <span className="text-xs font-black text-primary tracking-tight">VS</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Away */}
+                      <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+                        <div className="w-14 h-14 rounded-2xl bg-primary/5 border border-border/30 flex items-center justify-center overflow-hidden">
+                          {ms.awayLogo ? (
+                            <img src={ms.awayLogo} alt="" className="w-10 h-10 object-contain" />
+                          ) : (
+                            <Shield size={24} className="text-muted-foreground/40" />
+                          )}
+                        </div>
+                        <span className="text-[11px] font-bold text-foreground text-center leading-tight line-clamp-2 capitalize max-w-[100px]">
+                          {ms.awayTeam?.toLowerCase()}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Simple title layout ── */
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <Trophy size={18} className="text-primary" />
+                      </div>
+                      <h3 className="text-sm font-bold text-foreground truncate flex-1">{ms.title}</h3>
+                    </div>
+                  )}
+
+                  {/* Location in header */}
+                  {ms.location && (
+                    <div className="px-4 pb-2.5 -mt-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <MapPin size={9} /> <span className="truncate capitalize">{ms.location.toLowerCase()}</span>
+                      </span>
+                    </div>
+                  )}
                 </button>
 
-                {/* Expanded: pitch + info */}
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="border-t border-border"
-                  >
-                    <div className={`p-4 relative ${isLocked ? 'select-none' : ''}`}>
-                      {/* Lock overlay for non-managers on future matches */}
-                      {isLocked && (
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/60 backdrop-blur-sm rounded-b-2xl">
-                          <Lock size={28} className="text-muted-foreground mb-2" />
-                          <p className="text-sm font-semibold text-muted-foreground">Composition verrouillée</p>
-                          <p className="text-xs text-muted-foreground/70 mt-0.5">Disponible après le match</p>
-                        </div>
-                      )}
-
-                      <div className={isLocked ? 'filter blur-md' : ''}>
-                        {/* Pitch View directly */}
-                        {convokedPlayers.length > 0 ? (
-                          <PitchView
-                            convocations={ms.convocations}
-                            players={players}
-                          />
-                        ) : (
-                          <div className="text-center py-8">
-                            <Users size={32} className="mx-auto text-muted-foreground/50 mb-2" />
-                            <p className="text-sm text-muted-foreground">Aucun joueur convoqué</p>
+                {/* Expanded: pitch + info — no layout animation to prevent stretching */}
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1, transition: { height: { duration: 0.3 }, opacity: { duration: 0.25, delay: 0.05 } } }}
+                      exit={{ height: 0, opacity: 0, transition: { height: { duration: 0.25 }, opacity: { duration: 0.15 } } }}
+                      className="border-t border-border overflow-hidden"
+                    >
+                      <div className={`p-4 relative ${isLocked ? 'select-none' : ''}`}>
+                        {/* Lock overlay */}
+                        {isLocked && (
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-card/60 backdrop-blur-sm rounded-b-2xl">
+                            <Lock size={28} className="text-muted-foreground mb-2" />
+                            <p className="text-sm font-semibold text-muted-foreground">Composition verrouillée</p>
+                            <p className="text-xs text-muted-foreground/70 mt-0.5">Disponible après le match</p>
                           </div>
                         )}
 
-                        {/* Separator */}
-                        <div className="my-4 flex items-center gap-3">
-                          <Separator className="flex-1" />
-                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Infos match</span>
-                          <Separator className="flex-1" />
-                        </div>
-
-                        {/* Match info below */}
-                        <div className="space-y-2">
-                          {/* Score if available */}
-                          {ms.homeScore != null && ms.awayScore != null && (
-                            <div className="flex items-center justify-center gap-3 py-2">
-                              <div className="flex items-center gap-2">
-                                {ms.homeLogo && <img src={ms.homeLogo} alt="" className="w-5 h-5 object-contain" />}
-                                <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.homeTeam}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 bg-secondary rounded-lg px-3 py-1.5">
-                                <span className="text-lg font-black text-foreground">{ms.homeScore}</span>
-                                <span className="text-xs text-muted-foreground">-</span>
-                                <span className="text-lg font-black text-foreground">{ms.awayScore}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.awayTeam}</span>
-                                {ms.awayLogo && <img src={ms.awayLogo} alt="" className="w-5 h-5 object-contain" />}
-                              </div>
+                        <div className={isLocked ? 'filter blur-md' : ''}>
+                          {convokedPlayers.length > 0 ? (
+                            <PitchView convocations={ms.convocations} players={players} />
+                          ) : (
+                            <div className="text-center py-8">
+                              <Users size={32} className="mx-auto text-muted-foreground/50 mb-2" />
+                              <p className="text-sm text-muted-foreground">Aucun joueur convoqué</p>
                             </div>
                           )}
 
-                          {/* Details */}
-                          <div className="grid grid-cols-1 gap-1.5">
-                            {ms.location && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
-                                <MapPin size={12} className="shrink-0" />
-                                <span className="truncate">{ms.location}</span>
+                          <div className="my-4 flex items-center gap-3">
+                            <Separator className="flex-1" />
+                            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Infos match</span>
+                            <Separator className="flex-1" />
+                          </div>
+
+                          <div className="space-y-2">
+                            {hasScore && hasVs && (
+                              <div className="flex items-center justify-center gap-3 py-2">
+                                <div className="flex items-center gap-2">
+                                  {ms.homeLogo && <img src={ms.homeLogo} alt="" className="w-5 h-5 object-contain" />}
+                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.homeTeam}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-secondary rounded-lg px-3 py-1.5">
+                                  <span className="text-lg font-black text-foreground">{ms.homeScore}</span>
+                                  <span className="text-xs text-muted-foreground">-</span>
+                                  <span className="text-lg font-black text-foreground">{ms.awayScore}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-semibold text-foreground truncate max-w-[80px]">{ms.awayTeam}</span>
+                                  {ms.awayLogo && <img src={ms.awayLogo} alt="" className="w-5 h-5 object-contain" />}
+                                </div>
                               </div>
                             )}
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
-                              <span className="inline-flex items-center gap-1.5">
-                                <Calendar size={12} /> {formatDate(ms.date)}
-                              </span>
-                              {ms.time && (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <Clock size={12} /> {ms.time}
-                                </span>
+
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {ms.location && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
+                                  <MapPin size={12} className="shrink-0" />
+                                  <span className="truncate">{ms.location}</span>
+                                </div>
                               )}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
-                              <Users size={12} className="shrink-0" />
-                              <span>{convokedPlayers.length} joueur{convokedPlayers.length > 1 ? 's' : ''} convoqué{convokedPlayers.length > 1 ? 's' : ''}</span>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <Calendar size={12} /> {formatDate(ms.date)}
+                                </span>
+                                {ms.time && (
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <Clock size={12} /> {ms.time}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
+                                <Users size={12} className="shrink-0" />
+                                <span>{convokedPlayers.length} joueur{convokedPlayers.length > 1 ? 's' : ''} convoqué{convokedPlayers.length > 1 ? 's' : ''}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             );
           })}
         </div>
