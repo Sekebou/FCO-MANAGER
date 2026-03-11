@@ -32,6 +32,7 @@ const isAllowed = () => {
   if (isCapacitorNative()) return true;
   if (typeof window !== "undefined") {
     // Allow Lovable preview access
+    if (window.location.hostname.includes("lovable.app") || window.location.hostname.includes("lovable.dev")) return true;
     if (window.location.search.includes("__lovable_token")) return true;
     
     const fullUrl = window.location.href;
