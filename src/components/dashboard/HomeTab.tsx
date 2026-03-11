@@ -36,13 +36,12 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   const upcomingEvents = useMemo(() =>
     events
       .filter(e => new Date(e.date) >= now)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(0, 4),
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [events]
   );
 
-  const nextMatch = upcomingEvents.find(e => e.type === 'match');
-  const nextTraining = upcomingEvents.find(e => e.type === 'training');
+  const nextMatches = useMemo(() => upcomingEvents.filter(e => e.type === 'match').slice(0, 3), [upcomingEvents]);
+  const nextTrainings = useMemo(() => upcomingEvents.filter(e => e.type === 'training').slice(0, 2), [upcomingEvents]);
 
   const myPlayer = useMemo(() => {
     if (!currentUser?.playerId) return null;
