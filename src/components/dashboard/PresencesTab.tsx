@@ -57,6 +57,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [showMinPlayersAlert, setShowMinPlayersAlert] = useState(false);
   const [minPlayersCount, setMinPlayersCount] = useState(0);
 
+  useBodyScrollLock(!!convocationMode || showMinPlayersAlert);
+
   // React to navigation with a specific event ID
   useEffect(() => {
     if (initialSelectedEventId) {
