@@ -285,17 +285,18 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
         <AnimatePresence>
           {selected && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.85, y: 5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.85, y: 5 }}
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              className="absolute z-20 rounded-2xl shadow-2xl p-3.5 min-w-[155px] -translate-x-1/2"
+              className="absolute z-30 rounded-2xl shadow-2xl p-3.5 w-[160px]"
               style={{
-                left: `${Math.max(25, Math.min(75, selected.x))}%`,
-                top: `${Math.max(3, selected.y - 17)}%`,
-                background: 'rgba(15,15,25,0.88)',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: 'rgba(15,15,25,0.92)',
                 backdropFilter: 'blur(16px) saturate(1.5)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.15)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
