@@ -166,6 +166,7 @@ const mapChamp = (r: any): Championship => ({ id: r.id, name: r.name, season: r.
 const mapMatch = (r: any): Match => ({ id: r.id, championshipId: r.championship_id, homeTeam: r.home_team, awayTeam: r.away_team, homeScore: r.home_score, awayScore: r.away_score, date: r.date, journee: r.journee, played: r.played ?? false });
 const mapAlbum = (r: any): Album => ({ id: r.id, name: r.name, description: r.description, createdAt: r.created_at, createdBy: r.created_by, coverUrl: r.cover_url });
 const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url, storagePath: r.storage_path, title: r.title, uploadedAt: r.uploaded_at, uploadedBy: r.uploaded_by, uploaderName: r.uploader_name });
+const mapMatchSheet = (r: any): MatchSheet => ({ id: r.id, eventId: r.event_id, title: r.title, date: r.date, time: r.time, location: r.location, team: r.team, homeTeam: r.home_team, awayTeam: r.away_team, homeLogo: r.home_logo, awayLogo: r.away_logo, homeScore: r.home_score, awayScore: r.away_score, convocations: r.convocations || {}, createdAt: r.created_at, createdBy: r.created_by });
 
 // Generate signed URLs for photos (bucket is private)
 const getSignedPhotoUrls = async (photos: Photo[]): Promise<Photo[]> => {
