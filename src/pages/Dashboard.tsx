@@ -1124,6 +1124,7 @@ const Dashboard = () => {
   };
 
   const deleteCard = async (cardId: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce carton ?', message: 'Cette action est irréversible.',
