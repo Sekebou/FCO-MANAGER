@@ -624,13 +624,19 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                   {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds} • Mise {bet.amount}
+                                  {isMe ? (
+                                    <>Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds} • Mise {bet.amount}</>
+                                  ) : (
+                                    <>A parié sur ce match • Mise <span className="font-semibold text-foreground">{bet.amount}</span></>
+                                  )}
                                 </p>
                               </div>
-                              <div className="text-right shrink-0">
-                                <div className="text-xs font-black text-foreground">→ {Math.round(bet.amount * bet.odds)}</div>
-                                <div className="text-[9px] text-muted-foreground">pts</div>
-                              </div>
+                              {isMe && (
+                                <div className="text-right shrink-0">
+                                  <div className="text-xs font-black text-foreground">→ {Math.round(bet.amount * bet.odds)}</div>
+                                  <div className="text-[9px] text-muted-foreground">pts</div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
