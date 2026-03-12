@@ -1296,6 +1296,7 @@ const Dashboard = () => {
   };
 
   const deleteAlbum = async (albumId: string) => {
+    if (demoGuard()) return;
     if (!canManagePhotos()) return;
     setConfirmModal({
       title: 'Supprimer cet album ?', message: 'Toutes les photos de cet album seront supprimées.',
