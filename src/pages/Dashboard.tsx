@@ -1270,6 +1270,7 @@ const Dashboard = () => {
   };
 
   const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
+    if (demoGuard()) return;
     if (!canUpdateChampionnat()) return;
     try { await supabase.from('championship_matches').update({ home_score: homeScore, away_score: awayScore, played: true }).eq('id', matchId); } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
