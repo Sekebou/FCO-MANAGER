@@ -733,7 +733,7 @@ const Dashboard = () => {
     return false;
   }, [isDemoAccount]);
 
-
+  const recurringProcessed = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!currentUser || events.length === 0) return;
     const processRecurring = async () => {
