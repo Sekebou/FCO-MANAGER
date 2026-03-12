@@ -1276,6 +1276,7 @@ const Dashboard = () => {
   };
 
   const deleteChampMatch = async (matchId: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce match ?', message: 'Cette action est irréversible.',
