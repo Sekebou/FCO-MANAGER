@@ -935,6 +935,7 @@ const Dashboard = () => {
   };
 
   const addEvent = async (eventData: any) => {
+    if (demoGuard()) return;
     if (!canCreateEvent()) return;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (new Date(eventData.date) < today) { toast.error("Impossible de créer un événement à une date passée"); return; }
