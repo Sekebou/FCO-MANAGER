@@ -294,7 +294,7 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
 };
 
 const Dashboard = () => {
-  const { currentUser, logout, setCurrentUser } = useAuth();
+  const { currentUser, logout, setCurrentUser, isDemoAccount } = useAuth();
   const navigate = useNavigate();
   
   usePushNotifications(currentUser?.uid);
