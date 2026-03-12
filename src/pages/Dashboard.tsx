@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWebOrigin } from '@/lib/getWebOrigin';
+import {
+  DEMO_PLAYERS, DEMO_EVENTS, DEMO_NEWS, DEMO_MEMBERS, DEMO_CARDS,
+  DEMO_ATTENDANCE, DEMO_COMMENTS, DEMO_CHAMPIONSHIPS, DEMO_MATCHES,
+  DEMO_ALBUMS, DEMO_MATCH_SHEETS,
+} from '@/lib/demoData';
 import { sendInvitationEmail, sendEventEmail } from '@/lib/emailjs';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNavigate } from 'react-router-dom';
