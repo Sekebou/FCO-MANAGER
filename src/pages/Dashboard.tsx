@@ -736,7 +736,7 @@ const Dashboard = () => {
 
   const recurringProcessed = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!currentUser || events.length === 0) return;
+    if (!currentUser || events.length === 0 || isDemoAccount) return;
     const processRecurring = async () => {
       const now = new Date();
       const recurringEvents = events.filter(e => e.recurrence === 'recurring');
