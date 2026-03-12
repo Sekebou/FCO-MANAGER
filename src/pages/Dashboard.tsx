@@ -1055,6 +1055,7 @@ const Dashboard = () => {
   };
 
   const toggleLike = async (newsId: string) => {
+    if (demoGuard()) return;
     if (!currentUser) return;
     const newsItem = news.find(n => n.id === newsId);
     if (!newsItem) return;
