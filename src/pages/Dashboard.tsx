@@ -1107,6 +1107,7 @@ const Dashboard = () => {
   };
 
   const deleteComment = async (commentId: string) => {
+    if (demoGuard()) return;
     try { await supabase.from('news_comments').delete().eq('id', commentId); } catch (err: any) { console.error('Error deleting comment:', err); }
   };
 
