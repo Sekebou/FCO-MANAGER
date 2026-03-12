@@ -45,6 +45,9 @@ const isAllowed = () => {
     
     // Allow /auth page when there's any hash fragment (Supabase auth redirects)
     if (pathname === "/auth" && hash.length > 1) return true;
+    
+    // Allow /download page (APK distribution link)
+    if (pathname === "/download") return true;
   }
   return false;
 };
