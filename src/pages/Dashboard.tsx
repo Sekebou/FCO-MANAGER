@@ -1254,6 +1254,7 @@ const Dashboard = () => {
 
   const updateChampionship = async (id: string, updates: { team?: string }) => {
     if (demoGuard()) return;
+    try {
       await supabase.from('championships').update(updates).eq('id', id);
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
