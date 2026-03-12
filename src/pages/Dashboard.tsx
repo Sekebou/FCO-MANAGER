@@ -882,6 +882,7 @@ const Dashboard = () => {
   };
 
   const deletePlayer = async (playerId: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce joueur ?',
