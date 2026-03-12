@@ -1185,6 +1185,7 @@ const Dashboard = () => {
   const canUpdateChampionnat = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'admin+' || currentUser.role === 'entraineur' || currentUser.role === 'joueur');
 
   const refreshFromFFF = async (championshipId: string, fffUrl: string): Promise<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string }> => {
+    if (demoGuard()) return { success: false, updated: 0, added: 0, standingsCount: 0, error: 'Mode démo' };
     if (!canUpdateChampionnat()) return { success: false, updated: 0, added: 0, standingsCount: 0, error: 'Non autorisé' };
     try {
       const { decodeFFFApiRef, getClassement, getResultats, getCalendrier, mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement } = await import('@/lib/fffApi');
