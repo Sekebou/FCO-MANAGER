@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWebOrigin } from '@/lib/getWebOrigin';
+import {
+  DEMO_PLAYERS, DEMO_EVENTS, DEMO_NEWS, DEMO_MEMBERS, DEMO_CARDS,
+  DEMO_ATTENDANCE, DEMO_COMMENTS, DEMO_CHAMPIONSHIPS, DEMO_MATCHES,
+  DEMO_ALBUMS, DEMO_MATCH_SHEETS,
+} from '@/lib/demoData';
 import { sendInvitationEmail, sendEventEmail } from '@/lib/emailjs';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNavigate } from 'react-router-dom';
@@ -294,7 +299,7 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
 };
 
 const Dashboard = () => {
-  const { currentUser, logout, setCurrentUser } = useAuth();
+  const { currentUser, logout, setCurrentUser, isDemoAccount } = useAuth();
   const navigate = useNavigate();
   
   usePushNotifications(currentUser?.uid);
@@ -499,6 +504,7 @@ const Dashboard = () => {
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return; }
+    if (isDemoAccount) { setLoading(false); return; } // Demo mode — skip real data loading
 
     // ── 1. Restore from cache instantly ──
     const cachedPlayers = readCache<Player[]>('players');
@@ -684,7 +690,7 @@ const Dashboard = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, isDemoAccount]);
 
   // ── Lazy-load gallery photos only when gallery tab is opened ──
   const galleryLoadedRef = useRef(false);
@@ -701,9 +707,36 @@ const Dashboard = () => {
     loadPhotos();
   }, [activeTab]);
 
+  // ═══ DEMO MODE: inject fake data for Apple Review account ═══
+  useEffect(() => {
+    if (!isDemoAccount) return;
+    setPlayers(DEMO_PLAYERS);
+    setEvents(DEMO_EVENTS);
+    setNews(DEMO_NEWS);
+    setMembers(DEMO_MEMBERS);
+    setCards(DEMO_CARDS);
+    setAttendanceRecords(DEMO_ATTENDANCE);
+    setNewsComments(DEMO_COMMENTS);
+    setChampionships(DEMO_CHAMPIONSHIPS);
+    setChampMatches(DEMO_MATCHES);
+    setAlbums(DEMO_ALBUMS);
+    setMatchSheets(DEMO_MATCH_SHEETS);
+    setGalleryPhotos([]);
+    setLoading(false);
+  }, [isDemoAccount]);
+
+  /** Block all write operations in demo mode */
+  const demoGuard = useCallback(() => {
+    if (isDemoAccount) {
+      toast.info('🔒 Mode démo — action non disponible');
+      return true;
+    }
+    return false;
+  }, [isDemoAccount]);
+
   const recurringProcessed = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!currentUser || events.length === 0) return;
+    if (!currentUser || events.length === 0 || isDemoAccount) return;
     const processRecurring = async () => {
       const now = new Date();
       const recurringEvents = events.filter(e => e.recurrence === 'recurring');
@@ -758,6 +791,7 @@ const Dashboard = () => {
 
   // CRUD functions — all Supabase
   const togglePresence = async (eventId: string, playerId: string, status: string) => {
+    if (demoGuard()) return;
     if (!canManageOwnPresence(playerId)) { toast.warning('Vous ne pouvez gérer que votre propre présence'); return; }
     const event = events.find(e => e.id === eventId);
     const currentPresences = { ...(event?.presences || {}) };
@@ -816,6 +850,7 @@ const Dashboard = () => {
   };
 
   const addPlayer = async (playerData: any) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     if (currentUser?.role === 'entraineur') playerData.role = 'joueur';
     if (playerData.role === 'admin+' && currentUser?.role !== 'admin+') { toast.error("Seul l'Admin+ peut attribuer ce rôle"); return; }
@@ -848,6 +883,7 @@ const Dashboard = () => {
   };
 
   const deletePlayer = async (playerId: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce joueur ?',
@@ -866,6 +902,7 @@ const Dashboard = () => {
   };
 
   const deleteMember = async (memberId: string, playerId?: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     const targetMember = members.find(m => m.id === memberId);
     if (!targetMember) return;
@@ -899,6 +936,7 @@ const Dashboard = () => {
   };
 
   const addEvent = async (eventData: any) => {
+    if (demoGuard()) return;
     if (!canCreateEvent()) return;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (new Date(eventData.date) < today) { toast.error("Impossible de créer un événement à une date passée"); return; }
@@ -964,6 +1002,7 @@ const Dashboard = () => {
   };
 
   const deleteEvent = async (eventId: string) => {
+    if (demoGuard()) return;
     const event = events.find(e => e.id === eventId);
     if (event && !canDeleteEvent(event)) { toast.warning('Vous ne pouvez supprimer que les événements que vous avez créés'); return; }
     setConfirmModal({
@@ -993,6 +1032,7 @@ const Dashboard = () => {
   };
 
   const addNews = async (newsData: any) => {
+    if (demoGuard()) return;
     if (!canCreateNews()) return;
     try {
       await supabase.from('news').insert({
@@ -1005,6 +1045,7 @@ const Dashboard = () => {
   };
 
   const deleteNews = async (newsId: string) => {
+    if (demoGuard()) return;
     setConfirmModal({
       title: 'Supprimer cette publication ?',
       message: 'Cette action est irréversible.',
@@ -1015,6 +1056,7 @@ const Dashboard = () => {
   };
 
   const toggleLike = async (newsId: string) => {
+    if (demoGuard()) return;
     if (!currentUser) return;
     const newsItem = news.find(n => n.id === newsId);
     if (!newsItem) return;
@@ -1041,6 +1083,7 @@ const Dashboard = () => {
   };
 
   const addComment = async (newsId: string, content: string) => {
+    if (demoGuard()) return;
     if (!currentUser || !content.trim()) return;
     const newsItem = news.find(n => n.id === newsId);
     const tempId = `temp-${Date.now()}`;
@@ -1065,10 +1108,12 @@ const Dashboard = () => {
   };
 
   const deleteComment = async (commentId: string) => {
+    if (demoGuard()) return;
     try { await supabase.from('news_comments').delete().eq('id', commentId); } catch (err: any) { console.error('Error deleting comment:', err); }
   };
 
   const addCard = async (cardData: any) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     try {
       await supabase.from('cards').insert({
@@ -1080,6 +1125,7 @@ const Dashboard = () => {
   };
 
   const deleteCard = async (cardId: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce carton ?', message: 'Cette action est irréversible.',
@@ -1090,6 +1136,7 @@ const Dashboard = () => {
   };
 
   const updatePlayerStats = async (playerId: string, field: string, value: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     const numVal = parseInt(value) || 0;
     // Optimistic update (keep stable sort)
@@ -1102,6 +1149,7 @@ const Dashboard = () => {
 
   // Championship CRUD
   const addChampionship = async (data: { name: string; season: string; teams: string[]; team?: string; fffUrl?: string; matches?: Array<{ homeTeam: string; awayTeam: string; homeScore: number | null; awayScore: number | null; date: string; journee: number; played: boolean }>; standings?: Array<any>; teamLogos?: Record<string, string> }) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     try {
       const { matches: importedMatches, standings, teamLogos, ...champData } = data;
@@ -1138,6 +1186,7 @@ const Dashboard = () => {
   const canUpdateChampionnat = () => currentUser && (currentUser.role === 'admin' || currentUser.role === 'admin+' || currentUser.role === 'entraineur' || currentUser.role === 'joueur');
 
   const refreshFromFFF = async (championshipId: string, fffUrl: string): Promise<{ success: boolean; updated: number; added: number; standingsCount: number; error?: string }> => {
+    if (demoGuard()) return { success: false, updated: 0, added: 0, standingsCount: 0, error: 'Mode démo' };
     if (!canUpdateChampionnat()) return { success: false, updated: 0, added: 0, standingsCount: 0, error: 'Non autorisé' };
     try {
       const { decodeFFFApiRef, getClassement, getResultats, getCalendrier, mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement } = await import('@/lib/fffApi');
@@ -1191,6 +1240,7 @@ const Dashboard = () => {
   };
 
   const deleteChampionship = async (id: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce championnat ?', message: 'Tous les matchs associés seront également supprimés.',
@@ -1204,12 +1254,14 @@ const Dashboard = () => {
   };
 
   const updateChampionship = async (id: string, updates: { team?: string }) => {
+    if (demoGuard()) return;
     try {
       await supabase.from('championships').update(updates).eq('id', id);
     } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
   const addChampMatch = async (data: Omit<Match, 'id'>) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     try {
       await supabase.from('championship_matches').insert({
@@ -1220,11 +1272,13 @@ const Dashboard = () => {
   };
 
   const updateMatchScore = async (matchId: string, homeScore: number, awayScore: number) => {
+    if (demoGuard()) return;
     if (!canUpdateChampionnat()) return;
     try { await supabase.from('championship_matches').update({ home_score: homeScore, away_score: awayScore, played: true }).eq('id', matchId); } catch (err: any) { toast.error('Erreur: ' + err.message); }
   };
 
   const deleteChampMatch = async (matchId: string) => {
+    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce match ?', message: 'Cette action est irréversible.',
@@ -1236,6 +1290,7 @@ const Dashboard = () => {
 
   // Gallery
   const createAlbum = async (data: { name: string; description?: string }) => {
+    if (demoGuard()) return;
     if (!canManagePhotos()) return;
     try {
       await supabase.from('albums').insert({ name: data.name, description: data.description || '', created_by: currentUser!.uid });
@@ -1243,6 +1298,7 @@ const Dashboard = () => {
   };
 
   const deleteAlbum = async (albumId: string) => {
+    if (demoGuard()) return;
     if (!canManagePhotos()) return;
     setConfirmModal({
       title: 'Supprimer cet album ?', message: 'Toutes les photos de cet album seront supprimées.',
@@ -1267,6 +1323,7 @@ const Dashboard = () => {
   };
 
   const uploadPhotos = async (albumId: string, files: File[]) => {
+    if (demoGuard()) return;
     if (!canManagePhotos()) return;
     for (const file of files) {
       // iOS peut envoyer des fichiers sans type MIME correct, on le force
@@ -1317,6 +1374,7 @@ const Dashboard = () => {
   };
 
   const deletePhoto = (photo: { id: string; storagePath: string }) => {
+    if (demoGuard()) return;
     if (!canManagePhotos()) return;
     setConfirmModal({
       title: 'Supprimer cette photo ?', message: 'Cette action est irréversible.',
