@@ -790,6 +790,7 @@ const Dashboard = () => {
 
   // CRUD functions — all Supabase
   const togglePresence = async (eventId: string, playerId: string, status: string) => {
+    if (demoGuard()) return;
     if (!canManageOwnPresence(playerId)) { toast.warning('Vous ne pouvez gérer que votre propre présence'); return; }
     const event = events.find(e => e.id === eventId);
     const currentPresences = { ...(event?.presences || {}) };
