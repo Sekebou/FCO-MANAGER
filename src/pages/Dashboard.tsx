@@ -1044,6 +1044,7 @@ const Dashboard = () => {
   };
 
   const deleteNews = async (newsId: string) => {
+    if (demoGuard()) return;
     setConfirmModal({
       title: 'Supprimer cette publication ?',
       message: 'Cette action est irréversible.',
