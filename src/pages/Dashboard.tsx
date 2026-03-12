@@ -504,6 +504,7 @@ const Dashboard = () => {
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {
     if (!currentUser) { navigate('/auth'); return; }
+    if (isDemoAccount) { setLoading(false); return; } // Demo mode — skip real data loading
 
     // ── 1. Restore from cache instantly ──
     const cachedPlayers = readCache<Player[]>('players');
