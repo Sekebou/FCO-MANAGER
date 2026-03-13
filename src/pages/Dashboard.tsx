@@ -684,7 +684,7 @@ const Dashboard = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [currentUser, navigate, isDemoAccount]);
+  }, [currentUser, navigate]);
 
   // ── Lazy-load gallery photos only when gallery tab is opened ──
   const galleryLoadedRef = useRef(false);
