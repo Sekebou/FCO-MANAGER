@@ -1212,7 +1212,6 @@ const Dashboard = () => {
   };
 
   const addChampMatch = async (data: Omit<Match, 'id'>) => {
-    if (demoGuard()) return;
     if (!canManage()) return;
     try {
       await supabase.from('championship_matches').insert({
