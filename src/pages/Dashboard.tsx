@@ -1193,7 +1193,6 @@ const Dashboard = () => {
   };
 
   const deleteChampionship = async (id: string) => {
-    if (demoGuard()) return;
     if (!canManage()) return;
     setConfirmModal({
       title: 'Supprimer ce championnat ?', message: 'Tous les matchs associés seront également supprimés.',
