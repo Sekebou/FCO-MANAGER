@@ -867,7 +867,6 @@ const Dashboard = () => {
   };
 
   const deleteMember = async (memberId: string, playerId?: string) => {
-    if (demoGuard()) return;
     if (!canManage()) return;
     const targetMember = members.find(m => m.id === memberId);
     if (!targetMember) return;
