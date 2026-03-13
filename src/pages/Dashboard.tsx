@@ -701,32 +701,6 @@ const Dashboard = () => {
     loadPhotos();
   }, [activeTab]);
 
-  // ═══ DEMO MODE: inject fake data for Apple Review account ═══
-  useEffect(() => {
-    if (!isDemoAccount) return;
-    setPlayers(DEMO_PLAYERS);
-    setEvents(DEMO_EVENTS);
-    setNews(DEMO_NEWS);
-    setMembers(DEMO_MEMBERS);
-    setCards(DEMO_CARDS);
-    setAttendanceRecords(DEMO_ATTENDANCE);
-    setNewsComments(DEMO_COMMENTS);
-    setChampionships(DEMO_CHAMPIONSHIPS);
-    setChampMatches(DEMO_MATCHES);
-    setAlbums(DEMO_ALBUMS);
-    setMatchSheets(DEMO_MATCH_SHEETS);
-    setGalleryPhotos([]);
-    setLoading(false);
-  }, [isDemoAccount]);
-
-  /** Block all write operations in demo mode */
-  const demoGuard = useCallback(() => {
-    if (isDemoAccount) {
-      toast.info('🔒 Mode démo — action non disponible');
-      return true;
-    }
-    return false;
-  }, [isDemoAccount]);
 
   const recurringProcessed = useRef<Set<string>>(new Set());
   useEffect(() => {
