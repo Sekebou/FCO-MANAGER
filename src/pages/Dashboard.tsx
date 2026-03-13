@@ -965,7 +965,6 @@ const Dashboard = () => {
   };
 
   const deleteEvent = async (eventId: string) => {
-    if (demoGuard()) return;
     const event = events.find(e => e.id === eventId);
     if (event && !canDeleteEvent(event)) { toast.warning('Vous ne pouvez supprimer que les événements que vous avez créés'); return; }
     setConfirmModal({
