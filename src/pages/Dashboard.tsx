@@ -1238,7 +1238,6 @@ const Dashboard = () => {
 
   // Gallery
   const createAlbum = async (data: { name: string; description?: string }) => {
-    if (demoGuard()) return;
     if (!canManagePhotos()) return;
     try {
       await supabase.from('albums').insert({ name: data.name, description: data.description || '', created_by: currentUser!.uid });
