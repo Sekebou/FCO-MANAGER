@@ -817,7 +817,6 @@ const Dashboard = () => {
   };
 
   const addPlayer = async (playerData: any) => {
-    if (demoGuard()) return;
     if (!canManage()) return;
     if (currentUser?.role === 'entraineur') playerData.role = 'joueur';
     if (playerData.role === 'admin+' && currentUser?.role !== 'admin+') { toast.error("Seul l'Admin+ peut attribuer ce rôle"); return; }
