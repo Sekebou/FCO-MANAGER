@@ -14,14 +14,11 @@ export interface AppUser {
   team?: string;
 }
 
-const DEMO_EMAIL = 'admin@testapple.fr';
-
 interface AuthContextType {
   currentUser: AppUser | null;
   loading: boolean;
   logout: () => Promise<void>;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
-  isDemoAccount: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
