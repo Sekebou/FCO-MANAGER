@@ -1269,7 +1269,6 @@ const Dashboard = () => {
   };
 
   const uploadPhotos = async (albumId: string, files: File[]) => {
-    if (demoGuard()) return;
     if (!canManagePhotos()) return;
     for (const file of files) {
       // iOS peut envoyer des fichiers sans type MIME correct, on le force
