@@ -138,10 +138,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCurrentUser(null);
   };
 
-  const isDemoAccount = !!(currentUser?.email && currentUser.email.toLowerCase() === DEMO_EMAIL.toLowerCase());
-
   return (
-    <AuthContext.Provider value={{ currentUser, loading, logout, setCurrentUser, isDemoAccount }}>
+    <AuthContext.Provider value={{ currentUser, loading, logout, setCurrentUser }}>
       {children}
     </AuthContext.Provider>
   );
