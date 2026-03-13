@@ -994,7 +994,6 @@ const Dashboard = () => {
   };
 
   const addNews = async (newsData: any) => {
-    if (demoGuard()) return;
     if (!canCreateNews()) return;
     try {
       await supabase.from('news').insert({
