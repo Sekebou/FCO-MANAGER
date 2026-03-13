@@ -1091,7 +1091,6 @@ const Dashboard = () => {
   };
 
   const updatePlayerStats = async (playerId: string, field: string, value: string) => {
-    if (demoGuard()) return;
     if (!canManage()) return;
     const numVal = parseInt(value) || 0;
     // Optimistic update (keep stable sort)
