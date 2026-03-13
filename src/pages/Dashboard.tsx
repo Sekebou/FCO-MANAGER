@@ -1070,7 +1070,6 @@ const Dashboard = () => {
   };
 
   const addCard = async (cardData: any) => {
-    if (demoGuard()) return;
     if (!canManage()) return;
     try {
       await supabase.from('cards').insert({
