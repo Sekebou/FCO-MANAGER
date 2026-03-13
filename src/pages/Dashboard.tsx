@@ -1042,7 +1042,6 @@ const Dashboard = () => {
   };
 
   const addComment = async (newsId: string, content: string) => {
-    if (demoGuard()) return;
     if (!currentUser || !content.trim()) return;
     const newsItem = news.find(n => n.id === newsId);
     const tempId = `temp-${Date.now()}`;
