@@ -1319,7 +1319,7 @@ const Dashboard = () => {
   };
 
   const deletePhoto = (photo: { id: string; storagePath: string }) => {
-    if (demoGuard()) return;
+    
     if (!canManagePhotos()) return;
     setConfirmModal({
       title: 'Supprimer cette photo ?', message: 'Cette action est irréversible.',
