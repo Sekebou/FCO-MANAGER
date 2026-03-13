@@ -14,14 +14,11 @@ export interface AppUser {
   team?: string;
 }
 
-const DEMO_EMAIL = 'admin@testapple.fr';
-
 interface AuthContextType {
   currentUser: AppUser | null;
   loading: boolean;
   logout: () => Promise<void>;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
-  isDemoAccount: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -141,10 +138,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCurrentUser(null);
   };
 
-  const isDemoAccount = !!(currentUser?.email && currentUser.email.toLowerCase() === DEMO_EMAIL.toLowerCase());
-
   return (
-    <AuthContext.Provider value={{ currentUser, loading, logout, setCurrentUser, isDemoAccount }}>
+    <AuthContext.Provider value={{ currentUser, loading, logout, setCurrentUser }}>
       {children}
     </AuthContext.Provider>
   );
