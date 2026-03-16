@@ -3,7 +3,7 @@ import { getWebOrigin } from "@/lib/getWebOrigin";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft, Check } from "lucide-react";
+import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft, Check, UserPlus, Hash, User } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
 
@@ -22,6 +22,15 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [registerMode, setRegisterMode] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [regFirstName, setRegFirstName] = useState("");
+  const [regLastName, setRegLastName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regConfirmPassword, setRegConfirmPassword] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+  const [regSuccess, setRegSuccess] = useState(false);
 
   // Detect recovery session from email link
   useEffect(() => {
@@ -166,6 +175,64 @@ const Auth = () => {
     }
   };
 
+  const handleRegisterWithCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!inviteCode.trim()) { setError("Veuillez entrer le code d'invitation"); return; }
+    if (!regFirstName.trim() || !regLastName.trim()) { setError("Veuillez remplir tous les champs"); return; }
+    if (!regEmail.trim()) { setError("Veuillez entrer votre email"); return; }
+    if (regPassword.length < 6) { setError("Le mot de passe doit contenir au moins 6 caractères"); return; }
+    if (regPassword !== regConfirmPassword) { setError("Les mots de passe ne correspondent pas"); return; }
+
+    setRegLoading(true);
+    try {
+      // Validate invite code
+      const { data: inv, error: invError } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('invite_code', inviteCode.trim().toUpperCase())
+        .single();
+
+      if (invError || !inv) throw new Error("Code d'invitation invalide");
+      if (inv.status === 'used') throw new Error("Ce code a déjà été utilisé");
+      if (new Date(inv.expires_at) < new Date()) throw new Error("Ce code a expiré");
+
+      const fullName = `${regFirstName.trim()} ${regLastName.trim()}`;
+
+      // Sign up
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: regEmail.trim(),
+        password: regPassword,
+      });
+      if (authError) {
+        if (authError.message.includes('already registered')) throw new Error("Un compte avec cet email existe déjà");
+        if (authError.message.includes('weak') || authError.message.includes('easy to guess')) throw new Error("Ce mot de passe est trop faible, veuillez en choisir un autre");
+        throw authError;
+      }
+      const userId = authData.user?.id;
+      if (!userId) throw new Error("Erreur de création de compte");
+
+      // Use register_user RPC
+      const { error: regError } = await supabase.rpc('register_user', {
+        p_user_id: userId,
+        p_email: regEmail.trim(),
+        p_name: fullName,
+        p_role: inv.role,
+        p_position: inv.position || 'Attaquant',
+        p_license_expiry: inv.license_expiry || null,
+        p_invitation_id: inv.id,
+      });
+      if (regError) throw regError;
+
+      setRegSuccess(true);
+      toast.success("Compte créé avec succès ! 🎉");
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de l'inscription");
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
   return (
     <div className="h-[100dvh] flex relative overflow-hidden">
       {/* Decorative side - blue club */}
@@ -247,10 +314,10 @@ const Auth = () => {
           {/* Header */}
           <div className="mb-4 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
             <h2 className="text-xl font-bold text-foreground">
-              {recoveryMode ? "Nouveau mot de passe" : "Connexion"}
+              {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
             </h2>
             <p className="text-muted-foreground text-xs mt-0.5">
-              {recoveryMode ? "Choisissez votre nouveau mot de passe" : "Application officielle du Football Club d'Oisemont"}
+              {recoveryMode ? "Choisissez votre nouveau mot de passe" : registerMode ? "Entrez votre code d'invitation pour vous inscrire" : "Application officielle du Football Club d'Oisemont"}
             </p>
           </div>
 
@@ -326,7 +393,94 @@ const Auth = () => {
               className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {resetLoading ? <><Loader2 className="animate-spin" size={20} /> Envoi...</> : <>Envoyer le lien <Mail size={18} /></>}
                 </button>
-              </form> :
+              </form> : registerMode ?
+            (regSuccess ? (
+              <div className="text-center py-6 space-y-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 rounded-full border border-accent/20">
+                  <Check size={32} className="text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Compte créé ! 🎉</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Vous pouvez maintenant vous connecter avec vos identifiants.</p>
+                </div>
+                <button onClick={() => { setRegisterMode(false); setRegSuccess(false); setError(""); }}
+                  className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                  Se connecter <ChevronRight size={18} />
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleRegisterWithCode} className="space-y-4">
+                <button type="button" onClick={() => { setRegisterMode(false); setError(""); }}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-1">
+                  <ArrowLeft size={16} /> Retour
+                </button>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Code d'invitation</label>
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "code" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <Hash className={`shrink-0 transition-colors duration-200 ${focused === "code" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                    <input type="text" value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} onFocus={() => setFocused("code")} onBlur={() => setFocused(null)}
+                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm font-mono tracking-wider uppercase"
+                      placeholder="FCO-XXXX" required maxLength={10} autoComplete="off" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Prénom</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regfirst" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <User className={`shrink-0 transition-colors duration-200 ${focused === "regfirst" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                      <input type="text" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} onFocus={() => setFocused("regfirst")} onBlur={() => setFocused(null)}
+                        className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        placeholder="Prénom" required />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "reglast" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <User className={`shrink-0 transition-colors duration-200 ${focused === "reglast" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                      <input type="text" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} onFocus={() => setFocused("reglast")} onBlur={() => setFocused(null)}
+                        className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        placeholder="Nom" required />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regemail" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <Mail className={`shrink-0 transition-colors duration-200 ${focused === "regemail" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                    <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} onFocus={() => setFocused("regemail")} onBlur={() => setFocused(null)}
+                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                      placeholder="votre@email.com" required />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mot de passe</label>
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regpw" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                    <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} onFocus={() => setFocused("regpw")} onBlur={() => setFocused(null)}
+                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                      placeholder="Min. 6 caractères" required />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confirmer</label>
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regconfirm" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regconfirm" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                    <input type="password" value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} onFocus={() => setFocused("regconfirm")} onBlur={() => setFocused(null)}
+                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                      placeholder="Répéter le mot de passe" required />
+                  </div>
+                </div>
+                {error &&
+                  <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                    <Shield size={16} className="shrink-0" /> {error}
+                  </div>
+                }
+                <button type="submit" disabled={regLoading}
+                  className="group w-full bg-accent text-accent-foreground py-3.5 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {regLoading ? <><Loader2 className="animate-spin" size={20} /> Création...</> : <>Créer mon compte <ChevronRight size={18} /></>}
+                </button>
+              </form>
+            )) :
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
@@ -360,6 +514,14 @@ const Auth = () => {
               className="group w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
                   {loading ? <Loader2 className="animate-spin" size={20} /> : <>Se connecter <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform duration-300" /></>}
                   {loading && "Connexion..."}
+                </button>
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                  <div className="relative flex justify-center"><span className="bg-card px-3 text-xs text-muted-foreground">ou</span></div>
+                </div>
+                <button type="button" onClick={() => { setRegisterMode(true); setError(""); }}
+                  className="group w-full bg-secondary text-foreground py-3 rounded-xl font-medium hover:bg-secondary/80 transition-all flex items-center justify-center gap-2 text-sm">
+                  <UserPlus size={18} className="text-primary" /> Créer un compte
                 </button>
               </form>
             }

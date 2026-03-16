@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar, Share2 } from 'lucide-react';
+import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar, Share2, Hash } from 'lucide-react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface Props {
-  onSubmit: (data: { email?: string; role: string; licenseExpiry?: string; position?: string; mode: 'email' | 'link' | 'collective' }) => void;
+  onSubmit: (data: { email?: string; role: string; licenseExpiry?: string; position?: string; mode: 'email' | 'link' | 'collective' | 'code' }) => void;
   onClose: () => void;
   currentUser: AppUser | null;
 }
@@ -15,7 +15,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'admin+';
   const isSuperAdmin = currentUser?.role === 'admin+';
 
-  const [mode, setMode] = useState<'email' | 'link' | 'collective'>('email');
+  const [mode, setMode] = useState<'email' | 'link' | 'collective' | 'code'>('code');
   const [formData, setFormData] = useState({
     email: '',
     role: 'joueur',
@@ -56,10 +56,19 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
         {/* Body */}
         <div className="p-5 space-y-4">
           {/* Mode toggle */}
-          <div className="flex gap-1 p-1 bg-secondary rounded-xl">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-secondary rounded-xl">
+            <button
+              onClick={() => setMode('code')}
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                mode === 'code' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Hash size={14} />
+              Code
+            </button>
             <button
               onClick={() => setMode('email')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'email' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -68,7 +77,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             </button>
             <button
               onClick={() => setMode('link')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'link' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -77,7 +86,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             </button>
             <button
               onClick={() => setMode('collective')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'collective' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -172,7 +181,9 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             <div className="flex items-start gap-2">
               <Link2 size={14} className="text-primary shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {mode === 'email'
+                {mode === 'code'
+                  ? <>Un <span className="font-semibold text-foreground">code d'invitation</span> sera généré. Le joueur l'entre directement dans l'app pour créer son compte. Expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  : mode === 'email'
                   ? <>Un lien d'inscription sera envoyé par email. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
                   : mode === 'link'
                   ? <>Un lien unique sera généré pour <span className="font-semibold text-foreground">un seul compte</span>. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
@@ -193,7 +204,9 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             disabled={mode === 'email' && !formData.email}
             className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
           >
-            {mode === 'email' ? (
+            {mode === 'code' ? (
+              <><Hash size={16} /> Générer le code</>
+            ) : mode === 'email' ? (
               <><Send size={16} /> Envoyer</>
             ) : mode === 'link' ? (
               <><Share2 size={16} /> Générer le lien</>

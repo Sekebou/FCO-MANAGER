@@ -537,6 +537,7 @@ export type Database = {
           email: string | null
           expires_at: string
           id: string
+          invite_code: string | null
           invited_by: string | null
           license_expiry: string | null
           max_uses: number | null
@@ -552,6 +553,7 @@ export type Database = {
           email?: string | null
           expires_at: string
           id?: string
+          invite_code?: string | null
           invited_by?: string | null
           license_expiry?: string | null
           max_uses?: number | null
@@ -567,6 +569,7 @@ export type Database = {
           email?: string | null
           expires_at?: string
           id?: string
+          invite_code?: string | null
           invited_by?: string | null
           license_expiry?: string | null
           max_uses?: number | null

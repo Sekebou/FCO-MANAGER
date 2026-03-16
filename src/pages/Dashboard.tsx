@@ -1608,7 +1608,12 @@ const Dashboard = () => {
               if (currentUser?.role === 'entraineur') data.role = 'joueur';
               if (data.role === 'admin+' && currentUser?.role !== 'admin+') { toast.error("Seul l'Admin+ peut attribuer ce rôle"); return; }
               const isCollective = data.mode === 'collective';
+              const isCode = data.mode === 'code';
               const expiresAt = new Date(Date.now() + (isCollective ? 7 * 24 : 48) * 60 * 60 * 1000).toISOString();
+
+              // Generate invite code for code mode
+              const inviteCode = isCode ? `FCO-${Math.random().toString(36).substring(2, 6).toUpperCase()}` : null;
+
               const { data: inv, error } = await supabase.from('invitations').insert({
                 email: data.mode === 'email' ? data.email : null,
                 role: data.role,
@@ -1618,24 +1623,32 @@ const Dashboard = () => {
                 invited_by: currentUser?.uid || '',
                 max_uses: isCollective ? 9999 : 1,
                 use_count: 0,
-              } as any).select('id').single();
+                invite_code: inviteCode,
+              } as any).select('id, invite_code').single();
               if (error) throw error;
-              const link = `${getWebOrigin()}/register?token=${inv.id}`;
-              if (data.mode === 'email' && data.email) {
-                try {
-                  await sendInvitationEmail({
-                    to_email: data.email,
-                    invite_link: link,
-                    role_label: data.role || 'Joueur',
-                    inviter_name: currentUser?.name || 'Un administrateur',
-                  });
-                  toast.success('Invitation envoyée par email !');
-                } catch { toast.warning("Email non envoyé, mais le lien a été généré"); }
+              
+              if (isCode) {
+                toast.success('Code d\'invitation généré !');
+                setShowInvitePlayer(false);
+                setInviteResult({ email: '', link: (inv as any).invite_code || inviteCode || '' });
               } else {
-                toast.success(isCollective ? 'Lien collectif généré !' : 'Lien d\'invitation généré !');
+                const link = `${getWebOrigin()}/register?token=${inv.id}`;
+                if (data.mode === 'email' && data.email) {
+                  try {
+                    await sendInvitationEmail({
+                      to_email: data.email,
+                      invite_link: link,
+                      role_label: data.role || 'Joueur',
+                      inviter_name: currentUser?.name || 'Un administrateur',
+                    });
+                    toast.success('Invitation envoyée par email !');
+                  } catch { toast.warning("Email non envoyé, mais le lien a été généré"); }
+                } else {
+                  toast.success(isCollective ? 'Lien collectif généré !' : 'Lien d\'invitation généré !');
+                }
+                setShowInvitePlayer(false);
+                setInviteResult({ email: data.email || '', link });
               }
-              setShowInvitePlayer(false);
-              setInviteResult({ email: data.email || '', link });
             } catch (err: any) { toast.error('Erreur: ' + err.message); }
           }}
         />
@@ -1645,19 +1658,37 @@ const Dashboard = () => {
           <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col items-center pt-8 pb-4 px-6">
               <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mb-4"><CheckCircle2 size={32} className="text-accent" /></div>
-              <h3 className="text-lg font-bold text-foreground">{inviteResult.email ? 'Invitation envoyée' : 'Lien généré'}</h3>
+              <h3 className="text-lg font-bold text-foreground">
+                {inviteResult.email ? 'Invitation envoyée' : inviteResult.link.startsWith('FCO-') ? 'Code généré' : 'Lien généré'}
+              </h3>
               {inviteResult.email && <p className="text-sm text-muted-foreground mt-1">{inviteResult.email}</p>}
             </div>
             <div className="mx-6 mb-4 space-y-2">
-              <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
-                <Mail size={16} className="text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Lien d'inscription</p>
-                  <p className="text-xs font-medium text-foreground truncate">{inviteResult.link}</p>
-                </div>
-                <button onClick={() => { navigator.clipboard.writeText(inviteResult.link); toast.success('Lien copié !'); }} className="p-1.5 rounded-lg hover:bg-secondary transition-colors" title="Copier"><Copy size={14} className="text-muted-foreground" /></button>
-              </div>
-              <p className="text-[11px] text-muted-foreground text-center mt-2 px-2">📋 Vous pouvez aussi partager ce lien directement. Il expire dans 48h.</p>
+              {inviteResult.link.startsWith('FCO-') ? (
+                <>
+                  <div className="flex items-center justify-center gap-3 p-5 bg-secondary/60 rounded-xl border border-border/50">
+                    <p className="text-3xl font-black text-primary tracking-[0.15em] select-all">{inviteResult.link}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { navigator.clipboard.writeText(inviteResult.link); toast.success('Code copié !'); }} className="flex-1 py-2.5 bg-secondary hover:bg-secondary/80 text-foreground rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5">
+                      <Copy size={13} /> Copier le code
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground text-center mt-2 px-2">📱 Le joueur entre ce code dans l'app pour créer son compte. Expire dans 48h.</p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border/50">
+                    <Mail size={16} className="text-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Lien d'inscription</p>
+                      <p className="text-xs font-medium text-foreground truncate">{inviteResult.link}</p>
+                    </div>
+                    <button onClick={() => { navigator.clipboard.writeText(inviteResult.link); toast.success('Lien copié !'); }} className="p-1.5 rounded-lg hover:bg-secondary transition-colors" title="Copier"><Copy size={14} className="text-muted-foreground" /></button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground text-center mt-2 px-2">📋 Vous pouvez aussi partager ce lien directement. Il expire dans 48h.</p>
+                </>
+              )}
             </div>
             <div className="p-4 border-t border-border">
               <button onClick={() => setInviteResult(null)} className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all text-sm">Fermer</button>
