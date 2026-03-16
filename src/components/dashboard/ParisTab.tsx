@@ -529,6 +529,36 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     }
   }, [settleScores]);
 
+  const handleBetPlaced = useCallback((bet: BetPlacementPayload) => {
+    setBets(prev => {
+      const alreadyExists = prev.some(existing =>
+        existing.userId === bet.userId &&
+        teamsLikelyMatch(existing.homeTeam, bet.homeTeam) &&
+        teamsLikelyMatch(existing.awayTeam, bet.awayTeam) &&
+        normalizeDateKey(existing.matchDate) === normalizeDateKey(bet.matchDate)
+      );
+
+      if (alreadyExists) return prev;
+
+      return [{
+        id: `local-${bet.userId}-${Date.now()}`,
+        userId: bet.userId,
+        userName: bet.userName,
+        homeTeam: bet.homeTeam,
+        awayTeam: bet.awayTeam,
+        matchDate: bet.matchDate,
+        prediction: bet.prediction,
+        odds: bet.odds,
+        amount: bet.amount,
+        payout: 0,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      }, ...prev];
+    });
+
+    setBalance(Number.isFinite(bet.newBalance) ? bet.newBalance : Math.max(0, balance - bet.amount));
+  }, [balance]);
+
   const totalPotentialGain = myPendingBets.reduce((sum, b) => sum + Math.round(b.amount * b.odds), 0);
 
   return (
