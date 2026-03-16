@@ -324,13 +324,22 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [settleScores, setSettleScores] = useState<Record<string, { home: string; away: string }>>({});
   const [settlingMatch, setSettlingMatch] = useState<string | null>(null);
 
-  // Group pending bets by match for settlement
+  // Group pending bets by normalized match for settlement
   const pendingMatchGroups = useMemo(() => {
+    const normalizeDate = (dateStr: string) => {
+      if (!dateStr) return '';
+      const direct = /^\d{4}-\d{2}-\d{2}/.exec(dateStr)?.[0];
+      if (direct) return direct;
+      const d = new Date(dateStr);
+      return Number.isNaN(d.getTime()) ? dateStr : d.toISOString().split('T')[0];
+    };
+
     const groups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string; bets: Bet[] }>();
     for (const bet of allPendingBets) {
-      const key = `${bet.homeTeam}||${bet.awayTeam}||${bet.matchDate}`;
+      const normalizedDate = normalizeDate(bet.matchDate);
+      const key = `${bet.homeTeam}||${bet.awayTeam}||${normalizedDate}`;
       if (!groups.has(key)) {
-        groups.set(key, { homeTeam: bet.homeTeam, awayTeam: bet.awayTeam, matchDate: bet.matchDate, bets: [] });
+        groups.set(key, { homeTeam: bet.homeTeam, awayTeam: bet.awayTeam, matchDate: normalizedDate || bet.matchDate, bets: [] });
       }
       groups.get(key)!.bets.push(bet);
     }
