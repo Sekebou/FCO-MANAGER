@@ -1607,21 +1607,22 @@ const Dashboard = () => {
             try {
               if (currentUser?.role === 'entraineur') data.role = 'joueur';
               if (data.role === 'admin+' && currentUser?.role !== 'admin+') { toast.error("Seul l'Admin+ peut attribuer ce rôle"); return; }
-              const isCollective = data.mode === 'collective';
+              const isCollective = data.mode === 'collective' || (data as any).collective;
               const isCode = data.mode === 'code';
-              const expiresAt = new Date(Date.now() + (isCollective ? 7 * 24 : 48) * 60 * 60 * 1000).toISOString();
+              const isCodeCollective = isCode && (data as any).collective;
+              const expiresAt = new Date(Date.now() + (isCollective || isCodeCollective ? 7 * 24 : 48) * 60 * 60 * 1000).toISOString();
 
-              // Generate invite code for code mode
+              // Generate invite code for code mode (individual or collective)
               const inviteCode = isCode ? `FCO-${Math.random().toString(36).substring(2, 6).toUpperCase()}` : null;
 
               const { data: inv, error } = await supabase.from('invitations').insert({
                 email: data.mode === 'email' ? data.email : null,
-                role: data.role,
+                role: isCode ? 'joueur' : data.role,
                 position: data.position || null,
                 license_expiry: data.licenseExpiry || null,
                 expires_at: expiresAt,
                 invited_by: currentUser?.uid || '',
-                max_uses: isCollective ? 9999 : 1,
+                max_uses: isCollective || isCodeCollective ? 9999 : 1,
                 use_count: 0,
                 invite_code: inviteCode,
               } as any).select('id, invite_code').single();

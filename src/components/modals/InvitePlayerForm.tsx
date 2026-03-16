@@ -16,6 +16,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
   const isSuperAdmin = currentUser?.role === 'admin+';
 
   const [mode, setMode] = useState<'email' | 'link' | 'collective' | 'code'>('code');
+  const [codeCollective, setCodeCollective] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     role: 'joueur',
@@ -25,13 +26,15 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
 
   const handleSubmit = () => {
     if (mode === 'email' && !formData.email) return;
+    const isCodeMode = mode === 'code' || (mode === 'collective' && codeCollective);
     onSubmit({
       email: mode === 'email' ? formData.email : undefined,
-      role: formData.role,
+      role: isCodeMode ? 'joueur' : formData.role,
       licenseExpiry: formData.licenseExpiry || undefined,
       position: formData.position || undefined,
-      mode,
-    });
+      mode: codeCollective && mode === 'collective' ? 'code' : mode,
+      ...(codeCollective && mode === 'collective' ? { collective: true } : {}),
+    } as any);
   };
 
   return (
@@ -58,16 +61,25 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
           {/* Mode toggle */}
           <div className="grid grid-cols-2 gap-1 p-1 bg-secondary rounded-xl">
             <button
-              onClick={() => setMode('code')}
+              onClick={() => { setMode('code'); setFormData(f => ({ ...f, role: 'joueur' })); }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'code' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Hash size={14} />
-              Code
+              Code individuel
             </button>
             <button
-              onClick={() => setMode('email')}
+              onClick={() => { setMode('collective' as any); setCodeCollective(true); setFormData(f => ({ ...f, role: 'joueur' })); }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                mode === 'collective' && codeCollective ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Hash size={14} />
+              Code collectif
+            </button>
+            <button
+              onClick={() => { setMode('email'); setCodeCollective(false); }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'email' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -76,51 +88,52 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               Email
             </button>
             <button
-              onClick={() => setMode('link')}
+              onClick={() => { setMode('link'); setCodeCollective(false); }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                mode === 'link' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                mode === 'link' && !codeCollective ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Share2 size={14} />
               Lien unique
             </button>
-            <button
-              onClick={() => setMode('collective')}
-              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                mode === 'collective' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Link2 size={14} />
-              Collectif
-            </button>
           </div>
 
-          {/* Role */}
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rôle attribué</label>
-            {isAdmin ? (
-              <div className="relative">
-                <Shield size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 text-sm transition-all appearance-none"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                >
-                  <option value="joueur">Joueur</option>
-                  <option value="entraineur">Entraîneur</option>
-                  <option value="dirigeant">Dirigeant</option>
-                  <option value="photographe">Photographe</option>
-                  <option value="admin">Administrateur</option>
-                  
-                </select>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
-                <UserCircle size={14} className="text-primary shrink-0" />
-                <span className="text-sm font-medium text-foreground">Joueur</span>
-              </div>
-            )}
-          </div>
+          {/* Role - hidden for code modes (always joueur) */}
+          {!(mode === 'code' || (mode === 'collective' && codeCollective)) && (
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rôle attribué</label>
+              {isAdmin ? (
+                <div className="relative">
+                  <Shield size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <select
+                    className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 text-sm transition-all appearance-none"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  >
+                    <option value="joueur">Joueur</option>
+                    <option value="entraineur">Entraîneur</option>
+                    <option value="dirigeant">Dirigeant</option>
+                    <option value="photographe">Photographe</option>
+                    <option value="admin">Administrateur</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+                  <UserCircle size={14} className="text-primary shrink-0" />
+                  <span className="text-sm font-medium text-foreground">Joueur</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Role badge for code modes */}
+          {(mode === 'code' || (mode === 'collective' && codeCollective)) && (
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-primary/10 border border-primary/20 rounded-xl">
+              <UserCircle size={14} className="text-primary shrink-0" />
+              <span className="text-sm font-medium text-foreground">Rôle : Joueur</span>
+              <span className="text-xs text-muted-foreground ml-auto">(par défaut)</span>
+            </div>
+          )}
 
           {/* Email - only in email mode */}
           {mode === 'email' && (
@@ -139,8 +152,8 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             </div>
           )}
 
-          {/* Optional: Position */}
-          {formData.role !== 'photographe' && (
+          {/* Optional: Position - hidden for code modes */}
+          {!(mode === 'code' || (mode === 'collective' && codeCollective)) && formData.role !== 'photographe' && (
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Poste <span className="text-muted-foreground/50 normal-case">(optionnel)</span>
@@ -162,8 +175,8 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             </div>
           )}
 
-          {/* Optional: License */}
-          {formData.role !== 'photographe' && (
+          {/* Optional: License - hidden for code modes */}
+          {!(mode === 'code' || (mode === 'collective' && codeCollective)) && formData.role !== 'photographe' && (
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Licence FFF <span className="text-muted-foreground/50 normal-case">(optionnel)</span>
@@ -181,8 +194,10 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             <div className="flex items-start gap-2">
               <Link2 size={14} className="text-primary shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {mode === 'code'
-                  ? <>Un <span className="font-semibold text-foreground">code d'invitation</span> sera généré. Le joueur l'entre directement dans l'app pour créer son compte. Expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                {mode === 'code' && !codeCollective
+                  ? <>Un <span className="font-semibold text-foreground">code individuel</span> sera généré (<span className="font-semibold text-foreground">1 utilisation</span>). Le joueur l'entre dans l'app pour créer son compte. Expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  : mode === 'collective' && codeCollective
+                  ? <>Un <span className="font-semibold text-foreground">code collectif</span> sera généré (<span className="font-semibold text-foreground">utilisations illimitées</span>). Partagez-le à tout le vestiaire ! Expire dans <span className="font-semibold text-foreground">7 jours</span>.</>
                   : mode === 'email'
                   ? <>Un lien d'inscription sera envoyé par email. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
                   : mode === 'link'
@@ -204,8 +219,10 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             disabled={mode === 'email' && !formData.email}
             className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
           >
-            {mode === 'code' ? (
+            {mode === 'code' && !codeCollective ? (
               <><Hash size={16} /> Générer le code</>
+            ) : mode === 'collective' && codeCollective ? (
+              <><Hash size={16} /> Générer le code collectif</>
             ) : mode === 'email' ? (
               <><Send size={16} /> Envoyer</>
             ) : mode === 'link' ? (
