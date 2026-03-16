@@ -155,7 +155,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     if (teamData[team] && !teamData[team].loading) return;
 
     const LOCAL_CACHE_KEY = `paris_fff_${team}`;
-    const LOCAL_CACHE_TTL = 30 * 60 * 1000;
+    const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h (données FFF mises à jour le dimanche soir)
 
     try {
       const cached = localStorage.getItem(LOCAL_CACHE_KEY);

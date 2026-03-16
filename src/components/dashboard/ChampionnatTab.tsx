@@ -237,7 +237,7 @@ const ChampionnatTab: React.FC<Props> = ({
     let cancelled = false;
 
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
-    const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 min local cache
+    const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h local cache (data changes only on Sundays)
 
     // Helper: check if a cache has enough logos (at least 50% of teams)
     const cacheHasLogos = (cache: any): boolean => {
@@ -311,7 +311,7 @@ const ChampionnatTab: React.FC<Props> = ({
     // 2. Check DB cache — use shorter TTL (5min) on force refresh, normal 24h otherwise
     const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
-    const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
+    const CACHE_MAX_AGE = 6 * 24 * 60 * 60 * 1000; // 6 jours (données FFF mises à jour le dimanche soir)
     const FORCE_REFRESH_MAX_AGE = 5 * 60 * 1000; // 5min — prevents API spam
     const effectiveMaxAge = forceRefreshLive > 0 ? FORCE_REFRESH_MAX_AGE : CACHE_MAX_AGE;
 
