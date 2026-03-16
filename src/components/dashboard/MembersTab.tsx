@@ -91,7 +91,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     return { status: 'active', text: 'Active', days };
   };
 
-  const visibleMembers = members.filter(m => m.role !== 'admin+');
+  const visibleMembers = members;
   // Group by effective display role (displayRole takes priority for grouping)
   const getGroupRole = (m: Member) => {
     const override = localDisplayRoles[m.id];
