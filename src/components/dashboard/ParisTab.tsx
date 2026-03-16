@@ -346,7 +346,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return [...groups.values()];
   }, [allPendingBets]);
 
-  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, matchDate: string) => {
+  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, matchDate: string, betsForMatch: Bet[]) => {
     const scores = settleScores[matchKey];
     if (!scores || scores.home === '' || scores.away === '') {
       toast.error('Entre les deux scores');
@@ -361,19 +361,26 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
     setSettlingMatch(matchKey);
     try {
-      const { data, error } = await supabase.rpc('settle_match_bets', {
-        p_home_team: homeTeam,
-        p_away_team: awayTeam,
-        p_match_date: matchDate,
-        p_home_score: homeScore,
-        p_away_score: awayScore,
-      });
-      if (error) throw error;
-      const result = data as any;
-      const settled = result?.settled || 0;
-      const resultLabel = result?.result === 'home' ? homeTeam : result?.result === 'away' ? awayTeam : 'Match nul';
-      toast.success(`${settled} pari${settled > 1 ? 's' : ''} réglé${settled > 1 ? 's' : ''} — ${resultLabel} (${homeScore}-${awayScore})`);
-      // Clear scores for this match
+      const distinctDates = [...new Set(betsForMatch.map(b => b.matchDate))];
+      let totalSettled = 0;
+      let finalResult: any = null;
+
+      for (const rawDate of distinctDates) {
+        const { data, error } = await supabase.rpc('settle_match_bets', {
+          p_home_team: homeTeam,
+          p_away_team: awayTeam,
+          p_match_date: rawDate,
+          p_home_score: homeScore,
+          p_away_score: awayScore,
+        });
+        if (error) throw error;
+        const result = data as any;
+        totalSettled += result?.settled || 0;
+        finalResult = result;
+      }
+
+      const resultLabel = finalResult?.result === 'home' ? homeTeam : finalResult?.result === 'away' ? awayTeam : 'Match nul';
+      toast.success(`${totalSettled} pari${totalSettled > 1 ? 's' : ''} réglé${totalSettled > 1 ? 's' : ''} — ${resultLabel} (${homeScore}-${awayScore})`);
       setSettleScores(prev => { const next = { ...prev }; delete next[matchKey]; return next; });
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors du règlement');
