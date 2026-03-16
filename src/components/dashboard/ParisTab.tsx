@@ -12,7 +12,7 @@ import {
   OISEMONT_CL_NO, decodeFFFApiRef,
   type FFFMonthGroup, type FFFLiveMatch, type ScrapedStanding
 } from '@/lib/fffApi';
-import BetModal, { generateOdds } from './BetModal';
+import BetModal, { generateOdds, type BetPlacementPayload } from './BetModal';
 import BetLeaderboard from './BetLeaderboard';
 
 interface Bet {

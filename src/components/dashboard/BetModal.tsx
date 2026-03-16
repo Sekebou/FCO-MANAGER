@@ -5,9 +5,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
+export interface BetPlacementPayload {
+  userId: string;
+  userName: string;
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string;
+  prediction: 'home' | 'draw' | 'away';
+  odds: number;
+  amount: number;
+  newBalance: number;
+}
+
 interface BetModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onBetPlaced?: (bet: BetPlacementPayload) => void;
   homeTeam: string;
   awayTeam: string;
   matchDate: string;
