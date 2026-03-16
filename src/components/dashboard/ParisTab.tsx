@@ -3,6 +3,7 @@ import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2,
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Championship } from './ChampionnatTab';
 import {
