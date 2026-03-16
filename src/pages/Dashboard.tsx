@@ -302,6 +302,14 @@ const Dashboard = () => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('tab') || 'home';
   });
+  const [hasOpenedParisTab, setHasOpenedParisTab] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tab') === 'paris';
+  });
+
+  useEffect(() => {
+    if (activeTab === 'paris') setHasOpenedParisTab(true);
+  }, [activeTab]);
 
   const [pendingEventId, setPendingEventId] = useState<string | null>(null);
   const handleTabChange = (tab: string, eventId?: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(eventId || null); setActiveTab(tab); };
