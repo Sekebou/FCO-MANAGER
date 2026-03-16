@@ -22,6 +22,15 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [registerMode, setRegisterMode] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [regFirstName, setRegFirstName] = useState("");
+  const [regLastName, setRegLastName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regConfirmPassword, setRegConfirmPassword] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+  const [regSuccess, setRegSuccess] = useState(false);
 
   // Detect recovery session from email link
   useEffect(() => {
