@@ -700,8 +700,7 @@ const Dashboard = () => {
     const loadPhotos = async () => {
       const { data: photosData } = await supabase.from('gallery_photos').select('*');
       if (photosData) {
-        const mapped = photosData.map(mapPhoto);
-        getSignedPhotoUrls(mapped).then(signed => setGalleryPhotos(signed));
+        setGalleryPhotos(getPublicPhotoUrls(photosData.map(mapPhoto)));
       }
     };
     loadPhotos();
