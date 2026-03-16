@@ -341,7 +341,11 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     allPendingBets.filter(b => b.homeTeam === homeTeam && b.awayTeam === awayTeam && b.matchDate === matchDate);
 
   const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
-    myBets.some(b => b.homeTeam === homeTeam && b.awayTeam === awayTeam && b.matchDate === matchDate);
+    myBets.some(b =>
+      teamsLikelyMatch(b.homeTeam, homeTeam) &&
+      teamsLikelyMatch(b.awayTeam, awayTeam) &&
+      normalizeDateKey(b.matchDate) === normalizeDateKey(matchDate)
+    );
 
   const isAdminPlus = currentUser?.role === 'admin+';
 
