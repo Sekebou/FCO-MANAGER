@@ -5,7 +5,7 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 import type { AppUser } from '@/contexts/AuthContext';
 
 interface Props {
-  onSubmit: (data: { email?: string; role: string; licenseExpiry?: string; position?: string; mode: 'email' | 'link' | 'collective' }) => void;
+  onSubmit: (data: { email?: string; role: string; licenseExpiry?: string; position?: string; mode: 'email' | 'link' | 'collective' | 'code' }) => void;
   onClose: () => void;
   currentUser: AppUser | null;
 }
