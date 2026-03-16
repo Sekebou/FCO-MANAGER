@@ -303,6 +303,30 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     });
   }, [loadTeamFFFData]);
 
+  // Auto-retry: if selected team finished loading but has no data, retry once
+  useEffect(() => {
+    const data = teamData[selectedTeam];
+    if (data && !data.loading && data.upcoming.length === 0 && !loadingTeamsRef.current.has(selectedTeam)) {
+      // Small delay to avoid tight loop
+      const timer = setTimeout(() => {
+        void loadTeamFFFData(selectedTeam, true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedTeam, teamData, loadTeamFFFData]);
+
+  // Manual refresh handler
+  const handleForceRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Clear local cache for selected team
+    try { localStorage.removeItem(`paris_fff_v2_${selectedTeam}`); } catch {}
+    // Reset team data to trigger loading state
+    setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: true } }));
+    await loadTeamFFFData(selectedTeam, true);
+    setRefreshing(false);
+    toast.success('Matchs actualisés');
+  }, [selectedTeam, loadTeamFFFData]);
+
   // Current team data
   const currentData = teamData[selectedTeam] || { upcoming: [], classement: [], loading: true };
 
