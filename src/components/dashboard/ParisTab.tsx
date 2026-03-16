@@ -128,31 +128,48 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const customTeams = [...new Set(championships.map(c => c.team || 'A').filter(t => !BASE_TEAMS.includes(t)))].sort();
   const allTeamOptions = [...BASE_TEAMS, ...customTeams];
 
-  // Load bets & balance
+  // Resolve real auth user id + load bets & balance
   useEffect(() => {
-    if (!currentUser) return;
+    let mounted = true;
+
     const fetchData = async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const sessionUserId = authData.user?.id ?? null;
+      if (mounted) setAuthUserId(sessionUserId);
+
+      if (!sessionUserId) {
+        if (mounted) setLoading(false);
+        return;
+      }
+
       const [{ data: betsData }, { data: pointsData }] = await Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
-        supabase.from('user_points').select('balance').eq('user_id', currentUser.uid).maybeSingle(),
+        supabase.from('user_points').select('balance').eq('user_id', sessionUserId).maybeSingle(),
       ]);
+
+      if (!mounted) return;
       if (betsData) setBets(betsData.map(mapBet));
       if (pointsData) setBalance(pointsData.balance);
       else setBalance(100);
       setLoading(false);
     };
+
     fetchData();
 
     const channel = supabase.channel('paris-tab')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => {
         supabase.from('bets').select('*').order('created_at', { ascending: false }).then(({ data }) => data && setBets(data.map(mapBet)));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${currentUser.uid}` }, (payload: any) => {
-        if (typeof payload.new?.balance === 'number') setBalance(payload.new.balance);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, (payload: any) => {
+        if (payload.new?.user_id === authUserId && typeof payload.new?.balance === 'number') setBalance(payload.new.balance);
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [currentUser]);
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [authUserId]);
 
   // Load profile photos for bettors
   useEffect(() => {
