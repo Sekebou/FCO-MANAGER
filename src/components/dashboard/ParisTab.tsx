@@ -114,6 +114,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
