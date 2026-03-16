@@ -173,7 +173,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     // Prevent duplicate concurrent loads
     if (loadingTeamsRef.current.has(team)) return;
 
-    const LOCAL_CACHE_KEY = `paris_fff_${team}`;
+    const LOCAL_CACHE_VERSION = 'v2';
+    const LOCAL_CACHE_KEY = `paris_fff_${LOCAL_CACHE_VERSION}_${team}`;
     const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h
 
     // Check local cache first
