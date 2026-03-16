@@ -351,13 +351,13 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className={`w-full lg:w-1/2 flex ${registerMode ? 'items-start' : 'items-center'} justify-center p-4 sm:p-12 bg-background relative overflow-hidden h-[100dvh]`} style={{ paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)' }}>
+      <div className={`w-full lg:w-1/2 flex ${registerMode ? 'items-start overflow-y-auto' : 'items-center overflow-hidden'} justify-center p-4 sm:p-12 bg-background relative h-[100dvh]`} style={{ paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)', paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
         <div className="w-full max-w-[420px] relative z-10">
           {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-4 animate-[fadeSlideUp_0.6s_ease-out_both]">
+          <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_both]`}>
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
               <img src={clubLogo} alt="FCO Logo" className="w-[70px] h-[70px] object-contain" />
             </div>
@@ -365,7 +365,7 @@ const Auth = () => {
           </div>
 
           {/* Header */}
-          <div className="mb-4 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
+          <div className={`${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
             <h2 className="text-xl font-bold text-foreground">
               {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
             </h2>
@@ -375,7 +375,7 @@ const Auth = () => {
           </div>
 
           {/* Form card */}
-          <div className="bg-card rounded-2xl p-5 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
+          <div className={`bg-card rounded-2xl ${registerMode ? 'p-4' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
             {recoveryMode ? (
               recoverySuccess ? (
                 <div className="text-center py-6 space-y-4">
@@ -458,15 +458,15 @@ const Auth = () => {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleRegisterWithCode} className="space-y-4">
+              <form onSubmit={handleRegisterWithCode} className="space-y-3">
                 <button type="button" onClick={() => { setRegisterMode(false); setError(""); setCodeStatus('idle'); setValidatedInvitation(null); setInviteCode(""); }}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-1">
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft size={16} /> Retour
                 </button>
                 {/* Code field with live validation */}
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Code d'invitation</label>
-                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border px-3.5 ${
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Code d'invitation</label>
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border px-3 ${
                     codeStatus === 'valid' ? 'border-green-500/50 ring-2 ring-green-500/20' :
                     codeStatus === 'invalid' || codeStatus === 'expired' || codeStatus === 'used' ? 'border-destructive/50 ring-2 ring-destructive/20' :
                     focused === "code" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : "border-border"
@@ -477,9 +477,8 @@ const Auth = () => {
                       focused === "code" ? "text-primary" : "text-muted-foreground/50"
                     }`} size={18} />
                     <input type="text" value={inviteCode} onChange={(e) => handleCodeChange(e.target.value)} onFocus={() => setFocused("code")} onBlur={() => setFocused(null)}
-                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm font-mono tracking-wider uppercase"
+                      className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm font-mono tracking-wider uppercase"
                       placeholder="FCO-XXXX" required maxLength={10} autoComplete="off" />
-                    {/* Status indicator */}
                     <div className="shrink-0">
                       {codeStatus === 'checking' && <Loader2 size={18} className="animate-spin text-muted-foreground" />}
                       {codeStatus === 'valid' && (
@@ -498,74 +497,78 @@ const Auth = () => {
                     </div>
                   </div>
                   {codeStatus === 'valid' && validatedInvitation && (
-                    <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1 animate-fade-in">
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1 animate-fade-in">
                       <Shield size={12} /> Code valide — Rôle : <span className="font-semibold">{validatedInvitation.role}</span>
                     </p>
                   )}
-                  {codeStatus === 'invalid' && <p className="text-xs text-destructive mt-1.5 animate-fade-in">Code d'invitation invalide</p>}
-                  {codeStatus === 'expired' && <p className="text-xs text-destructive mt-1.5 animate-fade-in">Ce code a expiré</p>}
-                  {codeStatus === 'used' && <p className="text-xs text-destructive mt-1.5 animate-fade-in">Ce code a déjà été utilisé</p>}
+                  {codeStatus === 'invalid' && <p className="text-xs text-destructive mt-1 animate-fade-in">Code d'invitation invalide</p>}
+                  {codeStatus === 'expired' && <p className="text-xs text-destructive mt-1 animate-fade-in">Ce code a expiré</p>}
+                  {codeStatus === 'used' && <p className="text-xs text-destructive mt-1 animate-fade-in">Ce code a déjà été utilisé</p>}
                 </div>
 
                 {/* Rest of form - only enabled when code is valid */}
-                <fieldset disabled={codeStatus !== 'valid'} className={`space-y-4 transition-opacity duration-300 ${codeStatus !== 'valid' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
-                  <div className="grid grid-cols-2 gap-3">
+                <fieldset disabled={codeStatus !== 'valid'} className={`space-y-3 transition-opacity duration-300 ${codeStatus !== 'valid' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Prénom</label>
-                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regfirst" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Prénom</label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regfirst" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <User className={`shrink-0 transition-colors duration-200 ${focused === "regfirst" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="text" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} onFocus={() => setFocused("regfirst")} onBlur={() => setFocused(null)}
-                          className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                          className="w-full py-2.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
                           placeholder="Prénom" required />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
-                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "reglast" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Nom</label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "reglast" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <User className={`shrink-0 transition-colors duration-200 ${focused === "reglast" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="text" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} onFocus={() => setFocused("reglast")} onBlur={() => setFocused(null)}
-                          className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                          className="w-full py-2.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
                           placeholder="Nom" required />
                       </div>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
-                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regemail" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Email</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regemail" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                       <Mail className={`shrink-0 transition-colors duration-200 ${focused === "regemail" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                       <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} onFocus={() => setFocused("regemail")} onBlur={() => setFocused(null)}
-                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
                         placeholder="votre@email.com" required />
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mot de passe</label>
-                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                      <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regpw" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
-                      <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} onFocus={() => setFocused("regpw")} onBlur={() => setFocused(null)}
-                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                        placeholder="Min. 8 caractères" required minLength={8} />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Mot de passe</label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                        <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regpw" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                        <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} onFocus={() => setFocused("regpw")} onBlur={() => setFocused(null)}
+                          className="w-full py-2.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                          placeholder="Min. 8 car." required minLength={8} />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confirmer</label>
-                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regconfirm" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                      <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regconfirm" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
-                      <input type="password" value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} onFocus={() => setFocused("regconfirm")} onBlur={() => setFocused(null)}
-                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                        placeholder="Répéter le mot de passe" required minLength={8} />
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Confirmer</label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regconfirm" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                        <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regconfirm" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                        <input type="password" value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} onFocus={() => setFocused("regconfirm")} onBlur={() => setFocused(null)}
+                          className="w-full py-2.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                          placeholder="Confirmer" required minLength={8} />
+                      </div>
                     </div>
                   </div>
                 </fieldset>
                 {error &&
-                  <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
+                  <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-2.5 rounded-xl text-sm animate-fade-in">
                     <Shield size={16} className="shrink-0" /> {error}
                   </div>
                 }
                 <button type="submit" disabled={regLoading || codeStatus !== 'valid'}
-                  className="group w-full bg-accent text-accent-foreground py-3.5 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="group w-full bg-accent text-accent-foreground py-3 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {regLoading ? <><Loader2 className="animate-spin" size={20} /> Création...</> : <>Créer mon compte <ChevronRight size={18} /></>}
                 </button>
+                {/* Bottom spacer for safe area */}
+                <div className="h-4" />
               </form>
             )) :
 
