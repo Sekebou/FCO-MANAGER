@@ -31,6 +31,9 @@ const Auth = () => {
   const [regConfirmPassword, setRegConfirmPassword] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
+  const [codeStatus, setCodeStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'expired' | 'used'>('idle');
+  const [validatedInvitation, setValidatedInvitation] = useState<any>(null);
+  const codeCheckTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Detect recovery session from email link
   useEffect(() => {
@@ -175,28 +178,43 @@ const Auth = () => {
     }
   };
 
+  // Live invite code validation
+  const handleCodeChange = (val: string) => {
+    const upper = val.toUpperCase();
+    setInviteCode(upper);
+    setError("");
+    setValidatedInvitation(null);
+    if (codeCheckTimeout.current) clearTimeout(codeCheckTimeout.current);
+    if (upper.length < 4) { setCodeStatus('idle'); return; }
+    setCodeStatus('checking');
+    codeCheckTimeout.current = setTimeout(async () => {
+      try {
+        const { data: inv, error: invError } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('invite_code', upper.trim())
+          .single();
+        if (invError || !inv) { setCodeStatus('invalid'); return; }
+        if (inv.status === 'used' || (inv.max_uses && inv.use_count >= inv.max_uses)) { setCodeStatus('used'); return; }
+        if (new Date(inv.expires_at) < new Date()) { setCodeStatus('expired'); return; }
+        setCodeStatus('valid');
+        setValidatedInvitation(inv);
+      } catch { setCodeStatus('invalid'); }
+    }, 500);
+  };
+
   const handleRegisterWithCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!inviteCode.trim()) { setError("Veuillez entrer le code d'invitation"); return; }
+    if (codeStatus !== 'valid' || !validatedInvitation) { setError("Veuillez entrer un code d'invitation valide"); return; }
     if (!regFirstName.trim() || !regLastName.trim()) { setError("Veuillez remplir tous les champs"); return; }
     if (!regEmail.trim()) { setError("Veuillez entrer votre email"); return; }
-    if (regPassword.length < 6) { setError("Le mot de passe doit contenir au moins 6 caractères"); return; }
+    if (regPassword.length < 8) { setError("Le mot de passe doit contenir au moins 8 caractères"); return; }
     if (regPassword !== regConfirmPassword) { setError("Les mots de passe ne correspondent pas"); return; }
 
     setRegLoading(true);
+    const inv = validatedInvitation;
     try {
-      // Validate invite code
-      const { data: inv, error: invError } = await supabase
-        .from('invitations')
-        .select('*')
-        .eq('invite_code', inviteCode.trim().toUpperCase())
-        .single();
-
-      if (invError || !inv) throw new Error("Code d'invitation invalide");
-      if (inv.status === 'used') throw new Error("Ce code a déjà été utilisé");
-      if (new Date(inv.expires_at) < new Date()) throw new Error("Ce code a expiré");
-
       const fullName = `${regFirstName.trim()} ${regLastName.trim()}`;
 
       // Sign up
@@ -206,14 +224,14 @@ const Auth = () => {
       });
       if (authError) {
         if (authError.message.includes('already registered')) throw new Error("Un compte avec cet email existe déjà");
-        if (authError.message.includes('weak') || authError.message.includes('easy to guess')) throw new Error("Ce mot de passe est trop faible, veuillez en choisir un autre");
+        if (authError.message.includes('weak') || authError.message.includes('easy to guess') || authError.message.includes('pwned')) throw new Error("Ce mot de passe est trop courant ou trop faible. Choisissez-en un autre.");
         throw authError;
       }
       const userId = authData.user?.id;
       if (!userId) throw new Error("Erreur de création de compte");
 
-      // Use register_user RPC
-      const { error: regError } = await supabase.rpc('register_user', {
+      // Register profile via RPC
+      const { data: regResult, error: regError } = await supabase.rpc('register_user', {
         p_user_id: userId,
         p_email: regEmail.trim(),
         p_name: fullName,
@@ -224,8 +242,43 @@ const Auth = () => {
       });
       if (regError) throw regError;
 
-      setRegSuccess(true);
-      toast.success("Compte créé avec succès ! 🎉");
+      // Auto-login
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: regEmail.trim(),
+        password: regPassword,
+      });
+      if (loginError) throw loginError;
+      const user = loginData.user;
+      if (!user) throw new Error("Erreur de connexion automatique");
+
+      // Fetch profile
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (!profile) throw new Error("Profil introuvable");
+
+      // Session token
+      const sessionToken = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      await supabase.from('user_sessions').upsert({ user_id: user.id, session_token: sessionToken, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      localStorage.setItem('sessionToken', sessionToken);
+
+      const appUser = {
+        uid: user.id,
+        email: user.email || '',
+        role: profile.role,
+        name: profile.name,
+        username: profile.username || '',
+        playerId: profile.player_id || undefined,
+        photoURL: profile.photo_url || null,
+        team: profile.team || undefined
+      };
+      localStorage.setItem('currentUser', JSON.stringify(appUser));
+      setCurrentUser(appUser as any);
+
+      // Show welcome
+      const firstName = fullName.split(' ')[0];
+      sessionStorage.setItem('showWelcome', firstName);
+
+      toast.success("Bienvenue au club ! 🎉");
+      navigate("/");
     } catch (err: any) {
       setError(err.message || "Erreur lors de l'inscription");
     } finally {
@@ -401,81 +454,115 @@ const Auth = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-foreground">Compte créé ! 🎉</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Vous pouvez maintenant vous connecter avec vos identifiants.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Connexion en cours...</p>
                 </div>
-                <button onClick={() => { setRegisterMode(false); setRegSuccess(false); setError(""); }}
-                  className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
-                  Se connecter <ChevronRight size={18} />
-                </button>
               </div>
             ) : (
               <form onSubmit={handleRegisterWithCode} className="space-y-4">
-                <button type="button" onClick={() => { setRegisterMode(false); setError(""); }}
+                <button type="button" onClick={() => { setRegisterMode(false); setError(""); setCodeStatus('idle'); setValidatedInvitation(null); setInviteCode(""); }}
                   className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-1">
                   <ArrowLeft size={16} /> Retour
                 </button>
+                {/* Code field with live validation */}
                 <div>
                   <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Code d'invitation</label>
-                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "code" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                    <Hash className={`shrink-0 transition-colors duration-200 ${focused === "code" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
-                    <input type="text" value={inviteCode} onChange={(e) => setInviteCode(e.target.value.toUpperCase())} onFocus={() => setFocused("code")} onBlur={() => setFocused(null)}
+                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border px-3.5 ${
+                    codeStatus === 'valid' ? 'border-green-500/50 ring-2 ring-green-500/20' :
+                    codeStatus === 'invalid' || codeStatus === 'expired' || codeStatus === 'used' ? 'border-destructive/50 ring-2 ring-destructive/20' :
+                    focused === "code" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : "border-border"
+                  }`}>
+                    <Hash className={`shrink-0 transition-colors duration-200 ${
+                      codeStatus === 'valid' ? 'text-green-500' :
+                      codeStatus === 'invalid' || codeStatus === 'expired' || codeStatus === 'used' ? 'text-destructive' :
+                      focused === "code" ? "text-primary" : "text-muted-foreground/50"
+                    }`} size={18} />
+                    <input type="text" value={inviteCode} onChange={(e) => handleCodeChange(e.target.value)} onFocus={() => setFocused("code")} onBlur={() => setFocused(null)}
                       className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm font-mono tracking-wider uppercase"
                       placeholder="FCO-XXXX" required maxLength={10} autoComplete="off" />
+                    {/* Status indicator */}
+                    <div className="shrink-0">
+                      {codeStatus === 'checking' && <Loader2 size={18} className="animate-spin text-muted-foreground" />}
+                      {codeStatus === 'valid' && (
+                        <div className="relative flex items-center justify-center">
+                          <div className="absolute w-6 h-6 bg-green-500/30 rounded-full animate-ping" />
+                          <div className="w-4 h-4 bg-green-500 rounded-full relative z-10 flex items-center justify-center">
+                            <Check size={10} className="text-white" strokeWidth={3} />
+                          </div>
+                        </div>
+                      )}
+                      {(codeStatus === 'invalid' || codeStatus === 'expired' || codeStatus === 'used') && (
+                        <div className="w-4 h-4 bg-destructive rounded-full flex items-center justify-center">
+                          <span className="text-white text-[10px] font-bold">✕</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  {codeStatus === 'valid' && validatedInvitation && (
+                    <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1 animate-fade-in">
+                      <Shield size={12} /> Code valide — Rôle : <span className="font-semibold">{validatedInvitation.role}</span>
+                    </p>
+                  )}
+                  {codeStatus === 'invalid' && <p className="text-xs text-destructive mt-1.5 animate-fade-in">Code d'invitation invalide</p>}
+                  {codeStatus === 'expired' && <p className="text-xs text-destructive mt-1.5 animate-fade-in">Ce code a expiré</p>}
+                  {codeStatus === 'used' && <p className="text-xs text-destructive mt-1.5 animate-fade-in">Ce code a déjà été utilisé</p>}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Prénom</label>
-                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regfirst" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                      <User className={`shrink-0 transition-colors duration-200 ${focused === "regfirst" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
-                      <input type="text" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} onFocus={() => setFocused("regfirst")} onBlur={() => setFocused(null)}
-                        className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                        placeholder="Prénom" required />
+
+                {/* Rest of form - only enabled when code is valid */}
+                <fieldset disabled={codeStatus !== 'valid'} className={`space-y-4 transition-opacity duration-300 ${codeStatus !== 'valid' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Prénom</label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regfirst" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                        <User className={`shrink-0 transition-colors duration-200 ${focused === "regfirst" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                        <input type="text" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} onFocus={() => setFocused("regfirst")} onBlur={() => setFocused(null)}
+                          className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                          placeholder="Prénom" required />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "reglast" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                        <User className={`shrink-0 transition-colors duration-200 ${focused === "reglast" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                        <input type="text" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} onFocus={() => setFocused("reglast")} onBlur={() => setFocused(null)}
+                          className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                          placeholder="Nom" required />
+                      </div>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nom</label>
-                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "reglast" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                      <User className={`shrink-0 transition-colors duration-200 ${focused === "reglast" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
-                      <input type="text" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} onFocus={() => setFocused("reglast")} onBlur={() => setFocused(null)}
-                        className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                        placeholder="Nom" required />
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regemail" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <Mail className={`shrink-0 transition-colors duration-200 ${focused === "regemail" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                      <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} onFocus={() => setFocused("regemail")} onBlur={() => setFocused(null)}
+                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        placeholder="votre@email.com" required />
                     </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Email</label>
-                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regemail" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                    <Mail className={`shrink-0 transition-colors duration-200 ${focused === "regemail" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
-                    <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} onFocus={() => setFocused("regemail")} onBlur={() => setFocused(null)}
-                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                      placeholder="votre@email.com" required />
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mot de passe</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regpw" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                      <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} onFocus={() => setFocused("regpw")} onBlur={() => setFocused(null)}
+                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        placeholder="Min. 8 caractères" required minLength={8} />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mot de passe</label>
-                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                    <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regpw" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
-                    <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} onFocus={() => setFocused("regpw")} onBlur={() => setFocused(null)}
-                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                      placeholder="Min. 6 caractères" required />
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confirmer</label>
+                    <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regconfirm" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                      <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regconfirm" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
+                      <input type="password" value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} onFocus={() => setFocused("regconfirm")} onBlur={() => setFocused(null)}
+                        className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
+                        placeholder="Répéter le mot de passe" required minLength={8} />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Confirmer</label>
-                  <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3.5 ${focused === "regconfirm" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
-                    <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regconfirm" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
-                    <input type="password" value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} onFocus={() => setFocused("regconfirm")} onBlur={() => setFocused(null)}
-                      className="w-full py-3.5 bg-transparent text-foreground placeholder:text-muted-foreground/50 transition-all outline-none text-sm"
-                      placeholder="Répéter le mot de passe" required />
-                  </div>
-                </div>
+                </fieldset>
                 {error &&
                   <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl text-sm animate-fade-in">
                     <Shield size={16} className="shrink-0" /> {error}
                   </div>
                 }
-                <button type="submit" disabled={regLoading}
+                <button type="submit" disabled={regLoading || codeStatus !== 'valid'}
                   className="group w-full bg-accent text-accent-foreground py-3.5 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {regLoading ? <><Loader2 className="animate-spin" size={20} /> Création...</> : <>Créer mon compte <ChevronRight size={18} /></>}
                 </button>
