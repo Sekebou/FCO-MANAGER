@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -120,6 +120,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
   const [profilePhotos, setProfilePhotos] = useState<Record<string, string | null>>({});
   const loadingTeamsRef = useRef<Set<string>>(new Set());
+  const retryCountRef = useRef<Record<string, number>>({});
   const equipesCache = useRef<any>(null);
 
   // Countdown
@@ -187,30 +188,34 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     });
   }, [bets]);
 
-  const loadTeamFFFData = useCallback(async (team: string) => {
-    // Prevent duplicate concurrent loads
-    if (loadingTeamsRef.current.has(team)) return;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadTeamFFFData = useCallback(async (team: string, forceRefresh = false) => {
+    // Prevent duplicate concurrent loads (unless force refresh)
+    if (!forceRefresh && loadingTeamsRef.current.has(team)) return;
 
     const LOCAL_CACHE_VERSION = 'v2';
     const LOCAL_CACHE_KEY = `paris_fff_${LOCAL_CACHE_VERSION}_${team}`;
     const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h
 
-    // Check local cache first
-    try {
-      const cached = localStorage.getItem(LOCAL_CACHE_KEY);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < LOCAL_CACHE_TTL && data) {
-          const classement = data.classement && Array.isArray(data.classement)
-            ? mapClassementToStandings(data.classement) : [];
-          setTeamData(prev => {
-            if (prev[team] && !prev[team].loading) return prev;
-            return { ...prev, [team]: { upcoming: data.upcoming || [], classement, loading: false } };
-          });
-          return;
+    // Check local cache first (skip on force refresh)
+    if (!forceRefresh) {
+      try {
+        const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < LOCAL_CACHE_TTL && data) {
+            const classement = data.classement && Array.isArray(data.classement)
+              ? mapClassementToStandings(data.classement) : [];
+            setTeamData(prev => {
+              if (prev[team] && !prev[team].loading) return prev;
+              return { ...prev, [team]: { upcoming: data.upcoming || [], classement, loading: false } };
+            });
+            return;
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
 
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
@@ -235,7 +240,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     const teamChamp = championships.find(c => (c.team || 'A') === team && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
 
-    if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
+    if (!forceRefresh && teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
       const cache = teamChamp.fffLiveCache;
       const classement = cache.classement && Array.isArray(cache.classement)
         ? mapClassementToStandings(cache.classement) : [];
@@ -298,6 +303,36 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       void loadTeamFFFData(team);
     });
   }, [loadTeamFFFData]);
+
+  // Auto-retry: if selected team finished loading but has no data, retry once
+  useEffect(() => {
+    const data = teamData[selectedTeam];
+    if (data && !data.loading && data.upcoming.length === 0 && !loadingTeamsRef.current.has(selectedTeam)) {
+      const retries = retryCountRef.current[selectedTeam] || 0;
+      if (retries >= 2) return; // Max 2 auto-retries
+      retryCountRef.current[selectedTeam] = retries + 1;
+      const timer = setTimeout(() => {
+        void loadTeamFFFData(selectedTeam, true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+    // Reset retry counter if we got data
+    if (teamData[selectedTeam]?.upcoming?.length > 0) {
+      retryCountRef.current[selectedTeam] = 0;
+    }
+  }, [selectedTeam, teamData, loadTeamFFFData]);
+
+  // Manual refresh handler
+  const handleForceRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Clear local cache for selected team
+    try { localStorage.removeItem(`paris_fff_v2_${selectedTeam}`); } catch {}
+    // Reset team data to trigger loading state
+    setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: true } }));
+    await loadTeamFFFData(selectedTeam, true);
+    setRefreshing(false);
+    toast.success('Matchs actualisés');
+  }, [selectedTeam, loadTeamFFFData]);
 
   // Current team data
   const currentData = teamData[selectedTeam] || { upcoming: [], classement: [], loading: true };
@@ -571,10 +606,20 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-foreground">Paris</h2>
         </div>
-        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-          <Coins size={16} className="text-amber-500" />
-          <span className="text-sm font-black text-amber-500">{balance}</span>
-          <span className="text-[10px] text-amber-500/70 font-medium">pts</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleForceRefresh}
+            disabled={refreshing || currentData.loading}
+            className="w-8 h-8 rounded-xl bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-all disabled:opacity-40"
+            title="Actualiser les matchs"
+          >
+            <RefreshCw size={14} className={cn("text-muted-foreground", (refreshing || currentData.loading) && "animate-spin")} />
+          </button>
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+            <Coins size={16} className="text-amber-500" />
+            <span className="text-sm font-black text-amber-500">{balance}</span>
+            <span className="text-[10px] text-amber-500/70 font-medium">pts</span>
+          </div>
         </div>
       </div>
 
