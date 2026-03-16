@@ -120,6 +120,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
   const [profilePhotos, setProfilePhotos] = useState<Record<string, string | null>>({});
   const loadingTeamsRef = useRef<Set<string>>(new Set());
+  const retryCountRef = useRef<Record<string, number>>({});
   const equipesCache = useRef<any>(null);
 
   // Countdown
