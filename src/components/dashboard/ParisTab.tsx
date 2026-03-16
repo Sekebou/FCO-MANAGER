@@ -239,7 +239,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     const teamChamp = championships.find(c => (c.team || 'A') === team && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
 
-    if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
+    if (!forceRefresh && teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
       const cache = teamChamp.fffLiveCache;
       const classement = cache.classement && Array.isArray(cache.classement)
         ? mapClassementToStandings(cache.classement) : [];
