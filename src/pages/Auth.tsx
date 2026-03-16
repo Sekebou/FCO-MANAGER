@@ -178,28 +178,43 @@ const Auth = () => {
     }
   };
 
+  // Live invite code validation
+  const handleCodeChange = (val: string) => {
+    const upper = val.toUpperCase();
+    setInviteCode(upper);
+    setError("");
+    setValidatedInvitation(null);
+    if (codeCheckTimeout.current) clearTimeout(codeCheckTimeout.current);
+    if (upper.length < 4) { setCodeStatus('idle'); return; }
+    setCodeStatus('checking');
+    codeCheckTimeout.current = setTimeout(async () => {
+      try {
+        const { data: inv, error: invError } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('invite_code', upper.trim())
+          .single();
+        if (invError || !inv) { setCodeStatus('invalid'); return; }
+        if (inv.status === 'used' || (inv.max_uses && inv.use_count >= inv.max_uses)) { setCodeStatus('used'); return; }
+        if (new Date(inv.expires_at) < new Date()) { setCodeStatus('expired'); return; }
+        setCodeStatus('valid');
+        setValidatedInvitation(inv);
+      } catch { setCodeStatus('invalid'); }
+    }, 500);
+  };
+
   const handleRegisterWithCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!inviteCode.trim()) { setError("Veuillez entrer le code d'invitation"); return; }
+    if (codeStatus !== 'valid' || !validatedInvitation) { setError("Veuillez entrer un code d'invitation valide"); return; }
     if (!regFirstName.trim() || !regLastName.trim()) { setError("Veuillez remplir tous les champs"); return; }
     if (!regEmail.trim()) { setError("Veuillez entrer votre email"); return; }
-    if (regPassword.length < 6) { setError("Le mot de passe doit contenir au moins 6 caractères"); return; }
+    if (regPassword.length < 8) { setError("Le mot de passe doit contenir au moins 8 caractères"); return; }
     if (regPassword !== regConfirmPassword) { setError("Les mots de passe ne correspondent pas"); return; }
 
     setRegLoading(true);
+    const inv = validatedInvitation;
     try {
-      // Validate invite code
-      const { data: inv, error: invError } = await supabase
-        .from('invitations')
-        .select('*')
-        .eq('invite_code', inviteCode.trim().toUpperCase())
-        .single();
-
-      if (invError || !inv) throw new Error("Code d'invitation invalide");
-      if (inv.status === 'used') throw new Error("Ce code a déjà été utilisé");
-      if (new Date(inv.expires_at) < new Date()) throw new Error("Ce code a expiré");
-
       const fullName = `${regFirstName.trim()} ${regLastName.trim()}`;
 
       // Sign up
@@ -209,14 +224,14 @@ const Auth = () => {
       });
       if (authError) {
         if (authError.message.includes('already registered')) throw new Error("Un compte avec cet email existe déjà");
-        if (authError.message.includes('weak') || authError.message.includes('easy to guess')) throw new Error("Ce mot de passe est trop faible, veuillez en choisir un autre");
+        if (authError.message.includes('weak') || authError.message.includes('easy to guess') || authError.message.includes('pwned')) throw new Error("Ce mot de passe est trop courant ou trop faible. Choisissez-en un autre.");
         throw authError;
       }
       const userId = authData.user?.id;
       if (!userId) throw new Error("Erreur de création de compte");
 
-      // Use register_user RPC
-      const { error: regError } = await supabase.rpc('register_user', {
+      // Register profile via RPC
+      const { data: regResult, error: regError } = await supabase.rpc('register_user', {
         p_user_id: userId,
         p_email: regEmail.trim(),
         p_name: fullName,
@@ -227,8 +242,43 @@ const Auth = () => {
       });
       if (regError) throw regError;
 
-      setRegSuccess(true);
-      toast.success("Compte créé avec succès ! 🎉");
+      // Auto-login
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: regEmail.trim(),
+        password: regPassword,
+      });
+      if (loginError) throw loginError;
+      const user = loginData.user;
+      if (!user) throw new Error("Erreur de connexion automatique");
+
+      // Fetch profile
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (!profile) throw new Error("Profil introuvable");
+
+      // Session token
+      const sessionToken = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      await supabase.from('user_sessions').upsert({ user_id: user.id, session_token: sessionToken, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      localStorage.setItem('sessionToken', sessionToken);
+
+      const appUser = {
+        uid: user.id,
+        email: user.email || '',
+        role: profile.role,
+        name: profile.name,
+        username: profile.username || '',
+        playerId: profile.player_id || undefined,
+        photoURL: profile.photo_url || null,
+        team: profile.team || undefined
+      };
+      localStorage.setItem('currentUser', JSON.stringify(appUser));
+      setCurrentUser(appUser as any);
+
+      // Show welcome
+      const firstName = fullName.split(' ')[0];
+      sessionStorage.setItem('showWelcome', firstName);
+
+      toast.success("Bienvenue au club ! 🎉");
+      navigate("/");
     } catch (err: any) {
       setError(err.message || "Erreur lors de l'inscription");
     } finally {
