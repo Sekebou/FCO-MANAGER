@@ -150,7 +150,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       ]);
 
       if (!mounted) return;
-      if (betsData) setBets(betsData.map(mapBet));
+      if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
       if (pointsData) setBalance(pointsData.balance);
       else setBalance(100);
       setLoading(false);
