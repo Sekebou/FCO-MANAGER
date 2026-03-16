@@ -1,0 +1,2 @@
+ALTER TABLE public.invitations ADD COLUMN IF NOT EXISTS invite_code text UNIQUE DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_invitations_invite_code ON public.invitations(invite_code) WHERE invite_code IS NOT NULL;
