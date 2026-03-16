@@ -302,6 +302,14 @@ const Dashboard = () => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('tab') || 'home';
   });
+  const [hasOpenedParisTab, setHasOpenedParisTab] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('tab') === 'paris';
+  });
+
+  useEffect(() => {
+    if (activeTab === 'paris') setHasOpenedParisTab(true);
+  }, [activeTab]);
 
   const [pendingEventId, setPendingEventId] = useState<string | null>(null);
   const handleTabChange = (tab: string, eventId?: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(eventId || null); setActiveTab(tab); };
@@ -1433,7 +1441,7 @@ const Dashboard = () => {
 
       {/* Content */}
       <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
-        <div key={activeTab} className="animate-fade-in">
+        <div className="animate-fade-in">
           {activeTab === 'home' && (
             <HomeTab currentUser={currentUser} events={events} players={visiblePlayers} news={news} members={visibleMembers} onNavigate={handleTabChange} />
           )}
@@ -1557,7 +1565,11 @@ const Dashboard = () => {
           {activeTab === 'news' && <NewsTab news={news} comments={newsComments} members={members} currentUser={currentUser} canManage={canManage} canCreateNews={canCreateNews} deleteNews={deleteNews} toggleLike={toggleLike} addComment={addComment} deleteComment={deleteComment} onAddNews={() => setShowAddNews(true)} />}
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryTab albums={albums} photos={galleryPhotos} currentUser={currentUser} canManagePhotos={canManagePhotos} onCreateAlbum={createAlbum} onDeleteAlbum={deleteAlbum} onUploadPhotos={uploadPhotos} onDeletePhoto={deletePhoto} />}
-          {activeTab === 'paris' && <ParisTab currentUser={currentUser} championships={championships} />}
+          {hasOpenedParisTab && (
+            <div className={activeTab === 'paris' ? '' : 'hidden'}>
+              <ParisTab currentUser={currentUser} championships={championships} />
+            </div>
+          )}
           {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} />}
           {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
