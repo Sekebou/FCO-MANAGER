@@ -681,7 +681,7 @@ const Dashboard = () => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'gallery_photos' }, () => {
         if (galleryLoadedRef.current) {
-          supabase.from('gallery_photos').select('*').then(({ data }) => data && getSignedPhotoUrls(data.map(mapPhoto)).then(signed => setGalleryPhotos(signed)));
+          supabase.from('gallery_photos').select('*').then(({ data }) => data && setGalleryPhotos(getPublicPhotoUrls(data.map(mapPhoto))));
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'match_sheets' }, () => {
