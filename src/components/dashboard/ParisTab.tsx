@@ -455,7 +455,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     );
 
   const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
-    myBets.some(b =>
+    !betsLoaded || myBets.some(b =>
       teamsLikelyMatch(b.homeTeam, homeTeam) &&
       teamsLikelyMatch(b.awayTeam, awayTeam) &&
       normalizeDateKey(b.matchDate) === normalizeDateKey(matchDate)
