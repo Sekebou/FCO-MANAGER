@@ -831,100 +831,52 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               <>
                 {/* Pending bets summary */}
                 {myPendingBets.length > 0 && (
-                  <div className="space-y-3">
-                    {/* Stats row */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-card rounded-2xl border border-border p-3 text-center">
-                        <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Mise totale</div>
-                        <div className="text-lg font-black text-foreground">{myPendingBets.reduce((s, b) => s + b.amount, 0)}</div>
-                        <div className="text-[9px] text-muted-foreground">pts engagés</div>
+                  <div className="bg-gradient-to-br from-accent/10 to-accent/5 rounded-2xl border border-accent/20 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 bg-accent/20 rounded-lg flex items-center justify-center">
+                        <Clock size={16} className="text-accent" />
                       </div>
-                      <div className="bg-card rounded-2xl border border-border p-3 text-center">
-                        <div className="text-[10px] text-muted-foreground font-medium mb-0.5">Gain potentiel</div>
-                        <div className="text-lg font-black text-emerald-500">+{totalPotentialGain}</div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">Paris en cours</h3>
+                        <p className="text-[10px] text-muted-foreground">{myPendingBets.length} pari{myPendingBets.length > 1 ? 's' : ''} en attente</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-card/60 rounded-xl p-3 text-center border border-border/30">
+                        <div className="text-[10px] text-muted-foreground font-medium mb-1">Mise totale</div>
+                        <div className="text-base font-black text-foreground">{myPendingBets.reduce((s, b) => s + b.amount, 0)}</div>
+                        <div className="text-[9px] text-muted-foreground">pts</div>
+                      </div>
+                      <div className="bg-card/60 rounded-xl p-3 text-center border border-border/30">
+                        <div className="text-[10px] text-muted-foreground font-medium mb-1">Gain potentiel</div>
+                        <div className="text-base font-black text-emerald-500">+{totalPotentialGain}</div>
                         <div className="text-[9px] text-muted-foreground">pts</div>
                       </div>
                     </div>
 
-                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">
-                      Paris en cours ({myPendingBets.length})
-                    </h3>
-
                     {/* Pending bets list */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {myPendingBets.map(bet => {
                         const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
-                        // Try to find logos from teamData
-                        const findLogos = () => {
-                          for (const tKey of Object.keys(teamData)) {
-                            const td = teamData[tKey];
-                            if (!td?.upcoming) continue;
-                            for (const group of td.upcoming) {
-                              for (const m of group.matchs) {
-                                const hName = getMatchTeamName(m.home);
-                                const aName = getMatchTeamName(m.away);
-                                if (teamsLikelyMatch(bet.homeTeam, hName) && teamsLikelyMatch(bet.awayTeam, aName)) {
-                                  return { homeLogo: m.home?.club?.logo, awayLogo: m.away?.club?.logo };
-                                }
-                              }
-                            }
-                          }
-                          return { homeLogo: undefined, awayLogo: undefined };
-                        };
-                        const { homeLogo, awayLogo } = findLogos();
-
                         return (
-                          <motion.div
-                            key={bet.id}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-card rounded-2xl border border-border overflow-hidden"
-                          >
-                            {/* Match header */}
-                            <div className="px-4 py-3 flex items-center justify-between">
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                {/* Home logo */}
-                                {homeLogo ? (
-                                  <img src={homeLogo} alt="" className="w-8 h-8 object-contain shrink-0" />
-                                ) : (
-                                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                                    {bet.homeTeam.charAt(0)}
-                                  </div>
-                                )}
-                                <div className="min-w-0 flex-1 text-center">
-                                  <p className="text-[11px] font-bold text-foreground leading-tight truncate">{bet.homeTeam}</p>
-                                  <p className="text-[10px] font-black text-muted-foreground my-0.5">VS</p>
-                                  <p className="text-[11px] font-bold text-foreground leading-tight truncate">{bet.awayTeam}</p>
-                                </div>
-                                {/* Away logo */}
-                                {awayLogo ? (
-                                  <img src={awayLogo} alt="" className="w-8 h-8 object-contain shrink-0" />
-                                ) : (
-                                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                                    {bet.awayTeam.charAt(0)}
-                                  </div>
-                                )}
+                          <div key={bet.id} className="bg-card rounded-xl border border-border/50 p-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <p className="text-xs font-bold text-foreground truncate">{bet.homeTeam} vs {bet.awayTeam}</p>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500">
+                                <Clock size={10} /> En cours
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] text-muted-foreground">
+                                Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds}
+                              </p>
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="text-muted-foreground">Mise: {bet.amount}</span>
+                                <span className="font-black text-emerald-500">→ {Math.round(bet.amount * bet.odds)}</span>
                               </div>
                             </div>
-
-                            {/* Bet details */}
-                            <div className="px-4 py-2.5 bg-secondary/30 border-t border-border/50 flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1.5">
-                                  <div className={cn(
-                                    "w-2 h-2 rounded-full",
-                                    bet.prediction === 'home' ? 'bg-accent' : bet.prediction === 'away' ? 'bg-destructive' : 'bg-amber-500'
-                                  )} />
-                                  <span className="text-[11px] font-bold text-foreground">{predLabel}</span>
-                                </div>
-                                <span className="text-[10px] text-muted-foreground font-medium">×{bet.odds}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-muted-foreground">{bet.amount} pts</span>
-                                <span className="text-xs font-black text-emerald-500">→ {Math.round(bet.amount * bet.odds)}</span>
-                              </div>
-                            </div>
-                          </motion.div>
+                          </div>
                         );
                       })}
                     </div>
