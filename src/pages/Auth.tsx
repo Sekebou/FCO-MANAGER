@@ -31,6 +31,9 @@ const Auth = () => {
   const [regConfirmPassword, setRegConfirmPassword] = useState("");
   const [regLoading, setRegLoading] = useState(false);
   const [regSuccess, setRegSuccess] = useState(false);
+  const [codeStatus, setCodeStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid' | 'expired' | 'used'>('idle');
+  const [validatedInvitation, setValidatedInvitation] = useState<any>(null);
+  const codeCheckTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Detect recovery session from email link
   useEffect(() => {
