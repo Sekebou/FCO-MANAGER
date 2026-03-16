@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Championship } from './ChampionnatTab';
 import {
@@ -41,7 +42,7 @@ const mapBet = (r: any): Bet => ({
   status: r.status, createdAt: r.created_at,
 });
 
-type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard';
+type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard' | 'settle';
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; color: string; bg: string }> = {
   pending: { icon: Clock, label: 'En cours', color: 'text-amber-500', bg: 'bg-amber-500/10' },
@@ -310,11 +311,67 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
     myBets.some(b => b.homeTeam === homeTeam && b.awayTeam === awayTeam && b.matchDate === matchDate);
 
+  const isAdminPlus = currentUser?.role === 'admin+';
+
   const filters: { id: TabFilter; label: string; icon: React.ElementType; count?: number }[] = [
     { id: 'upcoming', label: 'Matchs', icon: Flame },
     { id: 'my-bets', label: 'Mes Paris', icon: Ticket, count: myPendingBets.length },
     { id: 'leaderboard', label: 'Classement', icon: BarChart3 },
+    ...(isAdminPlus ? [{ id: 'settle' as TabFilter, label: 'Régler', icon: Gavel, count: allPendingBets.length }] : []),
   ];
+
+  // Settlement state for admin+
+  const [settleScores, setSettleScores] = useState<Record<string, { home: string; away: string }>>({});
+  const [settlingMatch, setSettlingMatch] = useState<string | null>(null);
+
+  // Group pending bets by match for settlement
+  const pendingMatchGroups = useMemo(() => {
+    const groups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string; bets: Bet[] }>();
+    for (const bet of allPendingBets) {
+      const key = `${bet.homeTeam}||${bet.awayTeam}||${bet.matchDate}`;
+      if (!groups.has(key)) {
+        groups.set(key, { homeTeam: bet.homeTeam, awayTeam: bet.awayTeam, matchDate: bet.matchDate, bets: [] });
+      }
+      groups.get(key)!.bets.push(bet);
+    }
+    return [...groups.values()];
+  }, [allPendingBets]);
+
+  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, matchDate: string) => {
+    const scores = settleScores[matchKey];
+    if (!scores || scores.home === '' || scores.away === '') {
+      toast.error('Entre les deux scores');
+      return;
+    }
+    const homeScore = parseInt(scores.home, 10);
+    const awayScore = parseInt(scores.away, 10);
+    if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
+      toast.error('Scores invalides');
+      return;
+    }
+
+    setSettlingMatch(matchKey);
+    try {
+      const { data, error } = await supabase.rpc('settle_match_bets', {
+        p_home_team: homeTeam,
+        p_away_team: awayTeam,
+        p_match_date: matchDate,
+        p_home_score: homeScore,
+        p_away_score: awayScore,
+      });
+      if (error) throw error;
+      const result = data as any;
+      const settled = result?.settled || 0;
+      const resultLabel = result?.result === 'home' ? homeTeam : result?.result === 'away' ? awayTeam : 'Match nul';
+      toast.success(`${settled} pari${settled > 1 ? 's' : ''} réglé${settled > 1 ? 's' : ''} — ${resultLabel} (${homeScore}-${awayScore})`);
+      // Clear scores for this match
+      setSettleScores(prev => { const next = { ...prev }; delete next[matchKey]; return next; });
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors du règlement');
+    } finally {
+      setSettlingMatch(null);
+    }
+  }, [settleScores]);
 
   const totalPotentialGain = myPendingBets.reduce((sum, b) => sum + Math.round(b.amount * b.odds), 0);
 
@@ -777,6 +834,116 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         {activeFilter === 'leaderboard' && (
           <motion.div key="leaderboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <BetLeaderboard />
+          </motion.div>
+        )}
+
+        {/* ═══ RÉGLER TAB (Admin+ only) ═══ */}
+        {activeFilter === 'settle' && isAdminPlus && (
+          <motion.div key="settle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl p-3">
+              <Shield size={16} className="text-accent shrink-0" />
+              <p className="text-[11px] text-foreground font-medium">
+                Règlement manuel — Entre les scores pour chaque match puis confirme. Les gains/pertes seront calculés automatiquement côté serveur.
+              </p>
+            </div>
+
+            {pendingMatchGroups.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <CheckCircle2 size={32} className="mx-auto mb-3 opacity-30" />
+                <p className="text-sm font-medium">Aucun pari en attente</p>
+                <p className="text-xs mt-1">Tous les paris ont été réglés ✓</p>
+              </div>
+            ) : (
+              pendingMatchGroups.map(group => {
+                const matchKey = `${group.homeTeam}||${group.awayTeam}||${group.matchDate}`;
+                const scores = settleScores[matchKey] || { home: '', away: '' };
+                const isSettling = settlingMatch === matchKey;
+                const matchDateFormatted = (() => {
+                  try { return new Date(group.matchDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); }
+                  catch { return group.matchDate; }
+                })();
+
+                return (
+                  <div key={matchKey} className="bg-card rounded-2xl border border-border overflow-hidden">
+                    {/* Match header */}
+                    <div className="px-4 py-3 bg-secondary/30 border-b border-border/50">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] text-muted-foreground font-medium">{matchDateFormatted}</span>
+                        <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                          {group.bets.length} pari{group.bets.length > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-foreground">{group.homeTeam} vs {group.awayTeam}</p>
+                    </div>
+
+                    {/* Bets list */}
+                    <div className="px-4 py-2 space-y-1.5">
+                      {group.bets.map(bet => {
+                        const predLabel = bet.prediction === 'home' ? group.homeTeam : bet.prediction === 'away' ? group.awayTeam : 'Nul';
+                        return (
+                          <div key={bet.id} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
+                            <div className="flex items-center gap-2">
+                              {profilePhotos[bet.userId] ? (
+                                <img src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover" />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-muted-foreground">
+                                  {bet.userName.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span className="text-xs font-semibold text-foreground">{bet.userName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-muted-foreground">
+                                {predLabel} • {bet.amount} pts • x{bet.odds}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Score input */}
+                    <div className="px-4 py-3 bg-secondary/20 border-t border-border/50">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-foreground truncate max-w-[80px]">{group.homeTeam.split(' ')[0]}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="99"
+                            value={scores.home}
+                            onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
+                            className="w-12 h-9 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
+                            placeholder="—"
+                            disabled={isSettling}
+                          />
+                          <span className="text-xs font-black text-muted-foreground">-</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="99"
+                            value={scores.away}
+                            onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
+                            className="w-12 h-9 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
+                            placeholder="—"
+                            disabled={isSettling}
+                          />
+                          <span className="text-[10px] font-bold text-foreground truncate max-w-[80px]">{group.awayTeam.split(' ')[0]}</span>
+                        </div>
+                        <button
+                          onClick={() => handleSettle(matchKey, group.homeTeam, group.awayTeam, group.matchDate)}
+                          disabled={isSettling || !scores.home || !scores.away}
+                          className="px-4 py-2 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-sm"
+                        >
+                          {isSettling ? <Loader2 size={14} className="animate-spin" /> : <Gavel size={14} />}
+                          Régler
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </motion.div>
         )}
       </AnimatePresence>
