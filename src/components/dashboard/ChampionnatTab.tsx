@@ -311,7 +311,7 @@ const ChampionnatTab: React.FC<Props> = ({
     // 2. Check DB cache — use shorter TTL (5min) on force refresh, normal 24h otherwise
     const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
-    const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24h
+    const CACHE_MAX_AGE = 6 * 24 * 60 * 60 * 1000; // 6 jours (données FFF mises à jour le dimanche soir)
     const FORCE_REFRESH_MAX_AGE = 5 * 60 * 1000; // 5min — prevents API spam
     const effectiveMaxAge = forceRefreshLive > 0 ? FORCE_REFRESH_MAX_AGE : CACHE_MAX_AGE;
 

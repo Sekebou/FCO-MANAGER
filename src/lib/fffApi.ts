@@ -5,7 +5,7 @@ export const OISEMONT_AFFILIATION = 508456;
 
 // In-memory cache with 5min TTL to reduce cloud edge function invocations
 const fffCache = new Map<string, { data: any; ts: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 
 /** Clear the FFF API cache (e.g. before a manual refresh) */
 export function clearFFFCache() {
