@@ -168,14 +168,13 @@ const mapAlbum = (r: any): Album => ({ id: r.id, name: r.name, description: r.de
 const mapPhoto = (r: any): Photo => ({ id: r.id, albumId: r.album_id, url: r.url, storagePath: r.storage_path, title: r.title, uploadedAt: r.uploaded_at, uploadedBy: r.uploaded_by, uploaderName: r.uploader_name });
 const mapMatchSheet = (r: any): MatchSheet => ({ id: r.id, eventId: r.event_id, title: r.title, date: r.date, time: r.time, location: r.location, team: r.team, homeTeam: r.home_team, awayTeam: r.away_team, homeLogo: r.home_logo, awayLogo: r.away_logo, homeScore: r.home_score, awayScore: r.away_score, convocations: r.convocations || {}, createdAt: r.created_at, createdBy: r.created_by });
 
-// Generate signed URLs for photos (bucket is private)
-const getSignedPhotoUrls = async (photos: Photo[]): Promise<Photo[]> => {
+// Generate public URLs for photos (bucket is now public)
+const getPublicPhotoUrls = (photos: Photo[]): Photo[] => {
   if (photos.length === 0) return photos;
-  const paths = photos.map(p => p.storagePath);
-  const { data, error } = await supabase.storage.from('photos').createSignedUrls(paths, 3600);
-  if (error || !data) return photos;
-  const urlMap = new Map(data.filter(d => d.signedUrl).map(d => [d.path, d.signedUrl]));
-  return photos.map(p => ({ ...p, url: urlMap.get(p.storagePath) || p.url }));
+  return photos.map(p => {
+    const { data } = supabase.storage.from('photos').getPublicUrl(p.storagePath);
+    return { ...p, url: data?.publicUrl || p.url };
+  });
 };
 
 // ── Stale-While-Revalidate cache helpers ──

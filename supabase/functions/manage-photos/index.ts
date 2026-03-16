@@ -39,11 +39,11 @@ Deno.serve(async (req) => {
 
       if (error) throw error;
 
-      const { data: signedData, error: signError } = await supabase.storage
+      const { data: publicData } = supabase.storage
         .from('photos')
-        .createSignedUrl(data.path, 3600);
+        .getPublicUrl(data.path);
 
-      const url = signedData?.signedUrl || '';
+      const url = publicData?.publicUrl || '';
 
       return new Response(JSON.stringify({ url, path: data.path }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
