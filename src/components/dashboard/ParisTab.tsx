@@ -82,6 +82,12 @@ function teamsLikelyMatch(a?: string, b?: string) {
   if (!na || !nb) return false;
   if (na === nb) return true;
   if (na.includes(nb) || nb.includes(na)) return true;
+  // Fuzzy: strip trailing S from each word before comparing (GAMACHES vs GAMACHE)
+  const stripPlural = (s: string) => s.split(' ').map(w => w.replace(/S$/, '')).join(' ');
+  const sa = stripPlural(na);
+  const sb = stripPlural(nb);
+  if (sa === sb) return true;
+  if (sa.includes(sb) || sb.includes(sa)) return true;
   const firstA = na.split(' ')[0];
   const firstB = nb.split(' ')[0];
   return firstA.length >= 3 && firstA === firstB;
