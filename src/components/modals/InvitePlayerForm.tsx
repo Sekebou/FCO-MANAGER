@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar, Share2 } from 'lucide-react';
+import { X, Mail, Shield, Send, Link2, Briefcase, Dumbbell, UserCircle, Camera, MapPin, Calendar, Share2, Hash } from 'lucide-react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import type { AppUser } from '@/contexts/AuthContext';
