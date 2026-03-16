@@ -314,10 +314,10 @@ const Auth = () => {
           {/* Header */}
           <div className="mb-4 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
             <h2 className="text-xl font-bold text-foreground">
-              {recoveryMode ? "Nouveau mot de passe" : "Connexion"}
+              {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
             </h2>
             <p className="text-muted-foreground text-xs mt-0.5">
-              {recoveryMode ? "Choisissez votre nouveau mot de passe" : "Application officielle du Football Club d'Oisemont"}
+              {recoveryMode ? "Choisissez votre nouveau mot de passe" : registerMode ? "Entrez votre code d'invitation pour vous inscrire" : "Application officielle du Football Club d'Oisemont"}
             </p>
           </div>
 
