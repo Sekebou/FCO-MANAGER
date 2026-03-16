@@ -490,11 +490,10 @@ const Dashboard = () => {
   const canCreateNews = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
   const canCreateEvent = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
 
-  const adminPlusPlayerIds = members.filter(m => m.role === 'admin+' && m.playerId).map(m => m.playerId);
   const dirigeantPlayerIds = members.filter(m => m.role === 'dirigeant' && m.playerId).map(m => m.playerId);
-  const visiblePlayers = players.filter(p => !adminPlusPlayerIds.includes(p.id));
-  const visiblePlayersForStats = players.filter(p => !adminPlusPlayerIds.includes(p.id) && !dirigeantPlayerIds.includes(p.id));
-  const visibleMembers = members.filter(m => m.role !== 'admin+');
+  const visiblePlayers = players;
+  const visiblePlayersForStats = players.filter(p => !dirigeantPlayerIds.includes(p.id));
+  const visibleMembers = members;
 
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {
@@ -1391,7 +1390,7 @@ const Dashboard = () => {
                 <div className="hidden lg:block text-left min-w-0 max-w-[160px]">
                   <div className="flex items-center gap-1">
                     <span className="text-sm font-semibold text-primary-foreground leading-tight truncate">{currentUser?.name}</span>
-                    {currentUser?.role === 'admin+' && <svg className="w-3.5 h-3.5 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
+                    {currentUser?.role === 'admin+' && !currentUser?.displayRole && <svg className="w-3.5 h-3.5 text-accent shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>}
                   </div>
                   <div className="flex items-center gap-1 text-[10px] font-medium text-primary-foreground/50 uppercase tracking-wider">
                     {(() => {
