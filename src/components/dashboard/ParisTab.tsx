@@ -59,6 +59,38 @@ function buildLocationLink(terrain?: { city?: string; name?: string }) {
   return `https://waze.com/ul?q=${encodeURIComponent(parts)}&navigate=yes`;
 }
 
+function normalizeDateKey(dateStr?: string) {
+  if (!dateStr) return '';
+  const direct = /^\d{4}-\d{2}-\d{2}/.exec(dateStr)?.[0];
+  if (direct) return direct;
+  const d = new Date(dateStr);
+  return Number.isNaN(d.getTime()) ? dateStr : d.toISOString().split('T')[0];
+}
+
+function normalizeTeamName(name?: string) {
+  return (name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function teamsLikelyMatch(a?: string, b?: string) {
+  const na = normalizeTeamName(a);
+  const nb = normalizeTeamName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.includes(nb) || nb.includes(na)) return true;
+  const firstA = na.split(' ')[0];
+  const firstB = nb.split(' ')[0];
+  return firstA.length >= 3 && firstA === firstB;
+}
+
+function getMatchTeamName(side?: { short_name?: string; name?: string }) {
+  return side?.short_name || side?.name || '';
+}
+
 const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [bets, setBets] = useState<Bet[]>([]);
   const [balance, setBalance] = useState(100);
