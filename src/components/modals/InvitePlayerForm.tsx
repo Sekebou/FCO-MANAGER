@@ -26,13 +26,15 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
 
   const handleSubmit = () => {
     if (mode === 'email' && !formData.email) return;
+    const isCodeMode = mode === 'code' || (mode === 'collective' && codeCollective);
     onSubmit({
       email: mode === 'email' ? formData.email : undefined,
-      role: formData.role,
+      role: isCodeMode ? 'joueur' : formData.role,
       licenseExpiry: formData.licenseExpiry || undefined,
       position: formData.position || undefined,
-      mode,
-    });
+      mode: codeCollective && mode === 'collective' ? 'code' : mode,
+      ...(codeCollective && mode === 'collective' ? { collective: true } : {}),
+    } as any);
   };
 
   return (
