@@ -934,107 +934,94 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl p-3">
               <Shield size={16} className="text-accent shrink-0" />
               <p className="text-[11px] text-foreground font-medium">
-                Règlement manuel — Entre les scores pour chaque match puis confirme. Les gains/pertes seront calculés automatiquement côté serveur.
+                Règle les 3 matchs ici : Équipe A, puis Équipe B, puis Équipe C. Un score validé règle automatiquement tous les paris liés à ce match côté serveur.
               </p>
             </div>
 
-            {pendingMatchGroups.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <CheckCircle2 size={32} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium">Aucun pari en attente</p>
-                <p className="text-xs mt-1">Tous les paris ont été réglés ✓</p>
-              </div>
-            ) : (
-              pendingMatchGroups.map(group => {
-                const matchKey = `${group.homeTeam}||${group.awayTeam}||${group.matchDate}`;
+            <div className="space-y-4">
+              {settleCards.map(({ team, loading, match, bets, matchKey }) => {
                 const scores = settleScores[matchKey] || { home: '', away: '' };
                 const isSettling = settlingMatch === matchKey;
-                const matchDateFormatted = (() => {
-                  try { return new Date(group.matchDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); }
-                  catch { return group.matchDate; }
-                })();
+                const homeName = match ? getMatchTeamName(match.home) : '';
+                const awayName = match ? getMatchTeamName(match.away) : '';
+                const matchDateFormatted = match?.date
+                  ? new Date(match.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+                  : null;
 
                 return (
-                  <div key={matchKey} className="bg-card rounded-2xl border border-border overflow-hidden">
-                    {/* Match header */}
-                    <div className="px-4 py-3 bg-secondary/30 border-b border-border/50">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-muted-foreground font-medium">{matchDateFormatted}</span>
-                        <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
-                          {group.bets.length} pari{group.bets.length > 1 ? 's' : ''}
-                        </span>
+                  <div key={team} className="bg-card rounded-2xl border border-border overflow-hidden">
+                    <div className="px-4 py-3 bg-secondary/30 border-b border-border/50 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-black text-foreground uppercase tracking-wider">Équipe {team}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {loading ? 'Chargement du match…' : matchDateFormatted || 'Aucun match à venir'}
+                        </p>
                       </div>
-                      <p className="text-sm font-bold text-foreground">{group.homeTeam} vs {group.awayTeam}</p>
+                      <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                        {bets.length} pari{bets.length > 1 ? 's' : ''}
+                      </span>
                     </div>
 
-                    {/* Bets list */}
-                    <div className="px-4 py-2 space-y-1.5">
-                      {group.bets.map(bet => {
-                        const predLabel = bet.prediction === 'home' ? group.homeTeam : bet.prediction === 'away' ? group.awayTeam : 'Nul';
-                        return (
-                          <div key={bet.id} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
-                            <div className="flex items-center gap-2">
-                              {profilePhotos[bet.userId] ? (
-                                <img src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover" />
-                              ) : (
-                                <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-muted-foreground">
-                                  {bet.userName.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <span className="text-xs font-semibold text-foreground">{bet.userName}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-muted-foreground">
-                                {predLabel} • {bet.amount} pts • x{bet.odds}
-                              </span>
-                            </div>
+                    <div className="p-4 space-y-4">
+                      {!match ? (
+                        <div className="text-center py-6 text-muted-foreground text-sm">Aucun match trouvé pour l'équipe {team}</div>
+                      ) : (
+                        <>
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-foreground">{homeName} vs {awayName}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              {match.time ? `${matchDateFormatted} • ${match.time}` : matchDateFormatted}
+                            </p>
                           </div>
-                        );
-                      })}
-                    </div>
 
-                    {/* Score input */}
-                    <div className="px-4 py-3 bg-secondary/20 border-t border-border/50">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-foreground truncate max-w-[80px]">{group.homeTeam.split(' ')[0]}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="99"
-                            value={scores.home}
-                            onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
-                            className="w-12 h-9 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
-                            placeholder="—"
-                            disabled={isSettling}
-                          />
-                          <span className="text-xs font-black text-muted-foreground">-</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="99"
-                            value={scores.away}
-                            onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
-                            className="w-12 h-9 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
-                            placeholder="—"
-                            disabled={isSettling}
-                          />
-                          <span className="text-[10px] font-bold text-foreground truncate max-w-[80px]">{group.awayTeam.split(' ')[0]}</span>
-                        </div>
-                        <button
-                          onClick={() => handleSettle(matchKey, group.homeTeam, group.awayTeam, group.matchDate, group.bets)}
-                          disabled={isSettling || !scores.home || !scores.away}
-                          className="px-4 py-2 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-sm"
-                        >
-                          {isSettling ? <Loader2 size={14} className="animate-spin" /> : <Gavel size={14} />}
-                          Régler
-                        </button>
-                      </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 flex items-center justify-center gap-2">
+                              <span className="text-xs font-bold text-foreground truncate max-w-[90px]">{homeName.split(' ')[0]}</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="99"
+                                value={scores.home}
+                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
+                                className="w-14 h-10 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
+                                placeholder="0"
+                                disabled={isSettling || !match}
+                              />
+                              <span className="text-sm font-black text-muted-foreground">-</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="99"
+                                value={scores.away}
+                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
+                                className="w-14 h-10 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
+                                placeholder="0"
+                                disabled={isSettling || !match}
+                              />
+                              <span className="text-xs font-bold text-foreground truncate max-w-[90px]">{awayName.split(' ')[0]}</span>
+                            </div>
+                            <button
+                              onClick={() => handleSettle(matchKey, homeName, awayName, bets)}
+                              disabled={isSettling || !scores.home || !scores.away || !match || bets.length === 0}
+                              className="px-4 py-2.5 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-sm"
+                            >
+                              {isSettling ? <Loader2 size={14} className="animate-spin" /> : <Gavel size={14} />}
+                              Régler
+                            </button>
+                          </div>
+
+                          <div className="rounded-xl border border-border/50 bg-secondary/20 px-3 py-2 text-[11px] text-muted-foreground">
+                            {bets.length > 0
+                              ? `${bets.length} pari${bets.length > 1 ? 's' : ''} en attente sur ce match seront réglés automatiquement.`
+                              : `Aucun pari en attente sur ce match pour le moment.`}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
