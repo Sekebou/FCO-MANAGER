@@ -614,22 +614,23 @@ const Auth = () => {
             }
           </div>
 
-          {/* Features description (mobile) - hidden on small screens to fit */}
-          <div className="lg:hidden mt-3 space-y-1.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
-            {[
-            { Icon: Users, text: "Gestion des effectifs et convocations" },
-            { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
-            { Icon: Calendar, text: "Calendrier et événements du club" }].
-            map((feat) =>
-            <div
-              key={feat.text}
-              className="items-center gap-2.5 py-2 rounded-lg bg-secondary/60 border border-border/50 flex flex-row px-[12px]">
-
-                <feat.Icon size={14} className="text-primary/60 shrink-0" />
-                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{feat.text}</span>
-              </div>
-            )}
-          </div>
+          {/* Features description (mobile) - hidden in register mode */}
+          {!registerMode && (
+            <div className="lg:hidden mt-3 space-y-1.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
+              {[
+              { Icon: Users, text: "Gestion des effectifs et convocations" },
+              { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
+              { Icon: Calendar, text: "Calendrier et événements du club" }].
+              map((feat) =>
+              <div
+                key={feat.text}
+                className="items-center gap-2.5 py-2 rounded-lg bg-secondary/60 border border-border/50 flex flex-row px-[12px]">
+                  <feat.Icon size={14} className="text-primary/60 shrink-0" />
+                  <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{feat.text}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Club name + Status */}
           <div className="mt-3 flex flex-col items-center gap-2 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
