@@ -109,6 +109,7 @@ function getMatchTeamName(side?: { short_name?: string; name?: string }) {
 
 const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [bets, setBets] = useState<Bet[]>([]);
+  const [betsLoaded, setBetsLoaded] = useState(false);
   const [balance, setBalance] = useState(100);
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string } | null>(null);
