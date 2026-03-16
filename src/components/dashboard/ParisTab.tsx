@@ -42,7 +42,7 @@ const mapBet = (r: any): Bet => ({
   status: r.status, createdAt: r.created_at,
 });
 
-type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard';
+type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard' | 'settle';
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; color: string; bg: string }> = {
   pending: { icon: Clock, label: 'En cours', color: 'text-amber-500', bg: 'bg-amber-500/10' },
