@@ -109,6 +109,7 @@ function getMatchTeamName(side?: { short_name?: string; name?: string }) {
 
 const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [bets, setBets] = useState<Bet[]>([]);
+  const [betsLoaded, setBetsLoaded] = useState(false);
   const [balance, setBalance] = useState(100);
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string } | null>(null);
@@ -149,7 +150,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       ]);
 
       if (!mounted) return;
-      if (betsData) setBets(betsData.map(mapBet));
+      if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
       if (pointsData) setBalance(pointsData.balance);
       else setBalance(100);
       setLoading(false);
@@ -171,6 +172,23 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       supabase.removeChannel(channel);
     };
   }, [authUserId]);
+
+  // Re-fetch bets when coming back online (airplane mode fix)
+  useEffect(() => {
+    if (betsLoaded) return;
+    const handleOnline = () => {
+      if (!authUserId) return;
+      Promise.all([
+        supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('user_points').select('balance').eq('user_id', authUserId).maybeSingle(),
+      ]).then(([{ data: betsData }, { data: pointsData }]) => {
+        if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
+        if (pointsData) setBalance(pointsData.balance);
+      });
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [betsLoaded, authUserId]);
 
   // Load profile photos for bettors
   useEffect(() => {
@@ -437,7 +455,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     );
 
   const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
-    myBets.some(b =>
+    !betsLoaded || myBets.some(b =>
       teamsLikelyMatch(b.homeTeam, homeTeam) &&
       teamsLikelyMatch(b.awayTeam, awayTeam) &&
       normalizeDateKey(b.matchDate) === normalizeDateKey(matchDate)
