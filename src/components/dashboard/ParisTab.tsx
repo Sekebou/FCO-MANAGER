@@ -947,7 +947,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           <span className="text-[10px] font-bold text-foreground truncate max-w-[80px]">{group.awayTeam.split(' ')[0]}</span>
                         </div>
                         <button
-                          onClick={() => handleSettle(matchKey, group.homeTeam, group.awayTeam, group.matchDate)}
+                          onClick={() => handleSettle(matchKey, group.homeTeam, group.awayTeam, group.matchDate, group.bets)}
                           disabled={isSettling || !scores.home || !scores.away}
                           className="px-4 py-2 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-sm"
                         >
