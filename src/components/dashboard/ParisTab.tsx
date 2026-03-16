@@ -599,10 +599,20 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           </div>
           <h2 className="text-lg sm:text-xl font-bold text-foreground">Paris</h2>
         </div>
-        <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-          <Coins size={16} className="text-amber-500" />
-          <span className="text-sm font-black text-amber-500">{balance}</span>
-          <span className="text-[10px] text-amber-500/70 font-medium">pts</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleForceRefresh}
+            disabled={refreshing || currentData.loading}
+            className="w-8 h-8 rounded-xl bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-all disabled:opacity-40"
+            title="Actualiser les matchs"
+          >
+            <RefreshCw size={14} className={cn("text-muted-foreground", (refreshing || currentData.loading) && "animate-spin")} />
+          </button>
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+            <Coins size={16} className="text-amber-500" />
+            <span className="text-sm font-black text-amber-500">{balance}</span>
+            <span className="text-[10px] text-amber-500/70 font-medium">pts</span>
+          </div>
         </div>
       </div>
 
