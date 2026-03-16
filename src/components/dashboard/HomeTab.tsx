@@ -86,13 +86,13 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         </div>
       </div>
 
-      {/* ── Player Stats (joueur only) ── */}
-      {!isCoach && myPlayer && (
+      {/* ── Personal Stats (any user with a player profile) ── */}
+      {myPlayer && (
         <div className="grid grid-cols-3 gap-2.5">
           {[
-            { icon: Target, value: myPlayer.goals || 0, label: 'Buts', color: 'text-primary' },
-            { icon: Swords, value: myPlayer.assists || 0, label: 'Passes D.', color: 'text-accent' },
-            { icon: Shield, value: myPlayer.matches || 0, label: 'Matchs', color: 'text-muted-foreground' },
+            { icon: Target, value: myPlayer.goals || 0, label: 'Mes Buts', color: 'text-primary' },
+            { icon: Swords, value: myPlayer.assists || 0, label: 'Mes Passes', color: 'text-accent' },
+            { icon: Shield, value: myPlayer.matches || 0, label: 'Mes Matchs', color: 'text-muted-foreground' },
           ].map((s) => (
             <div key={s.label} className="bg-card border border-border/50 rounded-2xl p-3 text-center">
               <s.icon size={16} className={`${s.color} mx-auto mb-1 opacity-70`} />
@@ -103,13 +103,13 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         </div>
       )}
 
-      {/* ── Coach Stats ── */}
+      {/* ── Club Stats (coach/admin view) ── */}
       {isCoach && (
         <div className="grid grid-cols-3 gap-2.5">
           {[
             { icon: Users, value: totalPlayers, label: 'Joueurs', color: 'text-primary' },
-            { icon: Target, value: players.reduce((s, p) => s + (p.goals || 0), 0), label: 'Buts', color: 'text-accent' },
-            { icon: Swords, value: players.reduce((s, p) => s + (p.assists || 0), 0), label: 'Passes', color: 'text-muted-foreground' },
+            { icon: Target, value: players.reduce((s, p) => s + (p.goals || 0), 0), label: 'Buts Club', color: 'text-accent' },
+            { icon: Swords, value: players.reduce((s, p) => s + (p.assists || 0), 0), label: 'Passes Club', color: 'text-muted-foreground' },
           ].map((s) => (
             <div key={s.label} className="bg-card border border-border/50 rounded-2xl p-3 text-center">
               <s.icon size={16} className={`${s.color} mx-auto mb-1 opacity-70`} />
