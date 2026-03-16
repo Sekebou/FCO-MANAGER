@@ -308,11 +308,17 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   useEffect(() => {
     const data = teamData[selectedTeam];
     if (data && !data.loading && data.upcoming.length === 0 && !loadingTeamsRef.current.has(selectedTeam)) {
-      // Small delay to avoid tight loop
+      const retries = retryCountRef.current[selectedTeam] || 0;
+      if (retries >= 2) return; // Max 2 auto-retries
+      retryCountRef.current[selectedTeam] = retries + 1;
       const timer = setTimeout(() => {
         void loadTeamFFFData(selectedTeam, true);
       }, 1500);
       return () => clearTimeout(timer);
+    }
+    // Reset retry counter if we got data
+    if (teamData[selectedTeam]?.upcoming?.length > 0) {
+      retryCountRef.current[selectedTeam] = 0;
     }
   }, [selectedTeam, teamData, loadTeamFFFData]);
 
