@@ -378,7 +378,46 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return [...groups.values()];
   }, [allPendingBets]);
 
-  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, matchDate: string, betsForMatch: Bet[]) => {
+  const settleTeams = BASE_TEAMS;
+
+  const settleCards = useMemo(() => {
+    return settleTeams.map((team) => {
+      const data = teamData[team] || { upcoming: [], classement: [], loading: true };
+      const nextTeamMatch = data.upcoming.flatMap(group => group.matchs).find(match => match.date && !isMatchFinished(match.date, match.time)) || null;
+
+      const teamMatchBets = allPendingBets.filter((bet) => {
+        if (!nextTeamMatch) return false;
+        const homeName = getMatchTeamName(nextTeamMatch.home);
+        const awayName = getMatchTeamName(nextTeamMatch.away);
+        return normalizeDateKey(bet.matchDate) === normalizeDateKey(nextTeamMatch.date)
+          && teamsLikelyMatch(bet.homeTeam, homeName)
+          && teamsLikelyMatch(bet.awayTeam, awayName);
+      });
+
+      const matchKey = nextTeamMatch
+        ? `${team}||${normalizeTeamName(getMatchTeamName(nextTeamMatch.home))}||${normalizeTeamName(getMatchTeamName(nextTeamMatch.away))}||${normalizeDateKey(nextTeamMatch.date)}`
+        : `team-${team}`;
+
+      return {
+        team,
+        loading: data.loading,
+        match: nextTeamMatch,
+        bets: teamMatchBets,
+        matchKey,
+      };
+    });
+  }, [teamData, allPendingBets]);
+
+  useEffect(() => {
+    if (activeFilter !== 'settle' || !isAdminPlus) return;
+    settleTeams.forEach((team) => {
+      if (!teamData[team] || teamData[team].loading) {
+        void loadTeamFFFData(team);
+      }
+    });
+  }, [activeFilter, isAdminPlus, loadTeamFFFData, teamData]);
+
+  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[]) => {
     const scores = settleScores[matchKey];
     if (!scores || scores.home === '' || scores.away === '') {
       toast.error('Entre les deux scores');
@@ -388,6 +427,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     const awayScore = parseInt(scores.away, 10);
     if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
       toast.error('Scores invalides');
+      return;
+    }
+    if (!betsForMatch.length) {
+      toast.error('Aucun pari en attente sur ce match');
       return;
     }
 
