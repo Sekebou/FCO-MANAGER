@@ -490,11 +490,10 @@ const Dashboard = () => {
   const canCreateNews = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
   const canCreateEvent = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
 
-  const adminPlusPlayerIds = members.filter(m => m.role === 'admin+' && m.playerId).map(m => m.playerId);
   const dirigeantPlayerIds = members.filter(m => m.role === 'dirigeant' && m.playerId).map(m => m.playerId);
-  const visiblePlayers = players.filter(p => !adminPlusPlayerIds.includes(p.id));
-  const visiblePlayersForStats = players.filter(p => !adminPlusPlayerIds.includes(p.id) && !dirigeantPlayerIds.includes(p.id));
-  const visibleMembers = members.filter(m => m.role !== 'admin+');
+  const visiblePlayers = players;
+  const visiblePlayersForStats = players.filter(p => !dirigeantPlayerIds.includes(p.id));
+  const visibleMembers = members;
 
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {
