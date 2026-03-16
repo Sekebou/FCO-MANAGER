@@ -102,6 +102,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
   const [profilePhotos, setProfilePhotos] = useState<Record<string, string | null>>({});
+  const loadingTeamsRef = useRef<Set<string>>(new Set());
+  const equipesCache = useRef<any>(null);
 
   // Countdown
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -152,11 +154,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   }, [bets]);
 
   const loadTeamFFFData = useCallback(async (team: string) => {
-    if (teamData[team] && !teamData[team].loading) return;
+    // Prevent duplicate concurrent loads
+    if (loadingTeamsRef.current.has(team)) return;
 
     const LOCAL_CACHE_KEY = `paris_fff_${team}`;
-    const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h (données FFF mises à jour le dimanche soir)
+    const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h
 
+    // Check local cache first
     try {
       const cached = localStorage.getItem(LOCAL_CACHE_KEY);
       if (cached) {
@@ -164,7 +168,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         if (Date.now() - ts < LOCAL_CACHE_TTL && data) {
           const classement = data.classement && Array.isArray(data.classement)
             ? mapClassementToStandings(data.classement) : [];
-          setTeamData(prev => ({ ...prev, [team]: { upcoming: data.upcoming || [], classement, loading: false } }));
+          setTeamData(prev => {
+            if (prev[team] && !prev[team].loading) return prev;
+            return { ...prev, [team]: { upcoming: data.upcoming || [], classement, loading: false } };
+          });
           return;
         }
       }
@@ -188,7 +195,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       }
     }
 
-    const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+    // Check DB cache (6 days like ChampionnatTab)
+    const CACHE_MAX_AGE = 6 * 24 * 60 * 60 * 1000;
     const teamChamp = championships.find(c => (c.team || 'A') === team && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
 
@@ -201,13 +209,17 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       return;
     }
 
-    setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: true } }));
+    loadingTeamsRef.current.add(team);
+    setTeamData(prev => ({ ...prev, [team]: { upcoming: prev[team]?.upcoming || [], classement: prev[team]?.classement || [], loading: true } }));
 
     try {
       let champParams = customParams;
       if (!champParams && mapping) {
-        const equipesData = await getEquipes(OISEMONT_CL_NO);
-        const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+        // Cache getEquipes call across teams
+        if (!equipesCache.current) {
+          equipesCache.current = await getEquipes(OISEMONT_CL_NO);
+        }
+        const equipes = Array.isArray(equipesCache.current) ? equipesCache.current : equipesCache.current?.equipes || [];
         champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
       }
       if (!champParams) {
@@ -235,12 +247,22 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     } catch (err) {
       console.error(`Error loading FFF for team ${team}:`, err);
       setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: false } }));
+    } finally {
+      loadingTeamsRef.current.delete(team);
     }
-  }, [championships, teamData]);
+  }, [championships]);
 
+  // Load selected team data
   useEffect(() => {
     void loadTeamFFFData(selectedTeam);
   }, [selectedTeam, loadTeamFFFData]);
+
+  // Preload all teams on mount for faster switching
+  useEffect(() => {
+    allTeamOptions.forEach(team => {
+      void loadTeamFFFData(team);
+    });
+  }, [loadTeamFFFData]);
 
   // Current team data
   const currentData = teamData[selectedTeam] || { upcoming: [], classement: [], loading: true };
