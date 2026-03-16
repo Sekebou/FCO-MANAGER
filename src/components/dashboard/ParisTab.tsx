@@ -114,6 +114,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
@@ -127,31 +128,48 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const customTeams = [...new Set(championships.map(c => c.team || 'A').filter(t => !BASE_TEAMS.includes(t)))].sort();
   const allTeamOptions = [...BASE_TEAMS, ...customTeams];
 
-  // Load bets & balance
+  // Resolve real auth user id + load bets & balance
   useEffect(() => {
-    if (!currentUser) return;
+    let mounted = true;
+
     const fetchData = async () => {
+      const { data: authData } = await supabase.auth.getUser();
+      const sessionUserId = authData.user?.id ?? null;
+      if (mounted) setAuthUserId(sessionUserId);
+
+      if (!sessionUserId) {
+        if (mounted) setLoading(false);
+        return;
+      }
+
       const [{ data: betsData }, { data: pointsData }] = await Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
-        supabase.from('user_points').select('balance').eq('user_id', currentUser.uid).maybeSingle(),
+        supabase.from('user_points').select('balance').eq('user_id', sessionUserId).maybeSingle(),
       ]);
+
+      if (!mounted) return;
       if (betsData) setBets(betsData.map(mapBet));
       if (pointsData) setBalance(pointsData.balance);
       else setBalance(100);
       setLoading(false);
     };
+
     fetchData();
 
     const channel = supabase.channel('paris-tab')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => {
         supabase.from('bets').select('*').order('created_at', { ascending: false }).then(({ data }) => data && setBets(data.map(mapBet)));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points', filter: `user_id=eq.${currentUser.uid}` }, (payload: any) => {
-        if (typeof payload.new?.balance === 'number') setBalance(payload.new.balance);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, (payload: any) => {
+        if (payload.new?.user_id === authUserId && typeof payload.new?.balance === 'number') setBalance(payload.new.balance);
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [currentUser]);
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [authUserId]);
 
   // Load profile photos for bettors
   useEffect(() => {
@@ -367,7 +385,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return status === 'live';
   };
 
-  const myBets = useMemo(() => bets.filter(b => b.userId === currentUser?.uid), [bets, currentUser]);
+  const myBets = useMemo(() => bets.filter(b => b.userId === authUserId), [bets, authUserId]);
   const myPendingBets = myBets.filter(b => b.status === 'pending');
   const myWonBets = myBets.filter(b => b.status === 'won');
   const myLostBets = myBets.filter(b => b.status === 'lost');
@@ -1111,7 +1129,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       </AnimatePresence>
 
       {/* Bet Modal */}
-      {betModal && currentUser && (
+      {betModal && currentUser && authUserId && (
         <BetModal
           isOpen={!!betModal}
           onClose={() => setBetModal(null)}
@@ -1120,7 +1138,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           matchDate={betModal.date}
           homeLogo={betModal.homeLogo}
           awayLogo={betModal.awayLogo}
-          userId={currentUser.uid}
+          userId={authUserId}
           userName={currentUser.name}
         />
       )}
