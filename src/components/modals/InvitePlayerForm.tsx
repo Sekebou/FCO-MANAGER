@@ -58,16 +58,25 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
           {/* Mode toggle */}
           <div className="grid grid-cols-2 gap-1 p-1 bg-secondary rounded-xl">
             <button
-              onClick={() => setMode('code')}
+              onClick={() => { setMode('code'); setFormData(f => ({ ...f, role: 'joueur' })); }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'code' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Hash size={14} />
-              Code
+              Code individuel
             </button>
             <button
-              onClick={() => setMode('email')}
+              onClick={() => { setMode('collective' as any); setCodeCollective(true); setFormData(f => ({ ...f, role: 'joueur' })); }}
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                mode === 'collective' && codeCollective ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Hash size={14} />
+              Code collectif
+            </button>
+            <button
+              onClick={() => { setMode('email'); setCodeCollective(false); }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
                 mode === 'email' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
@@ -76,22 +85,13 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               Email
             </button>
             <button
-              onClick={() => setMode('link')}
+              onClick={() => { setMode('link'); setCodeCollective(false); }}
               className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                mode === 'link' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                mode === 'link' && !codeCollective ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Share2 size={14} />
               Lien unique
-            </button>
-            <button
-              onClick={() => setMode('collective')}
-              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                mode === 'collective' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Link2 size={14} />
-              Collectif
             </button>
           </div>
 
