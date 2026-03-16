@@ -110,9 +110,13 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
       if (p[playerId] === 'present') present++;
     });
 
-    // Count from archived records for this player
+    // Count from archived records for this player (deduplicate by eventId)
+    const seenArchivedEvents = new Set<string>();
     archivedRecords.forEach(r => {
-      if (r.status === 'present') present++;
+      if (r.status === 'present' && !seenArchivedEvents.has(r.eventId)) {
+        seenArchivedEvents.add(r.eventId);
+        present++;
+      }
     });
 
     const total = activeEventIds.size + allArchivedEventIds.size;
