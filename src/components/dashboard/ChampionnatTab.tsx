@@ -237,7 +237,7 @@ const ChampionnatTab: React.FC<Props> = ({
     let cancelled = false;
 
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
-    const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 min local cache
+    const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h local cache (data changes only on Sundays)
 
     // Helper: check if a cache has enough logos (at least 50% of teams)
     const cacheHasLogos = (cache: any): boolean => {
