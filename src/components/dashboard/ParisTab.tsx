@@ -385,7 +385,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return status === 'live';
   };
 
-  const myBets = useMemo(() => bets.filter(b => b.userId === currentUser?.uid), [bets, currentUser]);
+  const myBets = useMemo(() => bets.filter(b => b.userId === authUserId), [bets, authUserId]);
   const myPendingBets = myBets.filter(b => b.status === 'pending');
   const myWonBets = myBets.filter(b => b.status === 'won');
   const myLostBets = myBets.filter(b => b.status === 'lost');
