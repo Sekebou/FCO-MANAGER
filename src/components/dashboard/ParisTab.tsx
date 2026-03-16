@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
