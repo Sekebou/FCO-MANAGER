@@ -351,13 +351,13 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className={`w-full lg:w-1/2 flex ${registerMode ? 'items-start' : 'items-center'} justify-center p-4 sm:p-12 bg-background relative overflow-hidden h-[100dvh]`} style={{ paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)' }}>
+      <div className={`w-full lg:w-1/2 flex ${registerMode ? 'items-start overflow-y-auto' : 'items-center overflow-hidden'} justify-center p-4 sm:p-12 bg-background relative h-[100dvh]`} style={{ paddingTop: 'max(env(safe-area-inset-top, 16px), 16px)', paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
         <div className="w-full max-w-[420px] relative z-10">
           {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-4 animate-[fadeSlideUp_0.6s_ease-out_both]">
+          <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_both]`}>
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
               <img src={clubLogo} alt="FCO Logo" className="w-[70px] h-[70px] object-contain" />
             </div>
@@ -365,7 +365,7 @@ const Auth = () => {
           </div>
 
           {/* Header */}
-          <div className="mb-4 animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]">
+          <div className={`${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
             <h2 className="text-xl font-bold text-foreground">
               {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
             </h2>
@@ -375,7 +375,7 @@ const Auth = () => {
           </div>
 
           {/* Form card */}
-          <div className="bg-card rounded-2xl p-5 sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]">
+          <div className={`bg-card rounded-2xl ${registerMode ? 'p-4' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
             {recoveryMode ? (
               recoverySuccess ? (
                 <div className="text-center py-6 space-y-4">
