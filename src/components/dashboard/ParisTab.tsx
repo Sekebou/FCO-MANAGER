@@ -311,11 +311,67 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
     myBets.some(b => b.homeTeam === homeTeam && b.awayTeam === awayTeam && b.matchDate === matchDate);
 
+  const isAdminPlus = currentUser?.role === 'admin+';
+
   const filters: { id: TabFilter; label: string; icon: React.ElementType; count?: number }[] = [
     { id: 'upcoming', label: 'Matchs', icon: Flame },
     { id: 'my-bets', label: 'Mes Paris', icon: Ticket, count: myPendingBets.length },
     { id: 'leaderboard', label: 'Classement', icon: BarChart3 },
+    ...(isAdminPlus ? [{ id: 'settle' as TabFilter, label: 'Régler', icon: Gavel, count: allPendingBets.length }] : []),
   ];
+
+  // Settlement state for admin+
+  const [settleScores, setSettleScores] = useState<Record<string, { home: string; away: string }>>({});
+  const [settlingMatch, setSettlingMatch] = useState<string | null>(null);
+
+  // Group pending bets by match for settlement
+  const pendingMatchGroups = useMemo(() => {
+    const groups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string; bets: Bet[] }>();
+    for (const bet of allPendingBets) {
+      const key = `${bet.homeTeam}||${bet.awayTeam}||${bet.matchDate}`;
+      if (!groups.has(key)) {
+        groups.set(key, { homeTeam: bet.homeTeam, awayTeam: bet.awayTeam, matchDate: bet.matchDate, bets: [] });
+      }
+      groups.get(key)!.bets.push(bet);
+    }
+    return [...groups.values()];
+  }, [allPendingBets]);
+
+  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, matchDate: string) => {
+    const scores = settleScores[matchKey];
+    if (!scores || scores.home === '' || scores.away === '') {
+      toast.error('Entre les deux scores');
+      return;
+    }
+    const homeScore = parseInt(scores.home, 10);
+    const awayScore = parseInt(scores.away, 10);
+    if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
+      toast.error('Scores invalides');
+      return;
+    }
+
+    setSettlingMatch(matchKey);
+    try {
+      const { data, error } = await supabase.rpc('settle_match_bets', {
+        p_home_team: homeTeam,
+        p_away_team: awayTeam,
+        p_match_date: matchDate,
+        p_home_score: homeScore,
+        p_away_score: awayScore,
+      });
+      if (error) throw error;
+      const result = data as any;
+      const settled = result?.settled || 0;
+      const resultLabel = result?.result === 'home' ? homeTeam : result?.result === 'away' ? awayTeam : 'Match nul';
+      toast.success(`${settled} pari${settled > 1 ? 's' : ''} réglé${settled > 1 ? 's' : ''} — ${resultLabel} (${homeScore}-${awayScore})`);
+      // Clear scores for this match
+      setSettleScores(prev => { const next = { ...prev }; delete next[matchKey]; return next; });
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors du règlement');
+    } finally {
+      setSettlingMatch(null);
+    }
+  }, [settleScores]);
 
   const totalPotentialGain = myPendingBets.reduce((sum, b) => sum + Math.round(b.amount * b.odds), 0);
 
