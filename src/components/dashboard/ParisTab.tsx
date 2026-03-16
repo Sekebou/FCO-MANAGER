@@ -524,18 +524,21 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             key={f.id}
             onClick={() => setActiveFilter(f.id)}
             className={cn(
-              "flex items-center justify-center gap-1 py-2 px-1.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap flex-1",
+              "flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap flex-1",
               activeFilter === f.id
                 ? 'bg-card text-foreground shadow-sm border border-border/50'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
+            <div className="relative">
+              <f.icon size={14} className="shrink-0" />
+              {f.count !== undefined && f.count > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 min-w-[14px] h-[14px] rounded-full bg-accent text-accent-foreground text-[8px] font-bold flex items-center justify-center px-0.5">
+                  {f.count}
+                </span>
+              )}
+            </div>
             <span>{f.label}</span>
-            {f.count !== undefined && f.count > 0 && (
-              <span className="min-w-[16px] h-[16px] rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center px-0.5 shrink-0">
-                {f.count}
-              </span>
-            )}
           </button>
         ))}
       </div>
