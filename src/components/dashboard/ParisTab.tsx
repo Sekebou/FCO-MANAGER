@@ -1163,6 +1163,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         <BetModal
           isOpen={!!betModal}
           onClose={() => setBetModal(null)}
+          onBetPlaced={handleBetPlaced}
           homeTeam={betModal.home}
           awayTeam={betModal.away}
           matchDate={betModal.date}

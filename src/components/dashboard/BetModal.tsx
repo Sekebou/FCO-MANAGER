@@ -147,6 +147,22 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         return;
       }
 
+      const newBalance = typeof data === 'object' && data !== null && 'new_balance' in data
+        ? Number((data as { new_balance?: number }).new_balance ?? balance - amount)
+        : balance - amount;
+
+      onBetPlaced?.({
+        userId,
+        userName,
+        homeTeam,
+        awayTeam,
+        matchDate,
+        prediction,
+        odds: selectedOdd,
+        amount,
+        newBalance,
+      });
+
       toast.success(`Pari de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
       onClose();
     } catch (err) {
