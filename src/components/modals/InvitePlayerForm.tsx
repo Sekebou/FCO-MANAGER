@@ -181,7 +181,9 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             <div className="flex items-start gap-2">
               <Link2 size={14} className="text-primary shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {mode === 'email'
+                {mode === 'code'
+                  ? <>Un <span className="font-semibold text-foreground">code d'invitation</span> sera généré. Le joueur l'entre directement dans l'app pour créer son compte. Expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  : mode === 'email'
                   ? <>Un lien d'inscription sera envoyé par email. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
                   : mode === 'link'
                   ? <>Un lien unique sera généré pour <span className="font-semibold text-foreground">un seul compte</span>. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
