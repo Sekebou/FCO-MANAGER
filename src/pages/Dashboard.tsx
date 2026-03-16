@@ -1441,7 +1441,7 @@ const Dashboard = () => {
 
       {/* Content */}
       <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
-        <div key={activeTab} className="animate-fade-in">
+        <div className="animate-fade-in">
           {activeTab === 'home' && (
             <HomeTab currentUser={currentUser} events={events} players={visiblePlayers} news={news} members={visibleMembers} onNavigate={handleTabChange} />
           )}
@@ -1565,7 +1565,11 @@ const Dashboard = () => {
           {activeTab === 'news' && <NewsTab news={news} comments={newsComments} members={members} currentUser={currentUser} canManage={canManage} canCreateNews={canCreateNews} deleteNews={deleteNews} toggleLike={toggleLike} addComment={addComment} deleteComment={deleteComment} onAddNews={() => setShowAddNews(true)} />}
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryTab albums={albums} photos={galleryPhotos} currentUser={currentUser} canManagePhotos={canManagePhotos} onCreateAlbum={createAlbum} onDeleteAlbum={deleteAlbum} onUploadPhotos={uploadPhotos} onDeletePhoto={deletePhoto} />}
-          {activeTab === 'paris' && <ParisTab currentUser={currentUser} championships={championships} />}
+          {hasOpenedParisTab && (
+            <div className={activeTab === 'paris' ? '' : 'hidden'}>
+              <ParisTab currentUser={currentUser} championships={championships} />
+            </div>
+          )}
           {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} />}
           {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
