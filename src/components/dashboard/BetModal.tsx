@@ -85,7 +85,7 @@ function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, hom
 
 export { generateOdds };
 
-const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName }) => {
+const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName }) => {
   useBodyScrollLock(isOpen);
   const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
   const [amount, setAmount] = useState(10);
