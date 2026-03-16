@@ -5,9 +5,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
+export interface BetPlacementPayload {
+  userId: string;
+  userName: string;
+  homeTeam: string;
+  awayTeam: string;
+  matchDate: string;
+  prediction: 'home' | 'draw' | 'away';
+  odds: number;
+  amount: number;
+  newBalance: number;
+}
+
 interface BetModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onBetPlaced?: (bet: BetPlacementPayload) => void;
   homeTeam: string;
   awayTeam: string;
   matchDate: string;
@@ -72,7 +85,7 @@ function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, hom
 
 export { generateOdds };
 
-const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName }) => {
+const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName }) => {
   useBodyScrollLock(isOpen);
   const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
   const [amount, setAmount] = useState(10);
@@ -133,6 +146,22 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, homeTeam, awayTeam
         setLoading(false);
         return;
       }
+
+      const newBalance = typeof data === 'object' && data !== null && 'new_balance' in data
+        ? Number((data as { new_balance?: number }).new_balance ?? balance - amount)
+        : balance - amount;
+
+      onBetPlaced?.({
+        userId,
+        userName,
+        homeTeam,
+        awayTeam,
+        matchDate,
+        prediction,
+        odds: selectedOdd,
+        amount,
+        newBalance,
+      });
 
       toast.success(`Pari de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
       onClose();
