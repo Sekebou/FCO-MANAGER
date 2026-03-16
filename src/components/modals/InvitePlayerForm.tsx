@@ -16,6 +16,7 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
   const isSuperAdmin = currentUser?.role === 'admin+';
 
   const [mode, setMode] = useState<'email' | 'link' | 'collective' | 'code'>('code');
+  const [codeCollective, setCodeCollective] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     role: 'joueur',
