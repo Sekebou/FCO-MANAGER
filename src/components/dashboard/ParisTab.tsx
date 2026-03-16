@@ -1129,7 +1129,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       </AnimatePresence>
 
       {/* Bet Modal */}
-      {betModal && currentUser && (
+      {betModal && currentUser && authUserId && (
         <BetModal
           isOpen={!!betModal}
           onClose={() => setBetModal(null)}
@@ -1138,7 +1138,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           matchDate={betModal.date}
           homeLogo={betModal.homeLogo}
           awayLogo={betModal.awayLogo}
-          userId={currentUser.uid}
+          userId={authUserId}
           userName={currentUser.name}
         />
       )}
