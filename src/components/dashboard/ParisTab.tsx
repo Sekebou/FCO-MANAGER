@@ -518,21 +518,23 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1.5 bg-secondary/50 rounded-xl p-1 border border-border/50">
+      <div className="flex bg-secondary/50 rounded-xl p-1 border border-border/50 overflow-x-auto no-scrollbar">
         {filters.map(f => (
           <button
             key={f.id}
             onClick={() => setActiveFilter(f.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+            className={cn(
+              "flex items-center justify-center gap-1 py-2 px-2.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap shrink-0",
+              filters.length <= 3 ? "flex-1" : "min-w-0 flex-1",
               activeFilter === f.id
                 ? 'bg-card text-foreground shadow-sm border border-border/50'
                 : 'text-muted-foreground hover:text-foreground'
-            }`}
+            )}
           >
-            <f.icon size={14} />
-            <span>{f.label}</span>
+            <f.icon size={13} className="shrink-0" />
+            <span className="truncate">{f.label}</span>
             {f.count !== undefined && f.count > 0 && (
-              <span className="min-w-[18px] h-[18px] rounded-full bg-accent text-accent-foreground text-[10px] font-bold flex items-center justify-center px-1">
+              <span className="min-w-[16px] h-[16px] rounded-full bg-accent text-accent-foreground text-[9px] font-bold flex items-center justify-center px-0.5 shrink-0">
                 {f.count}
               </span>
             )}
