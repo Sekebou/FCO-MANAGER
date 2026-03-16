@@ -59,6 +59,38 @@ function buildLocationLink(terrain?: { city?: string; name?: string }) {
   return `https://waze.com/ul?q=${encodeURIComponent(parts)}&navigate=yes`;
 }
 
+function normalizeDateKey(dateStr?: string) {
+  if (!dateStr) return '';
+  const direct = /^\d{4}-\d{2}-\d{2}/.exec(dateStr)?.[0];
+  if (direct) return direct;
+  const d = new Date(dateStr);
+  return Number.isNaN(d.getTime()) ? dateStr : d.toISOString().split('T')[0];
+}
+
+function normalizeTeamName(name?: string) {
+  return (name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function teamsLikelyMatch(a?: string, b?: string) {
+  const na = normalizeTeamName(a);
+  const nb = normalizeTeamName(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.includes(nb) || nb.includes(na)) return true;
+  const firstA = na.split(' ')[0];
+  const firstB = nb.split(' ')[0];
+  return firstA.length >= 3 && firstA === firstB;
+}
+
+function getMatchTeamName(side?: { short_name?: string; name?: string }) {
+  return side?.short_name || side?.name || '';
+}
+
 const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [bets, setBets] = useState<Bet[]>([]);
   const [balance, setBalance] = useState(100);
@@ -119,14 +151,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     });
   }, [bets]);
 
-  // Load FFF data for selected team — with localStorage cache to avoid redundant API calls
-  useEffect(() => {
-    if (teamData[selectedTeam] && !teamData[selectedTeam].loading) return; // already loaded in memory
+  const loadTeamFFFData = useCallback(async (team: string) => {
+    if (teamData[team] && !teamData[team].loading) return;
 
-    const LOCAL_CACHE_KEY = `paris_fff_${selectedTeam}`;
-    const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 min local cache
+    const LOCAL_CACHE_KEY = `paris_fff_${team}`;
+    const LOCAL_CACHE_TTL = 30 * 60 * 1000;
 
-    // Try localStorage first
     try {
       const cached = localStorage.getItem(LOCAL_CACHE_KEY);
       if (cached) {
@@ -134,7 +164,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         if (Date.now() - ts < LOCAL_CACHE_TTL && data) {
           const classement = data.classement && Array.isArray(data.classement)
             ? mapClassementToStandings(data.classement) : [];
-          setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: data.upcoming || [], classement, loading: false } }));
+          setTeamData(prev => ({ ...prev, [team]: { upcoming: data.upcoming || [], classement, loading: false } }));
           return;
         }
       }
@@ -146,69 +176,71 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       'C': { categoryCode: 'SEM', code: 3 },
     };
 
-    const mapping = teamMapping[selectedTeam];
+    const mapping = teamMapping[team];
     let customParams: { cpNo: number; phase: number; poule: number } | null = null;
 
     if (!mapping) {
-      const customChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffUrl);
+      const customChamp = championships.find(c => (c.team || 'A') === team && c.fffUrl);
       if (customChamp?.fffUrl) customParams = decodeFFFApiRef(customChamp.fffUrl);
       if (!customParams) {
-        setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: false } }));
+        setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: false } }));
         return;
       }
     }
 
-    // Check DB cache (24h)
     const CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
-    const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
+    const teamChamp = championships.find(c => (c.team || 'A') === team && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
 
     if (teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE) {
       const cache = teamChamp.fffLiveCache;
       const classement = cache.classement && Array.isArray(cache.classement)
         ? mapClassementToStandings(cache.classement) : [];
-      setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: cache.upcoming || [], classement, loading: false } }));
-      // Save to localStorage
+      setTeamData(prev => ({ ...prev, [team]: { upcoming: cache.upcoming || [], classement, loading: false } }));
       try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: cache, ts: Date.now() })); } catch {}
       return;
     }
 
-    // Fetch from API
-    setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: true } }));
-    let cancelled = false;
-    (async () => {
-      try {
-        let champParams = customParams;
-        if (!champParams && mapping) {
-          const equipesData = await getEquipes(OISEMONT_CL_NO);
-          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
-          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
-        }
-        if (!champParams || cancelled) return;
-        const [upcoming, classementData] = await Promise.all([
-          getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
-          getClassement(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
-        ]);
-        if (cancelled) return;
-        let classement: ScrapedStanding[] = [];
-        let rawClassement: any = null;
-        if (classementData) {
-          const members = classementData?.['hydra:member'] || classementData;
-          if (Array.isArray(members)) {
-            classement = mapClassementToStandings(members);
-            rawClassement = members;
-          }
-        }
-        setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming, classement, loading: false } }));
-        // Save to localStorage
-        try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: { upcoming, classement: rawClassement }, ts: Date.now() })); } catch {}
-      } catch (err) {
-        console.error(`Error loading FFF for team ${selectedTeam}:`, err);
-        if (!cancelled) setTeamData(prev => ({ ...prev, [selectedTeam]: { upcoming: [], classement: [], loading: false } }));
+    setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: true } }));
+
+    try {
+      let champParams = customParams;
+      if (!champParams && mapping) {
+        const equipesData = await getEquipes(OISEMONT_CL_NO);
+        const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
+        champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
       }
-    })();
-    return () => { cancelled = true; };
-  }, [selectedTeam, championships.length]);
+      if (!champParams) {
+        setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: false } }));
+        return;
+      }
+
+      const [upcoming, classementData] = await Promise.all([
+        getTousMatchsAvenir(champParams.cpNo, champParams.phase, champParams.poule),
+        getClassement(champParams.cpNo, champParams.phase, champParams.poule).catch(() => null),
+      ]);
+
+      let classement: ScrapedStanding[] = [];
+      let rawClassement: any = null;
+      if (classementData) {
+        const members = classementData?.['hydra:member'] || classementData;
+        if (Array.isArray(members)) {
+          classement = mapClassementToStandings(members);
+          rawClassement = members;
+        }
+      }
+
+      setTeamData(prev => ({ ...prev, [team]: { upcoming, classement, loading: false } }));
+      try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: { upcoming, classement: rawClassement }, ts: Date.now() })); } catch {}
+    } catch (err) {
+      console.error(`Error loading FFF for team ${team}:`, err);
+      setTeamData(prev => ({ ...prev, [team]: { upcoming: [], classement: [], loading: false } }));
+    }
+  }, [championships, teamData]);
+
+  useEffect(() => {
+    void loadTeamFFFData(selectedTeam);
+  }, [selectedTeam, loadTeamFFFData]);
 
   // Current team data
   const currentData = teamData[selectedTeam] || { upcoming: [], classement: [], loading: true };
@@ -346,7 +378,46 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return [...groups.values()];
   }, [allPendingBets]);
 
-  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, matchDate: string, betsForMatch: Bet[]) => {
+  const settleTeams = BASE_TEAMS;
+
+  const settleCards = useMemo(() => {
+    return settleTeams.map((team) => {
+      const data = teamData[team] || { upcoming: [], classement: [], loading: true };
+      const nextTeamMatch = data.upcoming.flatMap(group => group.matchs).find(match => match.date && !isMatchFinished(match.date, match.time)) || null;
+
+      const teamMatchBets = allPendingBets.filter((bet) => {
+        if (!nextTeamMatch) return false;
+        const homeName = getMatchTeamName(nextTeamMatch.home);
+        const awayName = getMatchTeamName(nextTeamMatch.away);
+        return normalizeDateKey(bet.matchDate) === normalizeDateKey(nextTeamMatch.date)
+          && teamsLikelyMatch(bet.homeTeam, homeName)
+          && teamsLikelyMatch(bet.awayTeam, awayName);
+      });
+
+      const matchKey = nextTeamMatch
+        ? `${team}||${normalizeTeamName(getMatchTeamName(nextTeamMatch.home))}||${normalizeTeamName(getMatchTeamName(nextTeamMatch.away))}||${normalizeDateKey(nextTeamMatch.date)}`
+        : `team-${team}`;
+
+      return {
+        team,
+        loading: data.loading,
+        match: nextTeamMatch,
+        bets: teamMatchBets,
+        matchKey,
+      };
+    });
+  }, [teamData, allPendingBets]);
+
+  useEffect(() => {
+    if (activeFilter !== 'settle' || !isAdminPlus) return;
+    settleTeams.forEach((team) => {
+      if (!teamData[team] || teamData[team].loading) {
+        void loadTeamFFFData(team);
+      }
+    });
+  }, [activeFilter, isAdminPlus, loadTeamFFFData, teamData]);
+
+  const handleSettle = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[]) => {
     const scores = settleScores[matchKey];
     if (!scores || scores.home === '' || scores.away === '') {
       toast.error('Entre les deux scores');
@@ -356,6 +427,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     const awayScore = parseInt(scores.away, 10);
     if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
       toast.error('Scores invalides');
+      return;
+    }
+    if (!betsForMatch.length) {
+      toast.error('Aucun pari en attente sur ce match');
       return;
     }
 
@@ -859,107 +934,94 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl p-3">
               <Shield size={16} className="text-accent shrink-0" />
               <p className="text-[11px] text-foreground font-medium">
-                Règlement manuel — Entre les scores pour chaque match puis confirme. Les gains/pertes seront calculés automatiquement côté serveur.
+                Règle les 3 matchs ici : Équipe A, puis Équipe B, puis Équipe C. Un score validé règle automatiquement tous les paris liés à ce match côté serveur.
               </p>
             </div>
 
-            {pendingMatchGroups.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <CheckCircle2 size={32} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-medium">Aucun pari en attente</p>
-                <p className="text-xs mt-1">Tous les paris ont été réglés ✓</p>
-              </div>
-            ) : (
-              pendingMatchGroups.map(group => {
-                const matchKey = `${group.homeTeam}||${group.awayTeam}||${group.matchDate}`;
+            <div className="space-y-4">
+              {settleCards.map(({ team, loading, match, bets, matchKey }) => {
                 const scores = settleScores[matchKey] || { home: '', away: '' };
                 const isSettling = settlingMatch === matchKey;
-                const matchDateFormatted = (() => {
-                  try { return new Date(group.matchDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); }
-                  catch { return group.matchDate; }
-                })();
+                const homeName = match ? getMatchTeamName(match.home) : '';
+                const awayName = match ? getMatchTeamName(match.away) : '';
+                const matchDateFormatted = match?.date
+                  ? new Date(match.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+                  : null;
 
                 return (
-                  <div key={matchKey} className="bg-card rounded-2xl border border-border overflow-hidden">
-                    {/* Match header */}
-                    <div className="px-4 py-3 bg-secondary/30 border-b border-border/50">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-muted-foreground font-medium">{matchDateFormatted}</span>
-                        <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
-                          {group.bets.length} pari{group.bets.length > 1 ? 's' : ''}
-                        </span>
+                  <div key={team} className="bg-card rounded-2xl border border-border overflow-hidden">
+                    <div className="px-4 py-3 bg-secondary/30 border-b border-border/50 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-black text-foreground uppercase tracking-wider">Équipe {team}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {loading ? 'Chargement du match…' : matchDateFormatted || 'Aucun match à venir'}
+                        </p>
                       </div>
-                      <p className="text-sm font-bold text-foreground">{group.homeTeam} vs {group.awayTeam}</p>
+                      <span className="text-[10px] font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                        {bets.length} pari{bets.length > 1 ? 's' : ''}
+                      </span>
                     </div>
 
-                    {/* Bets list */}
-                    <div className="px-4 py-2 space-y-1.5">
-                      {group.bets.map(bet => {
-                        const predLabel = bet.prediction === 'home' ? group.homeTeam : bet.prediction === 'away' ? group.awayTeam : 'Nul';
-                        return (
-                          <div key={bet.id} className="flex items-center justify-between py-1.5 border-b border-border/20 last:border-0">
-                            <div className="flex items-center gap-2">
-                              {profilePhotos[bet.userId] ? (
-                                <img src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover" />
-                              ) : (
-                                <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-muted-foreground">
-                                  {bet.userName.charAt(0).toUpperCase()}
-                                </div>
-                              )}
-                              <span className="text-xs font-semibold text-foreground">{bet.userName}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-muted-foreground">
-                                {predLabel} • {bet.amount} pts • x{bet.odds}
-                              </span>
-                            </div>
+                    <div className="p-4 space-y-4">
+                      {!match ? (
+                        <div className="text-center py-6 text-muted-foreground text-sm">Aucun match trouvé pour l'équipe {team}</div>
+                      ) : (
+                        <>
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-foreground">{homeName} vs {awayName}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1">
+                              {match.time ? `${matchDateFormatted} • ${match.time}` : matchDateFormatted}
+                            </p>
                           </div>
-                        );
-                      })}
-                    </div>
 
-                    {/* Score input */}
-                    <div className="px-4 py-3 bg-secondary/20 border-t border-border/50">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-foreground truncate max-w-[80px]">{group.homeTeam.split(' ')[0]}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="99"
-                            value={scores.home}
-                            onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
-                            className="w-12 h-9 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
-                            placeholder="—"
-                            disabled={isSettling}
-                          />
-                          <span className="text-xs font-black text-muted-foreground">-</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="99"
-                            value={scores.away}
-                            onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
-                            className="w-12 h-9 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
-                            placeholder="—"
-                            disabled={isSettling}
-                          />
-                          <span className="text-[10px] font-bold text-foreground truncate max-w-[80px]">{group.awayTeam.split(' ')[0]}</span>
-                        </div>
-                        <button
-                          onClick={() => handleSettle(matchKey, group.homeTeam, group.awayTeam, group.matchDate, group.bets)}
-                          disabled={isSettling || !scores.home || !scores.away}
-                          className="px-4 py-2 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-sm"
-                        >
-                          {isSettling ? <Loader2 size={14} className="animate-spin" /> : <Gavel size={14} />}
-                          Régler
-                        </button>
-                      </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 flex items-center justify-center gap-2">
+                              <span className="text-xs font-bold text-foreground truncate max-w-[90px]">{homeName.split(' ')[0]}</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="99"
+                                value={scores.home}
+                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
+                                className="w-14 h-10 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
+                                placeholder="0"
+                                disabled={isSettling || !match}
+                              />
+                              <span className="text-sm font-black text-muted-foreground">-</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="99"
+                                value={scores.away}
+                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
+                                className="w-14 h-10 rounded-lg bg-background border border-border text-center text-sm font-bold text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none"
+                                placeholder="0"
+                                disabled={isSettling || !match}
+                              />
+                              <span className="text-xs font-bold text-foreground truncate max-w-[90px]">{awayName.split(' ')[0]}</span>
+                            </div>
+                            <button
+                              onClick={() => handleSettle(matchKey, homeName, awayName, bets)}
+                              disabled={isSettling || !scores.home || !scores.away || !match || bets.length === 0}
+                              className="px-4 py-2.5 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 transition-all shadow-sm"
+                            >
+                              {isSettling ? <Loader2 size={14} className="animate-spin" /> : <Gavel size={14} />}
+                              Régler
+                            </button>
+                          </div>
+
+                          <div className="rounded-xl border border-border/50 bg-secondary/20 px-3 py-2 text-[11px] text-muted-foreground">
+                            {bets.length > 0
+                              ? `${bets.length} pari${bets.length > 1 ? 's' : ''} en attente sur ce match seront réglés automatiquement.`
+                              : `Aucun pari en attente sur ce match pour le moment.`}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
-              })
-            )}
+              })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
