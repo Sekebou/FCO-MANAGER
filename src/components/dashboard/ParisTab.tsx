@@ -173,6 +173,23 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     };
   }, [authUserId]);
 
+  // Re-fetch bets when coming back online (airplane mode fix)
+  useEffect(() => {
+    if (betsLoaded) return;
+    const handleOnline = () => {
+      if (!authUserId) return;
+      Promise.all([
+        supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('user_points').select('balance').eq('user_id', authUserId).maybeSingle(),
+      ]).then(([{ data: betsData }, { data: pointsData }]) => {
+        if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
+        if (pointsData) setBalance(pointsData.balance);
+      });
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [betsLoaded, authUserId]);
+
   // Load profile photos for bettors
   useEffect(() => {
     if (!bets.length) return;
