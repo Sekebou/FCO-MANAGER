@@ -175,6 +175,64 @@ const Auth = () => {
     }
   };
 
+  const handleRegisterWithCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!inviteCode.trim()) { setError("Veuillez entrer le code d'invitation"); return; }
+    if (!regFirstName.trim() || !regLastName.trim()) { setError("Veuillez remplir tous les champs"); return; }
+    if (!regEmail.trim()) { setError("Veuillez entrer votre email"); return; }
+    if (regPassword.length < 6) { setError("Le mot de passe doit contenir au moins 6 caractères"); return; }
+    if (regPassword !== regConfirmPassword) { setError("Les mots de passe ne correspondent pas"); return; }
+
+    setRegLoading(true);
+    try {
+      // Validate invite code
+      const { data: inv, error: invError } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('invite_code', inviteCode.trim().toUpperCase())
+        .single();
+
+      if (invError || !inv) throw new Error("Code d'invitation invalide");
+      if (inv.status === 'used') throw new Error("Ce code a déjà été utilisé");
+      if (new Date(inv.expires_at) < new Date()) throw new Error("Ce code a expiré");
+
+      const fullName = `${regFirstName.trim()} ${regLastName.trim()}`;
+
+      // Sign up
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: regEmail.trim(),
+        password: regPassword,
+      });
+      if (authError) {
+        if (authError.message.includes('already registered')) throw new Error("Un compte avec cet email existe déjà");
+        if (authError.message.includes('weak') || authError.message.includes('easy to guess')) throw new Error("Ce mot de passe est trop faible, veuillez en choisir un autre");
+        throw authError;
+      }
+      const userId = authData.user?.id;
+      if (!userId) throw new Error("Erreur de création de compte");
+
+      // Use register_user RPC
+      const { error: regError } = await supabase.rpc('register_user', {
+        p_user_id: userId,
+        p_email: regEmail.trim(),
+        p_name: fullName,
+        p_role: inv.role,
+        p_position: inv.position || 'Attaquant',
+        p_license_expiry: inv.license_expiry || null,
+        p_invitation_id: inv.id,
+      });
+      if (regError) throw regError;
+
+      setRegSuccess(true);
+      toast.success("Compte créé avec succès ! 🎉");
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de l'inscription");
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
   return (
     <div className="h-[100dvh] flex relative overflow-hidden">
       {/* Decorative side - blue club */}
