@@ -204,7 +204,9 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
             disabled={mode === 'email' && !formData.email}
             className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
           >
-            {mode === 'email' ? (
+            {mode === 'code' ? (
+              <><Hash size={16} /> Générer le code</>
+            ) : mode === 'email' ? (
               <><Send size={16} /> Envoyer</>
             ) : mode === 'link' ? (
               <><Share2 size={16} /> Générer le lien</>
