@@ -187,30 +187,34 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     });
   }, [bets]);
 
-  const loadTeamFFFData = useCallback(async (team: string) => {
-    // Prevent duplicate concurrent loads
-    if (loadingTeamsRef.current.has(team)) return;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadTeamFFFData = useCallback(async (team: string, forceRefresh = false) => {
+    // Prevent duplicate concurrent loads (unless force refresh)
+    if (!forceRefresh && loadingTeamsRef.current.has(team)) return;
 
     const LOCAL_CACHE_VERSION = 'v2';
     const LOCAL_CACHE_KEY = `paris_fff_${LOCAL_CACHE_VERSION}_${team}`;
     const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h
 
-    // Check local cache first
-    try {
-      const cached = localStorage.getItem(LOCAL_CACHE_KEY);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached);
-        if (Date.now() - ts < LOCAL_CACHE_TTL && data) {
-          const classement = data.classement && Array.isArray(data.classement)
-            ? mapClassementToStandings(data.classement) : [];
-          setTeamData(prev => {
-            if (prev[team] && !prev[team].loading) return prev;
-            return { ...prev, [team]: { upcoming: data.upcoming || [], classement, loading: false } };
-          });
-          return;
+    // Check local cache first (skip on force refresh)
+    if (!forceRefresh) {
+      try {
+        const cached = localStorage.getItem(LOCAL_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < LOCAL_CACHE_TTL && data) {
+            const classement = data.classement && Array.isArray(data.classement)
+              ? mapClassementToStandings(data.classement) : [];
+            setTeamData(prev => {
+              if (prev[team] && !prev[team].loading) return prev;
+              return { ...prev, [team]: { upcoming: data.upcoming || [], classement, loading: false } };
+            });
+            return;
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
 
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
