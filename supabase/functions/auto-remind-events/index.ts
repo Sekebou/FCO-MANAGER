@@ -95,43 +95,22 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // ── Find events happening in 23-25h window ──
+    // ── Find training events happening tomorrow (runs once daily at 20h) ──
     const now = new Date();
-    const in23h = new Date(now.getTime() + 23 * 60 * 60 * 1000);
-    const in25h = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-    const todayStr = in23h.toISOString().split('T')[0];
-    const tomorrowStr = in25h.toISOString().split('T')[0];
-
-    // Fetch training events on these dates that have NOT been reminded yet
-    const { data: events, error: evError } = await supabase
+    // Fetch training events for tomorrow that have NOT been reminded yet
+    const { data: targetEvents, error: evError } = await supabase
       .from('events')
       .select('*')
-      .in('date', [todayStr, tomorrowStr])
+      .eq('date', tomorrowStr)
       .eq('type', 'training')
       .is('reminded_at', null);
 
     if (evError) throw evError;
-    if (!events || events.length === 0) {
-      return new Response(JSON.stringify({ success: true, message: 'No unremninded events in 24h window', reminded: 0 }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Filter events whose date+time falls in the 23-25h window
-    const targetEvents = events.filter(ev => {
-      const eventDate = new Date(ev.date);
-      if (ev.time) {
-        const [h, m] = ev.time.replace('H', ':').replace('h', ':').split(':').map(Number);
-        eventDate.setHours(h || 0, m || 0, 0, 0);
-      } else {
-        eventDate.setHours(12, 0, 0, 0);
-      }
-      return eventDate >= in23h && eventDate <= in25h;
-    });
-
-    if (targetEvents.length === 0) {
-      return new Response(JSON.stringify({ success: true, message: 'No events in precise 24h window', reminded: 0 }), {
+    if (!targetEvents || targetEvents.length === 0) {
+      return new Response(JSON.stringify({ success: true, message: 'No unreminded training events tomorrow', reminded: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
