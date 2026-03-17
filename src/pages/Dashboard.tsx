@@ -531,6 +531,7 @@ const Dashboard = () => {
     const cachedChamps = readCache<Championship[]>('champs');
     const cachedMatches = readCache<Match[]>('matches');
     const cachedAlbums = readCache<Album[]>('albums');
+    const cachedMatchSheets = readCache<MatchSheet[]>('matchSheets');
 
     if (cachedPlayers) setPlayers(cachedPlayers);
     if (cachedEvents) setEvents(cachedEvents);
@@ -542,6 +543,7 @@ const Dashboard = () => {
     if (cachedChamps) setChampionships(cachedChamps);
     if (cachedMatches) setChampMatches(cachedMatches);
     if (cachedAlbums) setAlbums(cachedAlbums);
+    if (cachedMatchSheets) setMatchSheets(cachedMatchSheets);
 
     const hasCache = cachedPlayers || cachedEvents || cachedNews;
     if (hasCache) setLoading(false); // show cached data immediately
