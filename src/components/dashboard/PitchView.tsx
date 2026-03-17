@@ -285,7 +285,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
         </div>
 
         {/* Pitch markings */}
-        <svg viewBox="0 0 68 98" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice">
+        <svg viewBox="0 0 68 98" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
           {/* Field outline */}
           <rect x="4" y="2" width="60" height="94" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" rx="0.3" />
           {/* Midfield line */}
