@@ -550,7 +550,7 @@ const Auth = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Confirmer</label>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Confirmer</label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regconfirm" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regconfirm" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="password" value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} onFocus={() => setFocused("regconfirm")} onBlur={() => setFocused(null)}
