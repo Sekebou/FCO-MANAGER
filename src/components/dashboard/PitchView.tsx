@@ -13,23 +13,30 @@ interface Props {
 }
 
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
-  'Attaquant':          { x: 50, y: 8 },
-  'Ailier gauche':      { x: 15, y: 15 },
-  'Ailier droit':       { x: 85, y: 15 },
-  'Milieu offensif':    { x: 50, y: 28 },
-  'Milieu central':     { x: 50, y: 42 },
-  'Milieu gauche':      { x: 15, y: 42 },
-  'Milieu droit':       { x: 85, y: 42 },
-  'Milieu défensif':    { x: 50, y: 52 },
-  'Latéral gauche':     { x: 15, y: 66 },
-  'Latéral droit':      { x: 85, y: 66 },
-  'Défenseur central':  { x: 50, y: 66 },
-  'Défenseur gauche':   { x: 30, y: 66 },
-  'Défenseur droit':    { x: 70, y: 66 },
+  'Attaquant':          { x: 50, y: 9 },
+  'Ailier gauche':      { x: 16, y: 16 },
+  'Ailier droit':       { x: 84, y: 16 },
+  'Milieu offensif':    { x: 50, y: 32 },
+  'Milieu central':     { x: 50, y: 44 },
+  'Milieu gauche':      { x: 16, y: 44 },
+  'Milieu droit':       { x: 84, y: 44 },
+  'Milieu défensif':    { x: 50, y: 55 },
+  'Latéral gauche':     { x: 16, y: 68 },
+  'Latéral droit':      { x: 84, y: 68 },
+  'Défenseur central':  { x: 50, y: 68 },
+  'Défenseur gauche':   { x: 33, y: 68 },
+  'Défenseur droit':    { x: 67, y: 68 },
   'Gardien':            { x: 50, y: 86 },
 };
 
+// Lines on the pitch: group positions that share the same y-coordinate
+const DEFENSE_LINE_Y = 68;
+const DEFENSE_POSITIONS = new Set(['Latéral gauche', 'Latéral droit', 'Défenseur central', 'Défenseur gauche', 'Défenseur droit']);
+const ATTACK_LINE_Y = 16;
+const ATTACK_POSITIONS = new Set(['Attaquant', 'Ailier gauche', 'Ailier droit']);
+
 function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
+  // Group players by tactical line first, then by position
   const groups: Record<string, typeof basePlayers> = {};
   basePlayers.forEach(p => {
     const pos = p.conv.position || 'Sans poste';
@@ -37,19 +44,58 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     groups[pos].push(p);
   });
 
+  // Collect all players on the same tactical line to distribute evenly
+  const defenseLine = basePlayers.filter(p => DEFENSE_POSITIONS.has(p.conv.position || ''));
+  const attackLine = basePlayers.filter(p => ATTACK_POSITIONS.has(p.conv.position || ''));
+
   const result: { id: string; name: string; conv: Convocation; x: number; y: number }[] = [];
+  const handledIds = new Set<string>();
+
+  // Distribute defense line evenly across the width
+  if (defenseLine.length > 1) {
+    // Sort: latéral gauche first, then DC, then latéral droit
+    const posOrder: Record<string, number> = {
+      'Latéral gauche': 0, 'Défenseur gauche': 1, 'Défenseur central': 2, 'Défenseur droit': 3, 'Latéral droit': 4
+    };
+    defenseLine.sort((a, b) => (posOrder[a.conv.position || ''] ?? 2) - (posOrder[b.conv.position || ''] ?? 2));
+    const margin = 16; // left/right margin %
+    const width = 100 - 2 * margin; // usable width
+    defenseLine.forEach((p, i) => {
+      const x = defenseLine.length === 1 ? 50 : margin + (width / (defenseLine.length - 1)) * i;
+      result.push({ ...p, x, y: DEFENSE_LINE_Y });
+      handledIds.add(p.id);
+    });
+  }
+
+  // Distribute attack line evenly
+  if (attackLine.length > 1) {
+    const posOrder: Record<string, number> = { 'Ailier gauche': 0, 'Attaquant': 1, 'Ailier droit': 2 };
+    attackLine.sort((a, b) => (posOrder[a.conv.position || ''] ?? 1) - (posOrder[b.conv.position || ''] ?? 1));
+    const margin = 16;
+    const width = 100 - 2 * margin;
+    attackLine.forEach((p, i) => {
+      const x = attackLine.length === 1 ? 50 : margin + (width / (attackLine.length - 1)) * i;
+      result.push({ ...p, x, y: ATTACK_LINE_Y });
+      handledIds.add(p.id);
+    });
+  }
+
+  // Handle remaining players (midfield etc.) by position group
   Object.entries(groups).forEach(([pos, group]) => {
+    const unhandled = group.filter(p => !handledIds.has(p.id));
+    if (unhandled.length === 0) return;
     const base = POSITION_COORDS[pos] || { x: 50, y: 50 };
-    if (group.length === 1) {
-      result.push({ ...group[0], x: base.x, y: base.y });
+    if (unhandled.length === 1) {
+      result.push({ ...unhandled[0], x: base.x, y: base.y });
     } else {
-      const spread = Math.min(30, 18 * (group.length - 1));
-      group.forEach((p, i) => {
-        const offset = -spread / 2 + (spread / (group.length - 1)) * i;
+      const spread = Math.min(40, 24 * (unhandled.length - 1));
+      unhandled.forEach((p, i) => {
+        const offset = -spread / 2 + (spread / (unhandled.length - 1)) * i;
         result.push({ ...p, x: Math.max(14, Math.min(86, base.x + offset)), y: base.y });
       });
     }
   });
+
   return result;
 }
 
