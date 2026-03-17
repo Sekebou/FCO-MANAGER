@@ -3,7 +3,7 @@ import { getWebOrigin } from "@/lib/getWebOrigin";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft, Check, UserPlus, Hash, User } from "lucide-react";
+import { Lock, Mail, Loader2, Shield, ChevronRight, Users, TrendingUp, Calendar, ArrowLeft, Check, UserPlus, Hash, User, MapPin, CalendarDays } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
 
