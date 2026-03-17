@@ -559,6 +559,37 @@ const Auth = () => {
                       </div>
                     </div>
                   </div>
+                  {/* Optional: Position & License */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                        Poste <span className="text-muted-foreground/40 normal-case text-[10px]">(optionnel)</span>
+                      </label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 relative ${focused === "regpos" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                        <MapPin className={`shrink-0 transition-colors duration-200 ${focused === "regpos" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                        <select value={regPosition} onChange={(e) => setRegPosition(e.target.value)} onFocus={() => setFocused("regpos")} onBlur={() => setFocused(null)}
+                          className="w-full py-2.5 bg-transparent text-foreground transition-all outline-none text-sm appearance-none"
+                          style={{ fontSize: '16px' }}>
+                          <option value="">Non défini</option>
+                          <option value="Gardien">Gardien</option>
+                          <option value="Défenseur">Défenseur</option>
+                          <option value="Milieu">Milieu</option>
+                          <option value="Attaquant">Attaquant</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                        Licence <span className="text-muted-foreground/40 normal-case text-[10px]">(optionnel)</span>
+                      </label>
+                      <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "reglic" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
+                        <CalendarDays className={`shrink-0 transition-colors duration-200 ${focused === "reglic" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
+                        <input type="date" value={regLicense} onChange={(e) => setRegLicense(e.target.value)} onFocus={() => setFocused("reglic")} onBlur={() => setFocused(null)}
+                          className="w-full py-2.5 bg-transparent text-foreground transition-all outline-none text-sm"
+                          style={{ fontSize: '16px' }} />
+                      </div>
+                    </div>
+                  </div>
                 </fieldset>
                 {error &&
                   <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-2.5 rounded-xl text-sm animate-fade-in">
