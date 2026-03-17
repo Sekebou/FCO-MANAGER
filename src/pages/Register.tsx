@@ -89,12 +89,9 @@ const Register = () => {
       });
       if (regError) throw regError;
 
-      // For multi-use links, increment use_count manually
+      // For multi-use links, increment use_count atomically server-side
       if (isMultiUse) {
-        const currentCount = (invitation as any).use_count ?? 0;
-        await supabase.from('invitations').update({
-          use_count: currentCount + 1,
-        } as any).eq('id', token!);
+        await (supabase.rpc as any)('increment_invite_use_count', { p_invitation_id: token! });
       }
 
       // Mark success IMMEDIATELY — ref ensures it survives any re-mount
