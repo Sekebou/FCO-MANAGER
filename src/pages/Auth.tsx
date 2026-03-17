@@ -359,12 +359,12 @@ const Auth = () => {
 
         <div className="w-full max-w-[420px] relative z-10">
           {/* Mobile logo */}
-          <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-6'} mt-3 animate-[fadeSlideUp_0.6s_ease-out_both]`}>
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
-              <img src={clubLogo} alt="FCO Logo" className="w-[70px] h-[70px] object-contain" />
+            <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-5'} animate-[fadeSlideUp_0.6s_ease-out_both]`}>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
+                <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
+              </div>
+              <h1 className="text-xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
             </div>
-            <h1 className="text-2xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
-          </div>
 
           {/* Header */}
           <div className={`${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
@@ -669,7 +669,7 @@ const Auth = () => {
           )}
 
           {/* Club name + Status */}
-          <div className="mt-5 mb-3 flex flex-col items-center gap-2 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
+          <div className="mt-4 pb-4 flex flex-col items-center gap-2 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
             <p className="lg:hidden text-[10px] text-muted-foreground/50 font-medium">Football Club d'Oisemont</p>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-success/20 bg-success/5">
               <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
