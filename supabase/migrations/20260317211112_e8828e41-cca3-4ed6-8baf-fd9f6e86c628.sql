@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN reminded_at timestamp with time zone DEFAULT NULL;

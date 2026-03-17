@@ -416,6 +416,7 @@ export type Database = {
           presences: Json | null
           reason: string | null
           recurrence: string | null
+          reminded_at: string | null
           team: string | null
           time: string | null
           title: string
@@ -436,6 +437,7 @@ export type Database = {
           presences?: Json | null
           reason?: string | null
           recurrence?: string | null
+          reminded_at?: string | null
           team?: string | null
           time?: string | null
           title: string
@@ -456,6 +458,7 @@ export type Database = {
           presences?: Json | null
           reason?: string | null
           recurrence?: string | null
+          reminded_at?: string | null
           team?: string | null
           time?: string | null
           title?: string
