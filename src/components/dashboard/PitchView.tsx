@@ -371,7 +371,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
           return (
             <motion.div
               key={p.id}
-              className="absolute z-10 flex w-14 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
+              className="absolute z-10 flex w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
               onClick={(e) => {
                 e.stopPropagation();
