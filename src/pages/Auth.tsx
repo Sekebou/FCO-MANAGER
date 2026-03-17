@@ -531,7 +531,7 @@ const Auth = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Email</label>
+                    <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Email</label>
                     <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regemail" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                       <Mail className={`shrink-0 transition-colors duration-200 ${focused === "regemail" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                       <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} onFocus={() => setFocused("regemail")} onBlur={() => setFocused(null)}
