@@ -359,7 +359,7 @@ const Auth = () => {
 
         <div className="w-full max-w-[420px] relative z-10">
           {/* Mobile logo */}
-          <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_both]`}>
+          <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-5'} mt-2 animate-[fadeSlideUp_0.6s_ease-out_both]`}>
             <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
               <img src={clubLogo} alt="FCO Logo" className="w-[70px] h-[70px] object-contain" />
             </div>
