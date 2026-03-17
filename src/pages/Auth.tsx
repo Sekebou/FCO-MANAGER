@@ -597,11 +597,9 @@ const Auth = () => {
                   </div>
                 }
                 <button type="submit" disabled={regLoading || codeStatus !== 'valid'}
-                  className="group w-full bg-accent text-accent-foreground py-3 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="group w-full bg-accent text-accent-foreground py-2.5 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {regLoading ? <><Loader2 className="animate-spin" size={20} /> Création...</> : <>Créer mon compte <ChevronRight size={18} /></>}
                 </button>
-                {/* Bottom spacer for safe area */}
-                <div className="h-4" />
               </form>
             )) :
 
