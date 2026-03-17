@@ -22,9 +22,11 @@ const FIELD_RIGHT_PCT = (64 / 68) * 100;
 const PLAYER_SLOT_WIDTH = 48;
 const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
 const SAFE_BUFFER_PX = 10;
+// Global X offset to visually center players on the pitch (negative = shift left)
+const GLOBAL_X_OFFSET = -7;
 const DEFAULT_SAFE_BOUNDS: SafeBounds = {
-  left: 16,
-  right: 84,
+  left: 16 + GLOBAL_X_OFFSET,
+  right: 84 + GLOBAL_X_OFFSET,
 };
 
 function getSafeBounds(containerWidth: number): SafeBounds {
