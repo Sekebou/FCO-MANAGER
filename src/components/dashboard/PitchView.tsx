@@ -80,8 +80,9 @@ const ATK_ORDER: Record<string, number> = {
 };
 
 function distributeEvenly(count: number, left: number, right: number, compact?: boolean): number[] {
-  if (count === 1) return [50];
-  // For defense lines with 4+ players, use tighter bounds
+  const mid = (left + right) / 2;
+  if (count === 1) return [mid];
+  // For lines with 4+ players, use tighter bounds
   const margin = compact ? (right - left) * 0.08 : 0;
   const l = left + margin;
   const r = right - margin;
