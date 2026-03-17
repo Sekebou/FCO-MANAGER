@@ -941,6 +941,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_invite_use_count: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       place_bet: {
         Args: {
