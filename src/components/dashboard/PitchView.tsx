@@ -42,21 +42,22 @@ function getSafeBounds(containerWidth: number): SafeBounds {
 }
 
 function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
+  const cx = 48.5; // visual center correction (field renders slightly right)
   return {
-    'Attaquant': { x: 50, y: 9 },
+    'Attaquant': { x: cx, y: 9 },
     'Ailier gauche': { x: bounds.left, y: 15 },
     'Ailier droit': { x: bounds.right, y: 15 },
-    'Milieu offensif': { x: 50, y: 31 },
-    'Milieu central': { x: 50, y: 43 },
+    'Milieu offensif': { x: cx, y: 31 },
+    'Milieu central': { x: cx, y: 43 },
     'Milieu gauche': { x: bounds.left, y: 43 },
     'Milieu droit': { x: bounds.right, y: 43 },
-    'Milieu défensif': { x: 50, y: 54 },
+    'Milieu défensif': { x: cx, y: 54 },
     'Latéral gauche': { x: bounds.left, y: 68 },
     'Latéral droit': { x: bounds.right, y: 68 },
-    'Défenseur central': { x: 50, y: 68 },
-    'Défenseur gauche': { x: 37, y: 68 },
-    'Défenseur droit': { x: 63, y: 68 },
-    'Gardien': { x: 50, y: 86 },
+    'Défenseur central': { x: cx, y: 68 },
+    'Défenseur gauche': { x: cx - 13, y: 68 },
+    'Défenseur droit': { x: cx + 13, y: 68 },
+    'Gardien': { x: cx, y: 86 },
   };
 }
 
