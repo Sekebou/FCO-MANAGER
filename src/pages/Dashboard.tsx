@@ -180,6 +180,7 @@ const getPublicPhotoUrls = (photos: Photo[]): Photo[] => {
 // ── Stale-While-Revalidate cache helpers ──
 const CACHE_PREFIX = 'fco_cache_';
 const CACHE_TTL = 10 * 60 * 1000; // 10 min — data older than this won't be shown from cache
+const CACHE_FRESH = 2 * 60 * 1000; // 2 min — data younger than this skips background re-fetch
 
 const writeCache = (key: string, data: any) => {
   try {
@@ -195,6 +196,19 @@ const readCache = <T,>(key: string): T | null => {
     if (Date.now() - ts > CACHE_TTL) return null; // stale
     return data as T;
   } catch { return null; }
+};
+
+/** Returns true if ALL core caches are younger than CACHE_FRESH */
+const isCacheFresh = (): boolean => {
+  try {
+    const keys = ['players', 'events', 'news'];
+    return keys.every(k => {
+      const raw = localStorage.getItem(CACHE_PREFIX + k);
+      if (!raw) return false;
+      const { ts } = JSON.parse(raw);
+      return Date.now() - ts < CACHE_FRESH;
+    });
+  } catch { return false; }
 };
 // Small component showing points in header
 const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
