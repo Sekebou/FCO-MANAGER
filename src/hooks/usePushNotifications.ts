@@ -45,14 +45,15 @@ export function usePushNotifications(userId: string | undefined) {
       const finalToken = tryDecodeHexToString(token.value);
       console.log('FCM Token:', finalToken);
       try {
+        const currentPlatform = Capacitor.getPlatform();
         const { error } = await supabase
           .from('fcm_tokens')
           .upsert({
             user_id: userId,
             token: finalToken,
-            platform: Capacitor.getPlatform(),
+            platform: currentPlatform,
             updated_at: new Date().toISOString(),
-          }, { onConflict: 'token' });
+          }, { onConflict: 'user_id,platform' });
         
         if (error) {
           console.error('Error storing FCM token:', error);
