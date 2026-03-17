@@ -1402,8 +1402,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-secondary/30 flex flex-col pb-24">
-      {/* Temporary demo link */}
-      <a href="/pitch-demo" className="bg-accent text-accent-foreground text-center py-2 text-xs font-bold z-[999]">🏟 Voir démo terrain 4-3-3 →</a>
+      {/* Header */}
       {/* Header */}
       <header className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${headerVisible ? 'top-0 translate-y-0' : 'top-0 -translate-y-full'}`}>
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
