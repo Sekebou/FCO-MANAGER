@@ -353,7 +353,7 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className={`w-full lg:w-1/2 flex ${registerMode ? 'items-start overflow-y-auto' : 'items-center overflow-hidden'} justify-center px-4 sm:px-12 py-8 sm:py-12 bg-background relative h-[100dvh]`} style={{ paddingTop: 'max(env(safe-area-inset-top, 32px), 32px)', paddingBottom: 'max(env(safe-area-inset-bottom, 28px), 28px)' }}>
+      <div className={`w-full lg:w-1/2 flex ${registerMode ? 'items-start overflow-y-auto' : 'items-center overflow-hidden'} justify-center px-4 sm:px-12 bg-background relative h-[100dvh]`} style={{ paddingTop: 'max(env(safe-area-inset-top, 40px), 40px)', paddingBottom: 'max(env(safe-area-inset-bottom, 32px), 32px)' }}>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
