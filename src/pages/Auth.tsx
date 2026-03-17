@@ -358,13 +358,13 @@ const Auth = () => {
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
         <div className="w-full max-w-[420px] relative z-10 flex flex-col items-center h-full justify-between">
-          {/* Mobile logo */}
-            <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-5'} animate-[fadeSlideUp_0.6s_ease-out_both]`}>
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
-                <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
-              </div>
-              <h1 className="text-xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
+          {/* Top: Mobile logo */}
+          <div className={`lg:hidden text-center ${registerMode ? 'mb-1' : 'mb-3'} animate-[fadeSlideUp_0.6s_ease-out_both] shrink-0`}>
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/10 rounded-xl mb-1.5 border border-primary/20 shadow-lg shadow-primary/10">
+              <img src={clubLogo} alt="FCO Logo" className="w-12 h-12 object-contain" />
             </div>
+            <h1 className="text-lg font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
+          </div>
 
           {/* Header */}
           <div className={`${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
