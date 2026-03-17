@@ -541,7 +541,7 @@ const Auth = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Mot de passe</label>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Mot de passe</label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regpw" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} onFocus={() => setFocused("regpw")} onBlur={() => setFocused(null)}
