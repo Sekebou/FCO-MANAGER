@@ -21,7 +21,7 @@ const FIELD_LEFT_PCT = (4 / 68) * 100;
 const FIELD_RIGHT_PCT = (64 / 68) * 100;
 const PLAYER_SLOT_WIDTH = 48;
 const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
-const SAFE_BUFFER_PX = 6;
+const SAFE_BUFFER_PX = 10;
 const DEFAULT_SAFE_BOUNDS: SafeBounds = {
   left: 16,
   right: 84,
@@ -109,7 +109,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     .sort((a, b) => (ATK_ORDER[a.conv.position || ''] ?? 1) - (ATK_ORDER[b.conv.position || ''] ?? 1));
 
   if (attackLine.length >= 1) {
-    const xs = distributeEvenly(attackLine.length, bounds.left, bounds.right);
+    const xs = distributeEvenly(attackLine.length, bounds.left, bounds.right, attackLine.length >= 3);
     attackLine.forEach((p, i) => {
       result.push({ ...p, x: xs[i], y: 15 });
       handledIds.add(p.id);
@@ -285,7 +285,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
         </div>
 
         {/* Pitch markings */}
-        <svg viewBox="0 0 68 98" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice">
+        <svg viewBox="0 0 68 98" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
           {/* Field outline */}
           <rect x="4" y="2" width="60" height="94" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" rx="0.3" />
           {/* Midfield line */}
