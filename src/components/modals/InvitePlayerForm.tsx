@@ -211,24 +211,24 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
 
         {/* Footer */}
         <div className="flex gap-3 p-5 border-t border-border">
-          <button onClick={onClose} className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
+          <button onClick={onClose} className="shrink-0 px-5 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm">
             Annuler
           </button>
           <button
             onClick={handleSubmit}
             disabled={mode === 'email' && !formData.email}
-            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-primary/20 flex items-center justify-center gap-1.5 min-w-0"
           >
             {mode === 'code' && !codeCollective ? (
-              <><Hash size={16} /> Générer le code</>
+              <><Hash size={15} className="shrink-0" /> <span className="truncate">Générer</span></>
             ) : mode === 'collective' && codeCollective ? (
-              <><Hash size={16} /> Générer le code collectif</>
+              <><Hash size={15} className="shrink-0" /> <span className="truncate">Code collectif</span></>
             ) : mode === 'email' ? (
-              <><Send size={16} /> Envoyer</>
+              <><Send size={15} className="shrink-0" /> <span className="truncate">Envoyer</span></>
             ) : mode === 'link' ? (
-              <><Share2 size={16} /> Générer le lien</>
+              <><Share2 size={15} className="shrink-0" /> <span className="truncate">Générer le lien</span></>
             ) : (
-              <><Link2 size={16} /> Générer le lien collectif</>
+              <><Link2 size={15} className="shrink-0" /> <span className="truncate">Lien collectif</span></>
             )}
           </button>
         </div>
