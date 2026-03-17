@@ -154,8 +154,8 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
   return (
     <motion.svg
       viewBox="0 0 40 44"
-      width="38"
-      height="42"
+      width="34"
+      height="38"
       className="filter drop-shadow-lg"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: isSelected ? 1.15 : 1, opacity: 1 }}
