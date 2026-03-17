@@ -12,88 +12,90 @@ interface Props {
   players: Player[];
 }
 
+// Symmetric margins: 18% each side → usable width 64% (18 to 82)
+const MARGIN = 18;
+const MAX_X = 100 - MARGIN; // 82
+
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
   'Attaquant':          { x: 50, y: 9 },
-  'Ailier gauche':      { x: 16, y: 16 },
-  'Ailier droit':       { x: 84, y: 16 },
-  'Milieu offensif':    { x: 50, y: 32 },
-  'Milieu central':     { x: 50, y: 44 },
-  'Milieu gauche':      { x: 16, y: 44 },
-  'Milieu droit':       { x: 84, y: 44 },
-  'Milieu défensif':    { x: 50, y: 55 },
-  'Latéral gauche':     { x: 16, y: 68 },
-  'Latéral droit':      { x: 84, y: 68 },
+  'Ailier gauche':      { x: MARGIN, y: 15 },
+  'Ailier droit':       { x: MAX_X, y: 15 },
+  'Milieu offensif':    { x: 50, y: 31 },
+  'Milieu central':     { x: 50, y: 43 },
+  'Milieu gauche':      { x: MARGIN, y: 43 },
+  'Milieu droit':       { x: MAX_X, y: 43 },
+  'Milieu défensif':    { x: 50, y: 54 },
+  'Latéral gauche':     { x: MARGIN, y: 68 },
+  'Latéral droit':      { x: MAX_X, y: 68 },
   'Défenseur central':  { x: 50, y: 68 },
-  'Défenseur gauche':   { x: 33, y: 68 },
-  'Défenseur droit':    { x: 67, y: 68 },
+  'Défenseur gauche':   { x: 37, y: 68 },
+  'Défenseur droit':    { x: 63, y: 68 },
   'Gardien':            { x: 50, y: 86 },
 };
 
-// Lines on the pitch: group positions that share the same y-coordinate
-const DEFENSE_LINE_Y = 68;
 const DEFENSE_POSITIONS = new Set(['Latéral gauche', 'Latéral droit', 'Défenseur central', 'Défenseur gauche', 'Défenseur droit']);
-const ATTACK_LINE_Y = 16;
 const ATTACK_POSITIONS = new Set(['Attaquant', 'Ailier gauche', 'Ailier droit']);
+const MIDFIELD_POSITIONS = new Set(['Milieu offensif', 'Milieu central', 'Milieu gauche', 'Milieu droit', 'Milieu défensif']);
+
+const DEF_ORDER: Record<string, number> = {
+  'Latéral gauche': 0, 'Défenseur gauche': 1, 'Défenseur central': 2, 'Défenseur droit': 3, 'Latéral droit': 4
+};
+const ATK_ORDER: Record<string, number> = {
+  'Ailier gauche': 0, 'Attaquant': 1, 'Ailier droit': 2
+};
+
+/** Distribute N players evenly between MARGIN and MAX_X — perfectly symmetric */
+function distributeEvenly(count: number): number[] {
+  if (count === 1) return [50];
+  return Array.from({ length: count }, (_, i) =>
+    MARGIN + ((MAX_X - MARGIN) / (count - 1)) * i
+  );
+}
 
 function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
-  // Group players by tactical line first, then by position
-  const groups: Record<string, typeof basePlayers> = {};
-  basePlayers.forEach(p => {
-    const pos = p.conv.position || 'Sans poste';
-    if (!groups[pos]) groups[pos] = [];
-    groups[pos].push(p);
-  });
-
-  // Collect all players on the same tactical line to distribute evenly
-  const defenseLine = basePlayers.filter(p => DEFENSE_POSITIONS.has(p.conv.position || ''));
-  const attackLine = basePlayers.filter(p => ATTACK_POSITIONS.has(p.conv.position || ''));
-
   const result: { id: string; name: string; conv: Convocation; x: number; y: number }[] = [];
   const handledIds = new Set<string>();
 
-  // Distribute defense line evenly across the width
-  if (defenseLine.length > 1) {
-    // Sort: latéral gauche first, then DC, then latéral droit
-    const posOrder: Record<string, number> = {
-      'Latéral gauche': 0, 'Défenseur gauche': 1, 'Défenseur central': 2, 'Défenseur droit': 3, 'Latéral droit': 4
-    };
-    defenseLine.sort((a, b) => (posOrder[a.conv.position || ''] ?? 2) - (posOrder[b.conv.position || ''] ?? 2));
-    const margin = 16; // left/right margin %
-    const width = 100 - 2 * margin; // usable width
-    defenseLine.forEach((p, i) => {
-      const x = defenseLine.length === 1 ? 50 : margin + (width / (defenseLine.length - 1)) * i;
-      result.push({ ...p, x, y: DEFENSE_LINE_Y });
-      handledIds.add(p.id);
-    });
+  // Defense line — all defenders evenly distributed
+  const defenseLine = basePlayers
+    .filter(p => DEFENSE_POSITIONS.has(p.conv.position || ''))
+    .sort((a, b) => (DEF_ORDER[a.conv.position || ''] ?? 2) - (DEF_ORDER[b.conv.position || ''] ?? 2));
+  if (defenseLine.length >= 1) {
+    const xs = distributeEvenly(defenseLine.length);
+    defenseLine.forEach((p, i) => { result.push({ ...p, x: xs[i], y: 68 }); handledIds.add(p.id); });
   }
 
-  // Distribute attack line evenly
-  if (attackLine.length > 1) {
-    const posOrder: Record<string, number> = { 'Ailier gauche': 0, 'Attaquant': 1, 'Ailier droit': 2 };
-    attackLine.sort((a, b) => (posOrder[a.conv.position || ''] ?? 1) - (posOrder[b.conv.position || ''] ?? 1));
-    const margin = 16;
-    const width = 100 - 2 * margin;
-    attackLine.forEach((p, i) => {
-      const x = attackLine.length === 1 ? 50 : margin + (width / (attackLine.length - 1)) * i;
-      result.push({ ...p, x, y: ATTACK_LINE_Y });
-      handledIds.add(p.id);
-    });
+  // Attack line — all attackers evenly distributed
+  const attackLine = basePlayers
+    .filter(p => ATTACK_POSITIONS.has(p.conv.position || ''))
+    .sort((a, b) => (ATK_ORDER[a.conv.position || ''] ?? 1) - (ATK_ORDER[b.conv.position || ''] ?? 1));
+  if (attackLine.length >= 1) {
+    const xs = distributeEvenly(attackLine.length);
+    attackLine.forEach((p, i) => { result.push({ ...p, x: xs[i], y: 15 }); handledIds.add(p.id); });
   }
 
-  // Handle remaining players (midfield etc.) by position group
-  Object.entries(groups).forEach(([pos, group]) => {
-    const unhandled = group.filter(p => !handledIds.has(p.id));
-    if (unhandled.length === 0) return;
-    const base = POSITION_COORDS[pos] || { x: 50, y: 50 };
-    if (unhandled.length === 1) {
-      result.push({ ...unhandled[0], x: base.x, y: base.y });
+  // Midfield — each position at its own coords, spread if multiple share same position
+  const midGroups: Record<string, typeof basePlayers> = {};
+  basePlayers.filter(p => MIDFIELD_POSITIONS.has(p.conv.position || '') && !handledIds.has(p.id)).forEach(p => {
+    const pos = p.conv.position || '';
+    if (!midGroups[pos]) midGroups[pos] = [];
+    midGroups[pos].push(p);
+  });
+  Object.entries(midGroups).forEach(([pos, group]) => {
+    const base = POSITION_COORDS[pos] || { x: 50, y: 45 };
+    if (group.length === 1) {
+      result.push({ ...group[0], x: base.x, y: base.y });
     } else {
-      const spread = Math.min(40, 24 * (unhandled.length - 1));
-      unhandled.forEach((p, i) => {
-        const offset = -spread / 2 + (spread / (unhandled.length - 1)) * i;
-        result.push({ ...p, x: Math.max(14, Math.min(86, base.x + offset)), y: base.y });
-      });
+      const xs = distributeEvenly(group.length);
+      group.forEach((p, i) => { result.push({ ...p, x: xs[i], y: base.y }); });
     }
+    group.forEach(p => handledIds.add(p.id));
+  });
+
+  // Remaining (sans poste, etc.)
+  basePlayers.filter(p => !handledIds.has(p.id)).forEach(p => {
+    const base = POSITION_COORDS[p.conv.position || ''] || { x: 50, y: 50 };
+    result.push({ ...p, x: base.x, y: base.y });
   });
 
   return result;
