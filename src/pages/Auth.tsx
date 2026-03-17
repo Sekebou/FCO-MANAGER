@@ -353,7 +353,7 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-12 bg-background relative h-[100dvh] overflow-hidden" style={{ paddingTop: 'max(env(safe-area-inset-top, 40px), 40px)', paddingBottom: 'max(env(safe-area-inset-bottom, 32px), 32px)' }}>
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-12 bg-background relative h-[100dvh] overflow-hidden" style={{ paddingTop: 'max(env(safe-area-inset-top, 36px), 36px)', paddingBottom: 'max(env(safe-area-inset-bottom, 36px), 36px)' }}>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
