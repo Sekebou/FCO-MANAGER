@@ -15,6 +15,7 @@ const Download = lazy(() => import("./pages/Download"));
 const Support = lazy(() => import("./pages/Support"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const PitchDemo = lazy(() => import("./pages/PitchDemo"));
 
 const queryClient = new QueryClient();
 
