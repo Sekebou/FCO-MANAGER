@@ -22,9 +22,11 @@ const FIELD_RIGHT_PCT = (64 / 68) * 100;
 const PLAYER_SLOT_WIDTH = 48;
 const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
 const SAFE_BUFFER_PX = 10;
+// Global X offset to visually center players on the pitch (negative = shift left)
+const GLOBAL_X_OFFSET = -7;
 const DEFAULT_SAFE_BOUNDS: SafeBounds = {
-  left: 16,
-  right: 84,
+  left: 16 + GLOBAL_X_OFFSET,
+  right: 84 + GLOBAL_X_OFFSET,
 };
 
 function getSafeBounds(containerWidth: number): SafeBounds {
@@ -36,13 +38,13 @@ function getSafeBounds(containerWidth: number): SafeBounds {
   const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF - SAFE_BUFFER_PX) / containerWidth) * 100;
 
   return {
-    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft),
-    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight),
+    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft + GLOBAL_X_OFFSET),
+    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight + GLOBAL_X_OFFSET),
   };
 }
 
 function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
-  const cx = 48.5; // visual center correction (field renders slightly right)
+  const cx = 50 + GLOBAL_X_OFFSET;
   return {
     'Attaquant': { x: cx, y: 9 },
     'Ailier gauche': { x: bounds.left, y: 15 },
@@ -80,8 +82,9 @@ const ATK_ORDER: Record<string, number> = {
 };
 
 function distributeEvenly(count: number, left: number, right: number, compact?: boolean): number[] {
-  if (count === 1) return [50];
-  // For defense lines with 4+ players, use tighter bounds
+  const mid = (left + right) / 2;
+  if (count === 1) return [mid];
+  // For lines with 4+ players, use tighter bounds
   const margin = compact ? (right - left) * 0.08 : 0;
   const l = left + margin;
   const r = right - margin;
