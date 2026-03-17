@@ -180,6 +180,7 @@ const getPublicPhotoUrls = (photos: Photo[]): Photo[] => {
 // ── Stale-While-Revalidate cache helpers ──
 const CACHE_PREFIX = 'fco_cache_';
 const CACHE_TTL = 10 * 60 * 1000; // 10 min — data older than this won't be shown from cache
+const CACHE_FRESH = 2 * 60 * 1000; // 2 min — data younger than this skips background re-fetch
 
 const writeCache = (key: string, data: any) => {
   try {
@@ -195,6 +196,19 @@ const readCache = <T,>(key: string): T | null => {
     if (Date.now() - ts > CACHE_TTL) return null; // stale
     return data as T;
   } catch { return null; }
+};
+
+/** Returns true if ALL core caches are younger than CACHE_FRESH */
+const isCacheFresh = (): boolean => {
+  try {
+    const keys = ['players', 'events', 'news'];
+    return keys.every(k => {
+      const raw = localStorage.getItem(CACHE_PREFIX + k);
+      if (!raw) return false;
+      const { ts } = JSON.parse(raw);
+      return Date.now() - ts < CACHE_FRESH;
+    });
+  } catch { return false; }
 };
 // Small component showing points in header
 const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
@@ -532,7 +546,9 @@ const Dashboard = () => {
     const hasCache = cachedPlayers || cachedEvents || cachedNews;
     if (hasCache) setLoading(false); // show cached data immediately
 
-    // ── 2. Fetch fresh data in background (without gallery_photos) ──
+    // ── 2. Skip background fetch if cache is very fresh (< 2 min) ──
+    const skipFetch = hasCache && isCacheFresh();
+
     const fetchAll = async () => {
       try {
         const [
@@ -595,10 +611,22 @@ const Dashboard = () => {
       }
     };
 
-    fetchAll();
+    if (!skipFetch) {
+      fetchAll();
+    } else {
+      setLoading(false);
+    }
 
-    // Trigger cleanup of terminated match/training events (fire & forget)
-    supabase.functions.invoke('cleanup-old-events').catch(() => {});
+    // Trigger cleanup max 1x/hour (deduplicated via localStorage)
+    const CLEANUP_KEY = 'fco_cleanup_ts';
+    const CLEANUP_TTL = 60 * 60 * 1000; // 1 hour
+    try {
+      const lastCleanup = parseInt(localStorage.getItem(CLEANUP_KEY) || '0', 10);
+      if (Date.now() - lastCleanup > CLEANUP_TTL) {
+        localStorage.setItem(CLEANUP_KEY, String(Date.now()));
+        supabase.functions.invoke('cleanup-old-events').catch(() => {});
+      }
+    } catch { supabase.functions.invoke('cleanup-old-events').catch(() => {}); }
 
     // Daily bonus removed — was generating too many DB rows
 
@@ -641,8 +669,8 @@ const Dashboard = () => {
         } catch (err) { console.warn('iOS cold poll error:', err); }
       };
 
-      const hotInterval = setInterval(fetchHot, 5000);
-      const coldInterval = setInterval(fetchCold, 30000);
+      const hotInterval = setInterval(fetchHot, 15000);   // was 5s → now 15s
+      const coldInterval = setInterval(fetchCold, 60000);  // was 30s → now 60s
 
       return () => { clearInterval(hotInterval); clearInterval(coldInterval); };
     }
