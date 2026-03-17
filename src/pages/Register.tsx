@@ -91,7 +91,7 @@ const Register = () => {
 
       // For multi-use links, increment use_count atomically server-side
       if (isMultiUse) {
-        await supabase.rpc('increment_invite_use_count', { p_invitation_id: token! });
+        await (supabase.rpc as any)('increment_invite_use_count', { p_invitation_id: token! });
       }
 
       // Mark success IMMEDIATELY — ref ensures it survives any re-mount
