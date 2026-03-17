@@ -134,7 +134,7 @@ const ChatTab: React.FC<Props> = ({ currentUser, members, embedded = false }) =>
 
   useEffect(() => {
     updateLastSeen();
-    const interval = setInterval(updateLastSeen, 30000);
+    const interval = setInterval(updateLastSeen, 120000); // was 30s → now 120s to reduce DB writes
     return () => clearInterval(interval);
   }, [updateLastSeen]);
 
