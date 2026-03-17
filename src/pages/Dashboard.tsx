@@ -546,7 +546,9 @@ const Dashboard = () => {
     const hasCache = cachedPlayers || cachedEvents || cachedNews;
     if (hasCache) setLoading(false); // show cached data immediately
 
-    // ── 2. Fetch fresh data in background (without gallery_photos) ──
+    // ── 2. Skip background fetch if cache is very fresh (< 2 min) ──
+    const skipFetch = hasCache && isCacheFresh();
+
     const fetchAll = async () => {
       try {
         const [
@@ -609,10 +611,22 @@ const Dashboard = () => {
       }
     };
 
-    fetchAll();
+    if (!skipFetch) {
+      fetchAll();
+    } else {
+      setLoading(false);
+    }
 
-    // Trigger cleanup of terminated match/training events (fire & forget)
-    supabase.functions.invoke('cleanup-old-events').catch(() => {});
+    // Trigger cleanup max 1x/hour (deduplicated via localStorage)
+    const CLEANUP_KEY = 'fco_cleanup_ts';
+    const CLEANUP_TTL = 60 * 60 * 1000; // 1 hour
+    try {
+      const lastCleanup = parseInt(localStorage.getItem(CLEANUP_KEY) || '0', 10);
+      if (Date.now() - lastCleanup > CLEANUP_TTL) {
+        localStorage.setItem(CLEANUP_KEY, String(Date.now()));
+        supabase.functions.invoke('cleanup-old-events').catch(() => {});
+      }
+    } catch { supabase.functions.invoke('cleanup-old-events').catch(() => {}); }
 
     // Daily bonus removed — was generating too many DB rows
 
