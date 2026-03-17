@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ── Firebase OAuth2 (reused from send-push-notification) ──
+// ── Firebase OAuth2 ──
 async function getAccessToken(serviceAccount: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'RS256', typ: 'JWT' };
@@ -103,16 +103,17 @@ Deno.serve(async (req) => {
     const todayStr = in23h.toISOString().split('T')[0];
     const tomorrowStr = in25h.toISOString().split('T')[0];
 
-    // Fetch events on these dates
+    // Fetch training events on these dates that have NOT been reminded yet
     const { data: events, error: evError } = await supabase
       .from('events')
       .select('*')
       .in('date', [todayStr, tomorrowStr])
-      .eq('type', 'training');
+      .eq('type', 'training')
+      .is('reminded_at', null);
 
     if (evError) throw evError;
     if (!events || events.length === 0) {
-      return new Response(JSON.stringify({ success: true, message: 'No events in 24h window', reminded: 0 }), {
+      return new Response(JSON.stringify({ success: true, message: 'No unremninded events in 24h window', reminded: 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -124,7 +125,6 @@ Deno.serve(async (req) => {
         const [h, m] = ev.time.replace('H', ':').replace('h', ':').split(':').map(Number);
         eventDate.setHours(h || 0, m || 0, 0, 0);
       } else {
-        // No time specified — assume midday
         eventDate.setHours(12, 0, 0, 0);
       }
       return eventDate >= in23h && eventDate <= in25h;
@@ -136,47 +136,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Determine target user IDs for each event ──
-    // For matches with published convocations → only convoked players
-    // For training/matches without convocations → all players
+    // ── Profiles & player mapping ──
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, player_id, name');
 
     const playerToUserId: Record<string, string> = {};
-    const allUserIds: string[] = [];
     for (const p of (profiles || [])) {
       if (p.player_id) playerToUserId[p.player_id] = p.id;
-      allUserIds.push(p.id);
     }
 
-    // Collect { userId[], title, body } per event
     const notifications: { userIds: string[]; title: string; body: string; eventId: string }[] = [];
 
     for (const ev of targetEvents) {
       const dateLabel = new Date(ev.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
       const timeLabel = ev.time ? ` à ${ev.time}` : '';
-      const typeLabel = ev.type === 'match' ? '⚽ Match' : '🏋️ Entraînement';
 
-      let targetUserIds: string[] = [];
-
-      if (ev.type === 'match' && ev.convocations_published && ev.convocations) {
-        // Only convoked players
-        const convocations = typeof ev.convocations === 'string' ? JSON.parse(ev.convocations) : ev.convocations;
-        for (const [playerId, conv] of Object.entries(convocations)) {
-          if ((conv as any)?.status === 'convoque' && playerToUserId[playerId]) {
-            targetUserIds.push(playerToUserId[playerId]);
-          }
-        }
-      } else {
-        // All members with a player_id (i.e. all active players)
-        targetUserIds = Object.values(playerToUserId);
-      }
+      const targetUserIds = Object.values(playerToUserId);
 
       if (targetUserIds.length > 0) {
         notifications.push({
           userIds: targetUserIds,
-          title: `${typeLabel} demain`,
+          title: '🏋️ Entraînement demain',
           body: `${ev.title} — ${dateLabel}${timeLabel}${ev.location ? ` 📍 ${ev.location}` : ''}`,
           eventId: ev.id,
         });
@@ -228,6 +209,12 @@ Deno.serve(async (req) => {
           else totalFailed++;
         }
       }
+
+      // ── Mark event as reminded to prevent duplicates ──
+      await supabase
+        .from('events')
+        .update({ reminded_at: new Date().toISOString() })
+        .eq('id', notif.eventId);
     }
 
     console.log(`Auto-remind: ${totalSent} sent, ${totalFailed} failed, ${notifications.length} events`);
