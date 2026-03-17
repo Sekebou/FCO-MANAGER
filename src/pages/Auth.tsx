@@ -669,7 +669,7 @@ const Auth = () => {
           )}
 
           {/* Club name + Status */}
-          <div className="mt-4 mb-2 flex flex-col items-center gap-2 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
+          <div className="mt-5 mb-3 flex flex-col items-center gap-2 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
             <p className="lg:hidden text-[10px] text-muted-foreground/50 font-medium">Football Club d'Oisemont</p>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-success/20 bg-success/5">
               <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
