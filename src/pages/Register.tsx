@@ -242,8 +242,9 @@ const Register = () => {
             </div>
           </motion.div>
 
+          {/* Apple App Store — Primary */}
           <motion.a
-            href="https://play.google.com/apps/testing/com.sekebou.fcomanager"
+            href="https://apps.apple.com/fr/app/fco-manager/id6760185315"
             target="_blank"
             rel="noopener noreferrer"
             initial={{ opacity: 0, y: 10 }}
@@ -251,10 +252,21 @@ const Register = () => {
             transition={{ delay: 0.8, type: 'spring', stiffness: 150 }}
             className="group inline-flex items-center justify-center gap-2 w-full bg-accent text-accent-foreground py-3.5 rounded-xl font-semibold hover:bg-accent/90 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20"
           >
-            <Download size={18} />
-            Télécharger sur Google Play
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Télécharger sur l'App Store
             <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
           </motion.a>
+
+          {/* Google Play — Disabled / Coming soon */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.95, type: 'spring', stiffness: 150 }}
+            className="inline-flex items-center justify-center gap-2 w-full bg-muted text-muted-foreground py-3.5 rounded-xl font-semibold cursor-not-allowed opacity-60 mt-3"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 shrink-0"><path d="M3.18 23.76c-.36-.17-.58-.53-.58-.94V1.18c0-.41.22-.77.58-.94l11.83 11.76L3.18 23.76zm1.39-22.2L16.05 12 4.57 23.44l.01-21.88h-.01zm13.38 11.2L6.01 1.6l10.88 6.28 1.07.62v-.02l.01.01-.02.01v.02l.98.57-1.98 3.68zm2.18-1.26L18.06 12l2.07-1.5c.56.39.89 1.01.89 1.5 0 .49-.33 1.11-.89 1.5z"/></svg>
+            Bientôt disponible sur Google Play
+          </motion.div>
         </motion.div>
       </div>
     );
