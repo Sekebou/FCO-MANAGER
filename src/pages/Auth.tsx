@@ -238,8 +238,8 @@ const Auth = () => {
         p_email: regEmail.trim(),
         p_name: fullName,
         p_role: inv.role,
-        p_position: inv.position || 'Attaquant',
-        p_license_expiry: inv.license_expiry || null,
+        p_position: regPosition || inv.position || 'Attaquant',
+        p_license_expiry: regLicense || inv.license_expiry || null,
         p_invitation_id: inv.id,
       });
       if (regError) throw regError;
