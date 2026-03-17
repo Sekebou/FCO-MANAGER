@@ -460,7 +460,7 @@ const Auth = () => {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleRegisterWithCode} className="space-y-3">
+              <form onSubmit={handleRegisterWithCode} className="space-y-2">
                 <button type="button" onClick={() => { setRegisterMode(false); setError(""); setCodeStatus('idle'); setValidatedInvitation(null); setInviteCode(""); }}
                   className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft size={16} /> Retour
