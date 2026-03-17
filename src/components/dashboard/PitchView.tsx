@@ -46,9 +46,9 @@ function getSafeBounds(containerWidth: number): SafeBounds {
 function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
   const cx = 50 + GLOBAL_X_OFFSET;
   return {
-    'Attaquant': { x: cx, y: -2 },
-    'Ailier gauche': { x: bounds.left, y: 2 },
-    'Ailier droit': { x: bounds.right, y: 2 },
+    'Attaquant': { x: cx, y: 5 },
+    'Ailier gauche': { x: bounds.left, y: 10 },
+    'Ailier droit': { x: bounds.right, y: 10 },
     'Milieu offensif': { x: cx, y: 26 },
     'Milieu central': { x: cx, y: 37 },
     'Milieu gauche': { x: bounds.left, y: 37 },
