@@ -1,4 +1,4 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Convocation } from '@/pages/Dashboard';
 
@@ -12,92 +12,134 @@ interface Props {
   players: Player[];
 }
 
-// Field sidelines are at ~6% and ~94% of container width
-// Jerseys are ~38px wide (~5.5% of ~360px container), so center must be ≥9% from edge
-const MARGIN = 14;
-const MAX_X = 100 - MARGIN; // 86
-
-const POSITION_COORDS: Record<string, { x: number; y: number }> = {
-  'Attaquant':          { x: 50, y: 9 },
-  'Ailier gauche':      { x: MARGIN, y: 15 },
-  'Ailier droit':       { x: MAX_X, y: 15 },
-  'Milieu offensif':    { x: 50, y: 31 },
-  'Milieu central':     { x: 50, y: 43 },
-  'Milieu gauche':      { x: MARGIN, y: 43 },
-  'Milieu droit':       { x: MAX_X, y: 43 },
-  'Milieu défensif':    { x: 50, y: 54 },
-  'Latéral gauche':     { x: MARGIN, y: 68 },
-  'Latéral droit':      { x: MAX_X, y: 68 },
-  'Défenseur central':  { x: 50, y: 68 },
-  'Défenseur gauche':   { x: 37, y: 68 },
-  'Défenseur droit':    { x: 63, y: 68 },
-  'Gardien':            { x: 50, y: 86 },
+type SafeBounds = {
+  left: number;
+  right: number;
 };
+
+const FIELD_LEFT_PCT = (4 / 68) * 100;
+const FIELD_RIGHT_PCT = (64 / 68) * 100;
+const PLAYER_SLOT_WIDTH = 56;
+const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
+const DEFAULT_SAFE_BOUNDS: SafeBounds = {
+  left: 13.5,
+  right: 86.5,
+};
+
+function getSafeBounds(containerWidth: number): SafeBounds {
+  if (!containerWidth) return DEFAULT_SAFE_BOUNDS;
+
+  const fieldLeftPx = (containerWidth * FIELD_LEFT_PCT) / 100;
+  const fieldRightPx = (containerWidth * FIELD_RIGHT_PCT) / 100;
+  const safeLeft = ((fieldLeftPx + PLAYER_SLOT_HALF) / containerWidth) * 100;
+  const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF) / containerWidth) * 100;
+
+  return {
+    left: Math.max(FIELD_LEFT_PCT + 1, safeLeft),
+    right: Math.min(FIELD_RIGHT_PCT - 1, safeRight),
+  };
+}
+
+function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
+  return {
+    'Attaquant': { x: 50, y: 9 },
+    'Ailier gauche': { x: bounds.left, y: 15 },
+    'Ailier droit': { x: bounds.right, y: 15 },
+    'Milieu offensif': { x: 50, y: 31 },
+    'Milieu central': { x: 50, y: 43 },
+    'Milieu gauche': { x: bounds.left, y: 43 },
+    'Milieu droit': { x: bounds.right, y: 43 },
+    'Milieu défensif': { x: 50, y: 54 },
+    'Latéral gauche': { x: bounds.left, y: 68 },
+    'Latéral droit': { x: bounds.right, y: 68 },
+    'Défenseur central': { x: 50, y: 68 },
+    'Défenseur gauche': { x: 37, y: 68 },
+    'Défenseur droit': { x: 63, y: 68 },
+    'Gardien': { x: 50, y: 86 },
+  };
+}
 
 const DEFENSE_POSITIONS = new Set(['Latéral gauche', 'Latéral droit', 'Défenseur central', 'Défenseur gauche', 'Défenseur droit']);
 const ATTACK_POSITIONS = new Set(['Attaquant', 'Ailier gauche', 'Ailier droit']);
 const MIDFIELD_POSITIONS = new Set(['Milieu offensif', 'Milieu central', 'Milieu gauche', 'Milieu droit', 'Milieu défensif']);
 
 const DEF_ORDER: Record<string, number> = {
-  'Latéral gauche': 0, 'Défenseur gauche': 1, 'Défenseur central': 2, 'Défenseur droit': 3, 'Latéral droit': 4
-};
-const ATK_ORDER: Record<string, number> = {
-  'Ailier gauche': 0, 'Attaquant': 1, 'Ailier droit': 2
+  'Latéral gauche': 0,
+  'Défenseur gauche': 1,
+  'Défenseur central': 2,
+  'Défenseur droit': 3,
+  'Latéral droit': 4,
 };
 
-/** Distribute N players evenly between MARGIN and MAX_X — perfectly symmetric */
-function distributeEvenly(count: number): number[] {
+const ATK_ORDER: Record<string, number> = {
+  'Ailier gauche': 0,
+  'Attaquant': 1,
+  'Ailier droit': 2,
+};
+
+function distributeEvenly(count: number, left: number, right: number): number[] {
   if (count === 1) return [50];
-  return Array.from({ length: count }, (_, i) =>
-    MARGIN + ((MAX_X - MARGIN) / (count - 1)) * i
-  );
+
+  return Array.from({ length: count }, (_, i) => left + ((right - left) / (count - 1)) * i);
 }
 
-function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
+function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[], bounds: SafeBounds) {
+  const coords = getPositionCoords(bounds);
   const result: { id: string; name: string; conv: Convocation; x: number; y: number }[] = [];
   const handledIds = new Set<string>();
 
-  // Defense line — all defenders evenly distributed
   const defenseLine = basePlayers
-    .filter(p => DEFENSE_POSITIONS.has(p.conv.position || ''))
+    .filter((p) => DEFENSE_POSITIONS.has(p.conv.position || ''))
     .sort((a, b) => (DEF_ORDER[a.conv.position || ''] ?? 2) - (DEF_ORDER[b.conv.position || ''] ?? 2));
+
   if (defenseLine.length >= 1) {
-    const xs = distributeEvenly(defenseLine.length);
-    defenseLine.forEach((p, i) => { result.push({ ...p, x: xs[i], y: 68 }); handledIds.add(p.id); });
+    const xs = distributeEvenly(defenseLine.length, bounds.left, bounds.right);
+    defenseLine.forEach((p, i) => {
+      result.push({ ...p, x: xs[i], y: 68 });
+      handledIds.add(p.id);
+    });
   }
 
-  // Attack line — all attackers evenly distributed
   const attackLine = basePlayers
-    .filter(p => ATTACK_POSITIONS.has(p.conv.position || ''))
+    .filter((p) => ATTACK_POSITIONS.has(p.conv.position || ''))
     .sort((a, b) => (ATK_ORDER[a.conv.position || ''] ?? 1) - (ATK_ORDER[b.conv.position || ''] ?? 1));
+
   if (attackLine.length >= 1) {
-    const xs = distributeEvenly(attackLine.length);
-    attackLine.forEach((p, i) => { result.push({ ...p, x: xs[i], y: 15 }); handledIds.add(p.id); });
+    const xs = distributeEvenly(attackLine.length, bounds.left, bounds.right);
+    attackLine.forEach((p, i) => {
+      result.push({ ...p, x: xs[i], y: 15 });
+      handledIds.add(p.id);
+    });
   }
 
-  // Midfield — each position at its own coords, spread if multiple share same position
   const midGroups: Record<string, typeof basePlayers> = {};
-  basePlayers.filter(p => MIDFIELD_POSITIONS.has(p.conv.position || '') && !handledIds.has(p.id)).forEach(p => {
-    const pos = p.conv.position || '';
-    if (!midGroups[pos]) midGroups[pos] = [];
-    midGroups[pos].push(p);
-  });
+  basePlayers
+    .filter((p) => MIDFIELD_POSITIONS.has(p.conv.position || '') && !handledIds.has(p.id))
+    .forEach((p) => {
+      const pos = p.conv.position || '';
+      if (!midGroups[pos]) midGroups[pos] = [];
+      midGroups[pos].push(p);
+    });
+
   Object.entries(midGroups).forEach(([pos, group]) => {
-    const base = POSITION_COORDS[pos] || { x: 50, y: 45 };
+    const base = coords[pos] || { x: 50, y: 45 };
     if (group.length === 1) {
       result.push({ ...group[0], x: base.x, y: base.y });
     } else {
-      const xs = distributeEvenly(group.length);
-      group.forEach((p, i) => { result.push({ ...p, x: xs[i], y: base.y }); });
+      const xs = distributeEvenly(group.length, bounds.left, bounds.right);
+      group.forEach((p, i) => {
+        result.push({ ...p, x: xs[i], y: base.y });
+      });
     }
-    group.forEach(p => handledIds.add(p.id));
+    group.forEach((p) => handledIds.add(p.id));
   });
 
-  // Remaining (sans poste, etc.)
-  basePlayers.filter(p => !handledIds.has(p.id)).forEach(p => {
-    const base = POSITION_COORDS[p.conv.position || ''] || { x: 50, y: 50 };
-    result.push({ ...p, x: base.x, y: base.y });
-  });
+  basePlayers
+    .filter((p) => !handledIds.has(p.id))
+    .forEach((p) => {
+      const base = coords[p.conv.position || ''] || { x: 50, y: 50 };
+      result.push({ ...p, x: base.x, y: base.y });
+    });
 
   return result;
 }
@@ -175,24 +217,45 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
 
 const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [pitchWidth, setPitchWidth] = useState(0);
+  const pitchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const element = pitchContainerRef.current;
+    if (!element) return;
+
+    const updateWidth = () => setPitchWidth(element.clientWidth);
+    updateWidth();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => updateWidth());
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   const convokedPlayers = Object.entries(convocations)
     .filter(([, conv]) => conv.status === 'convoque' && conv.position)
     .map(([playerId, conv]) => {
-      const player = players.find(p => p.id === playerId);
+      const player = players.find((p) => p.id === playerId);
       return player ? { id: playerId, name: player.name, conv } : null;
     })
     .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
   if (convokedPlayers.length === 0) return null;
 
-  const positioned = getSpreadCoords(convokedPlayers);
-  const selected = selectedPlayer ? positioned.find(p => p.id === selectedPlayer) : null;
+  const bounds = useMemo(() => getSafeBounds(pitchWidth), [pitchWidth]);
+  const positioned = useMemo(() => getSpreadCoords(convokedPlayers, bounds), [convokedPlayers, bounds]);
+  const selected = selectedPlayer ? positioned.find((p) => p.id === selectedPlayer) : null;
 
   return (
     <div ref={ref}>
       <div
-        className="relative w-full max-w-sm mx-auto rounded-2xl overflow-visible shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
+        ref={pitchContainerRef}
+        className="relative mx-auto w-full max-w-sm rounded-2xl overflow-visible shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
         style={{ aspectRatio: '9 / 13' }}
         onClick={() => setSelectedPlayer(null)}
       >
@@ -204,9 +267,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
               className="w-full"
               style={{
                 height: `${100 / 18}%`,
-                backgroundColor: i % 2 === 0
-                  ? 'hsl(130 38% 40%)'
-                  : 'hsl(130 38% 35%)',
+                backgroundColor: i % 2 === 0 ? 'hsl(130 38% 40%)' : 'hsl(130 38% 35%)',
               }}
             />
           ))}
@@ -220,7 +281,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
         </div>
 
         {/* Pitch markings */}
-        <svg viewBox="0 0 68 98" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+        <svg viewBox="0 0 68 98" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid slice">
           {/* Field outline */}
           <rect x="4" y="2" width="60" height="94" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" rx="0.3" />
           {/* Midfield line */}
@@ -252,7 +313,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
         ].map((pos, i) => (
           <div key={`flag-${i}`} className="absolute" style={{ left: pos.x, top: pos.y, zIndex: 5 }}>
             {/* Pole */}
-            <div className="w-[2px] h-[18px] bg-white/60 rounded-full mx-auto" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
+            <div className="mx-auto h-[18px] w-[2px] rounded-full bg-white/60" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
             {/* Flag with wind keyframes */}
             <motion.div
               className="absolute -top-[1px] left-[2px] origin-left"
@@ -281,10 +342,10 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
                   strokeWidth="0.3"
                   animate={{
                     d: [
-                      "M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z",
-                      "M 0 0 Q 4 -1 8 1 Q 11 2 14 0.5 L 13.5 5.5 Q 10 4 7 5.5 Q 3 7 0 5 Z",
-                      "M 0 0 Q 5 2 7 0.5 Q 10 -1 14 1.5 L 12.5 5 Q 9 6 7 4.5 Q 4 3 0 5 Z",
-                      "M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z",
+                      'M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z',
+                      'M 0 0 Q 4 -1 8 1 Q 11 2 14 0.5 L 13.5 5.5 Q 10 4 7 5.5 Q 3 7 0 5 Z',
+                      'M 0 0 Q 5 2 7 0.5 Q 10 -1 14 1.5 L 12.5 5 Q 9 6 7 4.5 Q 4 3 0 5 Z',
+                      'M 0 0 Q 5 1.5 7 0 Q 11 -0.5 14 1 L 13 5 Q 10 6.5 7 5 Q 4 3.5 0 5 Z',
                     ],
                   }}
                   transition={{
@@ -306,21 +367,19 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
           return (
             <motion.div
               key={p.id}
-              className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10"
+              className="absolute z-10 flex w-14 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
-              onClick={(e) => { e.stopPropagation(); setSelectedPlayer(isSelected ? null : p.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedPlayer(isSelected ? null : p.id);
+              }}
               initial={{ y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: idx * 0.04, duration: 0.3 }}
             >
-              <JerseyIcon
-                number={p.conv.number || '?'}
-                isGk={isGk}
-                isSelected={isSelected}
-                index={idx}
-              />
+              <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={isSelected} index={idx} />
               <span
-                className="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold text-white text-center leading-none max-w-[62px] truncate"
+                className="w-full truncate rounded px-1 py-0.5 text-center text-[8px] font-bold leading-none text-white"
                 style={{
                   background: 'rgba(0,0,0,0.55)',
                   backdropFilter: 'blur(4px)',
