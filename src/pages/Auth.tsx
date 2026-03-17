@@ -353,7 +353,7 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className={`w-full lg:w-1/2 flex ${registerMode ? 'items-start overflow-y-auto' : 'items-center overflow-hidden'} justify-center px-4 sm:px-12 bg-background relative h-[100dvh]`} style={{ paddingTop: 'max(env(safe-area-inset-top, 40px), 40px)', paddingBottom: 'max(env(safe-area-inset-bottom, 32px), 32px)' }}>
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-12 bg-background relative h-[100dvh] overflow-hidden" style={{ paddingTop: 'max(env(safe-area-inset-top, 40px), 40px)', paddingBottom: 'max(env(safe-area-inset-bottom, 32px), 32px)' }}>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
@@ -377,7 +377,7 @@ const Auth = () => {
           </div>
 
           {/* Form card */}
-          <div className={`bg-card rounded-2xl ${registerMode ? 'p-4' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
+          <div className={`bg-card rounded-2xl ${registerMode ? 'p-3' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
             {recoveryMode ? (
               recoverySuccess ? (
                 <div className="text-center py-6 space-y-4">
@@ -460,14 +460,14 @@ const Auth = () => {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleRegisterWithCode} className="space-y-3">
+              <form onSubmit={handleRegisterWithCode} className="space-y-2">
                 <button type="button" onClick={() => { setRegisterMode(false); setError(""); setCodeStatus('idle'); setValidatedInvitation(null); setInviteCode(""); }}
                   className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft size={16} /> Retour
                 </button>
                 {/* Code field with live validation */}
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Code d'invitation</label>
+                  <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Code d'invitation</label>
                   <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border px-3 ${
                     codeStatus === 'valid' ? 'border-green-500/50 ring-2 ring-green-500/20' :
                     codeStatus === 'invalid' || codeStatus === 'expired' || codeStatus === 'used' ? 'border-destructive/50 ring-2 ring-destructive/20' :
@@ -509,10 +509,10 @@ const Auth = () => {
                 </div>
 
                 {/* Rest of form - only enabled when code is valid */}
-                <fieldset disabled={codeStatus !== 'valid'} className={`space-y-3 transition-opacity duration-300 ${codeStatus !== 'valid' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                <fieldset disabled={codeStatus !== 'valid'} className={`space-y-2 transition-opacity duration-300 ${codeStatus !== 'valid' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Prénom</label>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Prénom</label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regfirst" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <User className={`shrink-0 transition-colors duration-200 ${focused === "regfirst" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="text" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} onFocus={() => setFocused("regfirst")} onBlur={() => setFocused(null)}
@@ -521,7 +521,7 @@ const Auth = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Nom</label>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Nom</label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "reglast" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <User className={`shrink-0 transition-colors duration-200 ${focused === "reglast" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="text" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} onFocus={() => setFocused("reglast")} onBlur={() => setFocused(null)}
@@ -531,7 +531,7 @@ const Auth = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Email</label>
+                    <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Email</label>
                     <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regemail" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                       <Mail className={`shrink-0 transition-colors duration-200 ${focused === "regemail" ? "text-primary" : "text-muted-foreground/50"}`} size={18} />
                       <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} onFocus={() => setFocused("regemail")} onBlur={() => setFocused(null)}
@@ -541,7 +541,7 @@ const Auth = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Mot de passe</label>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Mot de passe</label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regpw" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regpw" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} onFocus={() => setFocused("regpw")} onBlur={() => setFocused(null)}
@@ -550,7 +550,7 @@ const Auth = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Confirmer</label>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Confirmer</label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "regconfirm" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <Lock className={`shrink-0 transition-colors duration-200 ${focused === "regconfirm" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
                         <input type="password" value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} onFocus={() => setFocused("regconfirm")} onBlur={() => setFocused(null)}
@@ -562,8 +562,8 @@ const Auth = () => {
                   {/* Optional: Position & License */}
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                        Poste <span className="text-muted-foreground/40 normal-case text-[10px]">(optionnel)</span>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                        Poste <span className="text-muted-foreground/40 normal-case">(opt.)</span>
                       </label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 relative ${focused === "regpos" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <MapPin className={`shrink-0 transition-colors duration-200 ${focused === "regpos" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
@@ -579,8 +579,8 @@ const Auth = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                        Licence <span className="text-muted-foreground/40 normal-case text-[10px]">(optionnel)</span>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                        Licence <span className="text-muted-foreground/40 normal-case">(opt.)</span>
                       </label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "reglic" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <CalendarDays className={`shrink-0 transition-colors duration-200 ${focused === "reglic" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
@@ -597,11 +597,9 @@ const Auth = () => {
                   </div>
                 }
                 <button type="submit" disabled={regLoading || codeStatus !== 'valid'}
-                  className="group w-full bg-accent text-accent-foreground py-3 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  className="group w-full bg-accent text-accent-foreground py-2.5 rounded-xl font-semibold hover:bg-accent/90 hover:shadow-xl hover:shadow-accent/25 active:scale-[0.98] transition-all duration-300 shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                   {regLoading ? <><Loader2 className="animate-spin" size={20} /> Création...</> : <>Créer mon compte <ChevronRight size={18} /></>}
                 </button>
-                {/* Bottom spacer for safe area */}
-                <div className="h-4" />
               </form>
             )) :
 
