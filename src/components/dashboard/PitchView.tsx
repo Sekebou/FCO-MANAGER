@@ -245,11 +245,11 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
     })
     .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
-  if (convokedPlayers.length === 0) return null;
-
   const bounds = useMemo(() => getSafeBounds(pitchWidth), [pitchWidth]);
   const positioned = useMemo(() => getSpreadCoords(convokedPlayers, bounds), [convokedPlayers, bounds]);
   const selected = selectedPlayer ? positioned.find((p) => p.id === selectedPlayer) : null;
+
+  if (convokedPlayers.length === 0) return null;
 
   return (
     <div ref={ref}>
