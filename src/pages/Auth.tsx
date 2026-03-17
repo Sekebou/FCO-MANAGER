@@ -509,7 +509,7 @@ const Auth = () => {
                 </div>
 
                 {/* Rest of form - only enabled when code is valid */}
-                <fieldset disabled={codeStatus !== 'valid'} className={`space-y-3 transition-opacity duration-300 ${codeStatus !== 'valid' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+                <fieldset disabled={codeStatus !== 'valid'} className={`space-y-2 transition-opacity duration-300 ${codeStatus !== 'valid' ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Prénom</label>
