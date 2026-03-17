@@ -648,6 +648,7 @@ const Auth = () => {
               </form>
             }
           </div>
+          </div>
 
           {/* Bottom: Features + Status */}
           <div className="shrink-0 w-full">
