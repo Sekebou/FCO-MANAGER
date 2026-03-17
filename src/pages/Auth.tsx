@@ -366,18 +366,19 @@ const Auth = () => {
             <h1 className="text-lg font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
           </div>
 
-          {/* Header */}
-          <div className={`${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
-            <h2 className="text-xl font-bold text-foreground">
-              {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
-            </h2>
-            <p className="text-muted-foreground text-xs mt-0.5">
-              {recoveryMode ? "Choisissez votre nouveau mot de passe" : registerMode ? "Entrez votre code d'invitation pour vous inscrire" : "Application officielle du Football Club d'Oisemont"}
-            </p>
-          </div>
+          {/* Middle: Header + Form */}
+          <div className="w-full flex-1 flex flex-col justify-center min-h-0">
+            <div className={`${registerMode ? 'mb-1.5' : 'mb-3'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
+              <h2 className="text-lg font-bold text-foreground">
+                {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
+              </h2>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                {recoveryMode ? "Choisissez votre nouveau mot de passe" : registerMode ? "Entrez votre code d'invitation" : "Application officielle du Football Club d'Oisemont"}
+              </p>
+            </div>
 
-          {/* Form card */}
-          <div className={`bg-card rounded-2xl ${registerMode ? 'p-3' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
+            {/* Form card */}
+            <div className={`bg-card rounded-2xl ${registerMode ? 'p-3' : 'p-4'} sm:p-6 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
             {recoveryMode ? (
               recoverySuccess ? (
                 <div className="text-center py-6 space-y-4">
