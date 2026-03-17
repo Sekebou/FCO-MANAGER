@@ -12,9 +12,10 @@ interface Props {
   players: Player[];
 }
 
-// Symmetric margins: 18% each side → usable width 64% (18 to 82)
-const MARGIN = 18;
-const MAX_X = 100 - MARGIN; // 82
+// Field sidelines are at ~6% and ~94% of container width
+// Use 12% margin to keep jerseys just inside the lines
+const MARGIN = 12;
+const MAX_X = 100 - MARGIN; // 88
 
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
   'Attaquant':          { x: 50, y: 9 },
