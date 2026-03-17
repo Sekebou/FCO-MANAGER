@@ -579,8 +579,8 @@ const Auth = () => {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                        Licence <span className="text-muted-foreground/40 normal-case text-[10px]">(optionnel)</span>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                        Licence <span className="text-muted-foreground/40 normal-case">(opt.)</span>
                       </label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 ${focused === "reglic" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <CalendarDays className={`shrink-0 transition-colors duration-200 ${focused === "reglic" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
