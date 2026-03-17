@@ -467,7 +467,7 @@ const Auth = () => {
                 </button>
                 {/* Code field with live validation */}
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Code d'invitation</label>
+                  <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Code d'invitation</label>
                   <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border px-3 ${
                     codeStatus === 'valid' ? 'border-green-500/50 ring-2 ring-green-500/20' :
                     codeStatus === 'invalid' || codeStatus === 'expired' || codeStatus === 'used' ? 'border-destructive/50 ring-2 ring-destructive/20' :
