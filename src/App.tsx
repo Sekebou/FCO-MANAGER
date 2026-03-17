@@ -46,6 +46,7 @@ const App = () => {
             <Route path="/support" element={<Support />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/pitch-demo" element={<PitchDemo />} />
             <Route path="/auth" element={
               <AuthProvider>
                 <Auth />
