@@ -377,7 +377,7 @@ const Auth = () => {
           </div>
 
           {/* Form card */}
-          <div className={`bg-card rounded-2xl ${registerMode ? 'p-4' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
+          <div className={`bg-card rounded-2xl ${registerMode ? 'p-3' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
             {recoveryMode ? (
               recoverySuccess ? (
                 <div className="text-center py-6 space-y-4">
