@@ -13,16 +13,16 @@ interface Props {
 }
 
 const POSITION_COORDS: Record<string, { x: number; y: number }> = {
-  'Attaquant':          { x: 50, y: 12 },
-  'Ailier gauche':      { x: 20, y: 18 },
-  'Ailier droit':       { x: 80, y: 18 },
-  'Milieu offensif':    { x: 50, y: 32 },
-  'Milieu central':     { x: 50, y: 43 },
-  'Milieu défensif':    { x: 50, y: 53 },
-  'Latéral gauche':     { x: 18, y: 63 },
-  'Latéral droit':      { x: 82, y: 63 },
-  'Défenseur central':  { x: 50, y: 66 },
-  'Gardien':            { x: 50, y: 82 },
+  'Attaquant':          { x: 50, y: 10 },
+  'Ailier gauche':      { x: 16, y: 18 },
+  'Ailier droit':       { x: 84, y: 18 },
+  'Milieu offensif':    { x: 50, y: 33 },
+  'Milieu central':     { x: 50, y: 44 },
+  'Milieu défensif':    { x: 50, y: 54 },
+  'Latéral gauche':     { x: 14, y: 68 },
+  'Latéral droit':      { x: 86, y: 68 },
+  'Défenseur central':  { x: 50, y: 68 },
+  'Gardien':            { x: 50, y: 85 },
 };
 
 function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
