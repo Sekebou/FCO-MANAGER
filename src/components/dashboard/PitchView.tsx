@@ -78,10 +78,13 @@ const ATK_ORDER: Record<string, number> = {
   'Ailier droit': 2,
 };
 
-function distributeEvenly(count: number, left: number, right: number): number[] {
+function distributeEvenly(count: number, left: number, right: number, compact?: boolean): number[] {
   if (count === 1) return [50];
-
-  return Array.from({ length: count }, (_, i) => left + ((right - left) / (count - 1)) * i);
+  // For defense lines with 4+ players, use tighter bounds
+  const margin = compact ? (right - left) * 0.08 : 0;
+  const l = left + margin;
+  const r = right - margin;
+  return Array.from({ length: count }, (_, i) => l + ((r - l) / (count - 1)) * i);
 }
 
 function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[], bounds: SafeBounds) {
