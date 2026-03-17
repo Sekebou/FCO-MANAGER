@@ -21,7 +21,7 @@ const FIELD_LEFT_PCT = (4 / 68) * 100;
 const FIELD_RIGHT_PCT = (64 / 68) * 100;
 const PLAYER_SLOT_WIDTH = 48;
 const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
-const SAFE_BUFFER_PX = 6;
+const SAFE_BUFFER_PX = 10;
 const DEFAULT_SAFE_BOUNDS: SafeBounds = {
   left: 16,
   right: 84,
