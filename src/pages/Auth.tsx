@@ -353,31 +353,32 @@ const Auth = () => {
       </div>
 
       {/* Login side */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-12 bg-background relative h-[100dvh] overflow-hidden" style={{ paddingTop: 'max(env(safe-area-inset-top, 36px), 36px)', paddingBottom: 'max(env(safe-area-inset-bottom, 36px), 36px)' }}>
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-12 bg-background relative h-[100dvh] overflow-hidden" style={{ paddingTop: 'max(env(safe-area-inset-top, 20px), 20px)', paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)' }}>
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary/[0.03] rounded-full" />
         <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-primary/[0.02] rounded-full" />
 
-        <div className="w-full max-w-[420px] relative z-10">
-          {/* Mobile logo */}
-            <div className={`lg:hidden text-center ${registerMode ? 'mb-2' : 'mb-5'} animate-[fadeSlideUp_0.6s_ease-out_both]`}>
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-2 border border-primary/20 shadow-lg shadow-primary/10">
-                <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
-              </div>
-              <h1 className="text-xl font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
+        <div className="w-full max-w-[420px] relative z-10 flex flex-col items-center h-full justify-between">
+          {/* Top: Mobile logo */}
+          <div className={`lg:hidden text-center ${registerMode ? 'mb-1' : 'mb-3'} animate-[fadeSlideUp_0.6s_ease-out_both] shrink-0`}>
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-primary/10 rounded-xl mb-1.5 border border-primary/20 shadow-lg shadow-primary/10">
+              <img src={clubLogo} alt="FCO Logo" className="w-12 h-12 object-contain" />
             </div>
-
-          {/* Header */}
-          <div className={`${registerMode ? 'mb-2' : 'mb-4'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
-            <h2 className="text-xl font-bold text-foreground">
-              {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
-            </h2>
-            <p className="text-muted-foreground text-xs mt-0.5">
-              {recoveryMode ? "Choisissez votre nouveau mot de passe" : registerMode ? "Entrez votre code d'invitation pour vous inscrire" : "Application officielle du Football Club d'Oisemont"}
-            </p>
+            <h1 className="text-lg font-bold text-foreground uppercase tracking-wide">FCO Manager</h1>
           </div>
 
-          {/* Form card */}
-          <div className={`bg-card rounded-2xl ${registerMode ? 'p-3' : 'p-5'} sm:p-8 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
+          {/* Middle: Header + Form */}
+          <div className="w-full flex-1 flex flex-col justify-center min-h-0">
+            <div className={`${registerMode ? 'mb-1.5' : 'mb-3'} animate-[fadeSlideUp_0.6s_ease-out_0.05s_both]`}>
+              <h2 className="text-lg font-bold text-foreground">
+                {recoveryMode ? "Nouveau mot de passe" : registerMode ? "Créer un compte" : "Connexion"}
+              </h2>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                {recoveryMode ? "Choisissez votre nouveau mot de passe" : registerMode ? "Entrez votre code d'invitation" : "Application officielle du Football Club d'Oisemont"}
+              </p>
+            </div>
+
+            {/* Form card */}
+            <div className={`bg-card rounded-2xl ${registerMode ? 'p-3' : 'p-4'} sm:p-6 border border-border shadow-sm animate-[fadeSlideUp_0.6s_ease-out_0.1s_both]`}>
             {recoveryMode ? (
               recoverySuccess ? (
                 <div className="text-center py-6 space-y-4">
@@ -647,31 +648,35 @@ const Auth = () => {
               </form>
             }
           </div>
+          </div>
 
-          {/* Features description (mobile) - hidden in register mode */}
-          {!registerMode && (
-            <div className="lg:hidden mt-3 space-y-1.5 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
-              {[
-              { Icon: Users, text: "Gestion des effectifs et convocations" },
-              { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
-              { Icon: Calendar, text: "Calendrier et événements du club" }].
-              map((feat) =>
-              <div
-                key={feat.text}
-                className="items-center gap-2.5 py-2 rounded-lg bg-secondary/60 border border-border/50 flex flex-row px-[12px]">
-                  <feat.Icon size={14} className="text-primary/60 shrink-0" />
-                  <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{feat.text}</span>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Bottom: Features + Status */}
+          <div className="shrink-0 w-full">
+            {/* Features description (mobile) - hidden in register mode */}
+            {!registerMode && (
+              <div className="lg:hidden mt-2 space-y-1 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
+                {[
+                { Icon: Users, text: "Gestion des effectifs et convocations" },
+                { Icon: TrendingUp, text: "Résultats et classements en temps réel" },
+                { Icon: Calendar, text: "Calendrier et événements du club" }].
+                map((feat) =>
+                <div
+                  key={feat.text}
+                  className="items-center gap-2.5 py-1.5 rounded-lg bg-secondary/60 border border-border/50 flex flex-row px-3">
+                    <feat.Icon size={13} className="text-primary/60 shrink-0" />
+                    <span className="text-[11px] font-medium text-muted-foreground whitespace-nowrap">{feat.text}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Club name + Status */}
-          <div className="mt-4 pb-4 flex flex-col items-center gap-2 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
-            <p className="lg:hidden text-[10px] text-muted-foreground/50 font-medium">Football Club d'Oisemont</p>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-success/20 bg-success/5">
-              <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-              <p className="text-[10px] text-success/70 font-medium">Connecté au serveur local </p>
+            {/* Club name + Status */}
+            <div className="mt-2 flex flex-col items-center gap-1.5 animate-[fadeSlideUp_0.6s_ease-out_0.3s_both]">
+              <p className="lg:hidden text-[10px] text-muted-foreground/50 font-medium">Football Club d'Oisemont</p>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-success/20 bg-success/5">
+                <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
+                <p className="text-[10px] text-success/70 font-medium">Connecté au serveur local</p>
+              </div>
             </div>
           </div>
         </div>
