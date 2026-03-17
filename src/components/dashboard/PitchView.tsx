@@ -44,7 +44,7 @@ function getSafeBounds(containerWidth: number): SafeBounds {
 }
 
 function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
-  const cx = 48.5; // visual center correction (field renders slightly right)
+  const cx = 50 + GLOBAL_X_OFFSET;
   return {
     'Attaquant': { x: cx, y: 9 },
     'Ailier gauche': { x: bounds.left, y: 15 },
