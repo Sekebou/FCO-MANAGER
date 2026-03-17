@@ -605,6 +605,7 @@ const Dashboard = () => {
         writeCache('champs', freshChamps);
         writeCache('matches', freshMatches);
         writeCache('albums', freshAlbums);
+        writeCache('matchSheets', freshMatchSheets);
 
         setLoading(false);
       } catch (err: any) {
