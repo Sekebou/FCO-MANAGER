@@ -1,55 +1,43 @@
 
-Objectif: corriger proprement la composition sur le terrain pour que les joueurs restent visuellement à l’intérieur des lignes, en particulier le n°2 à droite qui touche la ligne sur ta capture.
 
-Constat après analyse de l’image
-- Le problème principal est bien visible sur le côté droit: le n°2 est trop collé à la ligne, presque dessus.
-- Le bloc défensif est globalement trop large: les latéraux sont poussés trop près des bords.
-- Le calcul actuel sous-estime l’encombrement réel d’un joueur à l’écran:
-  - il tient compte d’une largeur logique,
-  - mais visuellement il faut aussi absorber le maillot, l’ombre, l’étiquette du nom, et un peu de marge de sécurité.
-- Résultat: mathématiquement “ça passe”, visuellement non.
+## Plan de corrections
 
-Plan d’implémentation
-1. Recalibrer la zone sûre horizontale dans `src/components/dashboard/PitchView.tsx`
-- Augmenter la marge de sécurité utilisée par `getSafeBounds`.
-- Ne plus se baser sur une largeur trop optimiste.
-- Ajouter un petit “buffer” fixe pour que le premier et le dernier joueur restent clairement à l’intérieur des lignes, pas juste à ras.
+### Problèmes identifiés
 
-2. Réduire légèrement l’empreinte visuelle des joueurs
-- Diminuer un peu la taille du conteneur joueur.
-- Réduire légèrement le maillot.
-- Réduire un peu la largeur/hauteur du badge nom si nécessaire.
-- Garder la lisibilité, mais prioriser un rendu propre sur mobile.
+1. **Logos non persistés** : La table `events` n'a pas de colonnes `home_logo`/`away_logo`. Les logos sont dans le state local mais jamais insérés en DB, donc perdus au rechargement.
+2. **Heure non auto-remplie** dans le sélecteur natif (le `time` est mis dans `formData.time` mais le `NativeTimePicker` l'affiche bien — à vérifier si c'est un problème d'affichage).
+3. **Après sélection d'un match FFF**, tout reste visible (équipe, compétition, liste) — il faut cacher la section FFF et montrer la date/heure.
+4. **LocationAutocomplete toujours visible** pour les matchs — il faut le cacher par défaut et ne le montrer que si le stade n'est pas trouvé via FFF ou via un bouton admin+.
+5. **Icône "en attente"** manquante à côté des compteurs ✓ et ✗ sur les cartes liste.
+6. **Texte "Appuie pour voir les détails"** à améliorer + ajouter un petit espace.
+7. **Animations** manquantes sur les boutons Présent/Absent de la carte liste.
 
-3. Rendre la ligne défensive plus compacte que les autres
-- Appliquer une distribution un peu plus resserrée pour les lignes à 4 ou 5 joueurs, surtout en défense.
-- Conserver la symétrie gauche/droite.
-- Éviter que les latéraux soient alignés au bord exact du terrain.
+### Modifications
 
-4. Vérifier le rendu sur le cas réel montré par ta capture
-- Contrôler spécifiquement le n°2 à droite et le n°3 à gauche.
-- Vérifier aussi les ailiers du haut pour éviter qu’ils reviennent trop près des bords après l’ajustement.
-- S’assurer que les noms ne dépassent pas non plus.
+#### 1. Migration DB : ajouter `home_logo` et `away_logo` à `events`
+```sql
+ALTER TABLE public.events ADD COLUMN home_logo text;
+ALTER TABLE public.events ADD COLUMN away_logo text;
+```
 
-Résultat attendu
-- Aucun maillot ne touche ou ne dépasse les lignes latérales.
-- Le n°2 et le n°3 restent bien à l’intérieur avec un petit espace visuel propre.
-- La défense paraît équilibrée et plus naturelle.
-- Le terrain garde le style actuel, mais avec une composition plus compacte et plus propre.
+#### 2. `src/pages/Dashboard.tsx`
+- Dans `addEvent` (ligne 706-713) : inclure `home_logo: eventData.homeLogo`, `away_logo: eventData.awayLogo` dans l'insert
+- Dans le fetch des events : mapper `home_logo`/`away_logo` vers `homeLogo`/`awayLogo` dans le type Event
 
-Détails techniques
-- Fichier concerné: `src/components/dashboard/PitchView.tsx`
-- Le problème vient surtout de:
-  - `PLAYER_SLOT_WIDTH` / `PLAYER_SLOT_HALF`
-  - `getSafeBounds(containerWidth)`
-  - `distributeEvenly(...)`
-  - la largeur fixe du wrapper joueur (`w-14`) et la taille du `JerseyIcon`
-- Je garderai la logique dynamique basée sur la largeur du terrain, mais avec:
-  - une empreinte visuelle plus réaliste,
-  - une marge de sécurité supplémentaire,
-  - une distribution plus compacte pour la ligne défensive.
+#### 3. `src/components/modals/AddEventForm.tsx`
+- **`handleFFFMatchSelect`** : après sélection, mettre un state `fffMatchSelected = true` qui masque toute la section FFF (équipes, compétitions, matchs) pour montrer uniquement titre/date/heure/lieu pré-remplis
+- Ajouter un bouton "Modifier le match" pour ré-ouvrir la sélection FFF si besoin
+- **LocationAutocomplete pour match** : masquer par défaut. Afficher uniquement si `!formData.location` (stade non trouvé via FFF) OU si admin+ clique sur un bouton "Modifier le stade"
+- S'assurer que `formData.time` est bien rempli (déjà fait dans `handleFFFMatchSelect` ligne 119)
 
-Critères de validation
-- Sur la preview mobile, les joueurs extrêmes restent entièrement à l’intérieur.
-- Les lignes latérales restent visibles avec un espace entre la ligne et les joueurs.
-- Le rendu reste centré, symétrique et lisible.
+#### 4. `src/components/dashboard/PresencesTab.tsx`
+- **Compteur "en attente"** : ajouter une icône Clock avec le count des joueurs n'ayant pas répondu à côté des ✓ et ✗ sur les cartes liste
+- **Texte hint** : changer en "Appuyez pour voir plus de détails sur l'événement" avec un `mt-1` pour l'espacement
+- **Animations Présent/Absent** : ajouter `motion.button` avec `whileTap={{ scale: 0.9 }}` et `AnimatePresence` pour les boutons de la carte liste (comme dans la vue détail)
+
+### Fichiers modifiés
+1. Migration SQL (nouvelle)
+2. `src/pages/Dashboard.tsx`
+3. `src/components/modals/AddEventForm.tsx`
+4. `src/components/dashboard/PresencesTab.tsx`
+

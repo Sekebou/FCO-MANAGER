@@ -19,11 +19,12 @@ type SafeBounds = {
 
 const FIELD_LEFT_PCT = (4 / 68) * 100;
 const FIELD_RIGHT_PCT = (64 / 68) * 100;
-const PLAYER_SLOT_WIDTH = 56;
+const PLAYER_SLOT_WIDTH = 48;
 const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
+const SAFE_BUFFER_PX = 6;
 const DEFAULT_SAFE_BOUNDS: SafeBounds = {
-  left: 13.5,
-  right: 86.5,
+  left: 16,
+  right: 84,
 };
 
 function getSafeBounds(containerWidth: number): SafeBounds {
@@ -31,12 +32,12 @@ function getSafeBounds(containerWidth: number): SafeBounds {
 
   const fieldLeftPx = (containerWidth * FIELD_LEFT_PCT) / 100;
   const fieldRightPx = (containerWidth * FIELD_RIGHT_PCT) / 100;
-  const safeLeft = ((fieldLeftPx + PLAYER_SLOT_HALF) / containerWidth) * 100;
-  const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF) / containerWidth) * 100;
+  const safeLeft = ((fieldLeftPx + PLAYER_SLOT_HALF + SAFE_BUFFER_PX) / containerWidth) * 100;
+  const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF - SAFE_BUFFER_PX) / containerWidth) * 100;
 
   return {
-    left: Math.max(FIELD_LEFT_PCT + 1, safeLeft),
-    right: Math.min(FIELD_RIGHT_PCT - 1, safeRight),
+    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft),
+    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight),
   };
 }
 
@@ -77,10 +78,13 @@ const ATK_ORDER: Record<string, number> = {
   'Ailier droit': 2,
 };
 
-function distributeEvenly(count: number, left: number, right: number): number[] {
+function distributeEvenly(count: number, left: number, right: number, compact?: boolean): number[] {
   if (count === 1) return [50];
-
-  return Array.from({ length: count }, (_, i) => left + ((right - left) / (count - 1)) * i);
+  // For defense lines with 4+ players, use tighter bounds
+  const margin = compact ? (right - left) * 0.08 : 0;
+  const l = left + margin;
+  const r = right - margin;
+  return Array.from({ length: count }, (_, i) => l + ((r - l) / (count - 1)) * i);
 }
 
 function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[], bounds: SafeBounds) {
@@ -93,7 +97,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     .sort((a, b) => (DEF_ORDER[a.conv.position || ''] ?? 2) - (DEF_ORDER[b.conv.position || ''] ?? 2));
 
   if (defenseLine.length >= 1) {
-    const xs = distributeEvenly(defenseLine.length, bounds.left, bounds.right);
+    const xs = distributeEvenly(defenseLine.length, bounds.left, bounds.right, defenseLine.length >= 4);
     defenseLine.forEach((p, i) => {
       result.push({ ...p, x: xs[i], y: 68 });
       handledIds.add(p.id);
@@ -150,8 +154,8 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
   return (
     <motion.svg
       viewBox="0 0 40 44"
-      width="38"
-      height="42"
+      width="34"
+      height="38"
       className="filter drop-shadow-lg"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: isSelected ? 1.15 : 1, opacity: 1 }}
@@ -367,7 +371,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players }, 
           return (
             <motion.div
               key={p.id}
-              className="absolute z-10 flex w-14 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
+              className="absolute z-10 flex w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
               onClick={(e) => {
                 e.stopPropagation();
