@@ -38,8 +38,8 @@ function getSafeBounds(containerWidth: number): SafeBounds {
   const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF - SAFE_BUFFER_PX) / containerWidth) * 100;
 
   return {
-    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft),
-    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight),
+    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft + GLOBAL_X_OFFSET),
+    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight + GLOBAL_X_OFFSET),
   };
 }
 
