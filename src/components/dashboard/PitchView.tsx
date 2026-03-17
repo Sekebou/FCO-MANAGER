@@ -19,11 +19,12 @@ type SafeBounds = {
 
 const FIELD_LEFT_PCT = (4 / 68) * 100;
 const FIELD_RIGHT_PCT = (64 / 68) * 100;
-const PLAYER_SLOT_WIDTH = 56;
+const PLAYER_SLOT_WIDTH = 48;
 const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
+const SAFE_BUFFER_PX = 6;
 const DEFAULT_SAFE_BOUNDS: SafeBounds = {
-  left: 13.5,
-  right: 86.5,
+  left: 16,
+  right: 84,
 };
 
 function getSafeBounds(containerWidth: number): SafeBounds {
@@ -31,12 +32,12 @@ function getSafeBounds(containerWidth: number): SafeBounds {
 
   const fieldLeftPx = (containerWidth * FIELD_LEFT_PCT) / 100;
   const fieldRightPx = (containerWidth * FIELD_RIGHT_PCT) / 100;
-  const safeLeft = ((fieldLeftPx + PLAYER_SLOT_HALF) / containerWidth) * 100;
-  const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF) / containerWidth) * 100;
+  const safeLeft = ((fieldLeftPx + PLAYER_SLOT_HALF + SAFE_BUFFER_PX) / containerWidth) * 100;
+  const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF - SAFE_BUFFER_PX) / containerWidth) * 100;
 
   return {
-    left: Math.max(FIELD_LEFT_PCT + 1, safeLeft),
-    right: Math.min(FIELD_RIGHT_PCT - 1, safeRight),
+    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft),
+    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight),
   };
 }
 
