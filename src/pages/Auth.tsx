@@ -562,8 +562,8 @@ const Auth = () => {
                   {/* Optional: Position & License */}
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                        Poste <span className="text-muted-foreground/40 normal-case text-[10px]">(optionnel)</span>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                        Poste <span className="text-muted-foreground/40 normal-case">(opt.)</span>
                       </label>
                       <div className={`flex items-center gap-2 rounded-xl transition-all duration-300 bg-secondary border border-border px-3 relative ${focused === "regpos" ? "ring-2 ring-primary/30 shadow-md shadow-primary/5 border-primary/50" : ""}`}>
                         <MapPin className={`shrink-0 transition-colors duration-200 ${focused === "regpos" ? "text-primary" : "text-muted-foreground/50"}`} size={16} />
