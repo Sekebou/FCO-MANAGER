@@ -385,27 +385,73 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                       Discipline ({spDiscipline}%)
                       <span className="flex-1 h-px bg-border/50" />
                     </h4>
-                    {spCards.length === 0 ? (
-                      <div className="flex items-center gap-2 py-2.5 px-3 bg-secondary/30 rounded-xl border border-border/40">
-                        <Check size={14} className="text-accent" />
-                        <p className="text-xs text-muted-foreground font-medium">Aucun carton — Discipline exemplaire</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {spCards.map(card => (
-                          <div key={card.id} className={`flex items-center gap-3 p-2.5 rounded-xl border ${card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'}`}>
-                            <AlertTriangle size={14} className={card.type === 'yellow' ? 'text-warning' : 'text-destructive'} />
-                            <div className="flex-1 min-w-0">
-                              <span className={`text-[10px] font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
-                                {card.type === 'yellow' ? 'JAUNE' : 'ROUGE'}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground ml-2">{new Date(card.date).toLocaleDateString('fr-FR')}</span>
-                              <p className="text-[10px] text-foreground truncate">{card.reason}</p>
+                    {(() => {
+                      const suspension = getPlayerSuspensionStatus(sp.id);
+                      return (
+                        <>
+                          {/* Card counts summary */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/20">
+                              <div className="w-3.5 h-4.5 rounded-sm bg-warning" />
+                              <span className="text-xs font-bold text-warning">{suspension.yellowCount}</span>
                             </div>
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/20">
+                              <div className="w-3.5 h-4.5 rounded-sm bg-destructive" />
+                              <span className="text-xs font-bold text-destructive">{suspension.redCount}</span>
+                            </div>
+                            {suspension.isSuspended && (
+                              <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-destructive/15 border border-destructive/30 ml-auto">
+                                <Ban size={12} className="text-destructive" />
+                                <span className="text-[10px] font-bold text-destructive uppercase">Suspendu</span>
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+
+                          {spCards.length === 0 ? (
+                            <div className="flex items-center gap-2 py-2.5 px-3 bg-secondary/30 rounded-xl border border-border/40">
+                              <Check size={14} className="text-accent" />
+                              <p className="text-xs text-muted-foreground font-medium">Aucun carton — Discipline exemplaire</p>
+                            </div>
+                          ) : (
+                            <>
+                              {/* Show only last 3 cards */}
+                              <div className="space-y-1.5">
+                                {spCards.slice(0, 3).map(card => (
+                                  <div key={card.id} className={`flex items-center gap-3 p-2.5 rounded-xl border ${card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'}`}>
+                                    <AlertTriangle size={14} className={card.type === 'yellow' ? 'text-warning' : 'text-destructive'} />
+                                    <div className="flex-1 min-w-0">
+                                      <span className={`text-[10px] font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
+                                        {card.type === 'yellow' ? 'JAUNE' : 'ROUGE'}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground ml-2">{new Date(card.date).toLocaleDateString('fr-FR')}</span>
+                                      <p className="text-[10px] text-foreground truncate">{card.reason}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              {spCards.length > 3 && (
+                                <button
+                                  onClick={() => setCardHistoryPlayerId(sp.id)}
+                                  className="w-full mt-2 py-2 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1"
+                                >
+                                  <Eye size={13} />
+                                  Voir tous les cartons ({spCards.length})
+                                </button>
+                              )}
+                              {spCards.length <= 3 && spCards.length > 0 && (
+                                <button
+                                  onClick={() => setCardHistoryPlayerId(sp.id)}
+                                  className="w-full mt-2 py-2 text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                                >
+                                  <Eye size={13} />
+                                  Historique complet
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </>
               );
