@@ -8,6 +8,7 @@ import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, Ch
 import { exportMatchSheet } from '@/lib/pdfExport';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
+import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
 
 interface AppUser {
   uid: string;
