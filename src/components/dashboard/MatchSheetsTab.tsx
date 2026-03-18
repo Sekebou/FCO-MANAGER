@@ -30,6 +30,7 @@ interface Props {
   players: Player[];
   isManager?: boolean;
   championships?: Championship[];
+  teamLogoMap?: Record<string, string>;
 }
 
 const teamColors: Record<string, string> = {
