@@ -209,10 +209,14 @@ export async function exportPlayerCard(
   
   // Cards
   const playerCards = cards.filter(c => c.playerId === player.id);
+  const yellowCount = playerCards.filter(c => c.type === 'yellow').length;
+  const redCount = playerCards.filter(c => c.type === 'red').length;
+  const isSuspended = yellowCount >= 3 || redCount > 0;
+  
   doc.setFontSize(11);
   doc.setTextColor(...PRIMARY_COLOR);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Cartons (${playerCards.length})`, 14, y);
+  doc.text(`Cartons (${playerCards.length}) — ${yellowCount} jaune${yellowCount > 1 ? 's' : ''}, ${redCount} rouge${redCount > 1 ? 's' : ''}${isSuspended ? ' — SUSPENDU' : ''}`, 14, y);
   y += 2;
   
   if (playerCards.length > 0) {
