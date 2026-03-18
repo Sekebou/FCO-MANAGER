@@ -807,47 +807,166 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                       </button>
                     )}
                   </div>
-                  {playerCards.length === 0 ? (
-                    <div className="flex items-center gap-2 py-2.5 px-3 bg-secondary/50 rounded-xl">
-                      <Check size={14} className="text-green-500" />
-                      <p className="text-xs text-muted-foreground font-medium">Aucun carton</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {playerCards.map(card => (
-                        <div key={card.id} className={`flex items-center gap-3 p-3 rounded-xl border ${card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'}`}>
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${card.type === 'yellow' ? 'bg-warning/20' : 'bg-destructive/20'}`}>
-                            <AlertTriangle size={14} className={card.type === 'yellow' ? 'text-warning' : 'text-destructive'} />
+                  {(() => {
+                    const suspension = getPlayerSuspensionStatus(player.id);
+                    return (
+                      <>
+                        {/* Card counts + suspension badge */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/20">
+                            <div className="w-3.5 h-4.5 rounded-sm bg-warning" />
+                            <span className="text-xs font-bold text-warning">{suspension.yellowCount}</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
-                                {card.type === 'yellow' ? 'JAUNE' : 'ROUGE'}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <Calendar size={10} /> {new Date(card.date).toLocaleDateString('fr-FR')}
-                              </span>
+                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/20">
+                            <div className="w-3.5 h-4.5 rounded-sm bg-destructive" />
+                            <span className="text-xs font-bold text-destructive">{suspension.redCount}</span>
+                          </div>
+                          {suspension.isSuspended && (
+                            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-destructive/15 border border-destructive/30 ml-auto">
+                              <Ban size={12} className="text-destructive" />
+                              <span className="text-[10px] font-bold text-destructive uppercase">Suspendu</span>
                             </div>
-                            <p className="text-xs text-foreground truncate mt-0.5">{card.reason}</p>
-                            {card.suspendedUntil && (
-                              <p className="text-[10px] text-destructive font-medium mt-0.5">Suspendu → {new Date(card.suspendedUntil).toLocaleDateString('fr-FR')}</p>
-                            )}
-                          </div>
-                          {canManage() && (
-                            <button onClick={() => deleteCard(card.id)} className="w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all shrink-0">
-                              <Trash2 size={13} className="text-destructive/60" />
-                            </button>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
+
+                        {playerCards.length === 0 ? (
+                          <div className="flex items-center gap-2 py-2.5 px-3 bg-secondary/50 rounded-xl">
+                            <Check size={14} className="text-accent" />
+                            <p className="text-xs text-muted-foreground font-medium">Aucun carton</p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Show last 2 cards inline */}
+                            <div className="space-y-2">
+                              {playerCards.slice(0, 2).map(card => (
+                                <div key={card.id} className={`flex items-center gap-3 p-3 rounded-xl border ${card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'}`}>
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${card.type === 'yellow' ? 'bg-warning/20' : 'bg-destructive/20'}`}>
+                                    <AlertTriangle size={14} className={card.type === 'yellow' ? 'text-warning' : 'text-destructive'} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className={`text-xs font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
+                                        {card.type === 'yellow' ? 'JAUNE' : 'ROUGE'}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                        <Calendar size={10} /> {new Date(card.date).toLocaleDateString('fr-FR')}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-foreground truncate mt-0.5">{card.reason}</p>
+                                  </div>
+                                  {canManage() && (
+                                    <button onClick={() => deleteCard(card.id)} className="w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all shrink-0">
+                                      <Trash2 size={13} className="text-destructive/60" />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            {/* View all button */}
+                            <button
+                              onClick={() => setCardHistoryPlayerId(player.id)}
+                              className="w-full mt-2 py-2 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors flex items-center justify-center gap-1"
+                            >
+                              <Eye size={13} />
+                              {playerCards.length > 2 ? `Voir tous les cartons (${playerCards.length})` : 'Historique complet'}
+                            </button>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* ── Card History Modal ── */}
+      <Dialog open={!!cardHistoryPlayerId} onOpenChange={(open) => { if (!open) setCardHistoryPlayerId(null); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl border-border/60">
+          {(() => {
+            if (!cardHistoryPlayerId) return null;
+            const historyPlayer = players.find(p => p.id === cardHistoryPlayerId);
+            if (!historyPlayer) return null;
+            const allPlayerCards = cards.filter(c => c.playerId === cardHistoryPlayerId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            const suspension = getPlayerSuspensionStatus(cardHistoryPlayerId);
+
+            return (
+              <>
+                <div className="p-4 pb-3 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur-md z-10">
+                  <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Shield size={16} className="text-accent" />
+                    Cartons — {historyPlayer.name}
+                  </DialogTitle>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/20">
+                      <div className="w-3.5 h-4.5 rounded-sm bg-warning" />
+                      <span className="text-xs font-bold text-warning">{suspension.yellowCount} jaune{suspension.yellowCount > 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/20">
+                      <div className="w-3.5 h-4.5 rounded-sm bg-destructive" />
+                      <span className="text-xs font-bold text-destructive">{suspension.redCount} rouge{suspension.redCount > 1 ? 's' : ''}</span>
+                    </div>
+                    {suspension.isSuspended && (
+                      <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-destructive/15 border border-destructive/30 ml-auto">
+                        <Ban size={12} className="text-destructive" />
+                        <span className="text-[10px] font-bold text-destructive uppercase">Suspendu</span>
+                      </div>
+                    )}
+                  </div>
+                  {suspension.isSuspended && (
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      {suspension.yellowCount >= 3 ? `Suspension automatique : ${suspension.yellowCount} cartons jaunes cumulés` : ''}
+                      {suspension.redCount > 0 ? `${suspension.yellowCount >= 3 ? ' + ' : ''}Carton rouge reçu` : ''}
+                    </p>
+                  )}
+                </div>
+
+                <div className="p-4 space-y-2">
+                  {allPlayerCards.length === 0 ? (
+                    <div className="flex items-center gap-2 py-4 px-3 bg-secondary/30 rounded-xl">
+                      <Check size={14} className="text-accent" />
+                      <p className="text-xs text-muted-foreground font-medium">Aucun carton</p>
+                    </div>
+                  ) : (
+                    allPlayerCards.map((card, idx) => (
+                      <div key={card.id} className={`flex items-start gap-3 p-3 rounded-xl border ${card.type === 'yellow' ? 'bg-warning/5 border-warning/20' : 'bg-destructive/5 border-destructive/20'}`}>
+                        <div className="flex flex-col items-center gap-1 shrink-0">
+                          <div className={`w-8 h-10 rounded-md flex items-center justify-center ${card.type === 'yellow' ? 'bg-warning' : 'bg-destructive'}`}>
+                            <span className="text-[10px] font-black text-white">#{allPlayerCards.length - idx}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-bold ${card.type === 'yellow' ? 'text-warning' : 'text-destructive'}`}>
+                              {card.type === 'yellow' ? 'JAUNE' : 'ROUGE'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Calendar size={10} /> {new Date(card.date).toLocaleDateString('fr-FR')}
+                            </span>
+                          </div>
+                          <p className="text-xs text-foreground mt-1">{card.reason}</p>
+                          {card.suspendedUntil && (
+                            <p className="text-[10px] text-destructive font-medium mt-1 flex items-center gap-1">
+                              <Ban size={10} /> Suspendu jusqu'au {new Date(card.suspendedUntil).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
+                        </div>
+                        {canManage() && (
+                          <button onClick={() => deleteCard(card.id)} className="w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all shrink-0 mt-1">
+                            <Trash2 size={13} className="text-destructive/60" />
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
