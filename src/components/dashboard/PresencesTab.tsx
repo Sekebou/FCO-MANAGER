@@ -45,6 +45,8 @@ const CONVOCATION_STATUSES = [
 const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onPublishAndNotifyConvocations, onSendReminder, onResetHeader, initialSelectedEventId }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialSelectedEventId || null);
   const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveSearch, setArchiveSearch] = useState('');
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
@@ -67,8 +69,32 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   }, [initialSelectedEventId]);
 
   const now = new Date();
+  const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
+  // Helper: check if a training event is terminated (past)
+  const isTrainingTerminated = (event: Event): boolean => {
+    if (event.type !== 'training') return false;
+    if (event.date > todayStr) return false;
+    if (event.date < todayStr) return true;
+    if (!event.time) {
+      const duration = (event.duration || 90) * 60 * 1000;
+      const midnightStart = new Date(now);
+      midnightStart.setHours(0, 0, 0, 0);
+      return now.getTime() > midnightStart.getTime() + duration;
+    }
+    const [h, m] = event.time.replace('H', ':').replace('h', ':').split(':').map(Number);
+    const eventStart = new Date(now);
+    eventStart.setHours(h || 0, m || 0, 0, 0);
+    const duration = (event.duration || 90) * 60 * 1000;
+    return now.getTime() > eventStart.getTime() + duration;
+  };
+
+  const isManager = canManage();
+
+  // Active events: exclude terminated trainings
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const upcomingEvents = events
+  const activeEvents = events
+    .filter(e => !isTrainingTerminated(e))
     .filter(e => new Date(e.date) >= sevenDaysAgo)
     .sort((a, b) => {
       const dateA = new Date(a.date);
@@ -77,6 +103,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       if (b.time) { const [h, m] = b.time.split(':').map(Number); dateB.setHours(h || 0, m || 0); }
       return dateA.getTime() - dateB.getTime();
     });
+
+  // Archived trainings (terminated)
+  const archivedTrainings = events
+    .filter(e => isTrainingTerminated(e))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // newest first
+
+  const upcomingEvents = showArchived ? archivedTrainings : activeEvents;
 
   // Helper: resolve logos for a match event
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
