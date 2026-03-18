@@ -69,21 +69,21 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const now = new Date();
   const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
-  // Helper: check if an event is terminated (past)
+  // Helper: check if an event is terminated (10 min after start time)
   const isEventTerminated = (event: Event): boolean => {
     if (event.date > todayStr) return false;
     if (event.date < todayStr) return true;
+    const ARCHIVE_DELAY = 10 * 60 * 1000; // 10 minutes
     if (!event.time) {
-      const duration = (event.duration || 90) * 60 * 1000;
+      // No time set: archive 10 min after midnight
       const midnightStart = new Date(now);
       midnightStart.setHours(0, 0, 0, 0);
-      return now.getTime() > midnightStart.getTime() + duration;
+      return now.getTime() > midnightStart.getTime() + ARCHIVE_DELAY;
     }
     const [h, m] = event.time.replace('H', ':').replace('h', ':').split(':').map(Number);
     const eventStart = new Date(now);
     eventStart.setHours(h || 0, m || 0, 0, 0);
-    const duration = (event.duration || 90) * 60 * 1000;
-    return now.getTime() > eventStart.getTime() + duration;
+    return now.getTime() > eventStart.getTime() + ARCHIVE_DELAY;
   };
 
   const isManager = canManage();
