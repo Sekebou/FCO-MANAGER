@@ -36,8 +36,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   today.setHours(0, 0, 0, 0);
   const todayStr = now.toLocaleDateString('en-CA');
 
-  const isTrainingTerminated = (event: Event): boolean => {
-    if (event.type !== 'training') return false;
+  const isEventTerminated = (event: Event): boolean => {
     if (event.date > todayStr) return false;
     if (event.date < todayStr) return true;
     if (!event.time) {
@@ -55,7 +54,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
 
   const upcomingEvents = useMemo(() =>
     events
-      .filter(e => new Date(e.date) >= today && !isTrainingTerminated(e))
+      .filter(e => new Date(e.date) >= today && !isEventTerminated(e))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [events]
   );
