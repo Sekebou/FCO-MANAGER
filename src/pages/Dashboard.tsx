@@ -681,6 +681,8 @@ const Dashboard = () => {
     // === Web/Android: Supabase Realtime subscriptions ===
     const channel = supabase.channel('dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
+        // Skip realtime refetch if we just did an optimistic stat update (avoid race condition)
+        if (Date.now() - statsUpdateLock.current < 3000) return;
         supabase.from('players').select('*').then(({ data }) => data && setPlayers(sortPlayersStable(data.map(mapPlayer))));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
@@ -1133,13 +1135,27 @@ const Dashboard = () => {
     });
   };
 
+  // Guard to prevent realtime from overwriting optimistic stat updates
+  const statsUpdateLock = React.useRef<number>(0);
+
   const updatePlayerStats = async (playerId: string, field: string, value: string) => {
     if (!canManage()) return;
-    const numVal = parseInt(value) || 0;
+    const numVal = parseInt(value);
+    // Don't save NaN (empty field while typing)
+    if (isNaN(numVal)) return;
+    const safeVal = Math.max(0, numVal);
+    // Lock realtime refetch for 3 seconds to avoid overwriting optimistic update
+    statsUpdateLock.current = Date.now();
     // Optimistic update (keep stable sort)
-    setPlayers(prev => sortPlayersStable(prev.map(p => p.id === playerId ? { ...p, [field]: numVal } : p)));
-    const { error } = await supabase.from('players').update({ [field]: numVal }).eq('id', playerId);
-    if (error) console.error('Error updating stats:', error);
+    setPlayers(prev => sortPlayersStable(prev.map(p => p.id === playerId ? { ...p, [field]: safeVal } : p)));
+    const { error } = await supabase.from('players').update({ [field]: safeVal }).eq('id', playerId);
+    if (error) {
+      console.error('Error updating stats:', error);
+      toast.error('Erreur lors de la sauvegarde des stats');
+      // Revert: refetch from DB
+      const { data } = await supabase.from('players').select('*');
+      if (data) setPlayers(sortPlayersStable(data.map(mapPlayer)));
+    }
   };
 
   const getPlayerCards = (playerId: string) => cards.filter(c => c.playerId === playerId);
