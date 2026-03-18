@@ -1040,19 +1040,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     </div>
                   )}
 
-                  {!isPast && (
+                  {!isPast && !isArchived && (
                     <div className="px-3.5 pb-1.5 mt-1">
                       <p className="text-[9px] text-muted-foreground/50 text-center">Appuyez pour voir plus de détails sur l'événement</p>
                     </div>
                   )}
-                  {isPast && (
+                  {(isPast || isArchived) && (
                     <div className="mx-3.5 mb-2 -mt-0.5">
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Clock size={8} /> Terminé</span>
                     </div>
                   )}
                 </button>
 
-                {!isPast && currentUser?.playerId && (() => {
+                {!isPast && !isArchived && currentUser?.playerId && (() => {
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
                     <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
