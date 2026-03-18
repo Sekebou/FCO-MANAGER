@@ -135,9 +135,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
             const hasVs = resolvedHome && resolvedAway;
 
-            // Resolve logos: match sheet → championship lookup → event
-            const homeLogo = ms.homeLogo || (resolvedHome ? getChampLogo(resolvedHome) : null);
-            const awayLogo = ms.awayLogo || (resolvedAway ? getChampLogo(resolvedAway) : null);
+            // Resolve logos: match sheet → event logo map → championship lookup
+            const homeLogo = ms.homeLogo || (resolvedHome ? getTeamLogo(resolvedHome) : null);
+            const awayLogo = ms.awayLogo || (resolvedAway ? getTeamLogo(resolvedAway) : null);
 
             const convokedPlayers = Object.entries(ms.convocations)
               .filter(([, c]) => c.status === 'convoque')
