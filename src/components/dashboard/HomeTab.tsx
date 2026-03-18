@@ -63,13 +63,8 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
 
   const initials = currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
-  // Managers go to matchsheets, players go to presences
   const handleMatchClick = (matchId: string) => {
-    if (isCoach) {
-      onNavigate('matchsheets');
-    } else {
-      onNavigate('presences', matchId);
-    }
+    onNavigate('presences', matchId);
   };
 
   return (
