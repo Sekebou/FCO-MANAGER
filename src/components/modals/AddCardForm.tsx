@@ -31,6 +31,7 @@ const AddCardForm = ({ players, selectedPlayerId, cards, onSubmit, onClose }: Pr
 
   const handleSubmit = () => {
     if (!formData.playerId || !formData.reason || !formData.date) { toast.warning('Remplissez tous les champs obligatoires'); return; }
+    if (showSuspension && !formData.suspendedUntil) { toast.warning('La date de fin de suspension est obligatoire'); return; }
     onSubmit(formData);
   };
 
@@ -121,13 +122,13 @@ const AddCardForm = ({ players, selectedPlayerId, cards, onSubmit, onClose }: Pr
             </div>
             {showSuspension && (
               <div>
-                <label className="block text-[11px] font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
-                  <Ban size={10} className="text-destructive" /> Suspendu jusqu'au
+                <label className="block text-[11px] font-medium text-destructive mb-1.5 flex items-center gap-1">
+                  <Ban size={10} /> Suspendu jusqu'au *
                 </label>
                 <NativeDatePicker
                   value={formData.suspendedUntil}
                   onChange={(date) => setFormData({ ...formData, suspendedUntil: date })}
-                  placeholder="Optionnel"
+                  placeholder="Obligatoire"
                 />
               </div>
             )}
