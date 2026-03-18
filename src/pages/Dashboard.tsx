@@ -1755,7 +1755,7 @@ const Dashboard = () => {
       )}
       {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} isDirigeant={currentUser?.role === 'dirigeant'} />}
       {showAddNews && <AddNewsForm onSubmit={addNews} onClose={() => setShowAddNews(false)} />}
-      {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
+      {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} cards={cards} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
       {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
       {showAdminResetPassword && selectedMemberForReset && <AdminResetPasswordForm member={selectedMemberForReset} onClose={() => { setShowAdminResetPassword(false); setSelectedMemberForReset(null); }} />}
       {showAvatarModal && currentUser && <AvatarModal currentUser={currentUser} onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }} onAvatarUpdated={(photoURL) => setCurrentUser({ ...currentUser, photoURL })} focusLicense={avatarFocusLicense} onStartTutorial={() => setShowTutorial(true)} />}
