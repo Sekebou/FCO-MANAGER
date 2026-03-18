@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWebOrigin } from '@/lib/getWebOrigin';
@@ -1370,6 +1370,23 @@ const Dashboard = () => {
       }
     });
   };
+  // Build a team→logo map from events for match sheet logo fallback
+  const teamLogoMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const ev of events) {
+      if (ev.homeLogo && ev.title) {
+        const parts = ev.title.split(/\s+vs\s+/i);
+        if (parts[0]) map[parts[0].trim().toUpperCase()] = ev.homeLogo;
+        if (parts[1]) map[parts[1].trim().toUpperCase()] = ev.awayLogo || ev.homeLogo;
+      }
+      if (ev.awayLogo && ev.title) {
+        const parts = ev.title.split(/\s+vs\s+/i);
+        if (parts[1]) map[parts[1].trim().toUpperCase()] = ev.awayLogo;
+        if (parts[0] && !map[parts[0].trim().toUpperCase()]) map[parts[0].trim().toUpperCase()] = ev.homeLogo || ev.awayLogo;
+      }
+    }
+    return map;
+  }, [events]);
 
   if (loading) {
     return (
@@ -1598,7 +1615,7 @@ const Dashboard = () => {
               <ParisTab currentUser={currentUser} championships={championships} />
             </div>
           )}
-          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} />}
+          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} />}
           {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
