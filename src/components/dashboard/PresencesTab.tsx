@@ -8,6 +8,7 @@ import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, Ch
 import { exportMatchSheet } from '@/lib/pdfExport';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
+import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
 
 interface AppUser {
   uid: string;
@@ -66,25 +67,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     }
   }, [initialSelectedEventId]);
 
-  const now = new Date();
-  const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+  const now = getNowParis();
+  const todayStr = now.toLocaleDateString('en-CA');
 
-  // Helper: check if an event is terminated (10 min after start time)
-  const isEventTerminated = (event: Event): boolean => {
-    if (event.date > todayStr) return false;
-    if (event.date < todayStr) return true;
-    const ARCHIVE_DELAY = 10 * 60 * 1000; // 10 minutes
-    if (!event.time) {
-      // No time set: archive 10 min after midnight
-      const midnightStart = new Date(now);
-      midnightStart.setHours(0, 0, 0, 0);
-      return now.getTime() > midnightStart.getTime() + ARCHIVE_DELAY;
-    }
-    const [h, m] = event.time.replace('H', ':').replace('h', ':').split(':').map(Number);
-    const eventStart = new Date(now);
-    eventStart.setHours(h || 0, m || 0, 0, 0);
-    return now.getTime() > eventStart.getTime() + ARCHIVE_DELAY;
-  };
+  // Helper: check if an event is terminated (10 min after start time, Paris TZ)
+  const isEventTerminated = (event: Event): boolean => isEventTerminatedParis(event);
 
   const isManager = canManage();
 
