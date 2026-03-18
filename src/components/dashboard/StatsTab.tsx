@@ -855,7 +855,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                                     </div>
                                     <p className="text-xs text-foreground truncate mt-0.5">{mostRecent.reason}</p>
                                   </div>
-                                  {canManage() && (
+                                  {currentUser?.role === 'admin+' && (
                                     <button onClick={() => deleteCard(mostRecent.id)} className="w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center transition-all shrink-0">
                                       <Trash2 size={13} className="text-destructive/60" />
                                     </button>
