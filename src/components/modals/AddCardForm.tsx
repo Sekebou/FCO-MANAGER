@@ -128,7 +128,7 @@ const AddCardForm = ({ players, selectedPlayerId, cards, onSubmit, onClose }: Pr
                 <NativeDatePicker
                   value={formData.suspendedUntil}
                   onChange={(date) => setFormData({ ...formData, suspendedUntil: date })}
-                  placeholder="Optionnel"
+                  placeholder="Obligatoire"
                 />
               </div>
             )}
