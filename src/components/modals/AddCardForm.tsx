@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import type { Player } from '@/pages/Dashboard';
-import { X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import type { Player, Card } from '@/pages/Dashboard';
+import { X, Ban } from 'lucide-react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { toast } from 'sonner';
 import NativeDatePicker from '@/components/ui/native-date-picker';
@@ -8,22 +8,31 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 interface Props {
   players: Player[];
   selectedPlayerId: string | null;
+  cards: Card[];
   onSubmit: (data: any) => void;
   onClose: () => void;
 }
 
-const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) => {
+const AddCardForm = ({ players, selectedPlayerId, cards, onSubmit, onClose }: Props) => {
   useBodyScrollLock();
   const [formData, setFormData] = useState({
     playerId: selectedPlayerId || '', type: 'yellow', reason: '', date: new Date().toISOString().split('T')[0], suspendedUntil: ''
   });
 
+  // Check if suspension field should be shown
+  const showSuspension = useMemo(() => {
+    if (!formData.playerId) return false;
+    if (formData.type === 'red') return true;
+    // Count existing yellows for this player
+    const existingYellows = cards.filter(c => c.playerId === formData.playerId && c.type === 'yellow').length;
+    // This new card would be the Nth yellow — show if it reaches 3
+    return existingYellows + 1 >= 3;
+  }, [formData.playerId, formData.type, cards]);
+
   const handleSubmit = () => {
     if (!formData.playerId || !formData.reason || !formData.date) { toast.warning('Remplissez tous les champs obligatoires'); return; }
     onSubmit(formData);
   };
-
-  const selectedPlayer = players.find(p => p.id === formData.playerId);
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={onClose}>
@@ -65,7 +74,7 @@ const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) =>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, type: 'yellow' })}
+                onClick={() => setFormData({ ...formData, type: 'yellow', suspendedUntil: '' })}
                 className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                   formData.type === 'yellow'
                     ? 'bg-warning/15 border-warning/50 text-warning'
@@ -76,7 +85,7 @@ const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) =>
               </button>
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, type: 'red' })}
+                onClick={() => setFormData({ ...formData, type: 'red', suspendedUntil: '' })}
                 className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                   formData.type === 'red'
                     ? 'bg-destructive/15 border-destructive/50 text-destructive'
@@ -100,8 +109,8 @@ const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) =>
             />
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Date + optional suspension */}
+          <div className={`grid ${showSuspension ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
             <div>
               <label className="block text-[11px] font-medium text-muted-foreground mb-1.5">Date</label>
               <NativeDatePicker
@@ -110,15 +119,31 @@ const AddCardForm = ({ players, selectedPlayerId, onSubmit, onClose }: Props) =>
                 placeholder="Date"
               />
             </div>
-            <div>
-              <label className="block text-[11px] font-medium text-muted-foreground mb-1.5">Suspendu jusqu'au</label>
-              <NativeDatePicker
-                value={formData.suspendedUntil}
-                onChange={(date) => setFormData({ ...formData, suspendedUntil: date })}
-                placeholder="Optionnel"
-              />
-            </div>
+            {showSuspension && (
+              <div>
+                <label className="block text-[11px] font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                  <Ban size={10} className="text-destructive" /> Suspendu jusqu'au
+                </label>
+                <NativeDatePicker
+                  value={formData.suspendedUntil}
+                  onChange={(date) => setFormData({ ...formData, suspendedUntil: date })}
+                  placeholder="Optionnel"
+                />
+              </div>
+            )}
           </div>
+
+          {/* Suspension warning */}
+          {showSuspension && (
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-destructive/10 border border-destructive/20">
+              <Ban size={14} className="text-destructive shrink-0" />
+              <p className="text-[10px] text-destructive font-medium">
+                {formData.type === 'red'
+                  ? 'Carton rouge = suspension automatique'
+                  : `3ème carton jaune = suspension automatique`}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
