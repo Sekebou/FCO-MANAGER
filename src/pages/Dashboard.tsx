@@ -1593,13 +1593,13 @@ const Dashboard = () => {
                     return;
                   }
 
-                  const typeLabels: Record<string, string> = { match: 'match', training: 'entraînement', other: 'événement' };
+                  const senderName = currentUser?.name || 'Un responsable';
                   const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
                   await supabase.functions.invoke('send-push-notification', {
                     body: {
-                      title: '⏰ Rappel',
-                      body: `N'oublie pas de confirmer ta présence ou absence pour le ${typeLabels[event.type] || 'événement'} : ${event.title} le ${eventDate} !`,
+                      title: `⏰ Rappel de ${senderName}`,
+                      body: `${senderName} a lancé un rappel de confirmation de présence pour l'événement suivant : ${event.title} le ${eventDate}`,
                       tokens,
                       data: { tab: 'presences', eventId: event.id },
                     },
