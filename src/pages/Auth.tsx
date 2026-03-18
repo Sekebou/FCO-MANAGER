@@ -651,7 +651,7 @@ const Auth = () => {
           </div>
 
           {/* Bottom: Features + Status */}
-          <div className="shrink-0 w-full">
+          <div className="shrink-0 w-full mt-4">
             {/* Features description (mobile) - hidden in register mode */}
             {!registerMode && (
               <div className="lg:hidden mt-2 space-y-1 animate-[fadeSlideUp_0.6s_ease-out_0.2s_both]">
