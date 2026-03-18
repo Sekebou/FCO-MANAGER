@@ -693,6 +693,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         <div key={player.id} className={`p-3 rounded-2xl border transition-all ${
                           isConvoked ? 'bg-accent/8 border-accent/30' :
                           isNotConvoked ? 'bg-destructive/5 border-destructive/20' :
+                          !presentIds.has(player.id) ? 'bg-muted/30 border-border/50 opacity-80' :
                           'bg-secondary/30 border-transparent'
                         }`}>
                           <div className="flex items-center justify-between gap-3">
