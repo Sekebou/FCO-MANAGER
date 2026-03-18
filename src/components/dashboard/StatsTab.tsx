@@ -66,6 +66,16 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [playerSearch, setPlayerSearch] = useState('');
   const [showAllAttendance, setShowAllAttendance] = useState(false);
+  const [cardHistoryPlayerId, setCardHistoryPlayerId] = useState<string | null>(null);
+
+  // Auto-suspension helper: 3 yellows (non-purged) or any red = suspended
+  const getPlayerSuspensionStatus = (playerId: string) => {
+    const playerCards = cards.filter(c => c.playerId === playerId);
+    const yellowCount = playerCards.filter(c => c.type === 'yellow').length;
+    const redCount = playerCards.filter(c => c.type === 'red').length;
+    const isSuspended = yellowCount >= 3 || redCount > 0;
+    return { yellowCount, redCount, isSuspended };
+  };
 
   // Period filtering helpers
   const now = new Date();
