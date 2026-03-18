@@ -182,19 +182,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ONLY delete terminated MATCH events (trainings are kept but hidden in the UI)
-    const matchEventIds = terminatedMatchEvents.map((e: any) => e.id);
-    if (matchEventIds.length > 0) {
-      await fetch(
-        `${supabaseUrl}/rest/v1/events?id=in.(${matchEventIds.join(',')})`,
-        { method: 'DELETE', headers }
-      );
-    }
+    // Events are NO LONGER deleted — they stay in the DB and are hidden in the UI.
+    // Match sheets are still created separately for match archiving.
 
-    console.log(`Cleanup: archived ${attendanceRecords.length} presences, deleted ${matchEventIds.length} match events (kept ${terminatedEvents.length - matchEventIds.length} trainings), updated ${scoresUpdated} scores`);
+    console.log(`Cleanup: archived ${attendanceRecords.length} presences from ${terminatedEvents.length} terminated events, updated ${scoresUpdated} scores`);
 
     return new Response(
-      JSON.stringify({ success: true, deleted: matchEventIds.length, archived: attendanceRecords.length, scoresUpdated }),
+      JSON.stringify({ success: true, deleted: 0, archived: attendanceRecords.length, scoresUpdated }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

@@ -927,7 +927,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             {showArchived ? <Archive className="mx-auto mb-3 text-muted-foreground" size={48} /> : <Calendar className="mx-auto mb-3 text-muted-foreground" size={48} />}
             <p className="text-muted-foreground font-medium">
               {showArchived
-                ? (archiveSearch ? 'Aucun entraînement trouvé' : 'Aucun entraînement archivé')
+                ? (archiveSearch ? 'Aucun événement trouvé' : 'Aucun événement archivé')
                 : eventFilter === 'all' ? 'Aucun événement à venir' : eventFilter === 'match' ? 'Aucun match à venir' : 'Aucun entraînement à venir'}
             </p>
             {!showArchived && canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
