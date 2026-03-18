@@ -253,7 +253,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
               <button
                 onClick={() => {
                   const sp = players.find(p => p.id === selectedPlayerId);
-                  if (sp) exportPlayerCard(sp, cards, events, attendanceRecords, members);
+                  if (sp) exportPlayerCard(sp, cards, events, attendanceRecords, members, matchSheets);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent/15 hover:bg-accent/25 transition-colors shrink-0"
                 title="Télécharger fiche joueur (PDF)"
