@@ -645,7 +645,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Rechercher un joueur présent…"
+                      placeholder="Rechercher un joueur…"
                       value={convocationSearch}
                       onChange={e => setConvocationSearch(e.target.value)}
                       className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
