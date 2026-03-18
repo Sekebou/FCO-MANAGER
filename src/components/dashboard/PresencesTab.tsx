@@ -683,6 +683,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     });
                     if (sorted.length === 0) {
                       return <p className="text-center text-sm text-muted-foreground py-6">Aucun résultat pour "{convocationSearch}"</p>;
+                    }
                     const presentIds = new Set(presentPlayers.map(p => p.id));
                     let lastWasPresent = true;
                     return sorted.map(player => {
