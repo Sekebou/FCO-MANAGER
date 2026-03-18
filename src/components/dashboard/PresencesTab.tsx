@@ -786,12 +786,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     <div className="space-y-4">
       <div className="flex justify-between items-center flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-accent/20 rounded-xl flex items-center justify-center">
-            <ClipboardCheck className="text-accent" size={18} />
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${showArchived ? 'bg-muted' : 'bg-accent/20'}`}>
+            {showArchived ? <Archive className="text-muted-foreground" size={18} /> : <ClipboardCheck className="text-accent" size={18} />}
           </div>
-          <h2 className="text-lg font-bold text-foreground">Gestion des présences</h2>
+          <h2 className="text-lg font-bold text-foreground">{showArchived ? 'Archives de présence' : 'Gestion des présences'}</h2>
         </div>
-        {canCreateEvent() && (
+        {!showArchived && canCreateEvent() && (
           <button onClick={onAddEvent} className="bg-primary text-primary-foreground px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-primary/90 transition-all text-xs font-medium">
             <Plus size={16} /> Événement
           </button>
