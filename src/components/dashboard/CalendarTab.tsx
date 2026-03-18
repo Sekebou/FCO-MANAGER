@@ -2,6 +2,7 @@ import React from 'react';
 import type { Event, Member } from '@/pages/Dashboard';
 import RoleBadge from '@/components/ui/role-badge';
 import { Swords, Dumbbell, CalendarDays } from 'lucide-react';
+import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
 
 interface AppUser {
   uid: string;

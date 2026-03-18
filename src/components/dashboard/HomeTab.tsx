@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
+import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
 
 interface HomeTabProps {
   currentUser: AppUser | null;
