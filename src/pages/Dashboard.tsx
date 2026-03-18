@@ -768,9 +768,15 @@ const Dashboard = () => {
     processRecurring();
   }, [events, currentUser]);
 
-  // License check
+  // License check — throttled to once per month
   useEffect(() => {
     if (!currentUser || ['photographe', 'admin', 'admin+'].includes(currentUser.role)) return;
+    const LICENSE_REMINDER_KEY = 'fco_license_reminder_ts';
+    const LICENSE_REMINDER_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+    try {
+      const lastReminder = parseInt(localStorage.getItem(LICENSE_REMINDER_KEY) || '0', 10);
+      if (Date.now() - lastReminder < LICENSE_REMINDER_TTL) return;
+    } catch {}
     const checkLicense = async () => {
       try {
         const { data: profile } = await supabase.from('profiles').select('license_expiry').eq('id', currentUser.uid).single();
@@ -780,6 +786,7 @@ const Dashboard = () => {
           playerLicense = player?.license_expiry || null;
         }
         if (!(profile?.license_expiry || playerLicense)) {
+          try { localStorage.setItem(LICENSE_REMINDER_KEY, String(Date.now())); } catch {}
           if (!showTutorial) {
             setShowLicenseReminder(true);
           } else {

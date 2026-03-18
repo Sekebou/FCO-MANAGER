@@ -4,7 +4,7 @@ import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download } from 'lucide-react';
+import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search } from 'lucide-react';
 import { exportMatchSheet } from '@/lib/pdfExport';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
@@ -45,6 +45,8 @@ const CONVOCATION_STATUSES = [
 const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onPublishAndNotifyConvocations, onSendReminder, onResetHeader, initialSelectedEventId }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialSelectedEventId || null);
   const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveSearch, setArchiveSearch] = useState('');
   const [convocationMode, setConvocationMode] = useState<string | null>(null);
   const [draftConvocations, setDraftConvocations] = useState<Record<string, Convocation>>({});
   const [expandedConvocations, setExpandedConvocations] = useState<Record<string, boolean>>({});
@@ -67,8 +69,32 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   }, [initialSelectedEventId]);
 
   const now = new Date();
+  const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
+  // Helper: check if a training event is terminated (past)
+  const isTrainingTerminated = (event: Event): boolean => {
+    if (event.type !== 'training') return false;
+    if (event.date > todayStr) return false;
+    if (event.date < todayStr) return true;
+    if (!event.time) {
+      const duration = (event.duration || 90) * 60 * 1000;
+      const midnightStart = new Date(now);
+      midnightStart.setHours(0, 0, 0, 0);
+      return now.getTime() > midnightStart.getTime() + duration;
+    }
+    const [h, m] = event.time.replace('H', ':').replace('h', ':').split(':').map(Number);
+    const eventStart = new Date(now);
+    eventStart.setHours(h || 0, m || 0, 0, 0);
+    const duration = (event.duration || 90) * 60 * 1000;
+    return now.getTime() > eventStart.getTime() + duration;
+  };
+
+  const isManager = canManage();
+
+  // Active events: exclude terminated trainings
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const upcomingEvents = events
+  const activeEvents = events
+    .filter(e => !isTrainingTerminated(e))
     .filter(e => new Date(e.date) >= sevenDaysAgo)
     .sort((a, b) => {
       const dateA = new Date(a.date);
@@ -77,6 +103,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       if (b.time) { const [h, m] = b.time.split(':').map(Number); dateB.setHours(h || 0, m || 0); }
       return dateA.getTime() - dateB.getTime();
     });
+
+  // Archived trainings (terminated)
+  const archivedTrainings = events
+    .filter(e => isTrainingTerminated(e))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // newest first
+
+  const upcomingEvents = showArchived ? archivedTrainings : activeEvents;
 
   // Helper: resolve logos for a match event
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
@@ -765,56 +798,98 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       </div>
 
       {/* Native-feel segmented filter */}
-      <div className="bg-secondary/60 backdrop-blur-sm p-1.5 rounded-2xl border border-border/50 flex gap-1">
-        {([
-          { key: 'all' as const, label: 'Tous', icon: Calendar, count: upcomingEvents.length },
-          { key: 'match' as const, label: 'Matchs', icon: Trophy, count: upcomingEvents.filter(e => e.type === 'match').length },
-          { key: 'training' as const, label: 'Entraîn.', icon: Dumbbell, count: upcomingEvents.filter(e => e.type === 'training').length },
-        ]).map(tab => {
-          const isActive = eventFilter === tab.key;
-          const TabIcon = tab.icon;
-          return (
-            <motion.button
-              key={tab.key}
-              onClick={() => setEventFilter(tab.key)}
-              whileTap={{ scale: 0.97 }}
-              className={`relative flex-1 flex items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-colors overflow-hidden ${
-                isActive
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground/70'
-              }`}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="presences-filter-pill"
-                  className="absolute inset-0 bg-card rounded-xl shadow-sm border border-border/60"
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                />
-              )}
-              <span className="relative flex items-center gap-1 min-w-0">
-                <TabIcon size={12} className="shrink-0" />
-                <span className="truncate">{tab.label}</span>
-                <span className={`text-[9px] font-black px-1 py-0.5 rounded-md min-w-[18px] text-center shrink-0 ${
-                  isActive ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'
-                }`}>{tab.count}</span>
-              </span>
-            </motion.button>
-          );
-        })}
-      </div>
+      {!showArchived && (
+        <div className="bg-secondary/60 backdrop-blur-sm p-1.5 rounded-2xl border border-border/50 flex gap-1">
+          {([
+            { key: 'all' as const, label: 'Tous', icon: Calendar, count: activeEvents.length },
+            { key: 'match' as const, label: 'Matchs', icon: Trophy, count: activeEvents.filter(e => e.type === 'match').length },
+            { key: 'training' as const, label: 'Entraîn.', icon: Dumbbell, count: activeEvents.filter(e => e.type === 'training').length },
+          ]).map(tab => {
+            const isActive = eventFilter === tab.key;
+            const TabIcon = tab.icon;
+            return (
+              <motion.button
+                key={tab.key}
+                onClick={() => setEventFilter(tab.key)}
+                whileTap={{ scale: 0.97 }}
+                className={`relative flex-1 flex items-center justify-center gap-1 py-2.5 px-1 rounded-xl text-[11px] font-bold transition-colors overflow-hidden ${
+                  isActive
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground/70'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="presences-filter-pill"
+                    className="absolute inset-0 bg-card rounded-xl shadow-sm border border-border/60"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span className="relative flex items-center gap-1 min-w-0">
+                  <TabIcon size={12} className="shrink-0" />
+                  <span className="truncate">{tab.label}</span>
+                  <span className={`text-[9px] font-black px-1 py-0.5 rounded-md min-w-[18px] text-center shrink-0 ${
+                    isActive ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'
+                  }`}>{tab.count}</span>
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Archive toggle for managers */}
+      {isManager && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowArchived(!showArchived); setArchiveSearch(''); }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+              showArchived
+                ? 'bg-muted text-foreground border border-border'
+                : 'bg-secondary/60 text-muted-foreground hover:text-foreground border border-transparent'
+            }`}
+          >
+            <Archive size={13} />
+            {showArchived ? 'Retour aux événements' : `Archives (${archivedTrainings.length})`}
+          </button>
+          {showArchived && (
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Rechercher un entraînement…"
+                value={archiveSearch}
+                onChange={e => setArchiveSearch(e.target.value)}
+                className="w-full h-9 bg-secondary/60 border border-border/60 rounded-xl pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
+                style={{ fontSize: 16 }}
+              />
+              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+            </div>
+          )}
+        </div>
+      )}
 
       {(() => {
-        const filteredEvents = eventFilter === 'all'
-          ? upcomingEvents
-          : upcomingEvents.filter(e => e.type === eventFilter);
+        let filteredEvents: Event[];
+        if (showArchived) {
+          const search = archiveSearch.toLowerCase().trim();
+          filteredEvents = search
+            ? archivedTrainings.filter(e => e.title.toLowerCase().includes(search) || e.date.includes(search) || e.location?.toLowerCase().includes(search))
+            : archivedTrainings;
+        } else {
+          filteredEvents = eventFilter === 'all'
+            ? upcomingEvents
+            : upcomingEvents.filter(e => e.type === eventFilter);
+        }
 
         return filteredEvents.length === 0 ? (
           <div className="text-center py-16 bg-card rounded-2xl border border-border">
-            <Calendar className="mx-auto mb-3 text-muted-foreground" size={48} />
+            {showArchived ? <Archive className="mx-auto mb-3 text-muted-foreground" size={48} /> : <Calendar className="mx-auto mb-3 text-muted-foreground" size={48} />}
             <p className="text-muted-foreground font-medium">
-              {eventFilter === 'all' ? 'Aucun événement à venir' : eventFilter === 'match' ? 'Aucun match à venir' : 'Aucun entraînement à venir'}
+              {showArchived
+                ? (archiveSearch ? 'Aucun entraînement trouvé' : 'Aucun entraînement archivé')
+                : eventFilter === 'all' ? 'Aucun événement à venir' : eventFilter === 'match' ? 'Aucun match à venir' : 'Aucun entraînement à venir'}
             </p>
-            {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
+            {!showArchived && canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
           </div>
         ) : (
         <div className="space-y-4 max-w-3xl mx-auto">
@@ -825,6 +900,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const absentCount = Object.values(presences).filter(p => p === 'absent').length;
               const pendingCount = players.length - presentCount - absentCount;
               const isPast = isEventPast(event);
+              const isArchived = showArchived && isTrainingTerminated(event);
               const matchInfo = getMatchLogos(event);
               const isMatch = !!matchInfo;
 
@@ -834,11 +910,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                     <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest shrink-0">
                       {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {isArchived && <span className="ml-1.5 text-muted-foreground/40">• Archivé</span>}
                     </span>
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                   </div>
               <div
-                className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
+                className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${(isPast || isArchived) ? 'opacity-50 grayscale-[30%]' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
                 {/* Main clickable area */}
                 <button
@@ -963,19 +1040,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     </div>
                   )}
 
-                  {!isPast && (
+                  {!isPast && !isArchived && (
                     <div className="px-3.5 pb-1.5 mt-1">
                       <p className="text-[9px] text-muted-foreground/50 text-center">Appuyez pour voir plus de détails sur l'événement</p>
                     </div>
                   )}
-                  {isPast && (
+                  {(isPast || isArchived) && (
                     <div className="mx-3.5 mb-2 -mt-0.5">
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Clock size={8} /> Terminé</span>
                     </div>
                   )}
                 </button>
 
-                {!isPast && currentUser?.playerId && (() => {
+                {!isPast && !isArchived && currentUser?.playerId && (() => {
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
                     <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
@@ -1021,7 +1098,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   );
                 })()}
 
-                {canDeleteEvent(event) && (
+                {!isArchived && canDeleteEvent(event) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}
                     className="absolute top-2 right-2 p-1.5 rounded-lg text-destructive/50 hover:text-destructive hover:bg-destructive/10 transition-all z-10"

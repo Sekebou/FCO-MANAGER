@@ -31,11 +31,31 @@ function getGreeting(): string {
 const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, members, onNavigate }) => {
   const isCoach = currentUser && ['admin+', 'admin', 'entraineur'].includes(currentUser.role);
 
+  const now = new Date();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const todayStr = now.toLocaleDateString('en-CA');
+
+  const isTrainingTerminated = (event: Event): boolean => {
+    if (event.type !== 'training') return false;
+    if (event.date > todayStr) return false;
+    if (event.date < todayStr) return true;
+    if (!event.time) {
+      const duration = (event.duration || 90) * 60 * 1000;
+      const midnightStart = new Date(now);
+      midnightStart.setHours(0, 0, 0, 0);
+      return now.getTime() > midnightStart.getTime() + duration;
+    }
+    const [h, m] = event.time.replace('H', ':').replace('h', ':').split(':').map(Number);
+    const eventStart = new Date(now);
+    eventStart.setHours(h || 0, m || 0, 0, 0);
+    const duration = (event.duration || 90) * 60 * 1000;
+    return now.getTime() > eventStart.getTime() + duration;
+  };
+
   const upcomingEvents = useMemo(() =>
     events
-      .filter(e => new Date(e.date) >= today)
+      .filter(e => new Date(e.date) >= today && !isTrainingTerminated(e))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [events]
   );
