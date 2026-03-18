@@ -841,29 +841,68 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
       {/* Archive toggle for managers */}
       {isManager && (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => { setShowArchived(!showArchived); setArchiveSearch(''); }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              showArchived
-                ? 'bg-muted text-foreground border border-border'
-                : 'bg-secondary/60 text-muted-foreground hover:text-foreground border border-transparent'
-            }`}
-          >
-            <Archive size={13} />
-            {showArchived ? 'Retour aux événements' : `Archives (${archivedTrainings.length})`}
-          </button>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setShowArchived(!showArchived); setArchiveSearch(''); setArchiveFilter('all'); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                showArchived
+                  ? 'bg-muted text-foreground border border-border'
+                  : 'bg-secondary/60 text-muted-foreground hover:text-foreground border border-transparent'
+              }`}
+            >
+              <Archive size={13} />
+              {showArchived ? 'Retour aux événements' : `Archives (${archivedEvents.length})`}
+            </button>
+            {showArchived && (
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Rechercher…"
+                  value={archiveSearch}
+                  onChange={e => setArchiveSearch(e.target.value)}
+                  className="w-full h-9 bg-secondary/60 border border-border/60 rounded-xl pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
+                  style={{ fontSize: 16 }}
+                />
+                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+              </div>
+            )}
+          </div>
           {showArchived && (
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Rechercher un entraînement…"
-                value={archiveSearch}
-                onChange={e => setArchiveSearch(e.target.value)}
-                className="w-full h-9 bg-secondary/60 border border-border/60 rounded-xl pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
-                style={{ fontSize: 16 }}
-              />
-              <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+            <div className="bg-secondary/60 backdrop-blur-sm p-1 rounded-xl border border-border/50 flex gap-1">
+              {([
+                { key: 'all' as const, label: 'Tous', icon: Calendar, count: archivedEvents.length },
+                { key: 'match' as const, label: 'Matchs', icon: Trophy, count: archivedEvents.filter(e => e.type === 'match').length },
+                { key: 'training' as const, label: 'Entraîn.', icon: Dumbbell, count: archivedEvents.filter(e => e.type === 'training').length },
+              ]).map(tab => {
+                const isActive = archiveFilter === tab.key;
+                const TabIcon = tab.icon;
+                return (
+                  <motion.button
+                    key={tab.key}
+                    onClick={() => setArchiveFilter(tab.key)}
+                    whileTap={{ scale: 0.97 }}
+                    className={`relative flex-1 flex items-center justify-center gap-1 py-2 px-1 rounded-lg text-[11px] font-bold transition-colors overflow-hidden ${
+                      isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/70'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="archive-filter-pill"
+                        className="absolute inset-0 bg-card rounded-lg shadow-sm border border-border/60"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      />
+                    )}
+                    <span className="relative flex items-center gap-1 min-w-0">
+                      <TabIcon size={11} className="shrink-0" />
+                      <span className="truncate">{tab.label}</span>
+                      <span className={`text-[9px] font-black px-1 py-0.5 rounded-md min-w-[16px] text-center shrink-0 ${
+                        isActive ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'
+                      }`}>{tab.count}</span>
+                    </span>
+                  </motion.button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -872,10 +911,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       {(() => {
         let filteredEvents: Event[];
         if (showArchived) {
+          let archiveList = archiveFilter === 'all' ? archivedEvents : archivedEvents.filter(e => e.type === archiveFilter);
           const search = archiveSearch.toLowerCase().trim();
           filteredEvents = search
-            ? archivedTrainings.filter(e => e.title.toLowerCase().includes(search) || e.date.includes(search) || e.location?.toLowerCase().includes(search))
-            : archivedTrainings;
+            ? archiveList.filter(e => e.title.toLowerCase().includes(search) || e.date.includes(search) || e.location?.toLowerCase().includes(search))
+            : archiveList;
         } else {
           filteredEvents = eventFilter === 'all'
             ? upcomingEvents
