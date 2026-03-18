@@ -1098,7 +1098,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   );
                 })()}
 
-                {canDeleteEvent(event) && (
+                {!isArchived && canDeleteEvent(event) && (
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteEvent(event.id); }}
                     className="absolute top-2 right-2 p-1.5 rounded-lg text-destructive/50 hover:text-destructive hover:bg-destructive/10 transition-all z-10"
