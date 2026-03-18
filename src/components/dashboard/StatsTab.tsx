@@ -59,7 +59,7 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
   month: 'Ce mois',
 };
 
-const StatsTab = ({ players, events, cards, attendanceRecords, members, championships, champMatches, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
+const StatsTab = ({ players, events, cards, attendanceRecords, members, championships, champMatches, matchSheets = [], currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
   const [expandedRadar, setExpandedRadar] = useState<string | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
