@@ -659,119 +659,125 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </div>
 
                 {/* Modal body - scrollable */}
-                <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+                <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
                   {(() => {
                     const search = convocationSearch.toLowerCase().trim();
-                    // Present players shown first, then others
                     const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
-                    const otherPlayers = eventPlayers.filter(p => presences[p.id] !== 'present');
-                    const allOrdered = [...presentPlayers, ...otherPlayers];
-                    const filtered = search ? allOrdered.filter(p => p.name.toLowerCase().includes(search)) : allOrdered;
-                    // Sort: convoqués first, then undecided present, then non-convoqués, then others
-                    const sorted = [...filtered].sort((a, b) => {
+                    const waitingPlayers = eventPlayers.filter(p => !presences[p.id] || (presences[p.id] !== 'present' && presences[p.id] !== 'absent'));
+                    const absentPlayers = eventPlayers.filter(p => presences[p.id] === 'absent');
+
+                    const filterBySearch = (list: typeof eventPlayers) => search ? list.filter(p => p.name.toLowerCase().includes(search)) : list;
+
+                    // Within each group, sort convoqués first
+                    const sortByConvocation = (list: typeof eventPlayers) => [...list].sort((a, b) => {
                       const order = (id: string) => {
                         const s = draftConvocations[id]?.status;
-                        const isPresent = presences[id] === 'present';
-                        if (s === 'convoque') return 0;
-                        if (isPresent && !s) return 1;
-                        if (s === 'non_convoque') return 3;
-                        return 2;
+                        return s === 'convoque' ? 0 : s === 'non_convoque' ? 2 : 1;
                       };
                       return order(a.id) - order(b.id);
                     });
-                    if (sorted.length === 0) {
+
+                    const filteredPresent = sortByConvocation(filterBySearch(presentPlayers));
+                    const filteredWaiting = sortByConvocation(filterBySearch(waitingPlayers));
+                    const filteredAbsent = sortByConvocation(filterBySearch(absentPlayers));
+
+                    if (filteredPresent.length === 0 && filteredWaiting.length === 0 && filteredAbsent.length === 0) {
                       return <p className="text-center text-sm text-muted-foreground py-6">Aucun résultat pour "{convocationSearch}"</p>;
                     }
-                    const presentIds = new Set(presentPlayers.map(p => p.id));
-                    let lastWasPresent = true;
-                    return sorted.map(player => {
+
+                    const renderPlayer = (player: typeof eventPlayers[0], statusTag?: string, tagColor?: string) => {
                       const conv = draftConvocations[player.id];
                       const isConvoked = conv?.status === 'convoque';
                       const isNotConvoked = conv?.status === 'non_convoque';
-                      const isPresent = presentIds.has(player.id);
-                      // Insert separator when transitioning from present to non-present players
-                      const showSeparator = !isPresent && lastWasPresent && !search;
-                      lastWasPresent = isPresent;
                       return (
-                        <React.Fragment key={player.id}>
-                          {showSeparator && (
-                            <div className="flex items-center gap-2 pt-2 pb-1">
-                              <div className="h-px flex-1 bg-border" />
-                              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Autres joueurs</span>
-                              <div className="h-px flex-1 bg-border" />
+                        <div key={player.id} className={`p-3 rounded-2xl border transition-all ${
+                          isConvoked ? 'bg-accent/8 border-accent/30' :
+                          isNotConvoked ? 'bg-destructive/5 border-destructive/20' :
+                          'bg-secondary/30 border-transparent'
+                        }`}>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              {(() => {
+                                const member = members.find(m => m.playerId === player.id);
+                                const photoURL = member?.photoURL;
+                                const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                if (photoURL) return <img src={photoURL} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />;
+                                return (
+                                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                    <span className="text-primary text-xs font-bold">{initials}</span>
+                                  </div>
+                                );
+                              })()}
+                              {(() => {
+                                const [firstName, ...rest] = player.name.split(' ');
+                                const lastName = rest.join(' ');
+                                return (
+                                  <div className="flex flex-col leading-tight min-w-0">
+                                    <span className="font-semibold text-sm text-foreground">{firstName}</span>
+                                    {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            <div className="flex gap-1.5 shrink-0">
+                              <motion.button
+                                onClick={() => updateDraft(player.id, { status: 'convoque' })}
+                                whileTap={{ scale: 0.9 }}
+                                className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isConvoked ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'}`}
+                              >
+                                <UserCheck size={14} /> Oui
+                              </motion.button>
+                              <motion.button
+                                onClick={() => updateDraft(player.id, { status: 'non_convoque' })}
+                                whileTap={{ scale: 0.9 }}
+                                className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isNotConvoked ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'}`}
+                              >
+                                <UserX size={14} /> Non
+                              </motion.button>
+                            </div>
+                          </div>
+                          {isConvoked && (
+                            <div className="mt-2.5 flex gap-2 items-center">
+                              <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
+                                <span className="text-sm font-medium text-foreground flex-1 truncate">
+                                  {conv?.position || <span className="text-muted-foreground">Poste</span>}
+                                </span>
+                                <ChevronDown size={12} className="text-muted-foreground shrink-0" />
+                                <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
+                                  <option value="">Poste</option>
+                                  {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                                </select>
+                              </div>
+                              <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
                             </div>
                           )}
-                          <div className={`p-3 rounded-2xl border transition-all ${
-                            isConvoked ? 'bg-accent/8 border-accent/30' :
-                            isNotConvoked ? 'bg-destructive/5 border-destructive/20' :
-                            !isPresent ? 'bg-muted/30 border-border/50 opacity-80' :
-                            'bg-secondary/30 border-transparent'
-                          }`}>
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                {(() => {
-                                  const member = members.find(m => m.playerId === player.id);
-                                  const photoURL = member?.photoURL;
-                                  const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                                  if (photoURL) return <img src={photoURL} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />;
-                                  return (
-                                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                      <span className="text-primary text-xs font-bold">{initials}</span>
-                                    </div>
-                                  );
-                                })()}
-                                {(() => {
-                                  const [firstName, ...rest] = player.name.split(' ');
-                                  const lastName = rest.join(' ');
-                                  return (
-                                    <div className="flex flex-col leading-tight min-w-0">
-                                      <span className="font-semibold text-sm text-foreground">{firstName}</span>
-                                      {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
-                                    </div>
-                                  );
-                                })()}
-                                {!isPresent && !search && (
-                                  <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-md text-muted-foreground font-medium ml-auto mr-2">
-                                    {presences[player.id] === 'absent' ? 'Absent' : 'En attente'}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex gap-1.5 shrink-0">
-                                <motion.button
-                                  onClick={() => updateDraft(player.id, { status: 'convoque' })}
-                                  whileTap={{ scale: 0.9 }}
-                                  className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isConvoked ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'}`}
-                                >
-                                  <UserCheck size={14} /> Oui
-                                </motion.button>
-                                <motion.button
-                                  onClick={() => updateDraft(player.id, { status: 'non_convoque' })}
-                                  whileTap={{ scale: 0.9 }}
-                                  className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isNotConvoked ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'}`}
-                                >
-                                  <UserX size={14} /> Non
-                                </motion.button>
-                              </div>
-                            </div>
-                            {isConvoked && (
-                              <div className="mt-2.5 flex gap-2 items-center">
-                                <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
-                                  <span className="text-sm font-medium text-foreground flex-1 truncate">
-                                    {conv?.position || <span className="text-muted-foreground">Poste</span>}
-                                  </span>
-                                  <ChevronDown size={12} className="text-muted-foreground shrink-0" />
-                                  <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
-                                    <option value="">Poste</option>
-                                    {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-                                  </select>
-                                </div>
-                                <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
-                              </div>
-                            )}
-                          </div>
-                        </React.Fragment>
+                        </div>
                       );
-                    });
+                    };
+
+                    const renderSection = (title: string, icon: React.ReactNode, players: typeof eventPlayers, tagColor: string) => {
+                      if (players.length === 0) return null;
+                      return (
+                        <div key={title}>
+                          <div className="flex items-center gap-2 pt-2 pb-1.5 px-1 sticky top-0 bg-card z-10">
+                            {icon}
+                            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{title}</span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${tagColor}`}>{players.length}</span>
+                          </div>
+                          <div className="space-y-2">
+                            {players.map(p => renderPlayer(p))}
+                          </div>
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <>
+                        {renderSection('Présents', <Check size={12} className="text-accent" />, filteredPresent, 'bg-accent/15 text-accent')}
+                        {renderSection('En attente', <Clock size={12} className="text-warning" />, filteredWaiting, 'bg-warning/15 text-warning')}
+                        {renderSection('Absents', <X size={12} className="text-destructive" />, filteredAbsent, 'bg-destructive/15 text-destructive')}
+                      </>
+                    );
                   })()}
                 </div>
 
