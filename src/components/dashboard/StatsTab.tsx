@@ -814,11 +814,11 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                         {/* Card counts + suspension badge */}
                         <div className="flex items-center gap-2 mb-2">
                           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-warning/10 border border-warning/20">
-                            <div className="w-3.5 h-4.5 rounded-sm bg-warning" />
+                            <div className="w-4 h-5 rounded-[2px] bg-warning shadow-sm" />
                             <span className="text-xs font-bold text-warning">{suspension.yellowCount}</span>
                           </div>
                           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/20">
-                            <div className="w-3.5 h-4.5 rounded-sm bg-destructive" />
+                            <div className="w-4 h-5 rounded-[2px] bg-destructive shadow-sm" />
                             <span className="text-xs font-bold text-destructive">{suspension.redCount}</span>
                           </div>
                           {suspension.isSuspended && (
