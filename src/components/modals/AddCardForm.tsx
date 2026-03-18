@@ -31,6 +31,7 @@ const AddCardForm = ({ players, selectedPlayerId, cards, onSubmit, onClose }: Pr
 
   const handleSubmit = () => {
     if (!formData.playerId || !formData.reason || !formData.date) { toast.warning('Remplissez tous les champs obligatoires'); return; }
+    if (showSuspension && !formData.suspendedUntil) { toast.warning('La date de fin de suspension est obligatoire'); return; }
     onSubmit(formData);
   };
 
