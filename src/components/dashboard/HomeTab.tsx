@@ -52,7 +52,8 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   }, [players, currentUser]);
 
   const recentNews = useMemo(() => news.slice(0, 2), [news]);
-  const totalPlayers = players.length;
+  const playerIdsWithAccount = useMemo(() => new Set(members.filter(m => m.playerId).map(m => m.playerId)), [members]);
+  const totalPlayers = useMemo(() => players.filter(p => playerIdsWithAccount.has(p.id)).length, [players, playerIdsWithAccount]);
 
   const initials = currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
 
