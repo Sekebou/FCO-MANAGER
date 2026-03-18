@@ -941,7 +941,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const absentCount = Object.values(presences).filter(p => p === 'absent').length;
               const pendingCount = players.length - presentCount - absentCount;
               const isPast = isEventPast(event);
-              const isArchived = showArchived && isTrainingTerminated(event);
+              const isArchived = showArchived && isEventTerminated(event);
               const matchInfo = getMatchLogos(event);
               const isMatch = !!matchInfo;
 
