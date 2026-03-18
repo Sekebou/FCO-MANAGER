@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Archive presences into attendance_records
+    // Archive presences into attendance_records for ALL terminated events
     const attendanceRecords: any[] = [];
     for (const event of terminatedEvents) {
       const presences = event.presences || {};
@@ -91,7 +91,6 @@ Deno.serve(async (req) => {
     const terminatedMatchEvents = terminatedEvents.filter((e: any) => e.type === 'match');
 
     if (terminatedMatchEvents.length > 0) {
-      // Get match_sheets that need scores
       const eventIds = terminatedMatchEvents.map((e: any) => e.id);
       const msRes = await fetch(
         `${supabaseUrl}/rest/v1/match_sheets?event_id=in.(${eventIds.join(',')})&select=id,event_id,home_team,away_team,home_score,away_score,date`,
@@ -101,14 +100,12 @@ Deno.serve(async (req) => {
       const sheetsNeedingScores = matchSheets.filter((ms: any) => ms.home_score == null || ms.away_score == null);
 
       if (sheetsNeedingScores.length > 0) {
-        // Fetch all championships with FFF URL to query results
         const champRes = await fetch(
           `${supabaseUrl}/rest/v1/championships?fff_url=not.is.null&select=id,fff_url,team`,
           { headers }
         );
         const championships = champRes.ok ? await champRes.json() : [];
 
-        // For each championship, fetch recent results from FFF API
         const allFffResults: { homeTeam: string; awayTeam: string; homeScore: number; awayScore: number; date: string }[] = [];
 
         for (const champ of championships) {
@@ -151,7 +148,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Match FFF results to match_sheets and update scores
         for (const ms of sheetsNeedingScores) {
           const home = (ms.home_team || '').toUpperCase().trim();
           const away = (ms.away_team || '').toUpperCase().trim();
@@ -160,7 +156,6 @@ Deno.serve(async (req) => {
           const match = allFffResults.find(r => {
             const rHome = r.homeTeam.toUpperCase().trim();
             const rAway = r.awayTeam.toUpperCase().trim();
-            // Match by team names (flexible: check both directions) and date
             return (
               ((rHome === home && rAway === away) || (rHome === away && rAway === home)) &&
               r.date === ms.date
@@ -168,7 +163,6 @@ Deno.serve(async (req) => {
           });
 
           if (match) {
-            // If teams are swapped in FFF vs match_sheet, swap scores accordingly
             const rHome = match.homeTeam.toUpperCase().trim();
             const isSwapped = rHome !== home;
             const finalHomeScore = isSwapped ? match.awayScore : match.homeScore;
@@ -188,17 +182,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Delete terminated events
-    const eventIds = terminatedEvents.map((e: any) => e.id);
-    await fetch(
-      `${supabaseUrl}/rest/v1/events?id=in.(${eventIds.join(',')})`,
-      { method: 'DELETE', headers }
-    );
+    // ONLY delete terminated MATCH events (trainings are kept but hidden in the UI)
+    const matchEventIds = terminatedMatchEvents.map((e: any) => e.id);
+    if (matchEventIds.length > 0) {
+      await fetch(
+        `${supabaseUrl}/rest/v1/events?id=in.(${matchEventIds.join(',')})`,
+        { method: 'DELETE', headers }
+      );
+    }
 
-    console.log(`Cleanup: archived ${attendanceRecords.length} presences, deleted ${eventIds.length} events, updated ${scoresUpdated} scores`);
+    console.log(`Cleanup: archived ${attendanceRecords.length} presences, deleted ${matchEventIds.length} match events (kept ${terminatedEvents.length - matchEventIds.length} trainings), updated ${scoresUpdated} scores`);
 
     return new Response(
-      JSON.stringify({ success: true, deleted: eventIds.length, archived: attendanceRecords.length, scoresUpdated }),
+      JSON.stringify({ success: true, deleted: matchEventIds.length, archived: attendanceRecords.length, scoresUpdated }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
