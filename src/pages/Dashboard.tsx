@@ -1370,8 +1370,25 @@ const Dashboard = () => {
       }
     });
   };
+  // Build a team→logo map from events for match sheet logo fallback
+  const teamLogoMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const ev of events) {
+      if (ev.homeLogo && ev.title) {
+        const parts = ev.title.split(/\s+vs\s+/i);
+        if (parts[0]) map[parts[0].trim().toUpperCase()] = ev.homeLogo;
+        if (parts[1]) map[parts[1].trim().toUpperCase()] = ev.awayLogo || ev.homeLogo;
+      }
+      if (ev.awayLogo && ev.title) {
+        const parts = ev.title.split(/\s+vs\s+/i);
+        if (parts[1]) map[parts[1].trim().toUpperCase()] = ev.awayLogo;
+        if (parts[0] && !map[parts[0].trim().toUpperCase()]) map[parts[0].trim().toUpperCase()] = ev.homeLogo || ev.awayLogo;
+      }
+    }
+    return map;
+  }, [events]);
 
-  if (loading) {
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
