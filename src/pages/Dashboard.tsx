@@ -681,6 +681,8 @@ const Dashboard = () => {
     // === Web/Android: Supabase Realtime subscriptions ===
     const channel = supabase.channel('dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
+        // Skip realtime refetch if we just did an optimistic stat update (avoid race condition)
+        if (Date.now() - statsUpdateLock.current < 3000) return;
         supabase.from('players').select('*').then(({ data }) => data && setPlayers(sortPlayersStable(data.map(mapPlayer))));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
