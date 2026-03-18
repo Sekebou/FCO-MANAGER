@@ -662,24 +662,29 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
                 {/* Modal body - scrollable */}
                 <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
-                  {eventPlayers.filter(p => presences[p.id] === 'present').length === 0 && (
-                    <p className="text-center text-sm text-muted-foreground py-8">Aucun joueur n'a encore répondu présent.</p>
-                  )}
                   {(() => {
-                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
                     const search = convocationSearch.toLowerCase().trim();
-                    const filtered = search ? presentPlayers.filter(p => p.name.toLowerCase().includes(search)) : presentPlayers;
-                    // Sort: convoqués first, then non-convoqués, then undecided
+                    // Present players shown first, then others
+                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
+                    const otherPlayers = eventPlayers.filter(p => presences[p.id] !== 'present');
+                    const allOrdered = [...presentPlayers, ...otherPlayers];
+                    const filtered = search ? allOrdered.filter(p => p.name.toLowerCase().includes(search)) : allOrdered;
+                    // Sort: convoqués first, then undecided present, then non-convoqués, then others
                     const sorted = [...filtered].sort((a, b) => {
                       const order = (id: string) => {
                         const s = draftConvocations[id]?.status;
-                        return s === 'convoque' ? 0 : s === 'non_convoque' ? 2 : 1;
+                        const isPresent = presences[id] === 'present';
+                        if (s === 'convoque') return 0;
+                        if (isPresent && !s) return 1;
+                        if (s === 'non_convoque') return 3;
+                        return 2;
                       };
                       return order(a.id) - order(b.id);
                     });
-                    if (search && sorted.length === 0) {
+                    if (sorted.length === 0) {
                       return <p className="text-center text-sm text-muted-foreground py-6">Aucun résultat pour "{convocationSearch}"</p>;
                     }
+                    const presentIds = new Set(presentPlayers.map(p => p.id));
                     return sorted.map(player => {
                       const conv = draftConvocations[player.id];
                       const isConvoked = conv?.status === 'convoque';
