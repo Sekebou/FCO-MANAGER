@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
+import type { MatchSheet } from '@/components/dashboard/MatchSheetsTab';
 import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined, Download, Search, User } from 'lucide-react';
 import { exportPlayerCard, exportSeasonReport, exportAttendanceReport } from '@/lib/pdfExport';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -17,6 +18,7 @@ interface Props {
   members: Member[];
   championships?: Championship[];
   champMatches?: Match[];
+  matchSheets?: MatchSheet[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
   updatePlayerStats: (playerId: string, field: string, value: string) => void;
@@ -57,7 +59,7 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
   month: 'Ce mois',
 };
 
-const StatsTab = ({ players, events, cards, attendanceRecords, members, championships, champMatches, currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
+const StatsTab = ({ players, events, cards, attendanceRecords, members, championships, champMatches, matchSheets = [], currentUser, canManage, updatePlayerStats, deletePlayer, getPlayerCards, deleteCard, onAddCard }: Props) => {
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
   const [expandedRadar, setExpandedRadar] = useState<string | null>(null);
   const [showStatsModal, setShowStatsModal] = useState(false);
@@ -251,7 +253,7 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
               <button
                 onClick={() => {
                   const sp = players.find(p => p.id === selectedPlayerId);
-                  if (sp) exportPlayerCard(sp, cards, events, attendanceRecords, members);
+                  if (sp) exportPlayerCard(sp, cards, events, attendanceRecords, members, matchSheets);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent/15 hover:bg-accent/25 transition-colors shrink-0"
                 title="Télécharger fiche joueur (PDF)"
@@ -275,7 +277,12 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
               const spGoals = sp.goals || 0;
               const spAssists = sp.assists || 0;
               const spMatches = sp.matches || 0;
-              const spAvgGoals = spMatches > 0 ? (spGoals / spMatches).toFixed(2) : '—';
+              // Count matches played from match_sheets convocations
+              const spMatchesPlayed = matchSheets.filter(ms => {
+                const conv = ms.convocations?.[sp.id];
+                return conv && conv.status === 'convoque';
+              }).length;
+              const spAvgGoals = spMatchesPlayed > 0 ? (spGoals / spMatchesPlayed).toFixed(2) : '—';
 
               return (
                 <>
@@ -298,9 +305,10 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                       Statistiques
                       <span className="flex-1 h-px bg-border/50" />
                     </h4>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-5 gap-2">
                       {[
-                        { icon: Activity, label: 'Matchs', value: spMatches, color: 'text-accent' },
+                        { icon: Activity, label: 'Convoc.', value: spMatchesPlayed, color: 'text-accent' },
+                        { icon: Trophy, label: 'Matchs', value: spMatches, color: 'text-accent' },
                         { icon: Target, label: 'Buts', value: spGoals, color: 'text-accent' },
                         { icon: Zap, label: 'PD', value: spAssists, color: 'text-accent' },
                         { icon: TrendingUp, label: 'Moy/M', value: spAvgGoals, color: 'text-muted-foreground' },

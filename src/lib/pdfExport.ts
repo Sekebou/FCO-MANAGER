@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Capacitor } from '@capacitor/core';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
+import type { MatchSheet } from '@/components/dashboard/MatchSheetsTab';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
 import logoUrl from '@/assets/logo.png';
 
@@ -106,7 +107,8 @@ export async function exportPlayerCard(
   cards: Card[],
   events: Event[],
   attendanceRecords: AttendanceRecord[],
-  members: Member[]
+  members: Member[],
+  matchSheets: MatchSheet[] = []
 ) {
   await ensureLogo();
   const doc = new jsPDF();
@@ -144,14 +146,20 @@ export async function exportPlayerCard(
   doc.text('Statistiques', 14, y);
   y += 2;
   
+  // Count matches played from convocations
+  const matchesPlayed = matchSheets.filter(ms => {
+    const conv = ms.convocations?.[player.id];
+    return conv && conv.status === 'convoque';
+  }).length;
+
   autoTable(doc, {
     startY: y,
-    head: [['Matchs', 'Buts', 'Passes D.', 'Moy. buts/match']],
+    head: [['Matchs joués (convoc.)', 'Buts', 'Passes D.', 'Moy. buts/match']],
     body: [[
-      String(player.matches || 0),
+      String(matchesPlayed),
       String(player.goals || 0),
       String(player.assists || 0),
-      (player.matches || 0) > 0 ? ((player.goals || 0) / (player.matches || 1)).toFixed(2) : '—',
+      matchesPlayed > 0 ? ((player.goals || 0) / matchesPlayed).toFixed(2) : '—',
     ]],
     theme: 'grid',
     headStyles: { fillColor: PRIMARY_COLOR, fontSize: 9 },
