@@ -71,9 +71,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const now = new Date();
   const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
-  // Helper: check if a training event is terminated (past)
-  const isTrainingTerminated = (event: Event): boolean => {
-    if (event.type !== 'training') return false;
+  // Helper: check if an event is terminated (past)
+  const isEventTerminated = (event: Event): boolean => {
     if (event.date > todayStr) return false;
     if (event.date < todayStr) return true;
     if (!event.time) {
@@ -91,10 +90,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
   const isManager = canManage();
 
-  // Active events: exclude terminated trainings
+  // Active events: exclude terminated events
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const activeEvents = events
-    .filter(e => !isTrainingTerminated(e))
+    .filter(e => !isEventTerminated(e))
     .filter(e => new Date(e.date) >= sevenDaysAgo)
     .sort((a, b) => {
       const dateA = new Date(a.date);
@@ -104,12 +103,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       return dateA.getTime() - dateB.getTime();
     });
 
-  // Archived trainings (terminated)
-  const archivedTrainings = events
-    .filter(e => isTrainingTerminated(e))
+  // Archived events (terminated — both matches and trainings)
+  const archivedEvents = events
+    .filter(e => isEventTerminated(e))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // newest first
 
-  const upcomingEvents = showArchived ? archivedTrainings : activeEvents;
+  const [archiveFilter, setArchiveFilter] = useState<'all' | 'match' | 'training'>('all');
+
+  const upcomingEvents = showArchived ? archivedEvents : activeEvents;
 
   // Helper: resolve logos for a match event
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
