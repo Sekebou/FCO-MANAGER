@@ -934,6 +934,14 @@ const Dashboard = () => {
           if (playerId) {
             await supabase.from('cards').delete().eq('player_id', playerId);
             await supabase.from('attendance_records').delete().eq('player_id', playerId);
+
+            // Remove player from all event presences (JSONB cleanup)
+            const eventsWithPresence = events.filter(e => e.presences && (e.presences as any)[playerId]);
+            for (const evt of eventsWithPresence) {
+              const updatedPresences = { ...(evt.presences as any) };
+              delete updatedPresences[playerId];
+              await supabase.from('events').update({ presences: updatedPresences }).eq('id', evt.id);
+            }
           }
           // Delete user role
           await supabase.from('user_roles').delete().eq('user_id', memberId);
@@ -946,7 +954,18 @@ const Dashboard = () => {
           }
           toast.success('Membre supprimé avec succès');
           setMembers(prev => prev.filter(m => m.id !== memberId));
-          if (playerId) setPlayers(prev => prev.filter(p => p.id !== playerId));
+          if (playerId) {
+            setPlayers(prev => prev.filter(p => p.id !== playerId));
+            // Update local events state to reflect cleaned presences
+            setEvents(prev => prev.map(e => {
+              if (e.presences && (e.presences as any)[playerId]) {
+                const cleaned = { ...(e.presences as any) };
+                delete cleaned[playerId];
+                return { ...e, presences: cleaned };
+              }
+              return e;
+            }));
+          }
         } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
