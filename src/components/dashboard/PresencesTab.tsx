@@ -900,6 +900,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const absentCount = Object.values(presences).filter(p => p === 'absent').length;
               const pendingCount = players.length - presentCount - absentCount;
               const isPast = isEventPast(event);
+              const isArchived = showArchived && isTrainingTerminated(event);
               const matchInfo = getMatchLogos(event);
               const isMatch = !!matchInfo;
 
@@ -909,11 +910,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                     <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest shrink-0">
                       {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {isArchived && <span className="ml-1.5 text-muted-foreground/40">• Archivé</span>}
                     </span>
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
                   </div>
               <div
-                className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${isPast ? 'opacity-50' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
+                className={`relative bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition-all ${(isPast || isArchived) ? 'opacity-50 grayscale-[30%]' : 'active:shadow-md hover:shadow-lg hover:border-border/80'}`}
               >
                 {/* Main clickable area */}
                 <button
