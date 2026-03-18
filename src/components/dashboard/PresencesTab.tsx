@@ -402,113 +402,149 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
               <Users size={15} className="text-primary" /> Réponses des joueurs
             </h4>
-            <div className="space-y-1.5">
-              {eventPlayers.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4 text-sm">Aucun joueur enregistré</p>
-              ) : (() => {
-                const MAX = 8;
-                const isExpanded = expandedPlayers[event.id];
-                const visible = isExpanded ? eventPlayers : eventPlayers.slice(0, MAX);
-                const hasMore = eventPlayers.length > MAX;
-                return (
-                  <>
-                    {visible.map(player => {
-                      const status = presences[player.id];
+
+            {/* Status filter tabs */}
+            {(() => {
+              const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
+              const absentPlayers = eventPlayers.filter(p => presences[p.id] === 'absent');
+              const waitingPlayers = eventPlayers.filter(p => !presences[p.id] || (presences[p.id] !== 'present' && presences[p.id] !== 'absent'));
+
+              const tabs = [
+                { key: 'present', label: 'Présents', count: presentPlayers.length, icon: Check, color: 'text-accent', bgActive: 'bg-accent/15 border-accent/30', dot: 'bg-accent' },
+                { key: 'absent', label: 'Absents', count: absentPlayers.length, icon: X, color: 'text-destructive', bgActive: 'bg-destructive/15 border-destructive/30', dot: 'bg-destructive' },
+                { key: 'waiting', label: 'En attente', count: waitingPlayers.length, icon: Clock, color: 'text-warning', bgActive: 'bg-warning/15 border-warning/30', dot: 'bg-warning' },
+              ];
+
+              const presenceFilter = expandedPlayers[`filter_${event.id}`] as unknown as string || 'present';
+              const setPresenceFilter = (f: string) => setExpandedPlayers(prev => ({ ...prev, [`filter_${event.id}`]: f as any }));
+
+              const filteredPlayers = presenceFilter === 'present' ? presentPlayers
+                : presenceFilter === 'absent' ? absentPlayers
+                : waitingPlayers;
+
+              return (
+                <>
+                  <div className="flex gap-1.5 mb-3">
+                    {tabs.map(tab => {
+                      const isActive = presenceFilter === tab.key;
+                      const TabIcon = tab.icon;
                       return (
-                        <div key={player.id} className="flex items-center justify-between p-2 sm:p-2.5 bg-secondary/40 rounded-xl gap-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {(() => {
-                              const member = members.find(m => m.playerId === player.id);
-                              const photoURL = member?.photoURL;
-                              const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                              if (photoURL) {
-                                return <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
-                              }
-                              return (
-                                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                  <span className="text-primary text-[10px] font-bold">{initials}</span>
-                                </div>
-                              );
-                            })()}
-                            <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
-                          </div>
-                          {canManageOwnPresence(player.id) ? (
-                            <div className="flex gap-1 shrink-0">
-                              <div className="relative overflow-visible">
-                                <motion.button
-                                  onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'present')}
-                                  disabled={isEventPast(event)}
-                                  whileTap={{ scale: 0.82 }}
-                                  animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
-                                  transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-                                  className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
-                                    status === 'present'
-                                      ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30'
-                                      : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
-                                  }`}
-                                >
-                                  <Check size={12} /> Présent
-                                </motion.button>
-                                <AnimatePresence>
-                                  {status === 'present' && (
-                                    <>
-                                      <motion.span key={`p1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-base">✓</motion.span>
-                                      <motion.span key={`p2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-xs">✓</motion.span>
-                                      <motion.span key={`p3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-accent/60 font-black text-[10px]">✓</motion.span>
-                                    </>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-                              <div className="relative overflow-visible">
-                                <motion.button
-                                  onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'absent')}
-                                  disabled={isEventPast(event)}
-                                  whileTap={isEventPast(event) ? {} : { scale: 0.82 }}
-                                  animate={status === 'absent' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
-                                  transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-                                  className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
-                                    status === 'absent'
-                                      ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30'
-                                      : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
-                                  }`}
-                                >
-                                  <X size={12} /> Absent
-                                </motion.button>
-                                <AnimatePresence>
-                                  {status === 'absent' && (
-                                    <>
-                                      <motion.span key={`a1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-base">✕</motion.span>
-                                      <motion.span key={`a2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-xs">✕</motion.span>
-                                      <motion.span key={`a3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-destructive/60 font-black text-[10px]">✕</motion.span>
-                                    </>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-                            </div>
-                          ) : (
-                            <span className={`px-2.5 h-8 rounded-lg text-[11px] font-semibold flex items-center gap-1 shrink-0 ${
-                              status === 'present' ? 'bg-accent/10 text-accent' :
-                              status === 'absent' ? 'bg-destructive/10 text-destructive' :
-                              'bg-warning/10 text-warning'
-                            }`}>
-                              {status === 'present' ? <><Check size={12} /> Présent</> : status === 'absent' ? <><X size={12} /> Absent</> : <><Clock size={12} /> En attente</>}
-                            </span>
-                          )}
-                        </div>
+                        <motion.button
+                          key={tab.key}
+                          onClick={() => setPresenceFilter(tab.key)}
+                          whileTap={{ scale: 0.95 }}
+                          className={`flex-1 flex items-center justify-center gap-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all border ${
+                            isActive
+                              ? `${tab.bgActive} ${tab.color}`
+                              : 'border-transparent bg-secondary/40 text-muted-foreground hover:bg-secondary/60'
+                          }`}
+                        >
+                          <TabIcon size={12} />
+                          <span className="truncate">{tab.label}</span>
+                          <span className={`text-[9px] font-black px-1 py-0.5 rounded-md min-w-[16px] text-center ${
+                            isActive ? `${tab.dot}/20 ${tab.color}` : 'bg-muted text-muted-foreground'
+                          }`}>{tab.count}</span>
+                        </motion.button>
                       );
                     })}
-                    {hasMore && (
-                      <button
-                        onClick={() => setExpandedPlayers(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/60 rounded-xl transition-all"
-                      >
-                        {isExpanded ? <><ChevronUp size={14} /> Réduire</> : <><ChevronDown size={14} /> {eventPlayers.length - MAX} joueur{eventPlayers.length - MAX > 1 ? 's' : ''} de plus</>}
-                      </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {filteredPlayers.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-6 text-sm">
+                        {presenceFilter === 'present' ? 'Aucun joueur présent' : presenceFilter === 'absent' ? 'Aucun joueur absent' : 'Aucun joueur en attente'}
+                      </p>
+                    ) : (
+                      filteredPlayers.map(player => {
+                        const status = presences[player.id];
+                        return (
+                          <div key={player.id} className="flex items-center justify-between p-2 sm:p-2.5 bg-secondary/40 rounded-xl gap-2">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              {(() => {
+                                const member = members.find(m => m.playerId === player.id);
+                                const photoURL = member?.photoURL;
+                                const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                if (photoURL) {
+                                  return <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+                                }
+                                return (
+                                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                    <span className="text-primary text-[10px] font-bold">{initials}</span>
+                                  </div>
+                                );
+                              })()}
+                              <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
+                            </div>
+                            {canManageOwnPresence(player.id) ? (
+                              <div className="flex gap-1 shrink-0">
+                                <div className="relative overflow-visible">
+                                  <motion.button
+                                    onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'present')}
+                                    disabled={isEventPast(event)}
+                                    whileTap={{ scale: 0.82 }}
+                                    animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
+                                    transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
+                                    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                                      status === 'present'
+                                        ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30'
+                                        : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
+                                    }`}
+                                  >
+                                    <Check size={12} /> Présent
+                                  </motion.button>
+                                  <AnimatePresence>
+                                    {status === 'present' && (
+                                      <>
+                                        <motion.span key={`p1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-base">✓</motion.span>
+                                        <motion.span key={`p2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-xs">✓</motion.span>
+                                        <motion.span key={`p3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-accent/60 font-black text-[10px]">✓</motion.span>
+                                      </>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                                <div className="relative overflow-visible">
+                                  <motion.button
+                                    onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'absent')}
+                                    disabled={isEventPast(event)}
+                                    whileTap={isEventPast(event) ? {} : { scale: 0.82 }}
+                                    animate={status === 'absent' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
+                                    transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
+                                    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                                      status === 'absent'
+                                        ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30'
+                                        : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
+                                    }`}
+                                  >
+                                    <X size={12} /> Absent
+                                  </motion.button>
+                                  <AnimatePresence>
+                                    {status === 'absent' && (
+                                      <>
+                                        <motion.span key={`a1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-base">✕</motion.span>
+                                        <motion.span key={`a2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-xs">✕</motion.span>
+                                        <motion.span key={`a3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-destructive/60 font-black text-[10px]">✕</motion.span>
+                                      </>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className={`px-2.5 h-8 rounded-lg text-[11px] font-semibold flex items-center gap-1 shrink-0 ${
+                                status === 'present' ? 'bg-accent/10 text-accent' :
+                                status === 'absent' ? 'bg-destructive/10 text-destructive' :
+                                'bg-warning/10 text-warning'
+                              }`}>
+                                {status === 'present' ? <><Check size={12} /> Présent</> : status === 'absent' ? <><X size={12} /> Absent</> : <><Clock size={12} /> En attente</>}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
                     )}
-                  </>
-                );
-              })()}
-            </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
