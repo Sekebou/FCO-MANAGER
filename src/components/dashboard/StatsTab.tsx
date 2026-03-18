@@ -277,7 +277,12 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
               const spGoals = sp.goals || 0;
               const spAssists = sp.assists || 0;
               const spMatches = sp.matches || 0;
-              const spAvgGoals = spMatches > 0 ? (spGoals / spMatches).toFixed(2) : '—';
+              // Count matches played from match_sheets convocations
+              const spMatchesPlayed = matchSheets.filter(ms => {
+                const conv = ms.convocations?.[sp.id];
+                return conv && conv.status === 'convoque';
+              }).length;
+              const spAvgGoals = spMatchesPlayed > 0 ? (spGoals / spMatchesPlayed).toFixed(2) : '—';
 
               return (
                 <>
