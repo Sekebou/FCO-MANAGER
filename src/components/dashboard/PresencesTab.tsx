@@ -883,11 +883,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
         return filteredEvents.length === 0 ? (
           <div className="text-center py-16 bg-card rounded-2xl border border-border">
-            <Calendar className="mx-auto mb-3 text-muted-foreground" size={48} />
+            {showArchived ? <Archive className="mx-auto mb-3 text-muted-foreground" size={48} /> : <Calendar className="mx-auto mb-3 text-muted-foreground" size={48} />}
             <p className="text-muted-foreground font-medium">
-              {eventFilter === 'all' ? 'Aucun événement à venir' : eventFilter === 'match' ? 'Aucun match à venir' : 'Aucun entraînement à venir'}
+              {showArchived
+                ? (archiveSearch ? 'Aucun entraînement trouvé' : 'Aucun entraînement archivé')
+                : eventFilter === 'all' ? 'Aucun événement à venir' : eventFilter === 'match' ? 'Aucun match à venir' : 'Aucun entraînement à venir'}
             </p>
-            {canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
+            {!showArchived && canManage() && <p className="text-sm text-muted-foreground/70 mt-2">Cliquez sur "+ Événement" pour en créer un</p>}
           </div>
         ) : (
         <div className="space-y-4 max-w-3xl mx-auto">
