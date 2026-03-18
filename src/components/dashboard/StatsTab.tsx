@@ -18,6 +18,7 @@ interface Props {
   members: Member[];
   championships?: Championship[];
   champMatches?: Match[];
+  matchSheets?: MatchSheet[];
   currentUser: AppUser | null;
   canManage: () => boolean | null;
   updatePlayerStats: (playerId: string, field: string, value: string) => void;
