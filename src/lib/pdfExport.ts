@@ -107,7 +107,8 @@ export async function exportPlayerCard(
   cards: Card[],
   events: Event[],
   attendanceRecords: AttendanceRecord[],
-  members: Member[]
+  members: Member[],
+  matchSheets: MatchSheet[] = []
 ) {
   await ensureLogo();
   const doc = new jsPDF();
