@@ -3,7 +3,7 @@ import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dash
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
 import type { MatchSheet } from '@/components/dashboard/MatchSheetsTab';
-import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined, Download, Search, User } from 'lucide-react';
+import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined, Download, Search, User, Ban, Eye } from 'lucide-react';
 import { exportPlayerCard, exportSeasonReport, exportAttendanceReport } from '@/lib/pdfExport';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import RoleBadge from '@/components/ui/role-badge';
