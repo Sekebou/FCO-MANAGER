@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
+import type { MatchSheet } from '@/components/dashboard/MatchSheetsTab';
 import { Plus, Minus, Trash2, Activity, Target, Trophy, Check, Crown, Medal, Award, Shield, AlertTriangle, Calendar, TrendingUp, Zap, HelpCircle, ChevronDown, BarChart3, X, ArrowLeft, Users, CircleDot, ChartNoAxesCombined, Download, Search, User } from 'lucide-react';
 import { exportPlayerCard, exportSeasonReport, exportAttendanceReport } from '@/lib/pdfExport';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
