@@ -305,9 +305,10 @@ const StatsTab = ({ players, events, cards, attendanceRecords, members, champion
                       Statistiques
                       <span className="flex-1 h-px bg-border/50" />
                     </h4>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-5 gap-2">
                       {[
-                        { icon: Activity, label: 'Matchs', value: spMatches, color: 'text-accent' },
+                        { icon: Activity, label: 'Convoc.', value: spMatchesPlayed, color: 'text-accent' },
+                        { icon: Trophy, label: 'Matchs', value: spMatches, color: 'text-accent' },
                         { icon: Target, label: 'Buts', value: spGoals, color: 'text-accent' },
                         { icon: Zap, label: 'PD', value: spAssists, color: 'text-accent' },
                         { icon: TrendingUp, label: 'Moy/M', value: spAvgGoals, color: 'text-muted-foreground' },
