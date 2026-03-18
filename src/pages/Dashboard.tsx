@@ -866,6 +866,14 @@ const Dashboard = () => {
     if (currentUser?.role === 'entraineur') playerData.role = 'joueur';
     if (playerData.role === 'admin+' && currentUser?.role !== 'admin+') { toast.error("Seul l'Admin+ peut attribuer ce rôle"); return; }
 
+    // Anti-doublon : vérifier si un joueur avec le même nom existe déjà
+    const normalizedName = playerData.name.trim().toLowerCase();
+    const existingPlayer = players.find(p => p.name.trim().toLowerCase() === normalizedName);
+    if (existingPlayer) {
+      toast.error(`Un joueur nommé "${existingPlayer.name}" existe déjà`);
+      return;
+    }
+
     try {
       let createdUid: string | null = null;
       if (playerData.createAccount && playerData.email && playerData.password) {
