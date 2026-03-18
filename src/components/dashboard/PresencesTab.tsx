@@ -191,8 +191,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     const event = selectedEvent;
     const eventPlayers = getPlayersForEvent(event);
     const presences = event.presences || {};
-    const presentCount = Object.values(presences).filter(p => p === 'present').length;
-    const absentCount = Object.values(presences).filter(p => p === 'absent').length;
+    const playerIds = new Set(eventPlayers.map(p => p.id));
+    const presentCount = eventPlayers.filter(p => presences[p.id] === 'present').length;
+    const absentCount = eventPlayers.filter(p => presences[p.id] === 'absent').length;
     const unknownCount = eventPlayers.length - presentCount - absentCount;
     const isConvocationMode = convocationMode === event.id;
     const isConvocationExpanded = expandedConvocations[event.id];
