@@ -39,18 +39,23 @@ const teamColors: Record<string, string> = {
   C: 'bg-amber-500/15 text-amber-500 border-amber-500/30',
 };
 
-const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [] }) => {
+const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {} }) => {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const now = new Date();
 
-  // Build a logo lookup from championships teamLogos
-  const getChampLogo = (teamName: string): string | null => {
+  // Build a logo lookup from championships teamLogos + event-based teamLogoMap
+  const getTeamLogo = (teamName: string): string | null => {
     if (!teamName) return null;
+    // Check teamLogoMap from events first
+    const upper = teamName.toUpperCase();
+    if (teamLogoMap[upper]) return teamLogoMap[upper];
+    if (teamLogoMap[teamName]) return teamLogoMap[teamName];
+    // Fallback to championships
     for (const champ of championships) {
       if (!champ.teamLogos) continue;
-      const logo = champ.teamLogos[teamName.toUpperCase()] || champ.teamLogos[teamName];
+      const logo = champ.teamLogos[upper] || champ.teamLogos[teamName];
       if (logo) return logo;
     }
     return null;
