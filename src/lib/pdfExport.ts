@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Capacitor } from '@capacitor/core';
 import type { Player, Event, Card, AttendanceRecord, Member } from '@/pages/Dashboard';
+import type { MatchSheet } from '@/components/dashboard/MatchSheetsTab';
 import type { Championship, Match } from '@/components/dashboard/ChampionnatTab';
 import logoUrl from '@/assets/logo.png';
 
