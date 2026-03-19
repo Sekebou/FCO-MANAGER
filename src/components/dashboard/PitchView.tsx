@@ -285,7 +285,6 @@ const DraggablePlayer: React.FC<{
 
 const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, isManager = false, onUpdateConvocations }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  const [pitchWidth, setPitchWidth] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
@@ -298,30 +297,10 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     if (!editMode && !justSavedRef.current) {
       setLocalConvocations(convocations);
     }
-    // Once the prop catches up with saved data, allow syncing again
     if (justSavedRef.current) {
       justSavedRef.current = false;
     }
   }, [convocations, editMode]);
-
-  useEffect(() => {
-    const element = pitchContainerRef.current;
-    if (!element) return;
-
-    const updateSize = () => {
-      setPitchWidth(element.clientWidth);
-    };
-    updateSize();
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(() => updateSize());
-      observer.observe(element);
-      return () => observer.disconnect();
-    }
-
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
 
   const convokedPlayers = Object.entries(localConvocations)
     .filter(([, conv]) => conv.status === 'convoque' && conv.position)
