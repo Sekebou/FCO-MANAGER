@@ -550,7 +550,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                 containerRef={pitchContainerRef as React.RefObject<HTMLDivElement>}
                 onDragEnd={(id, newX, newY) => {
                   // Convert back to field coordinates
-                  const fieldY = substitutePlayers.length > 0 ? newY / 0.8125 : newY;
+                  const fieldY = substitutePlayers.length > 0 ? newY / 0.85 : newY;
                   handlePlayerDragEnd(id, newX, fieldY);
                 }}
               >
