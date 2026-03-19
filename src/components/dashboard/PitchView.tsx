@@ -26,23 +26,22 @@ const BOUNDS = {
 
 const CX = (BOUNDS.left + BOUNDS.right) / 2; // true center of the field
 
-function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
-  const cx = 50 + GLOBAL_X_OFFSET;
+function getPositionCoords(): Record<string, { x: number; y: number }> {
   return {
-    'Attaquant': { x: cx, y: 9 },
-    'Ailier gauche': { x: bounds.left, y: 15 },
-    'Ailier droit': { x: bounds.right, y: 15 },
-    'Milieu offensif': { x: cx, y: 31 },
-    'Milieu central': { x: cx, y: 43 },
-    'Milieu gauche': { x: bounds.left, y: 43 },
-    'Milieu droit': { x: bounds.right, y: 43 },
-    'Milieu défensif': { x: cx, y: 54 },
-    'Latéral gauche': { x: bounds.left, y: 68 },
-    'Latéral droit': { x: bounds.right, y: 68 },
-    'Défenseur central': { x: cx, y: 68 },
-    'Défenseur gauche': { x: cx - 13, y: 68 },
-    'Défenseur droit': { x: cx + 13, y: 68 },
-    'Gardien': { x: cx, y: 86 },
+    'Attaquant': { x: CX, y: 9 },
+    'Ailier gauche': { x: BOUNDS.left, y: 15 },
+    'Ailier droit': { x: BOUNDS.right, y: 15 },
+    'Milieu offensif': { x: CX, y: 31 },
+    'Milieu central': { x: CX, y: 43 },
+    'Milieu gauche': { x: BOUNDS.left, y: 43 },
+    'Milieu droit': { x: BOUNDS.right, y: 43 },
+    'Milieu défensif': { x: CX, y: 54 },
+    'Latéral gauche': { x: BOUNDS.left, y: 68 },
+    'Latéral droit': { x: BOUNDS.right, y: 68 },
+    'Défenseur central': { x: CX, y: 68 },
+    'Défenseur gauche': { x: CX - 13, y: 68 },
+    'Défenseur droit': { x: CX + 13, y: 68 },
+    'Gardien': { x: CX, y: 86 },
   };
 }
 
