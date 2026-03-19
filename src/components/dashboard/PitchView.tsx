@@ -325,7 +325,9 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     });
   }, [convokedPlayers, localConvocations]);
 
-  const selected = selectedPlayer ? positioned.find((p) => p.id === selectedPlayer) : null;
+  const selected = selectedPlayer
+    ? positioned.find((p) => p.id === selectedPlayer) || substitutePlayers.find((p) => p.id === selectedPlayer)
+    : null;
 
   const handlePlayerDragEnd = useCallback((playerId: string, newX: number, newY: number) => {
     setLocalConvocations((prev) => {
