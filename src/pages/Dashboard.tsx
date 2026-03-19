@@ -54,7 +54,6 @@ export interface Convocation {
   status: 'convoque' | 'non_convoque';
   position?: string;
   number?: number;
-  substitute?: boolean;
   customX?: number;
   customY?: number;
 }
