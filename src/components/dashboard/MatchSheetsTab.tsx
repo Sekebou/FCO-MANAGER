@@ -42,7 +42,7 @@ const teamColors: Record<string, string> = {
   C: 'bg-amber-500/15 text-amber-500 border-amber-500/30',
 };
 
-const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {} }) => {
+const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, onMatchSheetUpdated }) => {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [localSheets, setLocalSheets] = useState(matchSheets);
@@ -60,12 +60,20 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .eq('id', sheetId);
       if (error) throw error;
       // Update local state
-      setLocalSheets((prev) => prev.map((ms) => ms.id === sheetId ? { ...ms, convocations: updated } : ms));
+      setLocalSheets((prev) => {
+        const next = prev.map((ms) => ms.id === sheetId ? { ...ms, convocations: updated } : ms);
+        // Also update parent state + cache
+        const updatedSheet = next.find((ms) => ms.id === sheetId);
+        if (updatedSheet && onMatchSheetUpdated) {
+          onMatchSheetUpdated(updatedSheet);
+        }
+        return next;
+      });
       toast.success('Disposition sauvegardée');
     } catch {
       toast.error('Erreur lors de la sauvegarde');
     }
-  }, []);
+  }, [onMatchSheetUpdated]);
 
   const now = new Date();
 
