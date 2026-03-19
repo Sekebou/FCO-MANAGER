@@ -317,12 +317,18 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [editMode, setEditMode] = useState(false);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
+  const justSavedRef = useRef(false);
   const pitchContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Sync local convocations when prop changes (and not in edit mode)
+  // Skip sync right after save to avoid overwriting with stale props
   useEffect(() => {
-    if (!editMode) {
+    if (!editMode && !justSavedRef.current) {
       setLocalConvocations(convocations);
+    }
+    // Once the prop catches up with saved data, allow syncing again
+    if (justSavedRef.current) {
+      justSavedRef.current = false;
     }
   }, [convocations, editMode]);
 
@@ -382,6 +388,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     if (onUpdateConvocations && hasChanges) {
       onUpdateConvocations(localConvocations);
     }
+    justSavedRef.current = true;
     setEditMode(false);
     setHasChanges(false);
   }, [localConvocations, onUpdateConvocations, hasChanges]);
