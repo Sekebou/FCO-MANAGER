@@ -541,7 +541,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           }
 
           return (
-            <motion.div
+            <div
               key={p.id}
               className="absolute z-10 flex w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
@@ -549,23 +549,27 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                 e.stopPropagation();
                 setSelectedPlayer(isSelected ? null : p.id);
               }}
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: idx * 0.04, duration: 0.3 }}
             >
-              <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={isSelected} index={idx} />
-              <span
-                className="w-full truncate rounded px-1 py-0.5 text-center text-[8px] font-bold leading-none text-white"
-                style={{
-                  background: 'rgba(0,0,0,0.55)',
-                  backdropFilter: 'blur(4px)',
-                  marginTop: '1px',
-                  letterSpacing: '0.02em',
-                }}
+              <motion.div
+                className="flex flex-col items-center"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.04, duration: 0.3 }}
               >
-                {lastName}
-              </span>
-            </motion.div>
+                <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={isSelected} index={idx} />
+                <span
+                  className="w-full truncate rounded px-1 py-0.5 text-center text-[8px] font-bold leading-none text-white"
+                  style={{
+                    background: 'rgba(0,0,0,0.55)',
+                    backdropFilter: 'blur(4px)',
+                    marginTop: '1px',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {lastName}
+                </span>
+              </motion.div>
+            </div>
           );
         })}
 
