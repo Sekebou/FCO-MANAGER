@@ -722,42 +722,18 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </div>
                           </div>
                           {isConvoked && (
-                            <div className="mt-2.5 space-y-2">
-                              <div className="flex gap-2 items-center">
-                                <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
-                                  <span className="text-sm font-medium text-foreground flex-1 truncate">
-                                    {conv?.position || <span className="text-muted-foreground">Poste</span>}
-                                  </span>
-                                  <ChevronDown size={12} className="text-muted-foreground shrink-0" />
-                                  <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
-                                    <option value="">Poste</option>
-                                    {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-                                  </select>
-                                </div>
-                                <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
+                            <div className="mt-2.5 flex gap-2 items-center">
+                              <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
+                                <span className="text-sm font-medium text-foreground flex-1 truncate">
+                                  {conv?.position || <span className="text-muted-foreground">Poste</span>}
+                                </span>
+                                <ChevronDown size={12} className="text-muted-foreground shrink-0" />
+                                <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
+                                  <option value="">Poste</option>
+                                  {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                                </select>
                               </div>
-                              <div className="flex gap-1.5">
-                                <button
-                                  onClick={() => updateDraft(player.id, { role: 'titulaire' })}
-                                  className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all ${
-                                    (!conv?.role || conv.role === 'titulaire')
-                                      ? 'bg-accent/20 text-accent border border-accent/40'
-                                      : 'bg-secondary/40 text-muted-foreground border border-transparent hover:border-border'
-                                  }`}
-                                >
-                                  Titulaire
-                                </button>
-                                <button
-                                  onClick={() => updateDraft(player.id, { role: 'remplacant' })}
-                                  className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all ${
-                                    conv?.role === 'remplacant'
-                                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                                      : 'bg-secondary/40 text-muted-foreground border border-transparent hover:border-border'
-                                  }`}
-                                >
-                                  Remplaçant
-                                </button>
-                              </div>
+                              <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
                             </div>
                           )}
                         </div>
