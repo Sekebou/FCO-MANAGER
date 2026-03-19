@@ -693,6 +693,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           )}
         </AnimatePresence>
       </div>
+    </div>
   );
 });
 
