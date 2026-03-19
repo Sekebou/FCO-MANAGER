@@ -54,6 +54,8 @@ export interface Convocation {
   status: 'convoque' | 'non_convoque';
   position?: string;
   number?: number;
+  customX?: number;
+  customY?: number;
 }
 
 export const POSITIONS = [
