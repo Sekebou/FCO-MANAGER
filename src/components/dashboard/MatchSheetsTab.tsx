@@ -179,16 +179,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               })
               .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
-            const starters = convokedPlayers.filter(p => {
-              if (p.conv.role === 'remplacant') return false;
-              if (p.conv.role === 'titulaire') return true;
-              return !p.conv.number || p.conv.number <= 11;
-            });
-            const substitutes = convokedPlayers.filter(p => {
-              if (p.conv.role === 'remplacant') return true;
-              if (p.conv.role === 'titulaire') return false;
-              return p.conv.number != null && p.conv.number >= 12;
-            });
+            const starters = convokedPlayers.filter(p => !p.conv.number || p.conv.number <= 11);
+            const substitutes = convokedPlayers.filter(p => p.conv.number != null && p.conv.number >= 12);
 
             return (
               <div

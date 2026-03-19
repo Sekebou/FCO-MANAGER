@@ -56,7 +56,6 @@ export interface Convocation {
   number?: number;
   customX?: number;
   customY?: number;
-  role?: 'titulaire' | 'remplacant';
 }
 
 export const POSITIONS = [
