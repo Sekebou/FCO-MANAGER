@@ -170,6 +170,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               })
               .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
+            const starters = convokedPlayers.filter(p => !p.conv.number || p.conv.number <= 11);
+            const substitutes = convokedPlayers.filter(p => p.conv.number && p.conv.number >= 12);
+
             return (
               <div
                 key={ms.id}
@@ -377,7 +380,10 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                               </div>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
                                 <Users size={12} className="shrink-0" />
-                                <span>{convokedPlayers.length} joueur{convokedPlayers.length > 1 ? 's' : ''} convoqué{convokedPlayers.length > 1 ? 's' : ''}</span>
+                                <span>
+                                  {starters.length} titulaire{starters.length > 1 ? 's' : ''}
+                                  {substitutes.length > 0 && ` + ${substitutes.length} remplaçant${substitutes.length > 1 ? 's' : ''}`}
+                                </span>
                               </div>
                             </div>
                           </div>
