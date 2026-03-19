@@ -72,8 +72,8 @@ function distributeEvenly(count: number, left: number, right: number, compact?: 
   return Array.from({ length: count }, (_, i) => l + ((r - l) / (count - 1)) * i);
 }
 
-function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[], bounds: SafeBounds) {
-  const coords = getPositionCoords(bounds);
+function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
+  const coords = getPositionCoords();
   const result: { id: string; name: string; conv: Convocation; x: number; y: number }[] = [];
   const handledIds = new Set<string>();
 
