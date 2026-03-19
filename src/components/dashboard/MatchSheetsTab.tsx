@@ -320,7 +320,12 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
                         <div className={isLocked ? 'filter blur-md' : ''}>
                           {convokedPlayers.length > 0 ? (
-                            <PitchView convocations={ms.convocations} players={players} />
+                            <PitchView
+                              convocations={ms.convocations}
+                              players={players}
+                              isManager={isManager}
+                              onUpdateConvocations={(updated) => handleUpdateConvocations(ms.id, updated)}
+                            />
                           ) : (
                             <div className="text-center py-8">
                               <Users size={32} className="mx-auto text-muted-foreground/50 mb-2" />
