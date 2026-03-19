@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Convocation, Player } from '@/pages/Dashboard';
 import type { Championship } from './ChampionnatTab';
 
