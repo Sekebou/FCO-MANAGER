@@ -341,7 +341,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
       }
       return p;
     });
-  }, [convokedPlayers, bounds, localConvocations]);
+  }, [convokedPlayers, localConvocations]);
 
   const selected = selectedPlayer ? positioned.find((p) => p.id === selectedPlayer) : null;
 
