@@ -1,43 +1,57 @@
 
+Problème réellement identifié dans le code actuel : le décalage ne vient pas seulement des coordonnées, mais surtout du rendu différent entre le mode normal et le mode édition dans `src/components/dashboard/PitchView.tsx`.
 
-## Plan de corrections
+En lecture normale, les joueurs sont rendus dans un `motion.div` avec `initial/animate` sur `y`. Framer Motion réécrit le `transform`, ce qui casse le centrage Tailwind `-translate-x-1/2 -translate-y-1/2`.  
+En mode édition, les joueurs sont rendus dans un `div` simple (`DraggablePlayer`) qui garde bien ce centrage. Résultat :
+- quand on clique sur “Modifier la disposition”, tous les joueurs changent de repère visuel et partent à gauche ;
+- quand on valide, ils repassent dans le wrapper animé du mode normal et repartent à droite ;
+- les `customX/customY` enregistrés peuvent être justes, mais l’affichage ne l’est pas.
 
-### Problèmes identifiés
+Plan de correction
 
-1. **Logos non persistés** : La table `events` n'a pas de colonnes `home_logo`/`away_logo`. Les logos sont dans le state local mais jamais insérés en DB, donc perdus au rechargement.
-2. **Heure non auto-remplie** dans le sélecteur natif (le `time` est mis dans `formData.time` mais le `NativeTimePicker` l'affiche bien — à vérifier si c'est un problème d'affichage).
-3. **Après sélection d'un match FFF**, tout reste visible (équipe, compétition, liste) — il faut cacher la section FFF et montrer la date/heure.
-4. **LocationAutocomplete toujours visible** pour les matchs — il faut le cacher par défaut et ne le montrer que si le stade n'est pas trouvé via FFF ou via un bouton admin+.
-5. **Icône "en attente"** manquante à côté des compteurs ✓ et ✗ sur les cartes liste.
-6. **Texte "Appuie pour voir les détails"** à améliorer + ajouter un petit espace.
-7. **Animations** manquantes sur les boutons Présent/Absent de la carte liste.
+1. Unifier le wrapper visuel des joueurs
+- Utiliser exactement le même conteneur positionné pour les 2 modes (normal + édition).
+- Garder `left/top` en `%` et le centrage `translate(-50%, -50%)` identiques partout.
+- Éviter que le conteneur absolu des joueurs soit un `motion.div` avec animation sur `x/y/transform`.
 
-### Modifications
+2. Déplacer les animations hors du conteneur positionné
+- Supprimer l’animation Framer Motion sur le bloc qui porte la position absolue.
+- Si on veut garder l’effet d’apparition, l’appliquer sur un enfant interne (maillot/label), avec `opacity` et `scale` uniquement.
+- Ainsi, le repère visuel ne changera plus quand on passe d’un mode à l’autre.
 
-#### 1. Migration DB : ajouter `home_logo` et `away_logo` à `events`
-```sql
-ALTER TABLE public.events ADD COLUMN home_logo text;
-ALTER TABLE public.events ADD COLUMN away_logo text;
+3. Rendre le mode édition visuellement identique au mode normal
+- Conserver la même largeur, le même centrage et le même point d’ancrage des maillots.
+- Vérifier que `DraggablePlayer` et le rendu normal utilisent le même markup de base, avec uniquement le drag/click qui change.
+
+4. Stabiliser la sauvegarde
+- Conserver la logique actuelle de sauvegarde des `customX/customY`, mais s’assurer qu’après `Valider`, le rendu relit ces coordonnées dans le même système visuel.
+- Garder la protection contre la resynchro trop tôt (`justSavedRef`), mais corriger d’abord le problème principal de `transform`, qui semble être la vraie cause du saut.
+
+5. Vérifications à faire après correction
+- Ouvrir une feuille avec une composition existante.
+- Cliquer sur “Modifier la disposition” : aucun joueur ne doit bouger d’un pixel.
+- Déplacer un joueur puis cliquer sur “Valider” : il doit rester exactement au même endroit.
+- Fermer/réouvrir la feuille de match : la position doit être identique.
+- Tester sur mobile étroit (comme actuellement) pour confirmer qu’il n’y a plus de décalage gauche/droite.
+
+Détails techniques
+```text
+Cause probable principale :
+- mode normal = wrapper joueur en motion.div avec animation sur y
+- mode édition = wrapper joueur en div classique
+
+Conséquence :
+- Framer Motion prend la main sur `transform`
+- le `translate(-50%, -50%)` n’est plus appliqué pareil
+- les coordonnées sauvegardées paraissent “fausses” alors que c’est surtout l’ancrage visuel qui change
+
+Correction :
+- même wrapper absolu dans les 2 modes
+- pas d’animation transform sur le wrapper positionné
+- animations éventuelles déplacées sur un enfant interne
 ```
 
-#### 2. `src/pages/Dashboard.tsx`
-- Dans `addEvent` (ligne 706-713) : inclure `home_logo: eventData.homeLogo`, `away_logo: eventData.awayLogo` dans l'insert
-- Dans le fetch des events : mapper `home_logo`/`away_logo` vers `homeLogo`/`awayLogo` dans le type Event
+Fichiers à modifier
+- `src/components/dashboard/PitchView.tsx`
 
-#### 3. `src/components/modals/AddEventForm.tsx`
-- **`handleFFFMatchSelect`** : après sélection, mettre un state `fffMatchSelected = true` qui masque toute la section FFF (équipes, compétitions, matchs) pour montrer uniquement titre/date/heure/lieu pré-remplis
-- Ajouter un bouton "Modifier le match" pour ré-ouvrir la sélection FFF si besoin
-- **LocationAutocomplete pour match** : masquer par défaut. Afficher uniquement si `!formData.location` (stade non trouvé via FFF) OU si admin+ clique sur un bouton "Modifier le stade"
-- S'assurer que `formData.time` est bien rempli (déjà fait dans `handleFFFMatchSelect` ligne 119)
-
-#### 4. `src/components/dashboard/PresencesTab.tsx`
-- **Compteur "en attente"** : ajouter une icône Clock avec le count des joueurs n'ayant pas répondu à côté des ✓ et ✗ sur les cartes liste
-- **Texte hint** : changer en "Appuyez pour voir plus de détails sur l'événement" avec un `mt-1` pour l'espacement
-- **Animations Présent/Absent** : ajouter `motion.button` avec `whileTap={{ scale: 0.9 }}` et `AnimatePresence` pour les boutons de la carte liste (comme dans la vue détail)
-
-### Fichiers modifiés
-1. Migration SQL (nouvelle)
-2. `src/pages/Dashboard.tsx`
-3. `src/components/modals/AddEventForm.tsx`
-4. `src/components/dashboard/PresencesTab.tsx`
-
+Pas de changement backend ou base de données nécessaire pour ce correctif.
