@@ -44,6 +44,27 @@ const teamColors: Record<string, string> = {
 const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {} }) => {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [localSheets, setLocalSheets] = useState(matchSheets);
+
+  // Keep local state in sync
+  React.useEffect(() => {
+    setLocalSheets(matchSheets);
+  }, [matchSheets]);
+
+  const handleUpdateConvocations = useCallback(async (sheetId: string, updated: Record<string, any>) => {
+    try {
+      const { error } = await supabase
+        .from('match_sheets')
+        .update({ convocations: updated as any })
+        .eq('id', sheetId);
+      if (error) throw error;
+      // Update local state
+      setLocalSheets((prev) => prev.map((ms) => ms.id === sheetId ? { ...ms, convocations: updated } : ms));
+      toast.success('Disposition sauvegardée');
+    } catch {
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  }, []);
 
   const now = new Date();
 
