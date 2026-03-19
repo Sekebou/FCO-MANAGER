@@ -455,7 +455,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           style={{
             top: 0,
             left: 0,
-            height: substitutePlayers.length > 0 ? '81.25%' : '100%',
+            height: substitutePlayers.length > 0 ? '85%' : '100%',
           }}
           preserveAspectRatio="none"
         >
