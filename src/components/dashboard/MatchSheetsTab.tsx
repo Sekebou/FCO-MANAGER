@@ -33,6 +33,7 @@ interface Props {
   isManager?: boolean;
   championships?: Championship[];
   teamLogoMap?: Record<string, string>;
+  onMatchSheetUpdated?: (sheet: MatchSheet) => void;
 }
 
 const teamColors: Record<string, string> = {

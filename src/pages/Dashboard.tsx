@@ -1667,7 +1667,7 @@ const Dashboard = () => {
               <ParisTab currentUser={currentUser} championships={championships} />
             </div>
           )}
-          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} />}
+          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} onMatchSheetUpdated={(updatedSheet) => { setMatchSheets(prev => { const next = prev.map(ms => ms.id === updatedSheet.id ? updatedSheet : ms); writeCache('matchSheets', next); return next; }); }} />}
           {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
