@@ -440,16 +440,11 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             <div
               className="absolute left-0 right-0 bottom-0"
               style={{
-                height: '18.75%',
-                background: 'linear-gradient(180deg, hsl(220 15% 16%) 0%, hsl(220 15% 12%) 100%)',
-                borderTop: '2px solid rgba(255,255,255,0.1)',
+                height: '15%',
+                background: 'linear-gradient(180deg, hsl(220 10% 22%) 0%, hsl(220 10% 16%) 100%)',
+                borderTop: '2px solid rgba(255,255,255,0.15)',
               }}
-            >
-              {/* Bench texture lines */}
-              <div className="absolute inset-0 opacity-[0.04]" style={{
-                backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(255,255,255,0.3) 8px, rgba(255,255,255,0.3) 9px)',
-              }} />
-            </div>
+            />
           )}
         </div>
 
