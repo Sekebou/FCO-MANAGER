@@ -411,7 +411,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
       <div
         ref={pitchContainerRef}
         className={`relative mx-auto w-full max-w-sm rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.25)] ${editMode ? 'ring-2 ring-primary/40' : ''}`}
-        style={{ aspectRatio: substitutePlayers.length > 0 ? '9 / 16' : '9 / 13' }}
+        style={{ aspectRatio: substitutePlayers.length > 0 ? '9 / 15' : '9 / 13' }}
         onClick={() => !editMode && setSelectedPlayer(null)}
       >
         {/* Horizontal grass stripes — field area */}
