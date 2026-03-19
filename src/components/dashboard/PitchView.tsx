@@ -417,7 +417,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         {/* Horizontal grass stripes — field area */}
         <div className="absolute inset-0 rounded-2xl overflow-hidden">
           {/* Grass area takes top portion */}
-          <div className="absolute top-0 left-0 right-0" style={{ height: substitutePlayers.length > 0 ? '81.25%' : '100%' }}>
+          <div className="absolute top-0 left-0 right-0" style={{ height: substitutePlayers.length > 0 ? '85%' : '100%' }}>
             {[...Array(18)].map((_, i) => (
               <div
                 key={i}
