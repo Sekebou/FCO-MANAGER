@@ -302,13 +302,16 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     }
   }, [convocations, editMode]);
 
-  const convokedPlayers = Object.entries(localConvocations)
+  const allConvokedPlayers = Object.entries(localConvocations)
     .filter(([, conv]) => conv.status === 'convoque' && conv.position)
     .map(([playerId, conv]) => {
       const player = players.find((p) => p.id === playerId);
       return player ? { id: playerId, name: player.name, conv } : null;
     })
     .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
+
+  const convokedPlayers = allConvokedPlayers.filter((p) => !p.conv.substitute);
+  const substitutePlayers = allConvokedPlayers.filter((p) => p.conv.substitute);
 
   // For players with customX/customY, use those; otherwise use computed positions
   const positioned = useMemo(() => {
