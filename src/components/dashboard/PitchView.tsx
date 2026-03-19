@@ -339,7 +339,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     if (onUpdateConvocations && hasChanges) {
       onUpdateConvocations(localConvocations);
     }
-    justSavedRef.current = true;
+    saveTimestampRef.current = Date.now();
     setEditMode(false);
     setHasChanges(false);
   }, [localConvocations, onUpdateConvocations, hasChanges]);
