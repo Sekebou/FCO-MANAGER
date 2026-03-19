@@ -476,8 +476,8 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         {[
           { x: '5%', y: '1%' },
           { x: '93%', y: '1%' },
-          { x: '5%', y: substitutePlayers.length > 0 ? '77%' : '95%' },
-          { x: '93%', y: substitutePlayers.length > 0 ? '77%' : '95%' },
+          { x: '5%', y: substitutePlayers.length > 0 ? '81%' : '95%' },
+          { x: '93%', y: substitutePlayers.length > 0 ? '81%' : '95%' },
         ].map((pos, i) => (
           <div key={`flag-${i}`} className="absolute" style={{ left: pos.x, top: pos.y, zIndex: 5 }}>
             <div className="mx-auto h-[18px] w-[2px] rounded-full bg-white/60" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
