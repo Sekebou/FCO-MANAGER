@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Convocation, Player } from '@/pages/Dashboard';
 import type { Championship } from './ChampionnatTab';
 
@@ -42,6 +44,27 @@ const teamColors: Record<string, string> = {
 const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {} }) => {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [localSheets, setLocalSheets] = useState(matchSheets);
+
+  // Keep local state in sync
+  React.useEffect(() => {
+    setLocalSheets(matchSheets);
+  }, [matchSheets]);
+
+  const handleUpdateConvocations = useCallback(async (sheetId: string, updated: Record<string, any>) => {
+    try {
+      const { error } = await supabase
+        .from('match_sheets')
+        .update({ convocations: updated as any })
+        .eq('id', sheetId);
+      if (error) throw error;
+      // Update local state
+      setLocalSheets((prev) => prev.map((ms) => ms.id === sheetId ? { ...ms, convocations: updated } : ms));
+      toast.success('Disposition sauvegardée');
+    } catch {
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  }, []);
 
   const now = new Date();
 
@@ -63,7 +86,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    const sorted = [...matchSheets].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = [...localSheets].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     if (!q) return sorted;
     return sorted.filter(ms =>
       ms.title.toLowerCase().includes(q) ||
@@ -72,7 +95,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       ms.date.includes(q) ||
       ms.team?.toLowerCase().includes(q)
     );
-  }, [matchSheets, search]);
+  }, [localSheets, search]);
 
   const formatDate = (d: string) => {
     const date = new Date(d);
@@ -297,7 +320,12 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
                         <div className={isLocked ? 'filter blur-md' : ''}>
                           {convokedPlayers.length > 0 ? (
-                            <PitchView convocations={ms.convocations} players={players} />
+                            <PitchView
+                              convocations={ms.convocations}
+                              players={players}
+                              isManager={isManager}
+                              onUpdateConvocations={(updated) => handleUpdateConvocations(ms.id, updated)}
+                            />
                           ) : (
                             <div className="text-center py-8">
                               <Users size={32} className="mx-auto text-muted-foreground/50 mb-2" />
