@@ -364,7 +364,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     setHasChanges(true);
   }, []);
 
-  if (convokedPlayers.length === 0) return null;
+  if (allConvokedPlayers.length === 0) return null;
 
   return (
     <div ref={ref}>
