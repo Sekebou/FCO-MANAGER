@@ -86,7 +86,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    const sorted = [...matchSheets].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = [...localSheets].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     if (!q) return sorted;
     return sorted.filter(ms =>
       ms.title.toLowerCase().includes(q) ||
