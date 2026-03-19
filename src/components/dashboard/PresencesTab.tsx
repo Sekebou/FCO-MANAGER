@@ -4,7 +4,7 @@ import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
-import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search } from 'lucide-react';
+import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search, ArrowLeftRight } from 'lucide-react';
 import { exportMatchSheet } from '@/lib/pdfExport';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
@@ -734,6 +734,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                 </select>
                               </div>
                               <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
+                              <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => updateDraft(player.id, { substitute: !conv?.substitute })}
+                                className={`h-10 px-2.5 rounded-xl flex items-center gap-1 text-[10px] font-bold transition-all whitespace-nowrap ${
+                                  conv?.substitute
+                                    ? 'bg-amber-500/20 text-amber-600 border border-amber-500/40'
+                                    : 'bg-secondary/60 border border-border/60 text-muted-foreground hover:border-amber-500/30'
+                                }`}
+                                title="Remplaçant"
+                              >
+                                <ArrowLeftRight size={12} />
+                                {conv?.substitute ? 'Rempl.' : 'Titu.'}
+                              </motion.button>
                             </div>
                           )}
                         </div>
