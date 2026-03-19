@@ -250,9 +250,10 @@ const DraggablePlayer: React.FC<{
     let newX = dragStart.current.startX + dxPct;
     let newY = dragStart.current.startY + dyPct;
 
-    // Clamp to field lines
+    // Clamp to field lines — prevent dragging into bench area
     newX = Math.max(BOUNDS.left, Math.min(BOUNDS.right, newX));
-    newY = Math.max(BOUNDS.top, Math.min(BOUNDS.bottom, newY));
+    const maxY = BOUNDS.bottom * 0.8125; // limit to field area
+    newY = Math.max(BOUNDS.top, Math.min(maxY, newY));
 
     const newPos = { x: newX, y: newY };
     posRef.current = newPos;
