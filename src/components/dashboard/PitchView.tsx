@@ -15,43 +15,16 @@ interface Props {
   onUpdateConvocations?: (updated: Record<string, Convocation>) => void;
 }
 
-type SafeBounds = {
-  left: number;
-  right: number;
+// Single unified coordinate system — all positions are percentages within the pitch container
+// Based on SVG viewBox 68x98: field lines at x=4..64, y=2..96
+const BOUNDS = {
+  left: (4 / 68) * 100 + 4,    // ~9.9%  — left field line + margin for player width
+  right: (64 / 68) * 100 - 4,  // ~90.1% — right field line - margin
+  top: (2 / 98) * 100 + 1,     // ~3%    — top line + margin
+  bottom: (96 / 98) * 100 - 1, // ~97%   — bottom line - margin
 };
 
-const FIELD_LEFT_PCT = (4 / 68) * 100;
-const FIELD_RIGHT_PCT = (64 / 68) * 100;
-const PLAYER_SLOT_WIDTH = 48;
-const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
-const SAFE_BUFFER_PX = 10;
-const GLOBAL_X_OFFSET = -7;
-const DEFAULT_SAFE_BOUNDS: SafeBounds = {
-  left: 16 + GLOBAL_X_OFFSET,
-  right: 84 + GLOBAL_X_OFFSET,
-};
-
-// Drag bounds: field white lines with small inset for player size
-const DRAG_BOUNDS = {
-  left: (4 / 68) * 100 + 4,   // left field line + small margin
-  right: (64 / 68) * 100 - 4, // right field line - small margin
-  top: (2 / 98) * 100 + 1,    // top line + small margin
-  bottom: (96 / 98) * 100 - 1, // bottom line - small margin
-};
-
-function getSafeBounds(containerWidth: number): SafeBounds {
-  if (!containerWidth) return DEFAULT_SAFE_BOUNDS;
-
-  const fieldLeftPx = (containerWidth * FIELD_LEFT_PCT) / 100;
-  const fieldRightPx = (containerWidth * FIELD_RIGHT_PCT) / 100;
-  const safeLeft = ((fieldLeftPx + PLAYER_SLOT_HALF + SAFE_BUFFER_PX) / containerWidth) * 100;
-  const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF - SAFE_BUFFER_PX) / containerWidth) * 100;
-
-  return {
-    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft + GLOBAL_X_OFFSET),
-    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight + GLOBAL_X_OFFSET),
-  };
-}
+const CX = (BOUNDS.left + BOUNDS.right) / 2; // true center of the field
 
 function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
   const cx = 50 + GLOBAL_X_OFFSET;
