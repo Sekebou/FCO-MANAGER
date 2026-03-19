@@ -94,7 +94,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     .sort((a, b) => (ATK_ORDER[a.conv.position || ''] ?? 1) - (ATK_ORDER[b.conv.position || ''] ?? 1));
 
   if (attackLine.length >= 1) {
-    const xs = distributeEvenly(attackLine.length, bounds.left, bounds.right, attackLine.length >= 3);
+    const xs = distributeEvenly(attackLine.length, BOUNDS.left, BOUNDS.right, attackLine.length >= 3);
     attackLine.forEach((p, i) => {
       result.push({ ...p, x: xs[i], y: 15 });
       handledIds.add(p.id);
