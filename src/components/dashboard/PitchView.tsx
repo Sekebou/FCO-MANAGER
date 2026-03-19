@@ -115,7 +115,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     if (group.length === 1) {
       result.push({ ...group[0], x: base.x, y: base.y });
     } else {
-      const xs = distributeEvenly(group.length, bounds.left, bounds.right);
+      const xs = distributeEvenly(group.length, BOUNDS.left, BOUNDS.right);
       group.forEach((p, i) => {
         result.push({ ...p, x: xs[i], y: base.y });
       });
