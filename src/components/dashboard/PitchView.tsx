@@ -408,31 +408,59 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
       <div
         ref={pitchContainerRef}
         className={`relative mx-auto w-full max-w-sm rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.25)] ${editMode ? 'ring-2 ring-primary/40' : ''}`}
-        style={{ aspectRatio: '9 / 13' }}
+        style={{ aspectRatio: substitutePlayers.length > 0 ? '9 / 16' : '9 / 13' }}
         onClick={() => !editMode && setSelectedPlayer(null)}
       >
-        {/* Horizontal grass stripes */}
+        {/* Horizontal grass stripes — field area */}
         <div className="absolute inset-0 rounded-2xl overflow-hidden">
-          {[...Array(18)].map((_, i) => (
+          {/* Grass area takes top portion */}
+          <div className="absolute top-0 left-0 right-0" style={{ height: substitutePlayers.length > 0 ? '81.25%' : '100%' }}>
+            {[...Array(18)].map((_, i) => (
+              <div
+                key={i}
+                className="w-full"
+                style={{
+                  height: `${100 / 18}%`,
+                  backgroundColor: i % 2 === 0 ? 'hsl(130 38% 40%)' : 'hsl(130 38% 35%)',
+                }}
+              />
+            ))}
             <div
-              key={i}
-              className="w-full"
+              className="absolute inset-0"
               style={{
-                height: `${100 / 18}%`,
-                backgroundColor: i % 2 === 0 ? 'hsl(130 38% 40%)' : 'hsl(130 38% 35%)',
+                background: 'radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,0.2) 100%)',
               }}
             />
-          ))}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,0.2) 100%)',
-            }}
-          />
+          </div>
+          {/* Bench area at the bottom */}
+          {substitutePlayers.length > 0 && (
+            <div
+              className="absolute left-0 right-0 bottom-0"
+              style={{
+                height: '18.75%',
+                background: 'linear-gradient(180deg, hsl(220 15% 16%) 0%, hsl(220 15% 12%) 100%)',
+                borderTop: '2px solid rgba(255,255,255,0.1)',
+              }}
+            >
+              {/* Bench texture lines */}
+              <div className="absolute inset-0 opacity-[0.04]" style={{
+                backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(255,255,255,0.3) 8px, rgba(255,255,255,0.3) 9px)',
+              }} />
+            </div>
+          )}
         </div>
 
-        {/* Pitch markings */}
-        <svg viewBox="0 0 68 98" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
+        {/* Pitch markings — positioned in the field area only */}
+        <svg
+          viewBox="0 0 68 98"
+          className="absolute h-full w-full"
+          style={{
+            top: 0,
+            left: 0,
+            height: substitutePlayers.length > 0 ? '81.25%' : '100%',
+          }}
+          preserveAspectRatio="none"
+        >
           <rect x="4" y="2" width="60" height="94" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" rx="0.3" />
           <line x1="4" y1="2.5" x2="64" y2="2.5" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4" />
           <path d="M 25 2.5 A 9 9 0 0 1 43 2.5" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" />
@@ -446,12 +474,12 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           <path d="M 62 2 A 2 2 0 0 1 64 4" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.3" />
         </svg>
 
-        {/* Corner flags */}
+        {/* Corner flags — in field area */}
         {[
           { x: '5%', y: '1%' },
           { x: '93%', y: '1%' },
-          { x: '5%', y: '95%' },
-          { x: '93%', y: '95%' },
+          { x: '5%', y: substitutePlayers.length > 0 ? '77%' : '95%' },
+          { x: '93%', y: substitutePlayers.length > 0 ? '77%' : '95%' },
         ].map((pos, i) => (
           <div key={`flag-${i}`} className="absolute" style={{ left: pos.x, top: pos.y, zIndex: 5 }}>
             <div className="mx-auto h-[18px] w-[2px] rounded-full bg-white/60" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }} />
@@ -506,11 +534,13 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           </div>
         )}
 
-        {/* Players */}
+        {/* Players on field — scale positions to field area */}
         {positioned.map((p, idx) => {
           const isSelected = selectedPlayer === p.id;
           const isGk = p.conv.position === 'Gardien';
           const lastName = p.name.split(' ').pop() || p.name;
+          // Scale Y coordinates to the field portion only
+          const scaledY = substitutePlayers.length > 0 ? p.y * 0.8125 : p.y;
 
           if (editMode) {
             return (
@@ -518,9 +548,13 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                 key={p.id}
                 playerId={p.id}
                 startX={p.x}
-                startY={p.y}
+                startY={scaledY}
                 containerRef={pitchContainerRef as React.RefObject<HTMLDivElement>}
-                onDragEnd={handlePlayerDragEnd}
+                onDragEnd={(id, newX, newY) => {
+                  // Convert back to field coordinates
+                  const fieldY = substitutePlayers.length > 0 ? newY / 0.8125 : newY;
+                  handlePlayerDragEnd(id, newX, fieldY);
+                }}
               >
                 {(isDragging) => (
                   <>
@@ -546,7 +580,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             <div
               key={p.id}
               className="absolute z-10 flex w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
-              style={{ left: `${p.x}%`, top: `${p.y}%` }}
+              style={{ left: `${p.x}%`, top: `${scaledY}%` }}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedPlayer(isSelected ? null : p.id);
@@ -575,6 +609,46 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           );
         })}
 
+        {/* Bench label & substitutes inside pitch container */}
+        {substitutePlayers.length > 0 && (
+          <div className="absolute left-0 right-0 bottom-0 z-10" style={{ height: '18.75%' }}>
+            {/* Bench header */}
+            <div className="flex items-center justify-center gap-2 pt-1.5 pb-1">
+              <ArrowLeftRight size={11} className="text-amber-400" />
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Banc</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400">{substitutePlayers.length}</span>
+            </div>
+            {/* Substitute players */}
+            <div className="flex flex-wrap justify-center gap-2 px-2">
+              {substitutePlayers.map((p, idx) => {
+                const isGk = p.conv.position === 'Gardien';
+                const lastName = p.name.split(' ').pop() || p.name;
+                return (
+                  <motion.div
+                    key={p.id}
+                    className="flex flex-col items-center w-12 cursor-pointer"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05, duration: 0.3 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPlayer(selectedPlayer === p.id ? null : p.id);
+                    }}
+                  >
+                    <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={selectedPlayer === p.id} index={idx + positioned.length} />
+                    <span
+                      className="w-full truncate rounded px-0.5 py-0.5 text-center text-[7px] font-bold leading-none text-white/80"
+                      style={{ marginTop: '1px', letterSpacing: '0.02em' }}
+                    >
+                      {lastName}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Player detail popup */}
         <AnimatePresence>
           {selected && !editMode && (
@@ -586,7 +660,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
               className="absolute z-30 rounded-2xl shadow-2xl p-3.5 w-[160px]"
               style={{
                 left: '50%',
-                top: '50%',
+                top: '40%',
                 transform: 'translate(-50%, -50%)',
                 background: 'rgba(15,15,25,0.92)',
                 backdropFilter: 'blur(16px) saturate(1.5)',
@@ -619,47 +693,6 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           )}
         </AnimatePresence>
       </div>
-
-      {/* Substitute bench */}
-      {substitutePlayers.length > 0 && (
-        <div className="mt-3 rounded-2xl overflow-hidden shadow-lg" style={{ background: 'linear-gradient(135deg, hsl(220 15% 18%), hsl(220 15% 14%))' }}>
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-            <ArrowLeftRight size={13} className="text-amber-400" />
-            <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Remplaçants</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400">{substitutePlayers.length}</span>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3 px-3 py-3">
-            {substitutePlayers.map((p, idx) => {
-              const isGk = p.conv.position === 'Gardien';
-              const lastName = p.name.split(' ').pop() || p.name;
-              return (
-                <motion.div
-                  key={p.id}
-                  className="flex flex-col items-center w-14 cursor-pointer"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.05, duration: 0.3 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPlayer(selectedPlayer === p.id ? null : p.id);
-                  }}
-                >
-                  <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={selectedPlayer === p.id} index={idx + positioned.length} />
-                  <span
-                    className="w-full truncate rounded px-1 py-0.5 text-center text-[7px] font-bold leading-none text-white/80"
-                    style={{ marginTop: '2px', letterSpacing: '0.02em' }}
-                  >
-                    {lastName}
-                  </span>
-                  <span className="text-[7px] text-amber-400/60 font-medium mt-0.5 truncate w-full text-center">
-                    {p.conv.position}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 });
