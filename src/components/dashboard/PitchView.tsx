@@ -15,61 +15,33 @@ interface Props {
   onUpdateConvocations?: (updated: Record<string, Convocation>) => void;
 }
 
-type SafeBounds = {
-  left: number;
-  right: number;
+// Single unified coordinate system — all positions are percentages within the pitch container
+// Based on SVG viewBox 68x98: field lines at x=4..64, y=2..96
+const BOUNDS = {
+  left: (4 / 68) * 100 + 4,    // ~9.9%  — left field line + margin for player width
+  right: (64 / 68) * 100 - 4,  // ~90.1% — right field line - margin
+  top: (2 / 98) * 100 + 1,     // ~3%    — top line + margin
+  bottom: (96 / 98) * 100 - 1, // ~97%   — bottom line - margin
 };
 
-const FIELD_LEFT_PCT = (4 / 68) * 100;
-const FIELD_RIGHT_PCT = (64 / 68) * 100;
-const PLAYER_SLOT_WIDTH = 48;
-const PLAYER_SLOT_HALF = PLAYER_SLOT_WIDTH / 2;
-const SAFE_BUFFER_PX = 10;
-const GLOBAL_X_OFFSET = -7;
-const DEFAULT_SAFE_BOUNDS: SafeBounds = {
-  left: 16 + GLOBAL_X_OFFSET,
-  right: 84 + GLOBAL_X_OFFSET,
-};
+const CX = (BOUNDS.left + BOUNDS.right) / 2; // true center of the field
 
-// Drag bounds: field white lines with small inset for player size
-const DRAG_BOUNDS = {
-  left: (4 / 68) * 100 + 4,   // left field line + small margin
-  right: (64 / 68) * 100 - 4, // right field line - small margin
-  top: (2 / 98) * 100 + 1,    // top line + small margin
-  bottom: (96 / 98) * 100 - 1, // bottom line - small margin
-};
-
-function getSafeBounds(containerWidth: number): SafeBounds {
-  if (!containerWidth) return DEFAULT_SAFE_BOUNDS;
-
-  const fieldLeftPx = (containerWidth * FIELD_LEFT_PCT) / 100;
-  const fieldRightPx = (containerWidth * FIELD_RIGHT_PCT) / 100;
-  const safeLeft = ((fieldLeftPx + PLAYER_SLOT_HALF + SAFE_BUFFER_PX) / containerWidth) * 100;
-  const safeRight = ((fieldRightPx - PLAYER_SLOT_HALF - SAFE_BUFFER_PX) / containerWidth) * 100;
-
+function getPositionCoords(): Record<string, { x: number; y: number }> {
   return {
-    left: Math.max(FIELD_LEFT_PCT + 3, safeLeft + GLOBAL_X_OFFSET),
-    right: Math.min(FIELD_RIGHT_PCT - 3, safeRight + GLOBAL_X_OFFSET),
-  };
-}
-
-function getPositionCoords(bounds: SafeBounds): Record<string, { x: number; y: number }> {
-  const cx = 50 + GLOBAL_X_OFFSET;
-  return {
-    'Attaquant': { x: cx, y: 9 },
-    'Ailier gauche': { x: bounds.left, y: 15 },
-    'Ailier droit': { x: bounds.right, y: 15 },
-    'Milieu offensif': { x: cx, y: 31 },
-    'Milieu central': { x: cx, y: 43 },
-    'Milieu gauche': { x: bounds.left, y: 43 },
-    'Milieu droit': { x: bounds.right, y: 43 },
-    'Milieu défensif': { x: cx, y: 54 },
-    'Latéral gauche': { x: bounds.left, y: 68 },
-    'Latéral droit': { x: bounds.right, y: 68 },
-    'Défenseur central': { x: cx, y: 68 },
-    'Défenseur gauche': { x: cx - 13, y: 68 },
-    'Défenseur droit': { x: cx + 13, y: 68 },
-    'Gardien': { x: cx, y: 86 },
+    'Attaquant': { x: CX, y: 9 },
+    'Ailier gauche': { x: BOUNDS.left, y: 15 },
+    'Ailier droit': { x: BOUNDS.right, y: 15 },
+    'Milieu offensif': { x: CX, y: 31 },
+    'Milieu central': { x: CX, y: 43 },
+    'Milieu gauche': { x: BOUNDS.left, y: 43 },
+    'Milieu droit': { x: BOUNDS.right, y: 43 },
+    'Milieu défensif': { x: CX, y: 54 },
+    'Latéral gauche': { x: BOUNDS.left, y: 68 },
+    'Latéral droit': { x: BOUNDS.right, y: 68 },
+    'Défenseur central': { x: CX, y: 68 },
+    'Défenseur gauche': { x: CX - 13, y: 68 },
+    'Défenseur droit': { x: CX + 13, y: 68 },
+    'Gardien': { x: CX, y: 86 },
   };
 }
 
@@ -100,8 +72,8 @@ function distributeEvenly(count: number, left: number, right: number, compact?: 
   return Array.from({ length: count }, (_, i) => l + ((r - l) / (count - 1)) * i);
 }
 
-function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[], bounds: SafeBounds) {
-  const coords = getPositionCoords(bounds);
+function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocation }[]) {
+  const coords = getPositionCoords();
   const result: { id: string; name: string; conv: Convocation; x: number; y: number }[] = [];
   const handledIds = new Set<string>();
 
@@ -110,7 +82,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     .sort((a, b) => (DEF_ORDER[a.conv.position || ''] ?? 2) - (DEF_ORDER[b.conv.position || ''] ?? 2));
 
   if (defenseLine.length >= 1) {
-    const xs = distributeEvenly(defenseLine.length, bounds.left, bounds.right, defenseLine.length >= 4);
+    const xs = distributeEvenly(defenseLine.length, BOUNDS.left, BOUNDS.right, defenseLine.length >= 4);
     defenseLine.forEach((p, i) => {
       result.push({ ...p, x: xs[i], y: 68 });
       handledIds.add(p.id);
@@ -122,7 +94,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     .sort((a, b) => (ATK_ORDER[a.conv.position || ''] ?? 1) - (ATK_ORDER[b.conv.position || ''] ?? 1));
 
   if (attackLine.length >= 1) {
-    const xs = distributeEvenly(attackLine.length, bounds.left, bounds.right, attackLine.length >= 3);
+    const xs = distributeEvenly(attackLine.length, BOUNDS.left, BOUNDS.right, attackLine.length >= 3);
     attackLine.forEach((p, i) => {
       result.push({ ...p, x: xs[i], y: 15 });
       handledIds.add(p.id);
@@ -143,7 +115,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     if (group.length === 1) {
       result.push({ ...group[0], x: base.x, y: base.y });
     } else {
-      const xs = distributeEvenly(group.length, bounds.left, bounds.right);
+      const xs = distributeEvenly(group.length, BOUNDS.left, BOUNDS.right);
       group.forEach((p, i) => {
         result.push({ ...p, x: xs[i], y: base.y });
       });
@@ -279,8 +251,8 @@ const DraggablePlayer: React.FC<{
     let newY = dragStart.current.startY + dyPct;
 
     // Clamp to field lines
-    newX = Math.max(DRAG_BOUNDS.left, Math.min(DRAG_BOUNDS.right, newX));
-    newY = Math.max(DRAG_BOUNDS.top, Math.min(DRAG_BOUNDS.bottom, newY));
+    newX = Math.max(BOUNDS.left, Math.min(BOUNDS.right, newX));
+    newY = Math.max(BOUNDS.top, Math.min(BOUNDS.bottom, newY));
 
     const newPos = { x: newX, y: newY };
     posRef.current = newPos;
@@ -313,7 +285,6 @@ const DraggablePlayer: React.FC<{
 
 const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, isManager = false, onUpdateConvocations }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
-  const [pitchWidth, setPitchWidth] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
@@ -326,30 +297,10 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     if (!editMode && !justSavedRef.current) {
       setLocalConvocations(convocations);
     }
-    // Once the prop catches up with saved data, allow syncing again
     if (justSavedRef.current) {
       justSavedRef.current = false;
     }
   }, [convocations, editMode]);
-
-  useEffect(() => {
-    const element = pitchContainerRef.current;
-    if (!element) return;
-
-    const updateSize = () => {
-      setPitchWidth(element.clientWidth);
-    };
-    updateSize();
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(() => updateSize());
-      observer.observe(element);
-      return () => observer.disconnect();
-    }
-
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
 
   const convokedPlayers = Object.entries(localConvocations)
     .filter(([, conv]) => conv.status === 'convoque' && conv.position)
@@ -359,11 +310,9 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     })
     .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
-  const bounds = useMemo(() => getSafeBounds(pitchWidth), [pitchWidth]);
-
   // For players with customX/customY, use those; otherwise use computed positions
   const positioned = useMemo(() => {
-    const computed = getSpreadCoords(convokedPlayers, bounds);
+    const computed = getSpreadCoords(convokedPlayers);
     return computed.map((p) => {
       const conv = localConvocations[p.id];
       if (conv?.customX != null && conv?.customY != null) {
@@ -371,7 +320,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
       }
       return p;
     });
-  }, [convokedPlayers, bounds, localConvocations]);
+  }, [convokedPlayers, localConvocations]);
 
   const selected = selectedPlayer ? positioned.find((p) => p.id === selectedPlayer) : null;
 

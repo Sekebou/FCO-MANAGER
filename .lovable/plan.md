@@ -1,48 +1,43 @@
 
-Problème identifié : les coordonnées ne reposent pas sur le même repère selon le mode d’affichage. La composition “normale” utilise un centrage artificiel (`GLOBAL_X_OFFSET` + `getSafeBounds`) alors que le mode édition et la sauvegarde utilisent d’autres bornes (`DRAG_BOUNDS`). Résultat :
-- quand on clique sur “Modifier la disposition”, toute l’équipe se recalcule sur un autre repère et se décale ;
-- quand on valide, les `customX/customY` sont bien sauvegardés, mais leur réaffichage ne tombe pas exactement au même endroit visuel.
 
-Plan de correction :
+## Plan de corrections
 
-1. Unifier le système de coordonnées du terrain
-- Remplacer la logique actuelle par une seule source de vérité pour les limites gauche/droite/haut/bas du terrain.
-- Utiliser les vraies lignes blanches du SVG comme repère unique pour :
-  - la disposition automatique,
-  - le drag,
-  - l’affichage après sauvegarde.
-- Supprimer le décalage global artificiel (`GLOBAL_X_OFFSET`) pour éviter tout changement de repère entre les modes.
+### Problèmes identifiés
 
-2. Stabiliser l’entrée en mode édition
-- Faire en sorte que “Modifier la disposition” n’altère jamais les positions visibles.
-- Les joueurs affichés avant clic devront apparaître exactement au même endroit après passage en mode édition.
-- Si un joueur n’a pas encore de position personnalisée, sa position de départ sera calculée une fois avec le même repère que celui utilisé pour le drag.
+1. **Logos non persistés** : La table `events` n'a pas de colonnes `home_logo`/`away_logo`. Les logos sont dans le state local mais jamais insérés en DB, donc perdus au rechargement.
+2. **Heure non auto-remplie** dans le sélecteur natif (le `time` est mis dans `formData.time` mais le `NativeTimePicker` l'affiche bien — à vérifier si c'est un problème d'affichage).
+3. **Après sélection d'un match FFF**, tout reste visible (équipe, compétition, liste) — il faut cacher la section FFF et montrer la date/heure.
+4. **LocationAutocomplete toujours visible** pour les matchs — il faut le cacher par défaut et ne le montrer que si le stade n'est pas trouvé via FFF ou via un bouton admin+.
+5. **Icône "en attente"** manquante à côté des compteurs ✓ et ✗ sur les cartes liste.
+6. **Texte "Appuie pour voir les détails"** à améliorer + ajouter un petit espace.
+7. **Animations** manquantes sur les boutons Présent/Absent de la carte liste.
 
-3. Corriger la sauvegarde pour éviter le saut après validation
-- Conserver les coordonnées affichées pendant l’édition comme coordonnées finales exactes.
-- Vérifier que l’état local, le rendu après validation et le retour des données sauvegardées utilisent la même conversion.
-- Éviter tout recalcul horizontal parasite après `Valider`.
+### Modifications
 
-4. Nettoyer les détails qui aggravent le bug
-- Corriger l’avertissement React sur les refs dans `DraggablePlayer` / `JerseyIcon`, car il indique un montage fragile pendant le mode édition.
-- Revoir la synchro `localConvocations` / `convocations` pour que l’état ne soit pas réinjecté avec un autre layout au mauvais moment.
-
-5. Vérifications ciblées après correction
-- Ouvrir une feuille de match avec composition existante.
-- Cliquer sur “Modifier la disposition” : aucun joueur ne doit bouger.
-- Déplacer un joueur tout à gauche / tout à droite : il doit rester dans les lignes blanches.
-- Valider : le joueur doit rester exactement à l’endroit choisi.
-- Rouvrir la feuille : la position doit être identique.
-
-Détails techniques
-```text
-Aujourd’hui il y a 2 systèmes qui se contredisent :
-- auto layout : getSafeBounds(...) + GLOBAL_X_OFFSET
-- drag/save : DRAG_BOUNDS + pourcentages directs
-
-Correction prévue :
-- créer une seule fonction de bornes terrain
-- calculer les positions auto dans ce même espace
-- stocker et relire customX/customY dans cet espace sans transformation cachée
-- ne plus changer de repère entre “vue normale” et “mode édition”
+#### 1. Migration DB : ajouter `home_logo` et `away_logo` à `events`
+```sql
+ALTER TABLE public.events ADD COLUMN home_logo text;
+ALTER TABLE public.events ADD COLUMN away_logo text;
 ```
+
+#### 2. `src/pages/Dashboard.tsx`
+- Dans `addEvent` (ligne 706-713) : inclure `home_logo: eventData.homeLogo`, `away_logo: eventData.awayLogo` dans l'insert
+- Dans le fetch des events : mapper `home_logo`/`away_logo` vers `homeLogo`/`awayLogo` dans le type Event
+
+#### 3. `src/components/modals/AddEventForm.tsx`
+- **`handleFFFMatchSelect`** : après sélection, mettre un state `fffMatchSelected = true` qui masque toute la section FFF (équipes, compétitions, matchs) pour montrer uniquement titre/date/heure/lieu pré-remplis
+- Ajouter un bouton "Modifier le match" pour ré-ouvrir la sélection FFF si besoin
+- **LocationAutocomplete pour match** : masquer par défaut. Afficher uniquement si `!formData.location` (stade non trouvé via FFF) OU si admin+ clique sur un bouton "Modifier le stade"
+- S'assurer que `formData.time` est bien rempli (déjà fait dans `handleFFFMatchSelect` ligne 119)
+
+#### 4. `src/components/dashboard/PresencesTab.tsx`
+- **Compteur "en attente"** : ajouter une icône Clock avec le count des joueurs n'ayant pas répondu à côté des ✓ et ✗ sur les cartes liste
+- **Texte hint** : changer en "Appuyez pour voir plus de détails sur l'événement" avec un `mt-1` pour l'espacement
+- **Animations Présent/Absent** : ajouter `motion.button` avec `whileTap={{ scale: 0.9 }}` et `AnimatePresence` pour les boutons de la carte liste (comme dans la vue détail)
+
+### Fichiers modifiés
+1. Migration SQL (nouvelle)
+2. `src/pages/Dashboard.tsx`
+3. `src/components/modals/AddEventForm.tsx`
+4. `src/components/dashboard/PresencesTab.tsx`
+
