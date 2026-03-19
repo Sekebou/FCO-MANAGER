@@ -95,7 +95,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       ms.date.includes(q) ||
       ms.team?.toLowerCase().includes(q)
     );
-  }, [matchSheets, search]);
+  }, [localSheets, search]);
 
   const formatDate = (d: string) => {
     const date = new Date(d);
