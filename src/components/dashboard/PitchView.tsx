@@ -309,7 +309,9 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
   const convokedPlayers = allConvokedPlayers.filter((p) => !p.conv.number || p.conv.number <= 11);
-  const substitutePlayers = allConvokedPlayers.filter((p) => p.conv.number != null && p.conv.number >= 12);
+  const substitutePlayers = allConvokedPlayers
+    .filter((p) => p.conv.number != null && p.conv.number >= 12)
+    .sort((a, b) => (a.conv.number ?? 99) - (b.conv.number ?? 99));
 
   // For players with customX/customY, use those; otherwise use computed positions
   const positioned = useMemo(() => {
