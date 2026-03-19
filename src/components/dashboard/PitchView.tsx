@@ -251,8 +251,8 @@ const DraggablePlayer: React.FC<{
     let newY = dragStart.current.startY + dyPct;
 
     // Clamp to field lines
-    newX = Math.max(DRAG_BOUNDS.left, Math.min(DRAG_BOUNDS.right, newX));
-    newY = Math.max(DRAG_BOUNDS.top, Math.min(DRAG_BOUNDS.bottom, newY));
+    newX = Math.max(BOUNDS.left, Math.min(BOUNDS.right, newX));
+    newY = Math.max(BOUNDS.top, Math.min(BOUNDS.bottom, newY));
 
     const newPos = { x: newX, y: newY };
     posRef.current = newPos;
