@@ -620,6 +620,47 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           )}
         </AnimatePresence>
       </div>
+
+      {/* Substitute bench */}
+      {substitutePlayers.length > 0 && (
+        <div className="mt-3 rounded-2xl overflow-hidden shadow-lg" style={{ background: 'linear-gradient(135deg, hsl(220 15% 18%), hsl(220 15% 14%))' }}>
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+            <ArrowLeftRight size={13} className="text-amber-400" />
+            <span className="text-[11px] font-bold text-white/70 uppercase tracking-wider">Remplaçants</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400">{substitutePlayers.length}</span>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 px-3 py-3">
+            {substitutePlayers.map((p, idx) => {
+              const isGk = p.conv.position === 'Gardien';
+              const lastName = p.name.split(' ').pop() || p.name;
+              return (
+                <motion.div
+                  key={p.id}
+                  className="flex flex-col items-center w-14 cursor-pointer"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.05, duration: 0.3 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPlayer(selectedPlayer === p.id ? null : p.id);
+                  }}
+                >
+                  <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={selectedPlayer === p.id} index={idx + positioned.length} />
+                  <span
+                    className="w-full truncate rounded px-1 py-0.5 text-center text-[7px] font-bold leading-none text-white/80"
+                    style={{ marginTop: '2px', letterSpacing: '0.02em' }}
+                  >
+                    {lastName}
+                  </span>
+                  <span className="text-[7px] text-amber-400/60 font-medium mt-0.5 truncate w-full text-center">
+                    {p.conv.position}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 });
