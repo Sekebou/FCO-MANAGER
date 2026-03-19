@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Move, Check } from 'lucide-react';
+import { Move, Check, RotateCcw } from 'lucide-react';
 import type { Convocation } from '@/pages/Dashboard';
 
 interface Player {
@@ -29,6 +29,14 @@ const GLOBAL_X_OFFSET = -7;
 const DEFAULT_SAFE_BOUNDS: SafeBounds = {
   left: 16 + GLOBAL_X_OFFSET,
   right: 84 + GLOBAL_X_OFFSET,
+};
+
+// Drag bounds: field white lines with small inset for player size
+const DRAG_BOUNDS = {
+  left: (4 / 68) * 100 + 4,   // left field line + small margin
+  right: (64 / 68) * 100 - 4, // right field line - small margin
+  top: (2 / 98) * 100 + 1,    // top line + small margin
+  bottom: (96 / 98) * 100 - 1, // bottom line - small margin
 };
 
 function getSafeBounds(containerWidth: number): SafeBounds {
@@ -161,10 +169,10 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
       viewBox="0 0 40 44"
       width="34"
       height="38"
-      className="filter drop-shadow-lg"
+      className="filter drop-shadow-lg pointer-events-none"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: isDragging ? 1.2 : isSelected ? 1.15 : 1, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 20, delay: index * 0.03 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20, delay: isDragging ? 0 : index * 0.03 }}
     >
       <defs>
         <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -219,12 +227,89 @@ const JerseyIcon: React.FC<{ number: string | number; isGk?: boolean; isSelected
   );
 };
 
+/** Draggable player wrapper — uses pointer events for reliable touch/mouse drag */
+const DraggablePlayer: React.FC<{
+  playerId: string;
+  startX: number;
+  startY: number;
+  containerRef: React.RefObject<HTMLDivElement>;
+  onDragEnd: (id: string, newX: number, newY: number) => void;
+  children: (isDragging: boolean) => React.ReactNode;
+}> = ({ playerId, startX, startY, containerRef, onDragEnd, children }) => {
+  const [dragging, setDragging] = useState(false);
+  const [pos, setPos] = useState({ x: startX, y: startY });
+  const dragStart = useRef<{ pointerX: number; pointerY: number; startX: number; startY: number } | null>(null);
+
+  // Sync position when props change (after save or cancel)
+  useEffect(() => {
+    setPos({ x: startX, y: startY });
+  }, [startX, startY]);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const container = containerRef.current;
+    if (!container) return;
+
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragStart.current = {
+      pointerX: e.clientX,
+      pointerY: e.clientY,
+      startX: pos.x,
+      startY: pos.y,
+    };
+    setDragging(true);
+  }, [pos, containerRef]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragStart.current) return;
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const dx = e.clientX - dragStart.current.pointerX;
+    const dy = e.clientY - dragStart.current.pointerY;
+    const dxPct = (dx / rect.width) * 100;
+    const dyPct = (dy / rect.height) * 100;
+
+    let newX = dragStart.current.startX + dxPct;
+    let newY = dragStart.current.startY + dyPct;
+
+    // Clamp to field lines
+    newX = Math.max(DRAG_BOUNDS.left, Math.min(DRAG_BOUNDS.right, newX));
+    newY = Math.max(DRAG_BOUNDS.top, Math.min(DRAG_BOUNDS.bottom, newY));
+
+    setPos({ x: newX, y: newY });
+  }, [containerRef]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragStart.current) return;
+    e.preventDefault();
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    dragStart.current = null;
+    setDragging(false);
+    onDragEnd(playerId, Math.round(pos.x * 10) / 10, Math.round(pos.y * 10) / 10);
+  }, [playerId, pos, onDragEnd]);
+
+  return (
+    <div
+      className={`absolute z-10 flex w-12 -translate-x-1/2 -translate-y-1/2 flex-col items-center touch-none ${dragging ? 'z-20 cursor-grabbing' : 'cursor-grab'}`}
+      style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    >
+      {children(dragging)}
+    </div>
+  );
+};
+
 const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, isManager = false, onUpdateConvocations }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [pitchWidth, setPitchWidth] = useState(0);
-  const [pitchHeight, setPitchHeight] = useState(0);
   const [editMode, setEditMode] = useState(false);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
   const pitchContainerRef = useRef<HTMLDivElement | null>(null);
@@ -242,7 +327,6 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
 
     const updateSize = () => {
       setPitchWidth(element.clientWidth);
-      setPitchHeight(element.clientHeight);
     };
     updateSize();
 
@@ -280,27 +364,14 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
 
   const selected = selectedPlayer ? positioned.find((p) => p.id === selectedPlayer) : null;
 
-  const handleDragEnd = useCallback((playerId: string, info: { point: { x: number; y: number } }) => {
-    const container = pitchContainerRef.current;
-    if (!container) return;
-
-    const rect = container.getBoundingClientRect();
-    // Calculate percentage position relative to container
-    let newX = ((info.point.x - rect.left) / rect.width) * 100;
-    let newY = ((info.point.y - rect.top) / rect.height) * 100;
-
-    // Clamp within field boundaries
-    newX = Math.max(bounds.left, Math.min(bounds.right, newX));
-    newY = Math.max(3, Math.min(95, newY));
-
+  const handlePlayerDragEnd = useCallback((playerId: string, newX: number, newY: number) => {
     setLocalConvocations((prev) => {
       const updated = { ...prev };
-      updated[playerId] = { ...updated[playerId], customX: Math.round(newX * 10) / 10, customY: Math.round(newY * 10) / 10 };
+      updated[playerId] = { ...updated[playerId], customX: newX, customY: newY };
       return updated;
     });
     setHasChanges(true);
-    setDraggingId(null);
-  }, [bounds]);
+  }, []);
 
   const handleSave = useCallback(() => {
     if (onUpdateConvocations && hasChanges) {
@@ -316,6 +387,19 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     setHasChanges(false);
   }, [convocations]);
 
+  const handleResetPositions = useCallback(() => {
+    // Remove all customX/customY to reset to auto layout
+    setLocalConvocations((prev) => {
+      const updated: Record<string, Convocation> = {};
+      for (const [id, conv] of Object.entries(prev)) {
+        const { customX, customY, ...rest } = conv;
+        updated[id] = rest;
+      }
+      return updated;
+    });
+    setHasChanges(true);
+  }, []);
+
   if (convokedPlayers.length === 0) return null;
 
   return (
@@ -325,6 +409,13 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         <div className="flex items-center justify-end gap-2 mb-2">
           {editMode ? (
             <>
+              <button
+                onClick={handleResetPositions}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              >
+                <RotateCcw size={11} />
+                Réinitialiser
+              </button>
               <button
                 onClick={handleCancelEdit}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
@@ -353,11 +444,11 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
 
       <div
         ref={pitchContainerRef}
-        className={`relative mx-auto w-full max-w-sm rounded-2xl overflow-visible shadow-[0_8px_32px_rgba(0,0,0,0.25)] ${editMode ? 'ring-2 ring-primary/40' : ''}`}
+        className={`relative mx-auto w-full max-w-sm rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.25)] ${editMode ? 'ring-2 ring-primary/40' : ''}`}
         style={{ aspectRatio: '9 / 13' }}
         onClick={() => !editMode && setSelectedPlayer(null)}
       >
-        {/* Horizontal grass stripes with subtle gradient */}
+        {/* Horizontal grass stripes */}
         <div className="absolute inset-0 rounded-2xl overflow-hidden">
           {[...Array(18)].map((_, i) => (
             <div
@@ -447,8 +538,8 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
 
         {/* Edit mode indicator */}
         {editMode && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-primary/90 text-primary-foreground text-[10px] font-bold tracking-wide shadow-lg">
-            Mode édition — Glissez les joueurs
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-primary/90 text-primary-foreground text-[10px] font-bold tracking-wide shadow-lg whitespace-nowrap">
+            Glissez les joueurs
           </div>
         )}
 
@@ -457,20 +548,43 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           const isSelected = selectedPlayer === p.id;
           const isGk = p.conv.position === 'Gardien';
           const lastName = p.name.split(' ').pop() || p.name;
-          const isDragging = draggingId === p.id;
+
+          if (editMode) {
+            return (
+              <DraggablePlayer
+                key={p.id}
+                playerId={p.id}
+                startX={p.x}
+                startY={p.y}
+                containerRef={pitchContainerRef as React.RefObject<HTMLDivElement>}
+                onDragEnd={handlePlayerDragEnd}
+              >
+                {(isDragging) => (
+                  <>
+                    <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={false} index={idx} isDragging={isDragging} />
+                    <span
+                      className="w-full truncate rounded px-1 py-0.5 text-center text-[8px] font-bold leading-none text-white"
+                      style={{
+                        background: isDragging ? 'rgba(59,130,246,0.7)' : 'rgba(0,0,0,0.55)',
+                        backdropFilter: 'blur(4px)',
+                        marginTop: '1px',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {lastName}
+                    </span>
+                  </>
+                )}
+              </DraggablePlayer>
+            );
+          }
 
           return (
             <motion.div
               key={p.id}
-              className={`absolute z-10 flex w-12 -translate-x-1/2 -translate-y-1/2 flex-col items-center ${editMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`}
+              className="absolute z-10 flex w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
               style={{ left: `${p.x}%`, top: `${p.y}%` }}
-              drag={editMode}
-              dragMomentum={false}
-              dragElastic={0}
-              onDragStart={() => setDraggingId(p.id)}
-              onDragEnd={(_, info) => handleDragEnd(p.id, info)}
               onClick={(e) => {
-                if (editMode) return;
                 e.stopPropagation();
                 setSelectedPlayer(isSelected ? null : p.id);
               }}
@@ -478,11 +592,11 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: idx * 0.04, duration: 0.3 }}
             >
-              <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={isSelected} index={idx} isDragging={isDragging} />
+              <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={isSelected} index={idx} />
               <span
                 className="w-full truncate rounded px-1 py-0.5 text-center text-[8px] font-bold leading-none text-white"
                 style={{
-                  background: isDragging ? 'rgba(59,130,246,0.7)' : 'rgba(0,0,0,0.55)',
+                  background: 'rgba(0,0,0,0.55)',
                   backdropFilter: 'blur(4px)',
                   marginTop: '1px',
                   letterSpacing: '0.02em',
