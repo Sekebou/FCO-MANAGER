@@ -331,11 +331,9 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     })
     .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
-  const bounds = useMemo(() => getSafeBounds(pitchWidth), [pitchWidth]);
-
   // For players with customX/customY, use those; otherwise use computed positions
   const positioned = useMemo(() => {
-    const computed = getSpreadCoords(convokedPlayers, bounds);
+    const computed = getSpreadCoords(convokedPlayers);
     return computed.map((p) => {
       const conv = localConvocations[p.id];
       if (conv?.customX != null && conv?.customY != null) {
