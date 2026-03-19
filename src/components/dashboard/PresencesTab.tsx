@@ -723,17 +723,26 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           </div>
                           {isConvoked && (
                             <div className="mt-2.5 flex gap-2 items-center">
-                              <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
-                                <span className="text-sm font-medium text-foreground flex-1 truncate">
-                                  {conv?.position || <span className="text-muted-foreground">Poste</span>}
-                                </span>
-                                <ChevronDown size={12} className="text-muted-foreground shrink-0" />
-                                <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
-                                  <option value="">Poste</option>
-                                  {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
-                                </select>
-                              </div>
-                              <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => updateDraft(player.id, { number: e.target.value ? parseInt(e.target.value) : undefined })} className="w-16 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
+                              {(!conv?.number || conv.number < 12) && (
+                                <div className="relative flex-1 inline-flex items-center bg-secondary/60 border border-border/60 rounded-xl px-3 h-10 gap-1.5 cursor-pointer">
+                                  <span className="text-sm font-medium text-foreground flex-1 truncate">
+                                    {conv?.position || <span className="text-muted-foreground">Poste</span>}
+                                  </span>
+                                  <ChevronDown size={12} className="text-muted-foreground shrink-0" />
+                                  <select value={conv?.position || ''} onChange={e => updateDraft(player.id, { position: e.target.value })} className="absolute inset-0 opacity-0 w-full cursor-pointer" style={{ fontSize: 16 }}>
+                                    <option value="">Poste</option>
+                                    {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                                  </select>
+                                </div>
+                              )}
+                              <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => {
+                                const num = e.target.value ? parseInt(e.target.value) : undefined;
+                                if (num && num >= 12) {
+                                  updateDraft(player.id, { number: num, position: '' });
+                                } else {
+                                  updateDraft(player.id, { number: num });
+                                }
+                              }} className={`${(!conv?.number || conv.number < 12) ? 'w-16' : 'flex-1'} h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50`} style={{ fontSize: 16 }} min={1} max={99} />
                             </div>
                           )}
                         </div>

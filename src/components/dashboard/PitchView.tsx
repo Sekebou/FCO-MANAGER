@@ -609,23 +609,21 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
 
         {/* Bench label & substitutes inside pitch container */}
         {substitutePlayers.length > 0 && (
-          <div className="absolute left-0 right-0 bottom-0 z-10" style={{ height: '18.75%' }}>
-            {/* Bench header */}
-            <div className="flex items-center justify-center gap-2 pt-1.5 pb-1">
-              <ArrowLeftRight size={11} className="text-amber-400" />
-              <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Banc</span>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400">{substitutePlayers.length}</span>
+          <div className="absolute left-0 right-0 bottom-0 z-10" style={{ height: '15%' }}>
+            <div className="flex items-center justify-center gap-2 pt-1 pb-0.5">
+              <ArrowLeftRight size={10} className="text-white/50" />
+              <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">Remplaçants</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/10 text-white/60">{substitutePlayers.length}</span>
             </div>
-            {/* Substitute players */}
-            <div className="flex flex-wrap justify-center gap-2 px-2">
+            <div className="flex flex-wrap justify-center gap-1.5 px-2">
               {substitutePlayers.map((p, idx) => {
                 const isGk = p.conv.position === 'Gardien';
                 const lastName = p.name.split(' ').pop() || p.name;
                 return (
                   <motion.div
                     key={p.id}
-                    className="flex flex-col items-center w-12 cursor-pointer"
-                    initial={{ opacity: 0, y: 10 }}
+                    className="flex flex-col items-center w-10 cursor-pointer"
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05, duration: 0.3 }}
                     onClick={(e) => {
@@ -633,9 +631,42 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                       setSelectedPlayer(selectedPlayer === p.id ? null : p.id);
                     }}
                   >
-                    <JerseyIcon number={p.conv.number || '?'} isGk={isGk} isSelected={selectedPlayer === p.id} index={idx + positioned.length} />
+                    <motion.svg
+                      viewBox="0 0 40 44"
+                      width="28"
+                      height="32"
+                      className="filter drop-shadow-md pointer-events-none"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: selectedPlayer === p.id ? 1.1 : 1, opacity: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 20, delay: idx * 0.03 }}
+                    >
+                      <defs>
+                        <linearGradient id={`sub-grad-${idx}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                          {isGk ? (
+                            <>
+                              <stop offset="0%" stopColor="hsl(75 70% 50%)" />
+                              <stop offset="100%" stopColor="hsl(90 55% 35%)" />
+                            </>
+                          ) : (
+                            <>
+                              <stop offset="0%" stopColor="hsl(230 75% 30%)" />
+                              <stop offset="100%" stopColor="hsl(235 65% 18%)" />
+                            </>
+                          )}
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M 9 0 L 0 9 L 0 17 L 7 14.5 L 7 41 Q 7 43 9 43 L 31 43 Q 33 43 33 41 L 33 14.5 L 40 17 L 40 9 L 31 0 L 26 5.5 Q 23 9 20 9 Q 17 9 14 5.5 Z"
+                        fill={`url(#sub-grad-${idx})`}
+                        stroke={selectedPlayer === p.id ? 'hsl(45 100% 65%)' : 'rgba(255,255,255,0.12)'}
+                        strokeWidth={selectedPlayer === p.id ? 1.5 : 0.5}
+                      />
+                      <text x="20" y="31" textAnchor="middle" fill="white" fontSize="15" fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}>
+                        {p.conv.number || '?'}
+                      </text>
+                    </motion.svg>
                     <span
-                      className="w-full truncate rounded px-0.5 py-0.5 text-center text-[7px] font-bold leading-none text-white/80"
+                      className="w-full truncate rounded px-0.5 text-center text-[7px] font-bold leading-none text-white/70"
                       style={{ marginTop: '1px', letterSpacing: '0.02em' }}
                     >
                       {lastName}
