@@ -1,48 +1,43 @@
 
-Objectif : corriger le bug de persistance des positions sur les feuilles de match pour que les changements restent bien enregistrés après sauvegarde, reset, changement d’onglet et retour.
 
-1. Corriger la source de vérité des feuilles de match
-- Aujourd’hui, la sauvegarde des positions est faite dans `MatchSheetsTab`, mais seule sa copie locale (`localSheets`) est mise à jour.
-- Le bug vient du fait que quand on change d’onglet, `MatchSheetsTab` est remonté avec `matchSheets` venant du `Dashboard`, qui n’a pas été mis à jour tout de suite.
-- Je vais faire remonter la mise à jour au `Dashboard` pour que l’état central des feuilles de match soit mis à jour immédiatement après une sauvegarde/reset.
+## Plan de corrections
 
-2. Synchroniser aussi le cache local
-- Le projet recharge les feuilles via le cache local (`readCache('matchSheets')` / `writeCache('matchSheets')`).
-- Aujourd’hui, le cache n’est réécrit qu’au chargement global, pas après modification d’une disposition.
-- Je vais prévoir une mise à jour immédiate du cache des feuilles de match après sauvegarde pour éviter le retour à une ancienne version au remount.
+### Problèmes identifiés
 
-3. Garder l’optimistic update, mais au bon niveau
-- `MatchSheetsTab` pourra continuer à afficher la modif instantanément.
-- Mais la vraie mise à jour optimiste doit aussi toucher `matchSheets` dans `Dashboard`, sinon le changement d’onglet casse la cohérence.
-- Je vais donc passer un callback depuis `Dashboard` vers `MatchSheetsTab` pour centraliser la persistance.
+1. **Logos non persistés** : La table `events` n'a pas de colonnes `home_logo`/`away_logo`. Les logos sont dans le state local mais jamais insérés en DB, donc perdus au rechargement.
+2. **Heure non auto-remplie** dans le sélecteur natif (le `time` est mis dans `formData.time` mais le `NativeTimePicker` l'affiche bien — à vérifier si c'est un problème d'affichage).
+3. **Après sélection d'un match FFF**, tout reste visible (équipe, compétition, liste) — il faut cacher la section FFF et montrer la date/heure.
+4. **LocationAutocomplete toujours visible** pour les matchs — il faut le cacher par défaut et ne le montrer que si le stade n'est pas trouvé via FFF ou via un bouton admin+.
+5. **Icône "en attente"** manquante à côté des compteurs ✓ et ✗ sur les cartes liste.
+6. **Texte "Appuie pour voir les détails"** à améliorer + ajouter un petit espace.
+7. **Animations** manquantes sur les boutons Présent/Absent de la carte liste.
 
-4. Fiabiliser le reset
-- Le reset enlève bien `customX/customY` en local, mais doit suivre exactement le même circuit de sauvegarde que le drag manuel.
-- Je vais m’assurer que reset + valider écrit la version sans coordonnées custom dans la base, l’état central et le cache.
+### Modifications
 
-5. Réduire les effets de course
-- Le garde-fou actuel dans `PitchView` avec la fenêtre de 3 secondes masque partiellement un problème de synchro mais ne le résout pas complètement.
-- Je garderai la protection utile contre les retours réseau obsolètes, mais je ferai en sorte que les props envoyées au composant soient déjà à jour, pour que le changement d’onglet ne dépende plus du realtime.
+#### 1. Migration DB : ajouter `home_logo` et `away_logo` à `events`
+```sql
+ALTER TABLE public.events ADD COLUMN home_logo text;
+ALTER TABLE public.events ADD COLUMN away_logo text;
+```
 
-6. Vérification ciblée après correction
-- Cas 1 : déplacer plusieurs joueurs, valider, changer d’onglet, revenir.
-- Cas 2 : reset, valider, changer d’onglet, revenir.
-- Cas 3 : fermer/réouvrir la vue des feuilles si le cache local se réhydrate.
-- Cas 4 : vérifier qu’une feuille existante avec positions custom reste correcte.
+#### 2. `src/pages/Dashboard.tsx`
+- Dans `addEvent` (ligne 706-713) : inclure `home_logo: eventData.homeLogo`, `away_logo: eventData.awayLogo` dans l'insert
+- Dans le fetch des events : mapper `home_logo`/`away_logo` vers `homeLogo`/`awayLogo` dans le type Event
 
-Détail technique
-- Fichiers principaux concernés :
-  - `src/components/dashboard/MatchSheetsTab.tsx`
-  - `src/pages/Dashboard.tsx`
-  - possiblement léger ajustement dans `src/components/dashboard/PitchView.tsx`
-- Cause racine identifiée :
-  - mise à jour DB OK
-  - mise à jour locale du tab OK
-  - mais pas de mise à jour immédiate du state parent `matchSheets`
-  - ni du cache `matchSheets`
-  - donc au changement d’onglet, l’ancienne version réapparaît jusqu’à un refresh réseau/realtime
+#### 3. `src/components/modals/AddEventForm.tsx`
+- **`handleFFFMatchSelect`** : après sélection, mettre un state `fffMatchSelected = true` qui masque toute la section FFF (équipes, compétitions, matchs) pour montrer uniquement titre/date/heure/lieu pré-remplis
+- Ajouter un bouton "Modifier le match" pour ré-ouvrir la sélection FFF si besoin
+- **LocationAutocomplete pour match** : masquer par défaut. Afficher uniquement si `!formData.location` (stade non trouvé via FFF) OU si admin+ clique sur un bouton "Modifier le stade"
+- S'assurer que `formData.time` est bien rempli (déjà fait dans `handleFFFMatchSelect` ligne 119)
 
-Résultat attendu
-- Les positions enregistrées restent stables immédiatement.
-- Un reset reste bien appliqué.
-- Le changement d’onglet ne fait plus revenir une ancienne composition.
+#### 4. `src/components/dashboard/PresencesTab.tsx`
+- **Compteur "en attente"** : ajouter une icône Clock avec le count des joueurs n'ayant pas répondu à côté des ✓ et ✗ sur les cartes liste
+- **Texte hint** : changer en "Appuyez pour voir plus de détails sur l'événement" avec un `mt-1` pour l'espacement
+- **Animations Présent/Absent** : ajouter `motion.button` avec `whileTap={{ scale: 0.9 }}` et `AnimatePresence` pour les boutons de la carte liste (comme dans la vue détail)
+
+### Fichiers modifiés
+1. Migration SQL (nouvelle)
+2. `src/pages/Dashboard.tsx`
+3. `src/components/modals/AddEventForm.tsx`
+4. `src/components/dashboard/PresencesTab.tsx`
+
