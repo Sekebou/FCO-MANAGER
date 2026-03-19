@@ -238,11 +238,13 @@ const DraggablePlayer: React.FC<{
 }> = ({ playerId, startX, startY, containerRef, onDragEnd, children }) => {
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState({ x: startX, y: startY });
+  const posRef = useRef({ x: startX, y: startY });
   const dragStart = useRef<{ pointerX: number; pointerY: number; startX: number; startY: number } | null>(null);
 
   // Sync position when props change (after save or cancel)
   useEffect(() => {
     setPos({ x: startX, y: startY });
+    posRef.current = { x: startX, y: startY };
   }, [startX, startY]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -255,11 +257,11 @@ const DraggablePlayer: React.FC<{
     dragStart.current = {
       pointerX: e.clientX,
       pointerY: e.clientY,
-      startX: pos.x,
-      startY: pos.y,
+      startX: posRef.current.x,
+      startY: posRef.current.y,
     };
     setDragging(true);
-  }, [pos, containerRef]);
+  }, [containerRef]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragStart.current) return;
@@ -280,17 +282,20 @@ const DraggablePlayer: React.FC<{
     newX = Math.max(DRAG_BOUNDS.left, Math.min(DRAG_BOUNDS.right, newX));
     newY = Math.max(DRAG_BOUNDS.top, Math.min(DRAG_BOUNDS.bottom, newY));
 
-    setPos({ x: newX, y: newY });
+    const newPos = { x: newX, y: newY };
+    posRef.current = newPos;
+    setPos(newPos);
   }, [containerRef]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragStart.current) return;
     e.preventDefault();
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
     dragStart.current = null;
     setDragging(false);
-    onDragEnd(playerId, Math.round(pos.x * 10) / 10, Math.round(pos.y * 10) / 10);
-  }, [playerId, pos, onDragEnd]);
+    const finalPos = posRef.current;
+    onDragEnd(playerId, Math.round(finalPos.x * 10) / 10, Math.round(finalPos.y * 10) / 10);
+  }, [playerId, onDragEnd]);
 
   return (
     <div
