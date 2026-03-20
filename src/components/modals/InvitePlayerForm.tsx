@@ -195,14 +195,14 @@ const InvitePlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
               <Link2 size={14} className="text-primary shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {mode === 'code' && !codeCollective
-                  ? <>Un <span className="font-semibold text-foreground">code individuel</span> sera généré (<span className="font-semibold text-foreground">1 utilisation</span>). Le joueur l'entre dans l'app pour créer son compte. Expire dans <span className="font-semibold text-foreground">24 heures</span>.</>
+                  ? <>Un <span className="font-semibold text-foreground">code individuel</span> sera généré (<span className="font-semibold text-foreground">1 utilisation</span>). Le joueur l'entre dans l'app pour créer son compte. Expire dans <span className="font-semibold text-foreground">24h</span>.</>
                   : mode === 'collective' && codeCollective
-                  ? <>Un <span className="font-semibold text-foreground">code collectif</span> sera généré (<span className="font-semibold text-foreground">utilisations illimitées</span>). Partagez-le à tout le vestiaire ! Expire dans <span className="font-semibold text-foreground">24 heures</span>.</>
+                  ? <>Un <span className="font-semibold text-foreground">code collectif</span> sera généré (<span className="font-semibold text-foreground">utilisations illimitées</span>). Partagez-le à tout le vestiaire ! Expire dans <span className="font-semibold text-foreground">24h</span>.</>
                   : mode === 'email'
-                  ? <>Un lien d'inscription sera envoyé par email. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
+                  ? <>Un lien d'inscription sera envoyé par email. Le lien expire dans <span className="font-semibold text-foreground">24h</span>.</>
                   : mode === 'link'
-                  ? <>Un lien unique sera généré pour <span className="font-semibold text-foreground">un seul compte</span>. Le lien expire dans <span className="font-semibold text-foreground">48 heures</span>.</>
-                  : <>Un lien <span className="font-semibold text-foreground">réutilisable</span> sera généré. N'importe qui peut créer un compte avec le rôle sélectionné. Le lien expire dans <span className="font-semibold text-foreground">7 jours</span>.</>
+                  ? <>Un lien unique sera généré pour <span className="font-semibold text-foreground">un seul compte</span>. Le lien expire dans <span className="font-semibold text-foreground">24h</span>.</>
+                  : <>Un lien <span className="font-semibold text-foreground">réutilisable</span> sera généré. N'importe qui peut créer un compte avec le rôle sélectionné. Le lien expire dans <span className="font-semibold text-foreground">24h</span>.</>
                 }
               </p>
             </div>

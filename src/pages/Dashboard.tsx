@@ -1711,7 +1711,7 @@ const Dashboard = () => {
               const isCollective = data.mode === 'collective' || (data as any).collective;
               const isCode = data.mode === 'code';
               const isCodeCollective = isCode && (data as any).collective;
-              const expiresAt = new Date(Date.now() + (isCode || isCodeCollective ? 24 : isCollective ? 7 * 24 : 48) * 60 * 60 * 1000).toISOString();
+              const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
               // Generate invite code for code mode (individual or collective)
               const inviteCode = isCode ? `FCO-${Math.random().toString(36).substring(2, 6).toUpperCase()}` : null;
