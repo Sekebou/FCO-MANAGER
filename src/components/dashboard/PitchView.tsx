@@ -441,8 +441,8 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
               className="absolute left-0 right-0 bottom-0"
               style={{
                 height: '15%',
-                background: 'linear-gradient(180deg, hsl(220 10% 22%) 0%, hsl(220 10% 16%) 100%)',
-                borderTop: '2px solid rgba(255,255,255,0.15)',
+                background: 'white',
+                borderTop: '2px solid hsl(var(--border))',
               }}
             />
           )}
