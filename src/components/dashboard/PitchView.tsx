@@ -304,7 +304,8 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     .filter(([, conv]) => conv.status === 'convoque')
     .map(([playerId, conv]) => {
       const player = players.find((p) => p.id === playerId);
-      return player ? { id: playerId, name: player.name, conv } : null;
+      const name = player?.name || 'Joueur supprimé';
+      return { id: playerId, name, conv };
     })
     .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
 
