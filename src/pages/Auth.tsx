@@ -197,7 +197,7 @@ const Auth = () => {
           .eq('invite_code', upper.trim())
           .single();
         if (invError || !inv) { setCodeStatus('invalid'); return; }
-        if (inv.status === 'used' || (inv.max_uses && inv.use_count >= inv.max_uses)) { setCodeStatus('used'); return; }
+        if (inv.max_uses && inv.max_uses > 1 ? (inv.use_count ?? 0) >= inv.max_uses : inv.status === 'used') { setCodeStatus('used'); return; }
         if (new Date(inv.expires_at) < new Date()) { setCodeStatus('expired'); return; }
         setCodeStatus('valid');
         setValidatedInvitation(inv);
