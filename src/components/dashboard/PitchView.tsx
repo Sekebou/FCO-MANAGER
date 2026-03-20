@@ -301,7 +301,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   }, [convocations, editMode]);
 
   const allConvokedPlayers = Object.entries(localConvocations)
-    .filter(([, conv]) => conv.status === 'convoque' && (conv.position || (conv.number != null && conv.number >= 12)))
+    .filter(([, conv]) => conv.status === 'convoque')
     .map(([playerId, conv]) => {
       const player = players.find((p) => p.id === playerId);
       return player ? { id: playerId, name: player.name, conv } : null;
