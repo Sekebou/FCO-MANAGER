@@ -1,43 +1,55 @@
 
 
-## Plan de corrections
+# Plan de corrections multiples
 
-### Problèmes identifiés
+## 1. Bug remplaçants : "10 titulaires" au lieu de 11
+**Cause** : Le filtre `allConvokedPlayers` (ligne 304 de PitchView.tsx) exclut les joueurs convoqués qui n'ont ni position ni numéro ≥ 12. Le joueur N°11 sans position assignée est invisible.
 
-1. **Logos non persistés** : La table `events` n'a pas de colonnes `home_logo`/`away_logo`. Les logos sont dans le state local mais jamais insérés en DB, donc perdus au rechargement.
-2. **Heure non auto-remplie** dans le sélecteur natif (le `time` est mis dans `formData.time` mais le `NativeTimePicker` l'affiche bien — à vérifier si c'est un problème d'affichage).
-3. **Après sélection d'un match FFF**, tout reste visible (équipe, compétition, liste) — il faut cacher la section FFF et montrer la date/heure.
-4. **LocationAutocomplete toujours visible** pour les matchs — il faut le cacher par défaut et ne le montrer que si le stade n'est pas trouvé via FFF ou via un bouton admin+.
-5. **Icône "en attente"** manquante à côté des compteurs ✓ et ✗ sur les cartes liste.
-6. **Texte "Appuie pour voir les détails"** à améliorer + ajouter un petit espace.
-7. **Animations** manquantes sur les boutons Présent/Absent de la carte liste.
+**Correction** : Inclure TOUS les joueurs avec `status === 'convoque'`, puis séparer titulaires (numéro ≤ 11 ou sans numéro) / remplaçants (numéro ≥ 12).
 
-### Modifications
+**Fichier** : `src/components/dashboard/PitchView.tsx` — ligne 304
 
-#### 1. Migration DB : ajouter `home_logo` et `away_logo` à `events`
-```sql
-ALTER TABLE public.events ADD COLUMN home_logo text;
-ALTER TABLE public.events ADD COLUMN away_logo text;
-```
+## 2. Style du banc remplaçants
+- Fond noir/gris → **fond blanc** avec bordure subtile pour lisibilité
+- Agrandir les maillots remplaçants (28×32 → 32×36)
+- Label et noms en couleur sombre au lieu de blanc/gris sur fond sombre
+- Garder la partie terrain intacte (pelouse, lignes, drapeaux)
 
-#### 2. `src/pages/Dashboard.tsx`
-- Dans `addEvent` (ligne 706-713) : inclure `home_logo: eventData.homeLogo`, `away_logo: eventData.awayLogo` dans l'insert
-- Dans le fetch des events : mapper `home_logo`/`away_logo` vers `homeLogo`/`awayLogo` dans le type Event
+**Fichier** : `src/components/dashboard/PitchView.tsx` — zone bench (lignes 439-678)
 
-#### 3. `src/components/modals/AddEventForm.tsx`
-- **`handleFFFMatchSelect`** : après sélection, mettre un state `fffMatchSelected = true` qui masque toute la section FFF (équipes, compétitions, matchs) pour montrer uniquement titre/date/heure/lieu pré-remplis
-- Ajouter un bouton "Modifier le match" pour ré-ouvrir la sélection FFF si besoin
-- **LocationAutocomplete pour match** : masquer par défaut. Afficher uniquement si `!formData.location` (stade non trouvé via FFF) OU si admin+ clique sur un bouton "Modifier le stade"
-- S'assurer que `formData.time` est bien rempli (déjà fait dans `handleFFFMatchSelect` ligne 119)
+## 3. Invitation bloquée pour admin/entraîneur
+**Cause** : `MembersTab.tsx` ligne 128 vérifie `currentUser?.role === 'admin+'` — seul admin+ voit le bouton actif.
 
-#### 4. `src/components/dashboard/PresencesTab.tsx`
-- **Compteur "en attente"** : ajouter une icône Clock avec le count des joueurs n'ayant pas répondu à côté des ✓ et ✗ sur les cartes liste
-- **Texte hint** : changer en "Appuyez pour voir plus de détails sur l'événement" avec un `mt-1` pour l'espacement
-- **Animations Présent/Absent** : ajouter `motion.button` avec `whileTap={{ scale: 0.9 }}` et `AnimatePresence` pour les boutons de la carte liste (comme dans la vue détail)
+**Correction** : Tout utilisateur pour qui `canManage()` est vrai peut inviter (admin+, admin, entraîneur).
 
-### Fichiers modifiés
-1. Migration SQL (nouvelle)
-2. `src/pages/Dashboard.tsx`
-3. `src/components/modals/AddEventForm.tsx`
-4. `src/components/dashboard/PresencesTab.tsx`
+**Fichier** : `src/components/dashboard/MembersTab.tsx` — lignes 127-143
+
+## 4. Création de comptes bloquée avant version publique
+Le bouton "Inviter" pour les non-admin+ affiche un message d'erreur au lieu d'ouvrir le formulaire. Correction : supprimer cette restriction, tous les managers peuvent inviter.
+
+**Fichier** : même section de `MembersTab.tsx`
+
+## 5. Bug codes collectifs — deuxième utilisation impossible
+**Cause double** :
+- `Auth.tsx` ligne 200 : vérifie `inv.status === 'used'` → bloque dès la 1ère utilisation car `register_user` met le statut à `'used'`
+- `register_user` RPC : met `status = 'used'` sans vérifier `max_uses`
+
+**Corrections** :
+- **Auth.tsx** : Pour les codes collectifs (max_uses > 1), ne vérifier que `use_count >= max_uses`, pas le status
+- **Migration SQL** : Modifier `register_user` pour ne mettre `status = 'used'` que quand `use_count + 1 >= max_uses`, et toujours incrémenter `use_count`
+
+## 6. Durée d'expiration 24h pour tous les codes/liens
+**Cause** : Les liens email et unique expirent en 48h, les collectifs en 7j.
+
+**Correction** : Tous les modes → 24h. Afficher "24h" dans les textes d'info.
+
+**Fichier** : `src/pages/Dashboard.tsx` (ligne 1714) + `src/components/modals/InvitePlayerForm.tsx` (textes info)
+
+## Fichiers modifiés
+1. `src/components/dashboard/PitchView.tsx` — filtre starters/subs + style banc blanc
+2. `src/components/dashboard/MembersTab.tsx` — déblocage invitation
+3. `src/pages/Auth.tsx` — validation codes collectifs
+4. `src/pages/Dashboard.tsx` — expiration 24h
+5. `src/components/modals/InvitePlayerForm.tsx` — textes 24h
+6. **Migration SQL** — modifier `register_user` pour gérer correctement les codes collectifs
 
