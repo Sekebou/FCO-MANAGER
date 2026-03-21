@@ -72,7 +72,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
 
   const getRoleLabel = (role: string, displayRole?: string) => {
     const effectiveRole = displayRole || role;
-    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', dirigeant: 'Dirigeant', admin: 'Administrateur', 'admin+': 'Administrateur' };
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Community Manager', dirigeant: 'Dirigeant', admin: 'Administrateur', 'admin+': 'Administrateur' };
     return labels[effectiveRole] || effectiveRole;
   };
 
