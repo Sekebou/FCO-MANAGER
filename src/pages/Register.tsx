@@ -116,7 +116,7 @@ const Register = () => {
   };
 
   const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', dirigeant: 'Dirigeant', admin: 'Administrateur' };
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Community Manager', dirigeant: 'Dirigeant', admin: 'Administrateur' };
     return labels[role] || role;
   };
 

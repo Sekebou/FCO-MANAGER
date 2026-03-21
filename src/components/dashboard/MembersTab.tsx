@@ -72,7 +72,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
 
   const getRoleLabel = (role: string, displayRole?: string) => {
     const effectiveRole = displayRole || role;
-    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Photographe', dirigeant: 'Dirigeant', admin: 'Administrateur', 'admin+': 'Administrateur' };
+    const labels: Record<string, string> = { joueur: 'Joueur', entraineur: 'Entraîneur', photographe: 'Community Manager', dirigeant: 'Dirigeant', admin: 'Administrateur', 'admin+': 'Administrateur' };
     return labels[effectiveRole] || effectiveRole;
   };
 
@@ -109,7 +109,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
     admin: { icon: Shield, color: 'warning', label: 'Administrateur', gradient: 'from-amber-500/20 to-orange-500/20' },
     entraineur: { icon: Dumbbell, color: 'accent', label: 'Entraîneur', gradient: 'from-emerald-500/20 to-teal-500/20' },
     dirigeant: { icon: Briefcase, color: 'accent', label: 'Dirigeant', gradient: 'from-sky-500/20 to-blue-500/20' },
-    photographe: { icon: Camera, color: 'accent', label: 'Photographe', gradient: 'from-purple-500/20 to-pink-500/20' },
+    photographe: { icon: Camera, color: 'accent', label: 'Community Manager', gradient: 'from-purple-500/20 to-pink-500/20' },
     joueur: { icon: UserCircle, color: 'primary', label: 'Joueur', gradient: 'from-blue-500/20 to-indigo-500/20' },
   };
 
@@ -366,7 +366,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           { value: 'joueur', label: 'Joueur' },
                           { value: 'entraineur', label: 'Entraîneur' },
                           { value: 'dirigeant', label: 'Dirigeant' },
-                          { value: 'photographe', label: 'Photographe' },
+                          { value: 'photographe', label: 'Community Manager' },
                           { value: 'admin', label: 'Administrateur' },
                           ...(isSuperAdmin ? [{ value: 'admin+', label: 'Admin+' }] : []),
                         ];

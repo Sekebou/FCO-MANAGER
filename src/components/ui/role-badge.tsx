@@ -35,7 +35,7 @@ const ROLE_CONFIG: Record<string, { label: string; icon: React.ElementType; bg: 
     glow: 'shadow-[0_0_8px_rgba(16,185,129,0.2)]',
   },
   photographe: {
-    label: 'Photographe',
+    label: 'Community Manager',
     icon: Camera,
     bg: 'bg-gradient-to-r from-pink-500/20 to-rose-500/20',
     text: 'text-pink-500',

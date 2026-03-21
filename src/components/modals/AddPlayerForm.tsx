@@ -53,7 +53,7 @@ const AddPlayerForm = ({ onSubmit, onClose, currentUser }: Props) => {
                   <option value="joueur">Joueur</option>
                   <option value="entraineur">Entraîneur</option>
                   <option value="dirigeant">Dirigeant</option>
-                  <option value="photographe">Photographe</option>
+                  <option value="photographe">Community Manager</option>
                   <option value="admin">Administrateur</option>
                   
                 </select>
