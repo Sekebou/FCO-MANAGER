@@ -136,7 +136,29 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     return eventDate < now;
   };
 
-  const getPlayersForEvent = (_event: Event) => players;
+  // Deduplicate players: if two players share the same name (case-insensitive),
+  // keep the one linked to a member profile (account), discard the orphan duplicate
+  const deduplicatedPlayers = useMemo(() => {
+    const memberPlayerIds = new Set(members.filter(m => m.playerId).map(m => m.playerId));
+    const seen = new Map<string, Player>();
+    for (const p of players) {
+      const key = p.name.trim().toLowerCase();
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, p);
+      } else {
+        // Prefer the one linked to a profile
+        const existingLinked = memberPlayerIds.has(existing.id);
+        const currentLinked = memberPlayerIds.has(p.id);
+        if (currentLinked && !existingLinked) {
+          seen.set(key, p);
+        }
+      }
+    }
+    return Array.from(seen.values());
+  }, [players, members]);
+
+  const getPlayersForEvent = (_event: Event) => deduplicatedPlayers;
 
   const startConvocationMode = (eventId: string, event: Event) => {
     setConvocationMode(eventId);
