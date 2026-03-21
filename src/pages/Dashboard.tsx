@@ -1506,7 +1506,7 @@ const Dashboard = () => {
                           {visualRole === 'admin+' ? <><Shield size={9} className="text-accent shrink-0" /><span className="truncate">Super Admin</span></> :
                            visualRole === 'admin' ? <><Shield size={9} className="shrink-0" /><span className="truncate">Admin</span></> :
                            visualRole === 'entraineur' ? <><Dumbbell size={9} className="shrink-0" /><span className="truncate">Entraîneur</span></> :
-                           visualRole === 'photographe' ? <><Camera size={9} className="shrink-0" /><span className="truncate">Photo</span></> :
+                           visualRole === 'photographe' ? <><Camera size={9} className="shrink-0" /><span className="truncate">CM</span></> :
                            visualRole === 'dirigeant' ? <><Briefcase size={9} className="shrink-0" /><span className="truncate">Dirigeant</span></> :
                            <><UserCircle size={9} className="shrink-0" /><span className="truncate">Joueur</span></>}
                           {isAdminWithDisplay && <Shield size={8} className="text-accent/60 shrink-0" />}
