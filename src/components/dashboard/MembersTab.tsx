@@ -366,7 +366,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                           { value: 'joueur', label: 'Joueur' },
                           { value: 'entraineur', label: 'Entraîneur' },
                           { value: 'dirigeant', label: 'Dirigeant' },
-                          { value: 'photographe', label: 'Photographe' },
+                          { value: 'photographe', label: 'Community Manager' },
                           { value: 'admin', label: 'Administrateur' },
                           ...(isSuperAdmin ? [{ value: 'admin+', label: 'Admin+' }] : []),
                         ];
