@@ -48,7 +48,7 @@ const ROLE_TEXT_COLORS: Record<string, string> = {
 };
 const ROLE_LABELS: Record<string, string> = {
   'admin+': 'Super Admin', 'admin': 'Admin', 'entraineur': 'Entraîneur',
-  'joueur': 'Joueur', 'photographe': 'Photo', 'dirigeant': 'Dirigeant',
+  'joueur': 'Joueur', 'photographe': 'CM', 'dirigeant': 'Dirigeant',
 };
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
