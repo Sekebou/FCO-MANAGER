@@ -158,6 +158,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     return Array.from(seen.values());
   }, [players, members]);
 
+  // Player IDs belonging to dirigeants or community managers — they can see events but not respond
+  const nonRespondingPlayerIds = useMemo(() => {
+    return new Set(members.filter(m => (m.role === 'dirigeant' || m.role === 'photographe') && m.playerId).map(m => m.playerId!));
+  }, [members]);
+
+  const isNonRespondingPlayer = (playerId: string) => nonRespondingPlayerIds.has(playerId);
+
   const getPlayersForEvent = (_event: Event) => deduplicatedPlayers;
 
   const startConvocationMode = (eventId: string, event: Event) => {
@@ -199,11 +206,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   if (selectedEvent) {
     const event = selectedEvent;
     const eventPlayers = getPlayersForEvent(event);
+    const respondingPlayers = eventPlayers.filter(p => !isNonRespondingPlayer(p.id));
     const presences = event.presences || {};
     const playerIds = new Set(eventPlayers.map(p => p.id));
-    const presentCount = eventPlayers.filter(p => presences[p.id] === 'present').length;
-    const absentCount = eventPlayers.filter(p => presences[p.id] === 'absent').length;
-    const unknownCount = eventPlayers.length - presentCount - absentCount;
+    const presentCount = respondingPlayers.filter(p => presences[p.id] === 'present').length;
+    const absentCount = respondingPlayers.filter(p => presences[p.id] === 'absent').length;
+    const unknownCount = respondingPlayers.length - presentCount - absentCount;
     const isConvocationMode = convocationMode === event.id;
     const isConvocationExpanded = expandedConvocations[event.id];
 
@@ -473,7 +481,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                               })()}
                               <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
                             </div>
-                            {canManageOwnPresence(player.id) ? (
+                            {isNonRespondingPlayer(player.id) ? (
+                              <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
+                                Non concerné
+                              </span>
+                            ) : canManageOwnPresence(player.id) ? (
                               <div className="flex gap-1 shrink-0">
                                 <div className="relative overflow-visible">
                                   <motion.button
@@ -970,9 +982,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           {(() => {
             const renderCard = (event: Event) => {
               const presences = event.presences || {};
-              const presentCount = players.filter(p => presences[p.id] === 'present').length;
-              const absentCount = players.filter(p => presences[p.id] === 'absent').length;
-              const pendingCount = players.length - presentCount - absentCount;
+              const cardRespondingPlayers = deduplicatedPlayers.filter(p => !isNonRespondingPlayer(p.id));
+              const presentCount = cardRespondingPlayers.filter(p => presences[p.id] === 'present').length;
+              const absentCount = cardRespondingPlayers.filter(p => presences[p.id] === 'absent').length;
+              const pendingCount = cardRespondingPlayers.length - presentCount - absentCount;
               const isPast = isEventPast(event);
               const isArchived = showArchived && isEventTerminated(event);
               const matchInfo = getMatchLogos(event);
@@ -1127,6 +1140,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </button>
 
                 {!isPast && !isArchived && currentUser?.playerId && (() => {
+                  const isNonResponding = currentUser.role === 'dirigeant' || currentUser.role === 'photographe';
+                  if (isNonResponding) {
+                    return (
+                      <div className="flex items-center justify-center px-3.5 pb-2.5">
+                        <span className="text-[10px] italic text-muted-foreground/50">Non concerné par les présences</span>
+                      </div>
+                    );
+                  }
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
                     <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
