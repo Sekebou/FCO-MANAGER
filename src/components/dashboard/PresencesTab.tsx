@@ -982,9 +982,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           {(() => {
             const renderCard = (event: Event) => {
               const presences = event.presences || {};
-              const presentCount = players.filter(p => presences[p.id] === 'present').length;
-              const absentCount = players.filter(p => presences[p.id] === 'absent').length;
-              const pendingCount = players.length - presentCount - absentCount;
+              const cardRespondingPlayers = deduplicatedPlayers.filter(p => !isNonRespondingPlayer(p.id));
+              const presentCount = cardRespondingPlayers.filter(p => presences[p.id] === 'present').length;
+              const absentCount = cardRespondingPlayers.filter(p => presences[p.id] === 'absent').length;
+              const pendingCount = cardRespondingPlayers.length - presentCount - absentCount;
               const isPast = isEventPast(event);
               const isArchived = showArchived && isEventTerminated(event);
               const matchInfo = getMatchLogos(event);
