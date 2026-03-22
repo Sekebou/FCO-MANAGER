@@ -513,9 +513,10 @@ const Dashboard = () => {
   const canCreateNews = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
   const canCreateEvent = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
 
-  const dirigeantPlayerIds = members.filter(m => m.role === 'dirigeant' && m.playerId).map(m => m.playerId);
+  const nonPlayerRoleIds = members.filter(m => (m.role === 'dirigeant' || m.role === 'photographe') && m.playerId).map(m => m.playerId);
   const visiblePlayers = players;
-  const visiblePlayersForStats = players.filter(p => !dirigeantPlayerIds.includes(p.id));
+  const visiblePlayersForPresences = players.filter(p => !nonPlayerRoleIds.includes(p.id));
+  const visiblePlayersForStats = players.filter(p => !nonPlayerRoleIds.includes(p.id));
   const visibleMembers = members;
 
   // ===== DATA LOADING via Supabase =====
