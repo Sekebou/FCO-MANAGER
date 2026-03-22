@@ -480,7 +480,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                               })()}
                               <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
                             </div>
-                            {canManageOwnPresence(player.id) ? (
+                            {isNonRespondingPlayer(player.id) ? (
+                              <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
+                                Non concerné
+                              </span>
+                            ) : canManageOwnPresence(player.id) ? (
                               <div className="flex gap-1 shrink-0">
                                 <div className="relative overflow-visible">
                                   <motion.button
