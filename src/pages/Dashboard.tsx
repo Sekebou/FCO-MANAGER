@@ -515,7 +515,6 @@ const Dashboard = () => {
 
   const nonPlayerRoleIds = members.filter(m => (m.role === 'dirigeant' || m.role === 'photographe') && m.playerId).map(m => m.playerId);
   const visiblePlayers = players;
-  const visiblePlayersForPresences = players.filter(p => !nonPlayerRoleIds.includes(p.id));
   const visiblePlayersForStats = players.filter(p => !nonPlayerRoleIds.includes(p.id));
   const visibleMembers = members;
 
