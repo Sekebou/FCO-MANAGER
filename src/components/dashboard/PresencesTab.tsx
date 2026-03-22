@@ -1138,6 +1138,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </button>
 
                 {!isPast && !isArchived && currentUser?.playerId && (() => {
+                  const isNonResponding = currentUser.role === 'dirigeant' || currentUser.role === 'photographe';
+                  if (isNonResponding) {
+                    return (
+                      <div className="flex items-center justify-center px-3.5 pb-2.5">
+                        <span className="text-[10px] italic text-muted-foreground/50">Non concerné par les présences</span>
+                      </div>
+                    );
+                  }
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
                     <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
