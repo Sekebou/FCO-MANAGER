@@ -158,6 +158,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     return Array.from(seen.values());
   }, [players, members]);
 
+  // Player IDs belonging to dirigeants or community managers — they can see events but not respond
+  const nonRespondingPlayerIds = useMemo(() => {
+    return new Set(members.filter(m => (m.role === 'dirigeant' || m.role === 'photographe') && m.playerId).map(m => m.playerId!));
+  }, [members]);
+
+  const isNonRespondingPlayer = (playerId: string) => nonRespondingPlayerIds.has(playerId);
+
   const getPlayersForEvent = (_event: Event) => deduplicatedPlayers;
 
   const startConvocationMode = (eventId: string, event: Event) => {
