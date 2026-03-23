@@ -396,9 +396,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
         {/* Past event banner */}
         {isEventPast(event) && (
-          <div className="flex items-center gap-2 bg-muted/60 border border-border rounded-xl px-3 py-2">
-            <Clock size={14} className="text-muted-foreground shrink-0" />
-            <span className="text-xs font-semibold text-muted-foreground">Événement terminé — les réponses sont verrouillées</span>
+          <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 ${isManager ? 'bg-accent/5 border-accent/20' : 'bg-muted/60 border-border'}`}>
+            {isManager ? <Pencil size={14} className="text-accent shrink-0" /> : <Clock size={14} className="text-muted-foreground shrink-0" />}
+            <span className={`text-xs font-semibold ${isManager ? 'text-accent' : 'text-muted-foreground'}`}>
+              {isManager ? 'Événement terminé — vous pouvez corriger les réponses' : 'Événement terminé — les réponses sont verrouillées'}
+            </span>
           </div>
         )}
 
