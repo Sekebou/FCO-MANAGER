@@ -396,9 +396,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
         {/* Past event banner */}
         {isEventPast(event) && (
-          <div className="flex items-center gap-2 bg-muted/60 border border-border rounded-xl px-3 py-2">
-            <Clock size={14} className="text-muted-foreground shrink-0" />
-            <span className="text-xs font-semibold text-muted-foreground">Événement terminé — les réponses sont verrouillées</span>
+          <div className={`flex items-center gap-2 border rounded-xl px-3 py-2 ${isManager ? 'bg-accent/5 border-accent/20' : 'bg-muted/60 border-border'}`}>
+            {isManager ? <Pencil size={14} className="text-accent shrink-0" /> : <Clock size={14} className="text-muted-foreground shrink-0" />}
+            <span className={`text-xs font-semibold ${isManager ? 'text-accent' : 'text-muted-foreground'}`}>
+              {isManager ? 'Événement terminé — vous pouvez corriger les réponses' : 'Événement terminé — les réponses sont verrouillées'}
+            </span>
           </div>
         )}
 
@@ -485,12 +487,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                               <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
                                 Non concerné
                               </span>
-                            ) : canManageOwnPresence(player.id) ? (
+                            ) : canManageOwnPresence(player.id) || (isManager && isEventPast(event)) ? (
                               <div className="flex gap-1 shrink-0">
                                 <div className="relative overflow-visible">
                                   <motion.button
-                                    onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'present')}
-                                    disabled={isEventPast(event)}
+                                    onClick={() => {
+                                      const canAct = !isEventPast(event) || isManager;
+                                      if (canAct) togglePresence(event.id, player.id, 'present');
+                                    }}
+                                    disabled={isEventPast(event) && !isManager}
                                     whileTap={{ scale: 0.82 }}
                                     animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                     transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
@@ -514,9 +519,12 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                 </div>
                                 <div className="relative overflow-visible">
                                   <motion.button
-                                    onClick={() => !isEventPast(event) && togglePresence(event.id, player.id, 'absent')}
-                                    disabled={isEventPast(event)}
-                                    whileTap={isEventPast(event) ? {} : { scale: 0.82 }}
+                                    onClick={() => {
+                                      const canAct = !isEventPast(event) || isManager;
+                                      if (canAct) togglePresence(event.id, player.id, 'absent');
+                                    }}
+                                    disabled={isEventPast(event) && !isManager}
+                                    whileTap={(isEventPast(event) && !isManager) ? {} : { scale: 0.82 }}
                                     animate={status === 'absent' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                     transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
                                     className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
