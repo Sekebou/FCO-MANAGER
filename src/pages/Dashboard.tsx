@@ -856,7 +856,7 @@ const Dashboard = () => {
               await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 105 });
             }
             await supabase.from('points_transactions').insert({ user_id: currentUser.uid, amount: 5, type: 'presence', description: txDesc });
-            toast.success('+5 pts de pari ajoutés !', { icon: '🎉' });
+            // Points awarded silently
           }
         }
       } catch (err) { console.warn('Points award error:', err); }
