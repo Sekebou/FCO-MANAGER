@@ -843,7 +843,7 @@ const Dashboard = () => {
             const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
             if (pts) await supabase.from('user_points').update({ balance: Math.max(0, pts.balance - 5), updated_at: new Date().toISOString() }).eq('id', pts.id);
             await supabase.from('points_transactions').delete().eq('id', existingTx.id);
-            toast.info('-5 pts retirés');
+            // Points removed silently
           }
         } else {
           // Award points only if not already rewarded for this event
