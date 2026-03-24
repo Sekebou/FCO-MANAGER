@@ -122,6 +122,7 @@ export interface Member {
   createdAt: string;
   username?: string;
   licenseExpiry?: string;
+  isGhost?: boolean;
 }
 
 export interface Card {
@@ -160,7 +161,7 @@ const mapPlayer = (r: any): Player => ({ id: r.id, name: r.name, position: r.pos
 const sortPlayersStable = (list: Player[]) => [...list].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location, duration: r.duration ?? undefined, homeLogo: r.home_logo || undefined, awayLogo: r.away_logo || undefined });
 const mapNews = (r: any): NewsItem => ({ id: r.id, title: r.title, content: r.content, author: r.author, authorId: r.author_id, date: r.date, likes: r.likes || [] });
-const mapMember = (r: any): Member => ({ id: r.id, name: r.name, email: r.email, role: r.role, displayRole: r.display_role || undefined, playerId: r.player_id, photoURL: r.photo_url, createdAt: r.created_at, username: r.username, licenseExpiry: r.license_expiry });
+const mapMember = (r: any): Member => ({ id: r.id, name: r.name, email: r.email, role: r.role, displayRole: r.display_role || undefined, playerId: r.player_id, photoURL: r.photo_url, createdAt: r.created_at, username: r.username, licenseExpiry: r.license_expiry, isGhost: r.is_ghost ?? false });
 const mapCard = (r: any): Card => ({ id: r.id, playerId: r.player_id, type: r.type as any, reason: r.reason, date: r.date, suspendedUntil: r.suspended_until });
 const mapAttendance = (r: any): AttendanceRecord => ({ id: r.id, playerId: r.player_id, eventId: r.event_id, eventType: r.event_type, eventDate: r.event_date, status: r.status, savedAt: r.saved_at });
 const mapComment = (r: any): NewsComment => ({ id: r.id, newsId: r.news_id, authorName: r.author_name, authorUid: r.author_uid, content: r.content, createdAt: r.created_at });
@@ -513,10 +514,14 @@ const Dashboard = () => {
   const canCreateNews = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
   const canCreateEvent = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
 
+  // Ghost filtering: hide ghost accounts from non-ghost users
+  const isCurrentUserGhost = members.find(m => m.id === currentUser?.uid)?.isGhost;
+  const ghostPlayerIds = members.filter(m => m.isGhost && m.playerId).map(m => m.playerId);
+
   const nonPlayerRoleIds = members.filter(m => (m.role === 'dirigeant' || m.role === 'photographe') && m.playerId).map(m => m.playerId);
-  const visiblePlayers = players;
-  const visiblePlayersForStats = players.filter(p => !nonPlayerRoleIds.includes(p.id));
-  const visibleMembers = members;
+  const visiblePlayers = isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id));
+  const visiblePlayersForStats = (isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id))).filter(p => !nonPlayerRoleIds.includes(p.id));
+  const visibleMembers = isCurrentUserGhost ? members : members.filter(m => !m.isGhost);
 
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {

@@ -817,6 +817,7 @@ export type Database = {
           display_role: string | null
           email: string
           id: string
+          is_ghost: boolean
           license_expiry: string | null
           name: string
           photo_url: string | null
@@ -831,6 +832,7 @@ export type Database = {
           display_role?: string | null
           email: string
           id: string
+          is_ghost?: boolean
           license_expiry?: string | null
           name: string
           photo_url?: string | null
@@ -845,6 +847,7 @@ export type Database = {
           display_role?: string | null
           email?: string
           id?: string
+          is_ghost?: boolean
           license_expiry?: string | null
           name?: string
           photo_url?: string | null
