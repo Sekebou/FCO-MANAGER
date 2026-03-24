@@ -833,7 +833,7 @@ const Dashboard = () => {
     if (error) { toast.error('Erreur: ' + error.message); return; }
 
     // Points logic for presence (match or training only)
-    if (currentUser && (event?.type === 'match' || event?.type === 'training')) {
+    if (isOwnPresence && currentUser && (event?.type === 'match' || event?.type === 'training')) {
       const txDesc = `Présence:${eventId}`;
       try {
         if (isToggleOff) {
@@ -843,7 +843,7 @@ const Dashboard = () => {
             const { data: pts } = await supabase.from('user_points').select('id, balance').eq('user_id', currentUser.uid).maybeSingle();
             if (pts) await supabase.from('user_points').update({ balance: Math.max(0, pts.balance - 5), updated_at: new Date().toISOString() }).eq('id', pts.id);
             await supabase.from('points_transactions').delete().eq('id', existingTx.id);
-            toast.info('-5 pts retirés');
+            // Points removed silently
           }
         } else {
           // Award points only if not already rewarded for this event
@@ -856,7 +856,7 @@ const Dashboard = () => {
               await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 105 });
             }
             await supabase.from('points_transactions').insert({ user_id: currentUser.uid, amount: 5, type: 'presence', description: txDesc });
-            toast.success('+5 pts de pari ajoutés !', { icon: '🎉' });
+            // Points awarded silently
           }
         }
       } catch (err) { console.warn('Points award error:', err); }
@@ -1135,7 +1135,7 @@ const Dashboard = () => {
         await supabase.from('user_points').insert({ user_id: currentUser.uid, balance: 105 });
       }
       await supabase.from('points_transactions').insert({ user_id: currentUser.uid, amount: 5, type: 'comment', description: `Commentaire sur : ${newsItem?.title || 'Actu'}` });
-      toast.success('+5 pts de pari ajoutés !', { icon: '💬' });
+      // Points awarded silently
     } catch (err) { console.warn('Comment points error:', err); }
   };
 
