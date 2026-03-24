@@ -122,6 +122,7 @@ export interface Member {
   createdAt: string;
   username?: string;
   licenseExpiry?: string;
+  isGhost?: boolean;
 }
 
 export interface Card {
