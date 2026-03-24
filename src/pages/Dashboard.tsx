@@ -833,7 +833,7 @@ const Dashboard = () => {
     if (error) { toast.error('Erreur: ' + error.message); return; }
 
     // Points logic for presence (match or training only)
-    if (currentUser && (event?.type === 'match' || event?.type === 'training')) {
+    if (isOwnPresence && currentUser && (event?.type === 'match' || event?.type === 'training')) {
       const txDesc = `Présence:${eventId}`;
       try {
         if (isToggleOff) {
