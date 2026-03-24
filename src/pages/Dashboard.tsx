@@ -514,10 +514,14 @@ const Dashboard = () => {
   const canCreateNews = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
   const canCreateEvent = () => currentUser && (canManage() || currentUser.role === 'dirigeant');
 
+  // Ghost filtering: hide ghost accounts from non-ghost users
+  const isCurrentUserGhost = members.find(m => m.id === currentUser?.uid)?.isGhost;
+  const ghostPlayerIds = members.filter(m => m.isGhost && m.playerId).map(m => m.playerId);
+
   const nonPlayerRoleIds = members.filter(m => (m.role === 'dirigeant' || m.role === 'photographe') && m.playerId).map(m => m.playerId);
-  const visiblePlayers = players;
-  const visiblePlayersForStats = players.filter(p => !nonPlayerRoleIds.includes(p.id));
-  const visibleMembers = members;
+  const visiblePlayers = isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id));
+  const visiblePlayersForStats = (isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id))).filter(p => !nonPlayerRoleIds.includes(p.id));
+  const visibleMembers = isCurrentUserGhost ? members : members.filter(m => !m.isGhost);
 
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {
