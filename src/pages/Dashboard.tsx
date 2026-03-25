@@ -707,7 +707,7 @@ const Dashboard = () => {
       const hotInterval = setInterval(fetchHot, 15000);   // was 5s → now 15s
       const coldInterval = setInterval(fetchCold, 60000);  // was 30s → now 60s
 
-      return () => { clearInterval(hotInterval); clearInterval(coldInterval); };
+      return () => { clearInterval(hotInterval); clearInterval(coldInterval); window.removeEventListener('online', handleOnline); };
     }
 
     // === Web/Android: Supabase Realtime subscriptions ===
@@ -754,7 +754,7 @@ const Dashboard = () => {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(channel); window.removeEventListener('online', handleOnline); };
   }, [currentUser, navigate]);
 
   // ── Lazy-load gallery photos only when gallery tab is opened ──
