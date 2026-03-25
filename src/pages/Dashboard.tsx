@@ -648,6 +648,10 @@ const Dashboard = () => {
       setLoading(false);
     }
 
+    // Re-fetch when network comes back online
+    const handleOnline = () => { fetchAll(); };
+    window.addEventListener('online', handleOnline);
+
     // Trigger cleanup max 1x/hour (deduplicated via localStorage)
     const CLEANUP_KEY = 'fco_cleanup_ts';
     const CLEANUP_TTL = 60 * 60 * 1000; // 1 hour
