@@ -191,12 +191,12 @@ const writeCache = (key: string, data: any) => {
   } catch { /* quota exceeded — ignore */ }
 };
 
-const readCache = <T,>(key: string): T | null => {
+const readCache = <T,>(key: string, ignoreExpiry = false): T | null => {
   try {
     const raw = localStorage.getItem(CACHE_PREFIX + key);
     if (!raw) return null;
     const { ts, data } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL) return null; // stale
+    if (!ignoreExpiry && Date.now() - ts > CACHE_TTL) return null; // stale
     return data as T;
   } catch { return null; }
 };
@@ -616,8 +616,29 @@ const Dashboard = () => {
 
         setLoading(false);
       } catch (err: any) {
-        setError(err.message);
+        // Network error: fall back to ANY cached data (ignore expiry)
+        if (!hasCache) {
+          const fallback = (k: string) => {
+            try {
+              const raw = localStorage.getItem(CACHE_PREFIX + k);
+              if (!raw) return null;
+              return JSON.parse(raw).data;
+            } catch { return null; }
+          };
+          const fp = fallback('players'); if (fp) setPlayers(fp);
+          const fe = fallback('events'); if (fe) setEvents(fe);
+          const fn = fallback('news'); if (fn) setNews(fn);
+          const fm = fallback('members'); if (fm) setMembers(fm);
+          const fc = fallback('cards'); if (fc) setCards(fc);
+          const fa = fallback('attendance'); if (fa) setAttendanceRecords(fa);
+          const fco = fallback('comments'); if (fco) setNewsComments(fco);
+          const fch = fallback('champs'); if (fch) setChampionships(fch);
+          const fma = fallback('matches'); if (fma) setChampMatches(fma);
+          const fal = fallback('albums'); if (fal) setAlbums(fal);
+          const fms = fallback('matchSheets'); if (fms) setMatchSheets(fms);
+        }
         setLoading(false);
+        // Don't set error — show stale data silently
       }
     };
 
