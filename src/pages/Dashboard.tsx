@@ -2000,4 +2000,51 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+// Error boundary to prevent app crashes
+class DashboardErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Dashboard crash caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center gap-4">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-sm shadow-lg">
+            <h2 className="text-lg font-bold text-foreground mb-2">Erreur inattendue</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              L'application a rencontré un problème. Essayez de relancer.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium"
+            >
+              Relancer l'app
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const DashboardWithErrorBoundary = () => (
+  <DashboardErrorBoundary>
+    <Dashboard />
+  </DashboardErrorBoundary>
+);
+
+export default DashboardWithErrorBoundary;
