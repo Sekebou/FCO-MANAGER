@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
-import { X, Send, Smartphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Send, Smartphone, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+interface MemberOption {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface SendPushNotifFormProps {
   onClose: () => void;
@@ -11,26 +17,42 @@ const SendPushNotifForm: React.FC<SendPushNotifFormProps> = ({ onClose }) => {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [platform, setPlatform] = useState<'all' | 'ios' | 'android'>('all');
+  const [targetMode, setTargetMode] = useState<'all' | 'member'>('all');
+  const [selectedMemberId, setSelectedMemberId] = useState('');
+  const [members, setMembers] = useState<MemberOption[]>([]);
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    supabase.from('profiles').select('id, name, email').order('name').then(({ data }) => {
+      if (data) setMembers(data.map(p => ({ id: p.id, name: p.name, email: p.email })));
+    });
+  }, []);
 
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) {
       toast.error('Titre et message requis');
       return;
     }
+    if (targetMode === 'member' && !selectedMemberId) {
+      toast.error('Sélectionne un membre');
+      return;
+    }
 
     setSending(true);
     try {
-      // Fetch tokens filtered by platform
       let query = supabase.from('fcm_tokens').select('token, platform');
+
+      if (targetMode === 'member') {
+        query = query.eq('user_id', selectedMemberId);
+      }
       if (platform !== 'all') {
         query = query.eq('platform', platform);
       }
-      const { data: tokens, error: fetchErr } = await query;
 
+      const { data: tokens, error: fetchErr } = await query;
       if (fetchErr) throw fetchErr;
       if (!tokens || tokens.length === 0) {
-        toast.error(`Aucun token ${platform} trouvé`);
+        toast.error(targetMode === 'member' ? 'Aucun appareil enregistré pour ce membre' : `Aucun token ${platform} trouvé`);
         setSending(false);
         return;
       }
@@ -67,6 +89,54 @@ const SendPushNotifForm: React.FC<SendPushNotifFormProps> = ({ onClose }) => {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Target selector */}
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">Cible</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setTargetMode('all'); setSelectedMemberId(''); }}
+                className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  targetMode === 'all'
+                    ? 'bg-accent text-accent-foreground shadow-md'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                <Smartphone size={14} />
+                Tous
+              </button>
+              <button
+                onClick={() => setTargetMode('member')}
+                className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  targetMode === 'member'
+                    ? 'bg-accent text-accent-foreground shadow-md'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                <User size={14} />
+                Un membre
+              </button>
+            </div>
+          </div>
+
+          {/* Member selector */}
+          {targetMode === 'member' && (
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">Membre</label>
+              <div className="relative">
+                <select
+                  value={selectedMemberId}
+                  onChange={e => setSelectedMemberId(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-muted border border-border text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent appearance-none"
+                >
+                  <option value="">— Sélectionner —</option>
+                  {members.map(m => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
           {/* Platform selector */}
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">Plateforme</label>
@@ -114,7 +184,7 @@ const SendPushNotifForm: React.FC<SendPushNotifFormProps> = ({ onClose }) => {
 
           <button
             onClick={handleSend}
-            disabled={sending || !title.trim() || !body.trim()}
+            disabled={sending || !title.trim() || !body.trim() || (targetMode === 'member' && !selectedMemberId)}
             className="w-full py-3 rounded-xl bg-accent text-accent-foreground font-semibold text-sm hover:bg-accent/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <Send size={16} />
