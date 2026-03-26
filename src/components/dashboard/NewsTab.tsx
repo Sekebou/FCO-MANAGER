@@ -120,7 +120,26 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
               </div>
               {/* Body */}
               <div className="px-4 pb-4 pt-1">
-                <p className="text-foreground/80 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{item.content}</p>
+                {(() => {
+                  const isLong = item.content.length > MAX_CONTENT_LENGTH;
+                  const isContentExpanded = expandedContent[item.id];
+                  const displayText = isLong && !isContentExpanded
+                    ? item.content.slice(0, MAX_CONTENT_LENGTH).trimEnd() + '…'
+                    : item.content;
+                  return (
+                    <>
+                      <p className="text-foreground/80 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{displayText}</p>
+                      {isLong && (
+                        <button
+                          onClick={() => setExpandedContent(prev => ({ ...prev, [item.id]: !prev[item.id] }))}
+                          className="text-accent text-xs font-medium mt-1 hover:underline"
+                        >
+                          {isContentExpanded ? 'Voir moins' : 'Voir plus'}
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Actions bar */}
