@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
             penalties: entry.pen ?? entry.penalties ?? 0,
             goalsFor: entry.goals_for_count ?? entry.bp ?? entry.goals_for ?? 0,
             goalsAgainst: entry.goals_against_count ?? entry.bc ?? entry.goals_against ?? 0,
-            goalDiff: entry.goals_diff ?? entry.diff ?? entry.goal_diff ?? 0,
+            goalDiff: (entry.goals_for_count ?? entry.bp ?? entry.goals_for ?? 0) - (entry.goals_against_count ?? entry.bc ?? entry.goals_against ?? 0),
           })).filter((s: any) => s.team);
           if (standings.length > 0) {
             updateBody.fff_standings = standings;
