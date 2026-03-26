@@ -527,12 +527,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   <div className="relative overflow-visible">
                                     <motion.button
                                       onClick={() => {
+                                        console.log('[ABSENCE] clicked', { eventId: event.id, playerId: player.id, status, isEventPast: isEventPast(event), isManager, canManageOwn: canManageOwnPresence(player.id) });
                                         const canAct = !isEventPast(event) || isManager;
-                                        if (!canAct) return;
+                                        if (!canAct) { console.log('[ABSENCE] canAct=false, returning'); return; }
                                         const alreadyAbsent = status === 'absent';
                                         if (alreadyAbsent) {
+                                          console.log('[ABSENCE] toggling off');
                                           togglePresence(event.id, player.id, 'absent');
                                         } else {
+                                          console.log('[ABSENCE] opening modal');
                                           setAbsenceModal({ eventId: event.id, playerId: player.id });
                                           setAbsenceReason('');
                                         }
