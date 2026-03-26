@@ -40,9 +40,12 @@ const CommentAvatar: React.FC<{ authorUid: string; authorName: string; members: 
   );
 };
 
+const MAX_CONTENT_LENGTH = 150;
+
 const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNews, deleteNews, toggleLike, addComment, deleteComment, onAddNews }: Props) => {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [expandedContent, setExpandedContent] = useState<Record<string, boolean>>({});
 
   const getCommentsForNews = (newsId: string) => comments.filter(c => c.newsId === newsId);
 
