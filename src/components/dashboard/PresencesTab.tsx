@@ -533,7 +533,6 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                         const alreadyAbsent = status === 'absent';
                                         if (alreadyAbsent) {
                                           togglePresence(event.id, player.id, 'absent');
-                                          togglePresence(event.id, player.id, 'absent');
                                         } else {
                                           setAbsenceModal({ eventId: event.id, playerId: player.id });
                                           setAbsenceReason('');
