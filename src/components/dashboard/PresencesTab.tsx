@@ -28,7 +28,7 @@ interface Props {
   canManage: () => boolean | null;
   canCreateEvent: () => boolean | null;
   canManageOwnPresence: (playerId: string) => boolean | null;
-  togglePresence: (eventId: string, playerId: string, status: string) => void;
+  togglePresence: (eventId: string, playerId: string, status: string, absenceReason?: string) => void;
   deleteEvent: (eventId: string) => void;
   canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
