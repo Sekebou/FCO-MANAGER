@@ -402,6 +402,7 @@ export type Database = {
       }
       events: {
         Row: {
+          absence_reasons: Json | null
           away_logo: string | null
           convocations: Json | null
           convocations_published: boolean | null
@@ -423,6 +424,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          absence_reasons?: Json | null
           away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
@@ -444,6 +446,7 @@ export type Database = {
           type?: string
         }
         Update: {
+          absence_reasons?: Json | null
           away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
