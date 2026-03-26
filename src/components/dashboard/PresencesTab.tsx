@@ -57,8 +57,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [publishing, setPublishing] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [convocationSearch, setConvocationSearch] = useState('');
+  const [absenceModal, setAbsenceModal] = useState<{ eventId: string; playerId: string } | null>(null);
+  const [absenceReason, setAbsenceReason] = useState('');
 
-  useBodyScrollLock(!!convocationMode);
+  useBodyScrollLock(!!convocationMode || !!absenceModal);
 
   // React to navigation with a specific event ID
   useEffect(() => {
