@@ -1,0 +1,1 @@
+UPDATE championships SET fff_standings = '[]'::jsonb, fff_live_cache = NULL, fff_refreshed_at = NULL;
