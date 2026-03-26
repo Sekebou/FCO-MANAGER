@@ -529,9 +529,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                       onClick={() => {
                                         const canAct = !isEventPast(event) || isManager;
                                         if (!canAct) return;
-                                        const isOwnPlayer = currentUser?.playerId === player.id;
                                         const alreadyAbsent = status === 'absent';
-                                        if (alreadyAbsent || (isManager && !isOwnPlayer)) {
+                                        if (alreadyAbsent) {
                                           togglePresence(event.id, player.id, 'absent');
                                         } else {
                                           setAbsenceModal({ eventId: event.id, playerId: player.id });
