@@ -80,6 +80,7 @@ export interface Event {
   reason?: string;
   recurrence?: 'recurring' | 'ponctuel';
   presences?: Record<string, string>;
+  absenceReasons?: Record<string, string>;
   convocations?: Record<string, Convocation>;
   convocationsPublished?: boolean;
   createdBy?: string;
@@ -159,7 +160,7 @@ const tabs = [
 // ---- Supabase helpers: map DB snake_case → app camelCase ----
 const mapPlayer = (r: any): Player => ({ id: r.id, name: r.name, position: r.position || 'Non défini', matches: r.matches ?? 0, goals: r.goals ?? 0, assists: r.assists ?? 0, licenseExpiry: r.license_expiry || undefined });
 const sortPlayersStable = (list: Player[]) => [...list].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
-const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location, duration: r.duration ?? undefined, homeLogo: r.home_logo || undefined, awayLogo: r.away_logo || undefined });
+const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, absenceReasons: r.absence_reasons as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location, duration: r.duration ?? undefined, homeLogo: r.home_logo || undefined, awayLogo: r.away_logo || undefined });
 const mapNews = (r: any): NewsItem => ({ id: r.id, title: r.title, content: r.content, author: r.author, authorId: r.author_id, date: r.date, likes: r.likes || [] });
 const mapMember = (r: any): Member => ({ id: r.id, name: r.name, email: r.email, role: r.role, displayRole: r.display_role || undefined, playerId: r.player_id, photoURL: r.photo_url, createdAt: r.created_at, username: r.username, licenseExpiry: r.license_expiry, isGhost: r.is_ghost ?? false });
 const mapCard = (r: any): Card => ({ id: r.id, playerId: r.player_id, type: r.type as any, reason: r.reason, date: r.date, suspendedUntil: r.suspended_until });
@@ -835,29 +836,36 @@ const Dashboard = () => {
   const handleLogout = async () => { await logout(); navigate('/auth'); };
 
   // CRUD functions — all Supabase
-  const togglePresence = async (eventId: string, playerId: string, status: string) => {
+  const togglePresence = async (eventId: string, playerId: string, status: string, absenceReason?: string) => {
     if (!canManageOwnPresence(playerId) && !canManage()) { toast.warning('Vous ne pouvez gérer que votre propre présence'); return; }
     const event = events.find(e => e.id === eventId);
     const currentPresences = { ...(event?.presences || {}) };
+    const currentReasons = { ...(event?.absenceReasons || {}) };
     const isToggleOff = currentPresences[playerId] === status;
-    if (isToggleOff) delete currentPresences[playerId];
-    else currentPresences[playerId] = status;
-    setEvents(prev => prev.map(e => e.id === eventId ? { ...e, presences: currentPresences } : e));
+    if (isToggleOff) { delete currentPresences[playerId]; delete currentReasons[playerId]; }
+    else {
+      currentPresences[playerId] = status;
+      if (status === 'absent' && absenceReason?.trim()) {
+        currentReasons[playerId] = absenceReason.trim();
+      } else {
+        delete currentReasons[playerId];
+      }
+    }
+    setEvents(prev => prev.map(e => e.id === eventId ? { ...e, presences: currentPresences, absenceReasons: currentReasons } : e));
 
     // Use RPC for own presence (players), direct update for managers
     let error: any = null;
     const isOwnPresence = currentUser?.playerId === playerId;
     if (isOwnPresence && !canManage()) {
       const newStatus = isToggleOff ? '' : status;
-      const { error: rpcErr } = await supabase.rpc('update_event_presence', { p_event_id: eventId, p_status: newStatus || 'absent' });
-      // If toggling off, we need to remove the key — use direct update which RLS allows for managers
-      if (isToggleOff) {
-        // For toggle-off, set to empty string as a "cleared" state via RPC
-        // The RPC always sets a value, so we use a convention
-      }
+      const { error: rpcErr } = await supabase.rpc('update_event_presence', {
+        p_event_id: eventId,
+        p_status: newStatus || 'absent',
+        p_absence_reason: (status === 'absent' && !isToggleOff && absenceReason?.trim()) ? absenceReason.trim() : null,
+      });
       error = rpcErr;
     } else {
-      const { error: updateErr } = await supabase.from('events').update({ presences: currentPresences }).eq('id', eventId);
+      const { error: updateErr } = await supabase.from('events').update({ presences: currentPresences, absence_reasons: currentReasons }).eq('id', eventId);
       error = updateErr;
     }
     if (error) { toast.error('Erreur: ' + error.message); return; }

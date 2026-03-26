@@ -402,6 +402,7 @@ export type Database = {
       }
       events: {
         Row: {
+          absence_reasons: Json | null
           away_logo: string | null
           convocations: Json | null
           convocations_published: boolean | null
@@ -423,6 +424,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          absence_reasons?: Json | null
           away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
@@ -444,6 +446,7 @@ export type Database = {
           type?: string
         }
         Update: {
+          absence_reasons?: Json | null
           away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
@@ -988,10 +991,16 @@ export type Database = {
         Returns: Json
       }
       toggle_photo_like: { Args: { p_photo_id: string }; Returns: undefined }
-      update_event_presence: {
-        Args: { p_event_id: string; p_status: string }
-        Returns: undefined
-      }
+      update_event_presence:
+        | { Args: { p_event_id: string; p_status: string }; Returns: undefined }
+        | {
+            Args: {
+              p_absence_reason?: string
+              p_event_id: string
+              p_status: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       app_role:
