@@ -149,7 +149,12 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         <div className="space-y-3">
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
-            const isPast = new Date(ms.date) < now;
+            // Unlock 1h after match start (date + time), using Europe/Paris timezone
+            const matchDateTime = new Date(ms.date + (ms.time ? 'T' + ms.time : 'T00:00'));
+            // Convert "now" to Paris time for comparison
+            const parisNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+            const unlockTime = new Date(matchDateTime.getTime() + 60 * 60 * 1000); // +1h
+            const isPast = parisNow >= unlockTime;
             const isLocked = !isManager && !isPast;
             const hasScore = ms.homeScore != null && ms.awayScore != null;
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
