@@ -991,10 +991,16 @@ export type Database = {
         Returns: Json
       }
       toggle_photo_like: { Args: { p_photo_id: string }; Returns: undefined }
-      update_event_presence: {
-        Args: { p_event_id: string; p_status: string }
-        Returns: undefined
-      }
+      update_event_presence:
+        | { Args: { p_event_id: string; p_status: string }; Returns: undefined }
+        | {
+            Args: {
+              p_absence_reason?: string
+              p_event_id: string
+              p_status: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       app_role:
