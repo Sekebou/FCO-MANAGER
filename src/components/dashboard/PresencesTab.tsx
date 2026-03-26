@@ -535,7 +535,6 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                           togglePresence(event.id, player.id, 'absent');
                                           togglePresence(event.id, player.id, 'absent');
                                         } else {
-                                          console.log('[ABSENCE] opening modal');
                                           setAbsenceModal({ eventId: event.id, playerId: player.id });
                                           setAbsenceReason('');
                                         }
