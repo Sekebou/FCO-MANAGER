@@ -117,7 +117,7 @@ const NewsTab = ({ news, comments, members, currentUser, canManage, canCreateNew
               </div>
               {/* Body */}
               <div className="px-4 pb-4 pt-1">
-                <p className="text-foreground/70 text-[13px] leading-relaxed">{item.content}</p>
+                <p className="text-foreground/80 text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">{item.content}</p>
               </div>
 
               {/* Actions bar */}
