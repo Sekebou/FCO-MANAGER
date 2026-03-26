@@ -80,6 +80,7 @@ export interface Event {
   reason?: string;
   recurrence?: 'recurring' | 'ponctuel';
   presences?: Record<string, string>;
+  absenceReasons?: Record<string, string>;
   convocations?: Record<string, Convocation>;
   convocationsPublished?: boolean;
   createdBy?: string;
