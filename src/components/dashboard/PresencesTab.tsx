@@ -1275,7 +1275,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           whileTap={{ scale: 0.9 }}
                           animate={myStatus === 'absent' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
                           transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-                          onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'absent'); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (myStatus === 'absent') {
+                              togglePresence(event.id, currentUser.playerId!, 'absent');
+                            } else {
+                              setAbsenceModal({ eventId: event.id, playerId: currentUser.playerId! });
+                              setAbsenceReason('');
+                            }
+                          }}
                           className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'}`}
                         >
                           <X size={12} /> Absent
