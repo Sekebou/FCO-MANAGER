@@ -467,103 +467,115 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     ) : (
                       filteredPlayers.map(player => {
                         const status = presences[player.id];
+                        const absReason = event.absenceReasons?.[player.id];
+                        const canSeeReason = absReason && status === 'absent' && (
+                          isManager || currentUser?.playerId === player.id
+                        );
                         return (
-                          <div key={player.id} className="flex items-center justify-between p-2 sm:p-2.5 bg-secondary/40 rounded-xl gap-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              {(() => {
-                                const member = members.find(m => m.playerId === player.id);
-                                const photoURL = member?.photoURL;
-                                const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                                if (photoURL) {
-                                  return <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
-                                }
-                                return (
-                                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                    <span className="text-primary text-[10px] font-bold">{initials}</span>
-                                  </div>
-                                );
-                              })()}
-                              <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
-                            </div>
-                            {isNonRespondingPlayer(player.id) ? (
-                              <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
-                                Non concerné
-                              </span>
-                            ) : canManageOwnPresence(player.id) || (isManager && isEventPast(event)) ? (
-                              <div className="flex gap-1 shrink-0">
-                                <div className="relative overflow-visible">
-                                  <motion.button
-                                    onClick={() => {
-                                      const canAct = !isEventPast(event) || isManager;
-                                      if (canAct) togglePresence(event.id, player.id, 'present');
-                                    }}
-                                    disabled={isEventPast(event) && !isManager}
-                                    whileTap={{ scale: 0.82 }}
-                                    animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
-                                    transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-                                    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
-                                      status === 'present'
-                                        ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30'
-                                        : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
-                                    }`}
-                                  >
-                                    <Check size={12} /> Présent
-                                  </motion.button>
-                                  <AnimatePresence>
-                                    {status === 'present' && (
-                                      <>
-                                        <motion.span key={`p1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-base">✓</motion.span>
-                                        <motion.span key={`p2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-xs">✓</motion.span>
-                                        <motion.span key={`p3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-accent/60 font-black text-[10px]">✓</motion.span>
-                                      </>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                                <div className="relative overflow-visible">
-                                  <motion.button
-                                    onClick={() => {
-                                      const canAct = !isEventPast(event) || isManager;
-                                      if (!canAct) return;
-                                      const isOwnPlayer = currentUser?.playerId === player.id;
-                                      const alreadyAbsent = status === 'absent';
-                                      if (alreadyAbsent || (isManager && !isOwnPlayer)) {
-                                        togglePresence(event.id, player.id, 'absent');
-                                      } else {
-                                        setAbsenceModal({ eventId: event.id, playerId: player.id });
-                                        setAbsenceReason('');
-                                      }
-                                    }}
-                                    disabled={isEventPast(event) && !isManager}
-                                    whileTap={(isEventPast(event) && !isManager) ? {} : { scale: 0.82 }}
-                                    animate={status === 'absent' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
-                                    transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
-                                    className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
-                                      status === 'absent'
-                                        ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30'
-                                        : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
-                                    }`}
-                                  >
-                                    <X size={12} /> Absent
-                                  </motion.button>
-                                  <AnimatePresence>
-                                    {status === 'absent' && (
-                                      <>
-                                        <motion.span key={`a1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-base">✕</motion.span>
-                                        <motion.span key={`a2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-xs">✕</motion.span>
-                                        <motion.span key={`a3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-destructive/60 font-black text-[10px]">✕</motion.span>
-                                      </>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
+                          <div key={player.id} className="space-y-0">
+                            <div className="flex items-center justify-between p-2 sm:p-2.5 bg-secondary/40 rounded-xl gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                {(() => {
+                                  const member = members.find(m => m.playerId === player.id);
+                                  const photoURL = member?.photoURL;
+                                  const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                  if (photoURL) {
+                                    return <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+                                  }
+                                  return (
+                                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                      <span className="text-primary text-[10px] font-bold">{initials}</span>
+                                    </div>
+                                  );
+                                })()}
+                                <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
                               </div>
-                            ) : (
-                              <span className={`px-2.5 h-8 rounded-lg text-[11px] font-semibold flex items-center gap-1 shrink-0 ${
-                                status === 'present' ? 'bg-accent/10 text-accent' :
-                                status === 'absent' ? 'bg-destructive/10 text-destructive' :
-                                'bg-warning/10 text-warning'
-                              }`}>
-                                {status === 'present' ? <><Check size={12} /> Présent</> : status === 'absent' ? <><X size={12} /> Absent</> : <><Clock size={12} /> En attente</>}
-                              </span>
+                              {isNonRespondingPlayer(player.id) ? (
+                                <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
+                                  Non concerné
+                                </span>
+                              ) : canManageOwnPresence(player.id) || (isManager && isEventPast(event)) ? (
+                                <div className="flex gap-1 shrink-0">
+                                  <div className="relative overflow-visible">
+                                    <motion.button
+                                      onClick={() => {
+                                        const canAct = !isEventPast(event) || isManager;
+                                        if (canAct) togglePresence(event.id, player.id, 'present');
+                                      }}
+                                      disabled={isEventPast(event) && !isManager}
+                                      whileTap={{ scale: 0.82 }}
+                                      animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
+                                      transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
+                                      className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                                        status === 'present'
+                                          ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30'
+                                          : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'
+                                      }`}
+                                    >
+                                      <Check size={12} /> Présent
+                                    </motion.button>
+                                    <AnimatePresence>
+                                      {status === 'present' && (
+                                        <>
+                                          <motion.span key={`p1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-base">✓</motion.span>
+                                          <motion.span key={`p2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-xs">✓</motion.span>
+                                          <motion.span key={`p3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-accent/60 font-black text-[10px]">✓</motion.span>
+                                        </>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                  <div className="relative overflow-visible">
+                                    <motion.button
+                                      onClick={() => {
+                                        const canAct = !isEventPast(event) || isManager;
+                                        if (!canAct) return;
+                                        const isOwnPlayer = currentUser?.playerId === player.id;
+                                        const alreadyAbsent = status === 'absent';
+                                        if (alreadyAbsent || (isManager && !isOwnPlayer)) {
+                                          togglePresence(event.id, player.id, 'absent');
+                                        } else {
+                                          setAbsenceModal({ eventId: event.id, playerId: player.id });
+                                          setAbsenceReason('');
+                                        }
+                                      }}
+                                      disabled={isEventPast(event) && !isManager}
+                                      whileTap={(isEventPast(event) && !isManager) ? {} : { scale: 0.82 }}
+                                      animate={status === 'absent' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
+                                      transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
+                                      className={`px-2.5 h-8 rounded-lg flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                                        status === 'absent'
+                                          ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30'
+                                          : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'
+                                      }`}
+                                    >
+                                      <X size={12} /> Absent
+                                    </motion.button>
+                                    <AnimatePresence>
+                                      {status === 'absent' && (
+                                        <>
+                                          <motion.span key={`a1-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.8 }} animate={{ opacity: 0, y: -36, x: -6, scale: 1.8 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-base">✕</motion.span>
+                                          <motion.span key={`a2-${player.id}`} initial={{ opacity: 1, y: 0, x: 0, scale: 0.6 }} animate={{ opacity: 0, y: -28, x: 14, scale: 1.4 }} exit={{ opacity: 0 }} transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-xs">✕</motion.span>
+                                          <motion.span key={`a3-${player.id}`} initial={{ opacity: 0.8, y: 0, x: 0, scale: 0.5 }} animate={{ opacity: 0, y: -20, x: -14, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, delay: 0.08, ease: 'easeOut' }} className="absolute top-1 left-1/2 -translate-x-1/2 pointer-events-none text-destructive/60 font-black text-[10px]">✕</motion.span>
+                                        </>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className={`px-2.5 h-8 rounded-lg text-[11px] font-semibold flex items-center gap-1 shrink-0 ${
+                                  status === 'present' ? 'bg-accent/10 text-accent' :
+                                  status === 'absent' ? 'bg-destructive/10 text-destructive' :
+                                  'bg-warning/10 text-warning'
+                                }`}>
+                                  {status === 'present' ? <><Check size={12} /> Présent</> : status === 'absent' ? <><X size={12} /> Absent</> : <><Clock size={12} /> En attente</>}
+                                </span>
+                              )}
+                            </div>
+                            {canSeeReason && (
+                              <div className="flex items-start gap-1.5 px-3 py-1.5 ml-9">
+                                <MessageSquare size={11} className="text-destructive/50 shrink-0 mt-0.5" />
+                                <span className="text-[11px] text-destructive/70 italic leading-snug">« {absReason} »</span>
+                              </div>
                             )}
                           </div>
                         );
