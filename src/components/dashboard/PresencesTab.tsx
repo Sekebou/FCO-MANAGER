@@ -523,7 +523,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   <motion.button
                                     onClick={() => {
                                       const canAct = !isEventPast(event) || isManager;
-                                      if (canAct) togglePresence(event.id, player.id, 'absent');
+                                      if (!canAct) return;
+                                      const isOwnPlayer = currentUser?.playerId === player.id;
+                                      const alreadyAbsent = status === 'absent';
+                                      if (alreadyAbsent || (isManager && !isOwnPlayer)) {
+                                        togglePresence(event.id, player.id, 'absent');
+                                      } else {
+                                        setAbsenceModal({ eventId: event.id, playerId: player.id });
+                                        setAbsenceReason('');
+                                      }
                                     }}
                                     disabled={isEventPast(event) && !isManager}
                                     whileTap={(isEventPast(event) && !isManager) ? {} : { scale: 0.82 }}
