@@ -858,16 +858,11 @@ const Dashboard = () => {
     const isOwnPresence = currentUser?.playerId === playerId;
     if (isOwnPresence && !canManage()) {
       const newStatus = isToggleOff ? '' : status;
-      const { error: rpcErr } = await supabase.rpc('update_event_presence', { p_event_id: eventId, p_status: newStatus || 'absent' });
-      if (!rpcErr) {
-        // Update absence_reasons via direct update (managers can update events, but for players we need a separate approach)
-        // Since players can't update events directly, we'll use a manager-level update for absence_reasons
-        // Actually the RPC only updates presences. We need to also update absence_reasons.
-        // For now, use direct update which should work since RLS allows managers OR dirigeants to update events
-        // But players can't... so we need to handle this differently.
-        // Solution: update absence_reasons via a separate approach - let's add it to the RPC or use a direct update
-        await supabase.from('events').update({ absence_reasons: currentReasons }).eq('id', eventId);
-      }
+      const { error: rpcErr } = await supabase.rpc('update_event_presence', {
+        p_event_id: eventId,
+        p_status: newStatus || 'absent',
+        p_absence_reason: (status === 'absent' && !isToggleOff && absenceReason?.trim()) ? absenceReason.trim() : null,
+      });
       error = rpcErr;
     } else {
       const { error: updateErr } = await supabase.from('events').update({ presences: currentPresences, absence_reasons: currentReasons }).eq('id', eventId);
