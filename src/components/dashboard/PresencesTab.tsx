@@ -1311,6 +1311,78 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Absence Reason Modal */}
+      <AnimatePresence>
+        {absenceModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]"
+            onClick={() => setAbsenceModal(null)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm border border-border shadow-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-5 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-destructive/10 rounded-xl flex items-center justify-center">
+                    <MessageSquare size={20} className="text-destructive" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Signaler une absence</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Visible uniquement par le staff</p>
+                  </div>
+                </div>
+                <button onClick={() => setAbsenceModal(null)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
+                  <X size={16} className="text-muted-foreground" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-3">
+                <textarea
+                  placeholder="Raison de l'absence (facultatif)…"
+                  className="w-full p-3.5 bg-secondary border border-border rounded-xl h-24 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-destructive/30 focus:border-destructive/30 text-sm resize-none transition-all"
+                  value={absenceReason}
+                  onChange={(e) => setAbsenceReason(e.target.value)}
+                  maxLength={200}
+                  autoFocus
+                />
+                {absenceReason.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground text-right">{absenceReason.length}/200</p>
+                )}
+              </div>
+
+              <div className="flex gap-3 p-5 border-t border-border">
+                <button
+                  onClick={() => {
+                    togglePresence(absenceModal.eventId, absenceModal.playerId, 'absent');
+                    setAbsenceModal(null);
+                  }}
+                  className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+                >
+                  Sans raison
+                </button>
+                <button
+                  onClick={() => {
+                    togglePresence(absenceModal.eventId, absenceModal.playerId, 'absent', absenceReason || undefined);
+                    setAbsenceModal(null);
+                  }}
+                  className="flex-1 py-3 bg-destructive text-destructive-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-destructive/20"
+                >
+                  Confirmer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
