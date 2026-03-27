@@ -1591,7 +1591,7 @@ const Dashboard = () => {
 
                   // 1. Save convocations + create match sheet in parallel
                   const [updateResult, matchSheetResult] = await Promise.all([
-                    supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId),
+                    supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId).select(),
                     supabase.from('match_sheets').insert({
                       event_id: eventId,
                       title: event.title,
@@ -1609,6 +1609,7 @@ const Dashboard = () => {
                   ]);
 
                   if (updateResult.error) throw new Error(updateResult.error.message);
+                  if (!updateResult.data || updateResult.data.length === 0) throw new Error('Impossible de publier : vérifiez vos permissions.');
                   if (matchSheetResult.error) {
                     console.error('Match sheet insert error:', matchSheetResult.error);
                     // Don't block if match sheet already exists
@@ -1646,7 +1647,7 @@ const Dashboard = () => {
 
                   // 3. Redirect to match sheets tab immediately
                   handleTabChange('matchsheets');
-                } catch (err: any) { toast.error('Erreur: ' + err.message); }
+                } catch (err: any) { toast.error('Erreur: ' + err.message); throw err; }
               }}
               onSendReminder={async (event) => {
                 try {

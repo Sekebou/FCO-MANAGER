@@ -202,8 +202,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       setShowPublishConfirm(null);
     } catch (err) {
       console.error('Publish convocations error:', err);
+    } finally {
+      setPublishing(false);
     }
-    setPublishing(false);
   };
 
   // ─── DETAIL VIEW ───
