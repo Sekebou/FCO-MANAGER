@@ -991,6 +991,7 @@ export type Database = {
         Returns: Json
       }
       toggle_photo_like: { Args: { p_photo_id: string }; Returns: undefined }
+      unaccent: { Args: { "": string }; Returns: string }
       update_event_presence: {
         Args: {
           p_absence_reason?: string

@@ -906,9 +906,10 @@ const Dashboard = () => {
     if (currentUser?.role === 'entraineur') playerData.role = 'joueur';
     if (playerData.role === 'admin+' && currentUser?.role !== 'admin+') { toast.error("Seul l'Admin+ peut attribuer ce rôle"); return; }
 
-    // Anti-doublon : vérifier si un joueur avec le même nom existe déjà
-    const normalizedName = playerData.name.trim().toLowerCase();
-    const existingPlayer = players.find(p => p.name.trim().toLowerCase() === normalizedName);
+    // Anti-doublon : vérifier si un joueur avec le même nom existe déjà (ignorer accents + casse)
+    const stripAccents = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    const normalizedName = stripAccents(playerData.name);
+    const existingPlayer = players.find(p => stripAccents(p.name) === normalizedName);
     if (existingPlayer) {
       toast.error(`Un joueur nommé "${existingPlayer.name}" existe déjà`);
       return;
