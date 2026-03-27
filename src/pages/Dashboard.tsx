@@ -1590,7 +1590,7 @@ const Dashboard = () => {
                   const awayTeam = vsParts.length > 1 ? vsParts[1].trim() : null;
 
                   // 1. Save convocations + create match sheet in parallel
-                  const [, matchSheetResult] = await Promise.all([
+                  const [updateResult, matchSheetResult] = await Promise.all([
                     supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId),
                     supabase.from('match_sheets').insert({
                       event_id: eventId,
@@ -1607,6 +1607,12 @@ const Dashboard = () => {
                       created_by: currentUser?.uid,
                     } as any),
                   ]);
+
+                  if (updateResult.error) throw new Error(updateResult.error.message);
+                  if (matchSheetResult.error) {
+                    console.error('Match sheet insert error:', matchSheetResult.error);
+                    // Don't block if match sheet already exists
+                  }
 
                   // 2. Notify convoked players (fire & forget for speed)
                   const convokedPlayerIds = Object.entries(convocations)
