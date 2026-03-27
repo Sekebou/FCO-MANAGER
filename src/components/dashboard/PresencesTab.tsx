@@ -202,10 +202,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       setShowPublishConfirm(null);
     } catch (err) {
       console.error('Publish convocations error:', err);
-      // Re-throw so Dashboard's catch can show toast.error
-      throw err;
+    } finally {
+      setPublishing(false);
     }
-    setPublishing(false);
   };
 
   // ─── DETAIL VIEW ───
