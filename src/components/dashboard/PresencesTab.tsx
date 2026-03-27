@@ -200,8 +200,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       await onPublishAndNotifyConvocations(eventId, event, draftConvocations);
       setConvocationMode(null);
       setShowPublishConfirm(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Publish convocations error:', err);
+      // Don't close modal on error — let user retry
     } finally {
       setPublishing(false);
     }
