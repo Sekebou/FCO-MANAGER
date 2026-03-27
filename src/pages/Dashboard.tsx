@@ -1585,70 +1585,26 @@ const Dashboard = () => {
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} initialSelectedEventId={pendingEventId} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(null); }}
               onPublishAndNotifyConvocations={async (eventId, event, convocations) => {
                 try {
-                  // Parse home/away from title (uses "vs" separator)
-                  const vsParts = event.title.split(/\s+vs\s+/i);
-                  const homeTeam = (vsParts[0] || event.title).trim();
-                  const awayTeam = vsParts.length > 1 ? vsParts[1].trim() : null;
+                  const { data, error } = await supabase.functions.invoke('publish-convocations', {
+                    body: { eventId, convocations },
+                  });
 
-                  // 1. Save convocations + create match sheet in parallel
-                  const [updateResult, matchSheetResult] = await Promise.all([
-                    supabase.from('events').update({ convocations: convocations as any, convocations_published: true }).eq('id', eventId).select(),
-                    supabase.from('match_sheets').insert({
-                      event_id: eventId,
-                      title: event.title,
-                      date: event.date,
-                      time: event.time || null,
-                      location: event.location || null,
-                      team: event.team || null,
-                      home_team: homeTeam,
-                      away_team: awayTeam,
-                      home_logo: event.homeLogo || null,
-                      away_logo: event.awayLogo || null,
-                      convocations: convocations as any,
-                      created_by: currentUser?.uid,
-                    } as any),
-                  ]);
+                  if (error) throw new Error(error.message || 'Erreur lors de la publication');
+                  if (data?.error) throw new Error(data.error);
 
-                  if (updateResult.error) throw new Error(updateResult.error.message);
-                  if (!updateResult.data || updateResult.data.length === 0) throw new Error('Impossible de publier : vérifiez vos permissions.');
-                  if (matchSheetResult.error) {
-                    console.error('Match sheet insert error:', matchSheetResult.error);
-                    // Don't block if match sheet already exists
-                  }
+                  // Update local state
+                  setEvents(prev => prev.map(e => e.id === eventId ? { ...e, convocations: convocations as any, convocationsPublished: true } : e));
 
-                  // 2. Notify convoked players (fire & forget for speed)
-                  const convokedPlayerIds = Object.entries(convocations)
-                    .filter(([, c]) => c.status === 'convoque')
-                    .map(([playerId]) => playerId);
-
-                  const convokedMemberIds = members
-                    .filter(m => m.playerId && convokedPlayerIds.includes(m.playerId))
-                    .map(m => m.id);
-
-                  // Don't await notifications — redirect immediately
-                  if (convokedMemberIds.length > 0) {
-                    supabase.from('fcm_tokens').select('token').in('user_id', convokedMemberIds).then(({ data: tokenRows }) => {
-                      const tokens = tokenRows?.map(r => r.token) || [];
-                      if (tokens.length > 0) {
-                        const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-                        supabase.functions.invoke('send-push-notification', {
-                          body: {
-                            title: '✅ Convocation',
-                            body: `Tu es convoqué pour ${event.title} le ${eventDate}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`,
-                            tokens,
-                            data: { type: 'convocation', eventId: event.id },
-                          },
-                        }).catch(e => console.error('Push error:', e));
-                      }
-                    });
-                    toast.success(`Convocations publiées et joueurs notifiés !`);
+                  if (data?.notifiedCount > 0) {
+                    toast.success(`Convocations publiées et ${data.notifiedCount} joueur(s) notifié(s) !`);
+                  } else if (data?.convokedCount > 0) {
+                    toast.success('Convocations publiées ! (aucun appareil à notifier)');
                   } else {
                     toast.success('Convocations publiées !');
                   }
 
-                  // 3. Redirect to match sheets tab immediately
                   handleTabChange('matchsheets');
-                } catch (err: any) { toast.error('Erreur: ' + err.message); throw err; }
+                } catch (err: any) { toast.error('Erreur: ' + (err.message || 'Échec de la publication')); throw err; }
               }}
               onSendReminder={async (event) => {
                 try {
