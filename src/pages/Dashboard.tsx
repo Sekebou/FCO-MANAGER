@@ -1647,7 +1647,7 @@ const Dashboard = () => {
 
                   // 3. Redirect to match sheets tab immediately
                   handleTabChange('matchsheets');
-                } catch (err: any) { toast.error('Erreur: ' + err.message); }
+                } catch (err: any) { toast.error('Erreur: ' + err.message); throw err; }
               }}
               onSendReminder={async (event) => {
                 try {
