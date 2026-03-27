@@ -200,7 +200,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
       await onPublishAndNotifyConvocations(eventId, event, draftConvocations);
       setConvocationMode(null);
       setShowPublishConfirm(null);
-    } catch {}
+    } catch (err) {
+      console.error('Publish convocations error:', err);
+    }
     setPublishing(false);
   };
 
