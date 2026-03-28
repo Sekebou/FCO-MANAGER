@@ -208,7 +208,9 @@ const ConvocationWizard: React.FC<Props> = ({
                     </span>
                   )}
                   {!presenceStatus && (
-                    <span className="text-[9px] text-muted-foreground/50">En attente de réponse</span>
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-500 text-[9px] font-bold">
+                      En attente de réponse
+                    </span>
                   )}
                 </div>
               </motion.button>
