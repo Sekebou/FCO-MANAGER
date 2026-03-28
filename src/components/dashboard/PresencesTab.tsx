@@ -5,7 +5,7 @@ import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
 import ConvocationWizard from './ConvocationWizard';
-import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search, MessageSquare } from 'lucide-react';
+import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search, MessageSquare, Briefcase, Baby, Frown, HeartPulse, PenLine } from 'lucide-react';
 import { exportMatchSheet } from '@/lib/pdfExport';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
@@ -64,11 +64,11 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [absenceOtherText, setAbsenceOtherText] = useState('');
 
   const ABSENCE_REASONS = [
-    { label: 'Travail', icon: '💼' },
-    { label: "Garde d'enfants", icon: '👶' },
-    { label: 'Pas motivé / pas envie', icon: '😒' },
-    { label: 'Blessé / malade', icon: '🤕' },
-    { label: 'Autre', icon: '✏️' },
+    { label: 'Travail', icon: Briefcase },
+    { label: "Garde d'enfants", icon: Baby },
+    { label: 'Pas motivé / pas envie', icon: Frown },
+    { label: 'Blessé / malade', icon: HeartPulse },
+    { label: 'Autre', icon: PenLine },
   ];
   const [expandedArchiveConvos, setExpandedArchiveConvos] = useState<Record<string, boolean>>({});
   useBodyScrollLock(!!convocationMode || !!absenceModal);
@@ -761,7 +761,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         : 'border-border bg-secondary text-foreground hover:bg-secondary/80'
                     }`}
                   >
-                    <span className="text-lg">{reason.icon}</span>
+                    <reason.icon size={18} className={absenceReason === reason.label ? 'text-destructive' : 'text-muted-foreground'} />
                     <span>{reason.label}</span>
                     {absenceReason === reason.label && (
                       <Check size={16} className="ml-auto text-destructive" />
@@ -1284,7 +1284,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         : 'border-border bg-secondary text-foreground hover:bg-secondary/80'
                     }`}
                   >
-                    <span className="text-lg">{reason.icon}</span>
+                    <reason.icon size={18} className={absenceReason === reason.label ? 'text-destructive' : 'text-muted-foreground'} />
                     <span>{reason.label}</span>
                     {absenceReason === reason.label && (
                       <Check size={16} className="ml-auto text-destructive" />
