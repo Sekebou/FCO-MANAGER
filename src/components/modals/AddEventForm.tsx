@@ -415,6 +415,47 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
             </div>
           )}
 
+          {/* Match GHOST mode */}
+          {formData.type === 'match' && matchMode === 'ghost' && (
+            <div className="animate-fade-in space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-purple-500 flex items-center gap-1.5"><Ghost size={12} /> Mode fantôme</span>
+                <button type="button" onClick={() => { setMatchMode(null); setIsGhostMode(false); }} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">← Retour</button>
+              </div>
+              <div className="p-3 bg-purple-500/5 rounded-xl border border-purple-500/20 flex items-start gap-2">
+                <EyeOff size={14} className="text-purple-500 mt-0.5 shrink-0" />
+                <p className="text-[11px] text-muted-foreground">Cet événement sera invisible pour les autres membres. Aucune notification ne sera envoyée. Idéal pour tester les flux.</p>
+              </div>
+              {/* Type selector for ghost */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, type: 'match' }))} className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${formData.type === 'match' ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-secondary border-transparent text-muted-foreground'}`}>
+                    <Swords className="inline w-3.5 h-3.5 mr-1" />Match
+                  </button>
+                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, type: 'training' }))} className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${formData.type === 'training' ? 'bg-purple-500/10 border-purple-500/30 text-purple-600' : 'bg-secondary border-transparent text-muted-foreground'}`}>
+                    <Dumbbell className="inline w-3.5 h-3.5 mr-1" />Entraînement
+                  </button>
+                </div>
+              </div>
+              {/* Team selector */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['A', 'B', 'C'].map(t => (
+                    <button key={t} type="button" onClick={() => setFormData(prev => ({ ...prev, team: t }))} className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${formData.team === t ? 'bg-accent/10 border-accent/30 text-accent scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'}`}>
+                      Équipe {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="text" placeholder="Titre du test (ex: Test convocation)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+              </div>
+            </div>
+          )}
+
           {/* Title for non-match types */}
           {formData.type !== 'match' && (
             <div className="relative">
