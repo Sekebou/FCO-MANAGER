@@ -1081,14 +1081,16 @@ const Dashboard = () => {
   const deleteEvent = async (eventId: string) => {
     const event = events.find(e => e.id === eventId);
     if (event && !canDeleteEvent(event)) { toast.warning('Vous ne pouvez supprimer que les événements que vous avez créés'); return; }
+    const isGhost = event?.reason === '__ghost__';
     setConfirmModal({
       title: 'Supprimer cet événement ?',
-      message: 'Les données de présence seront archivées avant la suppression.',
+      message: isGhost ? 'Cet événement fantôme sera supprimé définitivement sans archivage.' : 'Les données de présence seront archivées avant la suppression.',
       onConfirm: async () => {
         // Optimistic delete: remove from UI immediately
         setEvents(prev => prev.filter(e => e.id !== eventId));
         try {
-          if (event && event.presences) {
+          // Skip archiving for ghost events
+          if (!isGhost && event && event.presences) {
             const records = Object.entries(event.presences)
               .filter(([, status]) => status === 'present' || status === 'absent')
               .map(([playerId, status]) => ({
@@ -1098,6 +1100,10 @@ const Dashboard = () => {
             if (records.length > 0) await supabase.from('attendance_records').insert(records);
           }
           await supabase.from('events').delete().eq('id', eventId);
+          // Also delete associated match sheet for ghost events
+          if (isGhost) {
+            await supabase.from('match_sheets').delete().eq('event_id', eventId);
+          }
         } catch (err: any) {
           // Restore on error
           if (event) setEvents(prev => [event, ...prev]);
