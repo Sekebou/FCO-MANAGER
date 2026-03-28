@@ -739,7 +739,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-foreground">Signaler une absence</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Visible uniquement par le staff</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Visible uniquement par l'entraîneur / admin</p>
                   </div>
                 </div>
                 <button onClick={() => setAbsenceModal(null)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
@@ -1261,7 +1261,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-foreground">Signaler une absence</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Visible uniquement par le staff</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Visible uniquement par l'entraîneur / admin</p>
                   </div>
                 </div>
                 <button onClick={() => setAbsenceModal(null)} className="w-8 h-8 rounded-lg bg-secondary hover:bg-secondary/80 flex items-center justify-center transition-colors">
