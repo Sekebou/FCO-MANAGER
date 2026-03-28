@@ -117,26 +117,6 @@ const ConvocationWizard: React.FC<Props> = ({
             </button>
           )}
         </div>
-        {/* Quick select all / deselect */}
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={() => {
-              const allPresent = players.filter(p => event.presences?.[p.id] === 'present');
-              const updates: Record<string, Convocation> = {};
-              allPresent.forEach(p => { updates[p.id] = { ...draftConvocations[p.id], status: 'convoque' }; });
-              setDraftConvocations(prev => ({ ...prev, ...updates }));
-            }}
-            className="flex-1 py-2 rounded-lg bg-accent/10 text-accent text-[11px] font-bold hover:bg-accent/20 transition-colors flex items-center justify-center gap-1"
-          >
-            <UserCheck size={12} /> Tous les présents
-          </button>
-          <button
-            onClick={() => setDraftConvocations({})}
-            className="py-2 px-3 rounded-lg bg-secondary text-muted-foreground text-[11px] font-bold hover:bg-secondary/80 transition-colors"
-          >
-            Réinitialiser
-          </button>
-        </div>
       </div>
 
       {/* Player grid */}
