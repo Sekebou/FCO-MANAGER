@@ -391,6 +391,11 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   useEffect(() => {
     if (!nextMatch?.date) return;
     const target = new Date(nextMatch.date);
+    // Include match kick-off time if available
+    if (nextMatch.time) {
+      const [h, m] = nextMatch.time.split(':').map(Number);
+      if (!isNaN(h)) target.setHours(h, m || 0, 0, 0);
+    }
     const update = () => {
       const now = new Date();
       const diff = target.getTime() - now.getTime();
