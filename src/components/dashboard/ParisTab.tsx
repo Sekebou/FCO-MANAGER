@@ -391,6 +391,11 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   useEffect(() => {
     if (!nextMatch?.date) return;
     const target = new Date(nextMatch.date);
+    // Include match kick-off time if available
+    if (nextMatch.time) {
+      const [h, m] = nextMatch.time.split(':').map(Number);
+      if (!isNaN(h)) target.setHours(h, m || 0, 0, 0);
+    }
     const update = () => {
       const now = new Date();
       const diff = target.getTime() - now.getTime();
@@ -405,7 +410,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [nextMatch?.date]);
+  }, [nextMatch?.date, nextMatch?.time]);
 
   // Match status: 'live' (during 100min window), 'waiting' (after 100min, same day), false (not today)
   const getMatchStatus = (matchDate: string, matchTime?: string): 'live' | 'waiting' | false => {
