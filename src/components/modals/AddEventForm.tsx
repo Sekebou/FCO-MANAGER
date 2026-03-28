@@ -567,7 +567,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
             </div>
           )}
           {/* Notification - show only when mode is chosen for match, or for training */}
-          {((formData.type === 'match' && matchMode !== null) || formData.type === 'training') && (
+          {!isGhostMode && ((formData.type === 'match' && matchMode !== null) || formData.type === 'training') && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
               <label className="flex items-center gap-3 cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, sendNotification: !prev.sendNotification }))}>
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.sendNotification ? 'bg-accent border-accent' : 'border-border'}`}>
@@ -590,7 +590,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
             Annuler
           </button>
           <button
-            onClick={() => onSubmit({ ...formData, duration: formData.duration ? parseInt(formData.duration, 10) : undefined })}
+            onClick={() => onSubmit({ ...formData, duration: formData.duration ? parseInt(formData.duration, 10) : undefined, ...(isGhostMode ? { reason: '__ghost__', sendNotification: false } : {}) })}
             disabled={!isFormValid}
             className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
           >
