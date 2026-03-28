@@ -695,7 +695,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               draftConvocations={draftConvocations}
               updateDraft={updateDraft}
               setDraftConvocations={setDraftConvocations}
-              onPublish={() => void publishConvocations(event.id)}
+              onPublish={(customNotif) => void publishConvocations(event.id, undefined, customNotif)}
               onCancel={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }}
               publishing={publishing}
               publishError={publishError}
