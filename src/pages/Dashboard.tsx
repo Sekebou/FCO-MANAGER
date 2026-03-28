@@ -1679,7 +1679,7 @@ const Dashboard = () => {
               <ParisTab currentUser={currentUser} championships={championships} />
             </div>
           )}
-          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} onMatchSheetUpdated={(updatedSheet) => { setMatchSheets(prev => { const next = prev.map(ms => ms.id === updatedSheet.id ? updatedSheet : ms); writeCache('matchSheets', next); return next; }); }} />}
+          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} onMatchSheetUpdated={(updatedSheet) => { setMatchSheets(prev => { const next = prev.map(ms => ms.id === updatedSheet.id ? updatedSheet : ms); writeCache('matchSheets', next); return next; }); }} onDeleteMatchSheet={(sheetId) => { setConfirmModal({ title: 'Supprimer cette feuille de match ?', message: 'Cette action est irréversible. La composition sera définitivement supprimée.', onConfirm: async () => { setMatchSheets(prev => prev.filter(ms => ms.id !== sheetId)); try { await supabase.from('match_sheets').delete().eq('id', sheetId); toast.success('Feuille de match supprimée'); } catch { toast.error('Erreur lors de la suppression'); } } }); }} />}
           {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
@@ -1810,7 +1810,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} isDirigeant={currentUser?.role === 'dirigeant'} />}
+      {showAddEvent && <AddEventForm onSubmit={addEvent} onClose={() => setShowAddEvent(false)} isDirigeant={currentUser?.role === 'dirigeant'} isAdminPlus={currentUser?.role === 'admin+'} currentUserId={currentUser?.uid} />}
       {showAddNews && <AddNewsForm onSubmit={addNews} onClose={() => setShowAddNews(false)} />}
       {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} cards={cards} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
       {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
