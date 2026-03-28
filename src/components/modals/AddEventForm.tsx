@@ -224,7 +224,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* FFF Import toggle - only for match */}
           {formData.type === 'match' && !matchMode && (
