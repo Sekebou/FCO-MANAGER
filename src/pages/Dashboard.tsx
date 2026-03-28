@@ -349,7 +349,8 @@ const Dashboard = () => {
   const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
   const [unreadDiscussions, setUnreadDiscussions] = useState(0);
   const [matchSheets, setMatchSheets] = useState<MatchSheet[]>([]);
-  const ghostEventIdsRef = React.useRef<Set<string>>(new Set());
+  // Track ghost event IDs from raw fetches (before filtering) to hide their match sheets for non-owners
+  const [ghostEventIds, setGhostEventIds] = useState<Set<string>>(new Set());
 
   // Fetch unread discussions count
   useEffect(() => {
