@@ -439,17 +439,25 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const absentPlayers = eventPlayers.filter(p => presences[p.id] === 'absent');
               const waitingPlayers = eventPlayers.filter(p => !presences[p.id] || (presences[p.id] !== 'present' && presences[p.id] !== 'absent'));
 
-              const tabs = [
+              const convoEntries = event.convocationsPublished && event.convocations ? Object.values(event.convocations as Record<string, any>) : [];
+              const convokedPlayerIds = convoEntries.filter((c: any) => c.status === 'convoque').map((c: any) => c.playerId);
+              const convokedPlayers = eventPlayers.filter(p => convokedPlayerIds.includes(p.id));
+
+              const tabs: { key: string; label: string; count: number; icon: any; color: string; bgActive: string; dot: string }[] = [
                 { key: 'present', label: 'Présents', count: presentPlayers.length, icon: Check, color: 'text-accent', bgActive: 'bg-accent/15 border-accent/30', dot: 'bg-accent' },
                 { key: 'absent', label: 'Absents', count: absentPlayers.length, icon: X, color: 'text-destructive', bgActive: 'bg-destructive/15 border-destructive/30', dot: 'bg-destructive' },
                 { key: 'waiting', label: 'En attente', count: waitingPlayers.length, icon: Clock, color: 'text-warning', bgActive: 'bg-warning/15 border-warning/30', dot: 'bg-warning' },
               ];
+              if (convokedPlayers.length > 0) {
+                tabs.push({ key: 'convoked', label: 'Convoqués', count: convokedPlayers.length, icon: ClipboardCheck, color: 'text-primary', bgActive: 'bg-primary/15 border-primary/30', dot: 'bg-primary' });
+              }
 
               const presenceFilter = expandedPlayers[`filter_${event.id}`] as unknown as string || 'present';
               const setPresenceFilter = (f: string) => setExpandedPlayers(prev => ({ ...prev, [`filter_${event.id}`]: f as any }));
 
               const filteredPlayers = presenceFilter === 'present' ? presentPlayers
                 : presenceFilter === 'absent' ? absentPlayers
+                : presenceFilter === 'convoked' ? convokedPlayers
                 : waitingPlayers;
 
               return (
