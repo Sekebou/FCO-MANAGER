@@ -167,6 +167,21 @@ serve(async (req) => {
                         token: fcmToken,
                         notification: { title: notifTitle, body: notifBody },
                         data: { type: 'convocation', eventId },
+                        apns: {
+                          payload: {
+                            aps: {
+                              alert: { title: notifTitle, body: notifBody },
+                              sound: 'default',
+                              'mutable-content': 1,
+                            },
+                          },
+                        },
+                        android: {
+                          notification: {
+                            sound: 'default',
+                            channel_id: 'convocations',
+                          },
+                        },
                       },
                     }),
                   });
