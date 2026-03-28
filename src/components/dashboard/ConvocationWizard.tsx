@@ -66,12 +66,19 @@ const ConvocationWizard: React.FC<Props> = ({
     [players, selectedIds]
   );
 
-  // Filter players by search
+  // Filter & sort players: present first, then absent, then no response
   const filteredPlayers = useMemo(() => {
     const s = search.toLowerCase().trim();
-    if (!s) return players;
-    return players.filter(p => p.name.toLowerCase().includes(s));
-  }, [players, search]);
+    let list = s ? players.filter(p => p.name.toLowerCase().includes(s)) : [...players];
+    const order = (id: string) => {
+      const status = event.presences?.[id];
+      if (status === 'present') return 0;
+      if (status === 'absent') return 2;
+      return 1;
+    };
+    list.sort((a, b) => order(a.id) - order(b.id));
+    return list;
+  }, [players, search, event.presences]);
 
   const togglePlayer = (playerId: string) => {
     const current = draftConvocations[playerId];
