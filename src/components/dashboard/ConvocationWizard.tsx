@@ -17,8 +17,8 @@ interface Props {
     type: string;
     presences?: Record<string, string>;
     convocations?: Record<string, Convocation>;
-    home_logo?: string;
-    away_logo?: string;
+    homeLogo?: string;
+    awayLogo?: string;
   };
   players: Player[];
   members: Member[];
@@ -296,16 +296,16 @@ const ConvocationWizard: React.FC<Props> = ({
         {/* Match info with logos */}
         <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 space-y-3">
           <div className="flex items-center justify-center gap-4">
-            {event.home_logo ? (
-              <img src={event.home_logo} alt="Domicile" className="w-10 h-10 object-contain" />
+            {event.homeLogo ? (
+              <img src={event.homeLogo} alt="Domicile" className="w-10 h-10 object-contain" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
                 <Shield size={18} className="text-accent" />
               </div>
             )}
             <span className="text-xs font-bold text-muted-foreground">VS</span>
-            {event.away_logo ? (
-              <img src={event.away_logo} alt="Extérieur" className="w-10 h-10 object-contain" />
+            {event.awayLogo ? (
+              <img src={event.awayLogo} alt="Extérieur" className="w-10 h-10 object-contain" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                 <Shield size={18} className="text-muted-foreground" />
