@@ -457,21 +457,6 @@ const ConvocationWizard: React.FC<Props> = ({
         <p className="text-[9px] text-muted-foreground/50 text-right">{customNotifBody.length}/500</p>
       </div>
 
-      {/* Live preview */}
-      {(customNotifTitle || customNotifBody) && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-xl p-3 border border-border/50 shadow-sm space-y-1"
-        >
-          <div className="flex items-center gap-1.5 mb-1">
-            <Bell size={10} className="text-muted-foreground" />
-            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">Aperçu notification</span>
-          </div>
-          <p className="text-xs font-bold text-foreground">{customNotifTitle || defaultNotifTitle}</p>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">{customNotifBody || 'Sans message'}</p>
-        </motion.div>
-      )}
 
       {/* What will happen */}
       <div className="bg-accent/5 rounded-xl p-3 border border-accent/15 space-y-2">
