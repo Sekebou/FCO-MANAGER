@@ -17,6 +17,8 @@ interface Props {
     type: string;
     presences?: Record<string, string>;
     convocations?: Record<string, Convocation>;
+    home_logo?: string;
+    away_logo?: string;
   };
   players: Player[];
   members: Member[];
