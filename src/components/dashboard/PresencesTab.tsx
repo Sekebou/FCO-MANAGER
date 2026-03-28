@@ -1258,16 +1258,22 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         };
                         if (presentIds.length === 0 && absentIds.length === 0) return null;
                         return (
-                          <div className="flex flex-wrap gap-1.5 text-[9px]">
+                          <div className="space-y-1 text-[9px]">
                             {presentIds.length > 0 && (
-                              <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
-                                <Check size={8} /> {presentIds.length} présent{presentIds.length > 1 ? 's' : ''}
-                              </span>
+                              <div>
+                                <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold mb-0.5">
+                                  <Check size={8} /> {presentIds.length} présent{presentIds.length > 1 ? 's' : ''}
+                                </span>
+                                <p className="text-muted-foreground pl-1 leading-relaxed">{presentIds.map(getName).join(', ')}</p>
+                              </div>
                             )}
                             {absentIds.length > 0 && (
-                              <span className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
-                                <X size={8} /> {absentIds.length} absent{absentIds.length > 1 ? 's' : ''}
-                              </span>
+                              <div>
+                                <span className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold mb-0.5">
+                                  <X size={8} /> {absentIds.length} absent{absentIds.length > 1 ? 's' : ''}
+                                </span>
+                                <p className="text-muted-foreground pl-1 leading-relaxed">{absentIds.map(getName).join(', ')}</p>
+                              </div>
                             )}
                           </div>
                         );
