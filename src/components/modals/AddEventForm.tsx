@@ -203,8 +203,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
 
         {/* Body */}
         <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
-          {/* Type selector */}
-          <div>
+          {/* Type selector - hidden in ghost mode */}
+          {!isGhostMode && <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
             <div className="grid grid-cols-3 gap-2">
               {typeOptions.map(opt => (
