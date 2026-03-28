@@ -94,6 +94,7 @@ const ConvocationWizard: React.FC<Props> = ({
     }
   };
 
+  const allHaveNumbers = selectedPlayers.every(p => draftConvocations[p.id]?.number);
   const canGoNext = step === 1 ? selectedIds.length > 0 : step === 2 ? allHaveNumbers : true;
 
   // ─── STEP 1: Player Selection ───
@@ -202,7 +203,6 @@ const ConvocationWizard: React.FC<Props> = ({
   );
 
   // ─── STEP 2: Number Assignment ───
-  const allHaveNumbers = selectedPlayers.every(p => draftConvocations[p.id]?.number);
 
   const renderStep2 = () => (
     <div className="flex flex-col h-full">
