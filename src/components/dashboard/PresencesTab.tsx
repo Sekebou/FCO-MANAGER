@@ -59,7 +59,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [convocationSearch, setConvocationSearch] = useState('');
   const [absenceModal, setAbsenceModal] = useState<{ eventId: string; playerId: string } | null>(null);
   const [absenceReason, setAbsenceReason] = useState('');
-
+  const [expandedArchiveConvos, setExpandedArchiveConvos] = useState<Record<string, boolean>>({});
   useBodyScrollLock(!!convocationMode || !!absenceModal);
 
   // React to navigation with a specific event ID
