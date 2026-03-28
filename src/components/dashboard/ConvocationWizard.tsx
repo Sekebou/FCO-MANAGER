@@ -109,6 +109,11 @@ const ConvocationWizard: React.FC<Props> = ({
   const allHaveNumbers = selectedPlayers.every(p => draftConvocations[p.id]?.number);
   const canGoNext = step === 1 ? selectedIds.length > 0 : step === 2 ? allHaveNumbers : true;
 
+  // Default notification preview
+  const eventDateFormatted = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const defaultNotifTitle = '✅ Convocation';
+  const defaultNotifBody = `Tu es convoqué pour ${event.title} le ${eventDateFormatted}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`;
+
   // ─── STEP 1: Player Selection ───
   const renderStep1 = () => (
     <div className="flex flex-col h-full">
