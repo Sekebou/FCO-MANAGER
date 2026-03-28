@@ -197,14 +197,19 @@ const ConvocationWizard: React.FC<Props> = ({
                   {player.position && (
                     <span className="text-[10px] text-muted-foreground/70">{player.position}</span>
                   )}
-                  {presenceStatus === 'present' && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
-                  )}
-                  {presenceStatus === 'absent' && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
-                  )}
-                </div>
-              </motion.button>
+                {presenceStatus === 'present' && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 text-[9px] font-bold">
+                    <Check size={8} strokeWidth={3} /> Présent
+                  </span>
+                )}
+                {presenceStatus === 'absent' && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive text-[9px] font-bold">
+                    <UserX size={8} /> Absent
+                  </span>
+                )}
+                {!presenceStatus && (
+                  <span className="text-[9px] text-muted-foreground/50">Sans réponse</span>
+                )}
             );
           })}
         </div>
