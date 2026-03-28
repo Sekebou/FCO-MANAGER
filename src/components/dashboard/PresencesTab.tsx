@@ -35,6 +35,7 @@ interface Props {
   onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>) => Promise<void>;
   onSendReminder?: (event: Event) => Promise<void>;
   onResetHeader?: () => void;
+  onNavigateToMatchSheet?: (eventId: string) => void;
   initialSelectedEventId?: string | null;
 }
 
