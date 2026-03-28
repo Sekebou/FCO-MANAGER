@@ -49,7 +49,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
   const [trainingLocationChoice, setTrainingLocationChoice] = useState<'stade' | 'salle' | 'autre' | null>(null);
 
   // Match creation mode: 'auto' (FFF) or 'manual'
-  const [matchMode, setMatchMode] = useState<'auto' | 'manual' | null>(null);
+  const [matchMode, setMatchMode] = useState<'auto' | 'manual' | 'ghost' | null>(null);
+  const [isGhostMode, setIsGhostMode] = useState(false);
 
   // FFF import state
   const [useFFimport, setUseFFFImport] = useState(false);
