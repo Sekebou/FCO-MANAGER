@@ -34,7 +34,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
   const [formData, setFormData] = useState({
     title: '',
     date: '',
-    type: isDirigeant ? 'training' : 'match',
+    type: (isDirigeant ? 'training' : 'match') as string,
     recurrence: 'ponctuel' as 'recurring' | 'ponctuel',
     sendNotification: true,
     reason: '',
