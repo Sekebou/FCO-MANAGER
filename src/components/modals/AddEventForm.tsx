@@ -31,19 +31,23 @@ interface FFFMatchOption {
 const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUserId }: Props) => {
   useBodyScrollLock();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string; date: string; type: string; recurrence: 'recurring' | 'ponctuel';
+    sendNotification: boolean; reason: string; time: string; location: string;
+    duration: string; homeLogo: string; awayLogo: string; team: string;
+  }>({
     title: '',
     date: '',
-    type: (isDirigeant ? 'training' : 'match') as string,
-    recurrence: 'ponctuel' as 'recurring' | 'ponctuel',
+    type: isDirigeant ? 'training' : 'match',
+    recurrence: 'ponctuel',
     sendNotification: true,
     reason: '',
     time: '',
     location: '',
-    duration: '' as string,
-    homeLogo: '' as string,
-    awayLogo: '' as string,
-    team: '' as string,
+    duration: '',
+    homeLogo: '',
+    awayLogo: '',
+    team: '',
   });
   const [locationValid, setLocationValid] = useState(false);
   const [trainingLocationChoice, setTrainingLocationChoice] = useState<'stade' | 'salle' | 'autre' | null>(null);
