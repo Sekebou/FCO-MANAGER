@@ -761,7 +761,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         : 'border-border bg-secondary text-foreground hover:bg-secondary/80'
                     }`}
                   >
-                    <span className="text-lg">{reason.icon}</span>
+                    <reason.icon size={18} className={absenceReason === reason.label ? 'text-destructive' : 'text-muted-foreground'} />
                     <span>{reason.label}</span>
                     {absenceReason === reason.label && (
                       <Check size={16} className="ml-auto text-destructive" />
@@ -1284,7 +1284,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         : 'border-border bg-secondary text-foreground hover:bg-secondary/80'
                     }`}
                   >
-                    <span className="text-lg">{reason.icon}</span>
+                    <reason.icon size={18} className={absenceReason === reason.label ? 'text-destructive' : 'text-muted-foreground'} />
                     <span>{reason.label}</span>
                     {absenceReason === reason.label && (
                       <Check size={16} className="ml-auto text-destructive" />
