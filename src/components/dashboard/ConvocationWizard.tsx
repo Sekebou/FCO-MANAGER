@@ -387,7 +387,7 @@ const ConvocationWizard: React.FC<Props> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center overflow-hidden"
+      className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <motion.div
@@ -457,7 +457,7 @@ const ConvocationWizard: React.FC<Props> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -465,7 +465,7 @@ const ConvocationWizard: React.FC<Props> = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
               transition={{ duration: 0.2 }}
-              className="flex-1 flex flex-col overflow-hidden"
+              className="flex-1 flex flex-col min-h-0"
             >
               {step === 1 && renderStep1()}
               {step === 2 && renderStep2()}
