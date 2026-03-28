@@ -387,7 +387,7 @@ const ConvocationWizard: React.FC<Props> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center overflow-hidden"
+      className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center"
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <motion.div
