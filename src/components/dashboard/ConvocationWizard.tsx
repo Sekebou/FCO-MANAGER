@@ -279,22 +279,23 @@ const ConvocationWizard: React.FC<Props> = ({
               <div className="shrink-0 flex items-center gap-1.5">
                 <span className="text-[10px] text-muted-foreground font-medium">N°</span>
                 <input
-                  type="number"
+                  type="tel"
                   inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="—"
                   value={conv?.number || ''}
                   onChange={e => {
-                    const num = e.target.value ? parseInt(e.target.value) : undefined;
-                    updateDraft(player.id, { number: num });
+                    const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
+                    const num = raw ? parseInt(raw) : undefined;
+                    updateDraft(player.id, { number: num && num >= 1 && num <= 99 ? num : undefined });
                   }}
-                  className={`w-14 h-12 text-center text-xl font-black rounded-xl border-2 transition-all focus:outline-none ${
+                  onFocus={e => e.target.select()}
+                  className={`w-14 h-12 text-center text-xl font-black rounded-xl border-2 transition-all focus:outline-none appearance-none ${
                     hasNumber
                       ? 'bg-accent/10 border-accent text-accent focus:border-accent'
                       : 'bg-card border-border text-foreground focus:border-accent'
                   }`}
-                  style={{ fontSize: 20 }}
-                  min={1}
-                  max={99}
+                  style={{ fontSize: 20, WebkitAppearance: 'none', MozAppearance: 'textfield' }}
                 />
               </div>
             </motion.div>
