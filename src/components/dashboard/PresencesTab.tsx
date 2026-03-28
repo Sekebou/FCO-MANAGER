@@ -61,6 +61,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [convocationSearch, setConvocationSearch] = useState('');
   const [absenceModal, setAbsenceModal] = useState<{ eventId: string; playerId: string } | null>(null);
   const [absenceReason, setAbsenceReason] = useState('');
+  const [absenceOtherText, setAbsenceOtherText] = useState('');
+
+  const ABSENCE_REASONS = [
+    { label: 'Travail', icon: '💼' },
+    { label: "Garde d'enfants", icon: '👶' },
+    { label: 'Pas motivé / pas envie', icon: '😒' },
+    { label: 'Blessé / malade', icon: '🤕' },
+    { label: 'Autre', icon: '✏️' },
+  ];
   const [expandedArchiveConvos, setExpandedArchiveConvos] = useState<Record<string, boolean>>({});
   useBodyScrollLock(!!convocationMode || !!absenceModal);
 
