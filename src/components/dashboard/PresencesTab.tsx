@@ -490,7 +490,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   <div className="space-y-1.5">
                     {filteredPlayers.length === 0 ? (
                       <p className="text-muted-foreground text-center py-6 text-sm">
-                        {presenceFilter === 'present' ? 'Aucun joueur présent' : presenceFilter === 'absent' ? 'Aucun joueur absent' : 'Aucun joueur en attente'}
+                        {presenceFilter === 'present' ? 'Aucun joueur présent' : presenceFilter === 'absent' ? 'Aucun joueur absent' : presenceFilter === 'convoked' ? 'Aucun joueur convoqué' : 'Aucun joueur en attente'}
                       </p>
                     ) : (
                       filteredPlayers.map(player => {
