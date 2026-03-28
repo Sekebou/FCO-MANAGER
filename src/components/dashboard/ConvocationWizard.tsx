@@ -1,0 +1,533 @@
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Player, Member, Convocation } from '@/pages/Dashboard';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import {
+  Shield, X, Search, Check, UserCheck, UserX, ChevronRight, ChevronLeft,
+  Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash
+} from 'lucide-react';
+
+interface Props {
+  event: {
+    id: string;
+    title: string;
+    date: string;
+    time?: string;
+    location?: string;
+    type: string;
+    presences?: Record<string, string>;
+    convocations?: Record<string, Convocation>;
+  };
+  players: Player[];
+  members: Member[];
+  draftConvocations: Record<string, Convocation>;
+  updateDraft: (playerId: string, updates: Partial<Convocation>) => void;
+  setDraftConvocations: React.Dispatch<React.SetStateAction<Record<string, Convocation>>>;
+  onPublish: () => void;
+  onCancel: () => void;
+  publishing: boolean;
+  publishError: string | null;
+}
+
+const STEPS = [
+  { num: 1, label: 'Sélection', icon: Users },
+  { num: 2, label: 'Numéros', icon: Hash },
+  { num: 3, label: 'Validation', icon: ClipboardList },
+];
+
+const ConvocationWizard: React.FC<Props> = ({
+  event, players, members, draftConvocations, updateDraft, setDraftConvocations,
+  onPublish, onCancel, publishing, publishError,
+}) => {
+  const [step, setStep] = useState(1);
+  const [search, setSearch] = useState('');
+  useBodyScrollLock(true);
+
+  const getPlayerPhoto = (playerId: string) => {
+    const member = members.find(m => m.playerId === playerId);
+    return member?.photoURL;
+  };
+
+  const getInitials = (name: string) =>
+    name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const selectedIds = useMemo(
+    () => Object.entries(draftConvocations).filter(([, c]) => c.status === 'convoque').map(([id]) => id),
+    [draftConvocations]
+  );
+
+  const selectedPlayers = useMemo(
+    () => players.filter(p => selectedIds.includes(p.id)),
+    [players, selectedIds]
+  );
+
+  const nonSelectedPlayers = useMemo(
+    () => players.filter(p => !selectedIds.includes(p.id)),
+    [players, selectedIds]
+  );
+
+  // Filter players by search
+  const filteredPlayers = useMemo(() => {
+    const s = search.toLowerCase().trim();
+    if (!s) return players;
+    return players.filter(p => p.name.toLowerCase().includes(s));
+  }, [players, search]);
+
+  const togglePlayer = (playerId: string) => {
+    const current = draftConvocations[playerId];
+    if (current?.status === 'convoque') {
+      // Deselect: remove from draft
+      setDraftConvocations(prev => {
+        const next = { ...prev };
+        delete next[playerId];
+        return next;
+      });
+    } else {
+      updateDraft(playerId, { status: 'convoque' });
+    }
+  };
+
+  const canGoNext = step === 1 ? selectedIds.length > 0 : true;
+
+  // ─── STEP 1: Player Selection ───
+  const renderStep1 = () => (
+    <div className="flex flex-col h-full">
+      {/* Search */}
+      <div className="px-4 pt-3 pb-2 shrink-0">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Rechercher un joueur…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
+            style={{ fontSize: 16 }}
+          />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+              <X size={12} className="text-muted-foreground" />
+            </button>
+          )}
+        </div>
+        {/* Quick select all / deselect */}
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => {
+              const allPresent = players.filter(p => event.presences?.[p.id] === 'present');
+              const updates: Record<string, Convocation> = {};
+              allPresent.forEach(p => { updates[p.id] = { ...draftConvocations[p.id], status: 'convoque' }; });
+              setDraftConvocations(prev => ({ ...prev, ...updates }));
+            }}
+            className="flex-1 py-2 rounded-lg bg-accent/10 text-accent text-[11px] font-bold hover:bg-accent/20 transition-colors flex items-center justify-center gap-1"
+          >
+            <UserCheck size={12} /> Tous les présents
+          </button>
+          <button
+            onClick={() => setDraftConvocations({})}
+            className="py-2 px-3 rounded-lg bg-secondary text-muted-foreground text-[11px] font-bold hover:bg-secondary/80 transition-colors"
+          >
+            Réinitialiser
+          </button>
+        </div>
+      </div>
+
+      {/* Player grid */}
+      <div className="flex-1 overflow-y-auto px-4 pb-2">
+        <div className="grid grid-cols-2 gap-2 py-1">
+          {filteredPlayers.map(player => {
+            const isSelected = selectedIds.includes(player.id);
+            const photo = getPlayerPhoto(player.id);
+            const presenceStatus = event.presences?.[player.id];
+            return (
+              <motion.button
+                key={player.id}
+                onClick={() => togglePlayer(player.id)}
+                whileTap={{ scale: 0.95 }}
+                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
+                  isSelected
+                    ? 'border-accent bg-accent/10 shadow-md shadow-accent/10'
+                    : 'border-transparent bg-secondary/40 hover:bg-secondary/60'
+                }`}
+              >
+                {/* Selection indicator */}
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-1.5 right-1.5 w-5 h-5 bg-accent rounded-full flex items-center justify-center"
+                  >
+                    <Check size={12} className="text-accent-foreground" strokeWidth={3} />
+                  </motion.div>
+                )}
+
+                {/* Avatar */}
+                {photo ? (
+                  <img
+                    src={photo}
+                    alt={player.name}
+                    className={`w-12 h-12 rounded-full object-cover ${isSelected ? 'ring-2 ring-accent' : 'opacity-70'}`}
+                  />
+                ) : (
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    isSelected ? 'bg-accent/20 ring-2 ring-accent' : 'bg-muted opacity-70'
+                  }`}>
+                    <span className={`text-sm font-bold ${isSelected ? 'text-accent' : 'text-muted-foreground'}`}>
+                      {getInitials(player.name)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Name */}
+                <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 ${
+                  isSelected ? 'text-foreground' : 'text-muted-foreground'
+                }`}>
+                  {player.name}
+                </span>
+
+                {/* Position + presence dot */}
+                <div className="flex items-center gap-1">
+                  {player.position && (
+                    <span className="text-[10px] text-muted-foreground/70">{player.position}</span>
+                  )}
+                  {presenceStatus === 'present' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                  )}
+                  {presenceStatus === 'absent' && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── STEP 2: Number Assignment ───
+  const renderStep2 = () => (
+    <div className="flex flex-col h-full">
+      <div className="px-4 pt-3 pb-1 shrink-0">
+        <p className="text-xs text-muted-foreground">
+          Attribuez un numéro de maillot à chaque joueur (optionnel)
+        </p>
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2 py-2">
+        {selectedPlayers.map((player, idx) => {
+          const photo = getPlayerPhoto(player.id);
+          const conv = draftConvocations[player.id];
+          return (
+            <motion.div
+              key={player.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.03 }}
+              className="flex items-center gap-3 p-3 bg-secondary/40 rounded-2xl border border-border/50"
+            >
+              {/* Avatar */}
+              {photo ? (
+                <img src={photo} alt={player.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                  <span className="text-accent text-xs font-bold">{getInitials(player.name)}</span>
+                </div>
+              )}
+
+              {/* Name */}
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold text-sm text-foreground block truncate">{player.name}</span>
+                {player.position && (
+                  <span className="text-[10px] text-muted-foreground/70">{player.position}</span>
+                )}
+              </div>
+
+              {/* Number input */}
+              <div className="shrink-0 relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="N°"
+                  value={conv?.number || ''}
+                  onChange={e => {
+                    const num = e.target.value ? parseInt(e.target.value) : undefined;
+                    updateDraft(player.id, { number: num });
+                  }}
+                  className="w-16 h-11 text-center text-lg font-bold bg-card border-2 border-border rounded-xl text-foreground focus:outline-none focus:border-accent transition-colors"
+                  style={{ fontSize: 18 }}
+                  min={1}
+                  max={99}
+                />
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // ─── STEP 3: Review & Confirm ───
+  const renderStep3 = () => {
+    const [showNonConvoked, setShowNonConvoked] = useState(false);
+    return (
+      <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-4 py-3">
+        {/* Match info */}
+        <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 space-y-2">
+          <div className="flex items-center gap-2">
+            <Trophy size={16} className="text-accent shrink-0" />
+            <span className="font-bold text-sm text-foreground">{event.title}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground text-xs">
+            <Clock size={12} />
+            <span>
+              {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {event.time && ` • ${event.time}`}
+            </span>
+          </div>
+          {event.location && (
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <MapPin size={12} />
+              <span>{event.location}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Convoked players */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <UserCheck size={14} className="text-accent" />
+            <span className="text-sm font-bold text-foreground">
+              {selectedPlayers.length} convoqué{selectedPlayers.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {selectedPlayers.map(player => {
+              const conv = draftConvocations[player.id];
+              const photo = getPlayerPhoto(player.id);
+              return (
+                <div key={player.id} className="flex items-center gap-3 p-2.5 bg-accent/5 rounded-xl border border-accent/20">
+                  {photo ? (
+                    <img src={photo} alt={player.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                      <span className="text-accent text-[10px] font-bold">{getInitials(player.name)}</span>
+                    </div>
+                  )}
+                  <span className="font-medium text-sm text-foreground flex-1 truncate">{player.name}</span>
+                  {conv?.number && (
+                    <span className="text-sm font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-lg">
+                      #{conv.number}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Non-convoked collapsible */}
+        {nonSelectedPlayers.length > 0 && (
+          <div>
+            <button
+              onClick={() => setShowNonConvoked(!showNonConvoked)}
+              className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <UserX size={13} />
+              <span>{nonSelectedPlayers.length} non convoqué{nonSelectedPlayers.length > 1 ? 's' : ''}</span>
+              <ChevronRight size={12} className={`transition-transform ${showNonConvoked ? 'rotate-90' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {showNonConvoked && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-1 mt-2">
+                    {nonSelectedPlayers.map(player => (
+                      <div key={player.id} className="flex items-center gap-2 px-2.5 py-1.5 text-muted-foreground/70">
+                        <span className="w-1.5 h-1.5 rounded-full bg-destructive/50 shrink-0" />
+                        <span className="text-xs">{player.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* What will happen */}
+        <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20 space-y-2">
+          <p className="text-xs font-bold text-primary flex items-center gap-2">
+            <Bell size={13} /> Ce qui va se passer :
+          </p>
+          <ul className="text-xs text-muted-foreground space-y-1 pl-5">
+            <li className="flex items-start gap-2">
+              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
+              Notification push aux joueurs convoqués
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
+              Création / mise à jour de la feuille de match
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
+              Les joueurs verront leur statut de convocation
+            </li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center overflow-hidden"
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <motion.div
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        className="bg-card w-full max-h-[92vh] rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header with stepper */}
+        <div className="px-5 pt-4 pb-3 border-b border-border shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-accent/10 rounded-xl flex items-center justify-center">
+                <Shield size={18} className="text-accent" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-foreground">Convocations</h3>
+                <p className="text-[11px] text-muted-foreground">
+                  {step === 1 && `${selectedIds.length} sélectionné${selectedIds.length > 1 ? 's' : ''}`}
+                  {step === 2 && 'Attribution des numéros'}
+                  {step === 3 && 'Vérification finale'}
+                </p>
+              </div>
+            </div>
+            <button onClick={onCancel} className="w-9 h-9 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center">
+              <X size={18} className="text-muted-foreground" />
+            </button>
+          </div>
+
+          {/* Stepper */}
+          <div className="flex items-center gap-1">
+            {STEPS.map((s, i) => {
+              const StepIcon = s.icon;
+              const isActive = step === s.num;
+              const isDone = step > s.num;
+              return (
+                <React.Fragment key={s.num}>
+                  <button
+                    onClick={() => {
+                      if (isDone) setStep(s.num);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                      isActive
+                        ? 'bg-accent text-accent-foreground'
+                        : isDone
+                          ? 'bg-accent/15 text-accent cursor-pointer'
+                          : 'bg-secondary/60 text-muted-foreground/50'
+                    }`}
+                  >
+                    {isDone ? (
+                      <Check size={12} strokeWidth={3} />
+                    ) : (
+                      <StepIcon size={12} />
+                    )}
+                    <span className="hidden min-[380px]:inline">{s.label}</span>
+                    <span className="min-[380px]:hidden">{s.num}</span>
+                  </button>
+                  {i < STEPS.length - 1 && (
+                    <div className={`flex-1 h-0.5 rounded-full ${isDone ? 'bg-accent/40' : 'bg-border'}`} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col overflow-hidden"
+            >
+              {step === 1 && renderStep1()}
+              {step === 2 && renderStep2()}
+              {step === 3 && renderStep3()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 space-y-2">
+          {publishError && (
+            <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
+              ⚠️ {publishError}
+            </p>
+          )}
+          <div className="flex gap-2">
+            {step === 1 ? (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all"
+              >
+                Annuler
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)}
+                className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80 transition-all flex items-center justify-center gap-2"
+              >
+                <ChevronLeft size={15} /> Retour
+              </button>
+            )}
+
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={() => setStep(s => (s + 1) as 1 | 2 | 3)}
+                disabled={!canGoNext}
+                className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-40"
+              >
+                Suivant <ChevronRight size={15} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onPublish}
+                disabled={publishing}
+                className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50"
+              >
+                {publishing ? (
+                  <><span className="animate-spin inline-block w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full" /> Envoi…</>
+                ) : (
+                  <><Send size={15} /> Publier & Notifier</>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+export default ConvocationWizard;
