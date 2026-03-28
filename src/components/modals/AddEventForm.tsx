@@ -227,7 +227,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
           </div>}
 
           {/* FFF Import toggle - only for match */}
-          {formData.type === 'match' && !matchMode && (
+          {formData.type === 'match' && !matchMode && !isGhostMode && (
             <div className="animate-fade-in space-y-2">
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mode de création</label>
               <button
