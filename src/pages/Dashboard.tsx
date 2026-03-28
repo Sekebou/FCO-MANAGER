@@ -588,8 +588,10 @@ const Dashboard = () => {
           supabase.from('match_sheets').select('*').order('date', { ascending: false }),
         ]);
 
+        const allEvents = (eventsData || []).map(mapEvent);
+        setGhostEventIds(new Set(allEvents.filter(e => e.reason === '__ghost__' && e.createdBy !== currentUser?.uid).map(e => e.id)));
         const freshPlayers = sortPlayersStable((playersData || []).map(mapPlayer));
-        const freshEvents = filterGhostEvents((eventsData || []).map(mapEvent), currentUser?.uid);
+        const freshEvents = filterGhostEvents(allEvents, currentUser?.uid);
         const freshNews = (newsData || []).map(mapNews);
         const freshMembers = (membersData || []).map(mapMember);
         const freshCards = (cardsData || []).map(mapCard);
