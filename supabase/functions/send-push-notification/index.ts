@@ -178,6 +178,21 @@ serve(async (req) => {
               token: fcmToken,
               notification: { title, body },
               data: data || {},
+              apns: {
+                payload: {
+                  aps: {
+                    alert: { title, body },
+                    sound: 'default',
+                    'mutable-content': 1,
+                  },
+                },
+              },
+              android: {
+                notification: {
+                  sound: 'default',
+                  channel_id: 'default',
+                },
+              },
             },
           }),
         });
