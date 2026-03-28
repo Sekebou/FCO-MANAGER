@@ -94,7 +94,7 @@ const ConvocationWizard: React.FC<Props> = ({
     }
   };
 
-  const canGoNext = step === 1 ? selectedIds.length > 0 : true;
+  const canGoNext = step === 1 ? selectedIds.length > 0 : step === 2 ? allHaveNumbers : true;
 
   // ─── STEP 1: Player Selection ───
   const renderStep1 = () => (
