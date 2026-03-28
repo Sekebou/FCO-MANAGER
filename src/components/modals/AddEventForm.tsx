@@ -539,7 +539,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
           )}
 
           {/* Location autocomplete - for match: only manual mode or auto after selection with override; for training: only "Autre"; for other: always */}
-          {(formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && matchMode === 'manual' && (!formData.location || showLocationOverride)) || (formData.type === 'match' && matchMode === 'auto' && fffMatchSelected && (!formData.location || showLocationOverride))) && (
+          {(isGhostMode || formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && matchMode === 'manual' && (!formData.location || showLocationOverride)) || (formData.type === 'match' && matchMode === 'auto' && fffMatchSelected && (!formData.location || showLocationOverride))) && (
             <LocationAutocomplete
               value={formData.location}
               onChange={(location) => setFormData({ ...formData, location })}
