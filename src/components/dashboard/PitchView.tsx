@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Move, Check, RotateCcw, ArrowLeftRight } from 'lucide-react';
+import { Move, Check, RotateCcw, ArrowLeftRight, ChevronDown } from 'lucide-react';
 import type { Convocation } from '@/pages/Dashboard';
+import { POSITIONS } from '@/pages/Dashboard';
 
 interface Player {
   id: string;
@@ -561,7 +562,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         {/* Players on field — scale positions to field area */}
         {positioned.map((p, idx) => {
           const isSelected = selectedPlayer === p.id;
-          const isGk = p.conv.position === 'Gardien';
+          const isGk = (p.conv.position || getDefaultPositionFromNumber(p.conv.number)) === 'Gardien';
           const lastName = p.name.split(' ').pop() || p.name;
           // Scale Y coordinates to the field portion only
           const scaledY = substitutePlayers.length > 0 ? p.y * 0.85 : p.y;
@@ -643,7 +644,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             </div>
             <div className="flex flex-wrap justify-center gap-2 px-2">
               {substitutePlayers.map((p, idx) => {
-                const isGk = p.conv.position === 'Gardien';
+                const isGk = (p.conv.position || getDefaultPositionFromNumber(p.conv.number)) === 'Gardien';
                 const lastName = p.name.split(' ').pop() || p.name;
                 return (
                   <motion.div
@@ -704,7 +705,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           </div>
         )}
 
-        {/* Player detail popup */}
+        {/* Player detail popup with position selector */}
         <AnimatePresence>
           {selected && !editMode && (
             <motion.div
@@ -712,7 +713,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.85 }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              className="absolute z-30 rounded-2xl shadow-2xl p-3.5 w-[160px]"
+              className="absolute z-30 rounded-2xl shadow-2xl p-3.5 w-[180px]"
               style={{
                 left: '50%',
                 top: '40%',
@@ -724,26 +725,54 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
               onClick={(e) => e.stopPropagation()}
             >
               <p className="font-bold text-sm text-white">{selected.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{
-                    background: selected.conv.position === 'Gardien'
-                      ? 'rgba(132,204,22,0.2)'
-                      : 'rgba(59,130,246,0.2)',
-                    color: selected.conv.position === 'Gardien'
-                      ? 'hsl(85 70% 60%)'
-                      : 'hsl(215 90% 70%)',
-                  }}
-                >
-                  {selected.conv.position}
+              {selected.conv.number && (
+                <span className="text-[10px] font-bold text-white/60 mt-0.5 block">
+                  N°{selected.conv.number}
                 </span>
-                {selected.conv.number && (
-                  <span className="text-[10px] font-bold text-white/60">
-                    N°{selected.conv.number}
+              )}
+              {isManager && onUpdateConvocations ? (
+                <div className="mt-2">
+                  <select
+                    value={localConvocations[selected.id]?.position || getDefaultPositionFromNumber(selected.conv.number) || ''}
+                    onChange={(e) => {
+                      const newPos = e.target.value;
+                      setLocalConvocations((prev) => {
+                        const updated = { ...prev };
+                        updated[selected.id] = { ...updated[selected.id], position: newPos };
+                        return updated;
+                      });
+                      // Save immediately
+                      const updatedConvs = { ...localConvocations };
+                      updatedConvs[selected.id] = { ...updatedConvs[selected.id], position: newPos };
+                      onUpdateConvocations(updatedConvs);
+                      saveTimestampRef.current = Date.now();
+                    }}
+                    className="w-full text-[11px] font-semibold rounded-lg px-2 py-1.5 bg-white/10 text-white border border-white/20 outline-none appearance-none cursor-pointer"
+                    style={{ fontSize: 16 }}
+                  >
+                    <option value="" className="bg-gray-900 text-white">— Poste —</option>
+                    {POSITIONS.map(pos => (
+                      <option key={pos} value={pos} className="bg-gray-900 text-white">{pos}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: (selected.conv.position || getDefaultPositionFromNumber(selected.conv.number)) === 'Gardien'
+                        ? 'rgba(132,204,22,0.2)'
+                        : 'rgba(59,130,246,0.2)',
+                      color: (selected.conv.position || getDefaultPositionFromNumber(selected.conv.number)) === 'Gardien'
+                        ? 'hsl(85 70% 60%)'
+                        : 'hsl(215 90% 70%)',
+                    }}
+                  >
+                    {selected.conv.position || getDefaultPositionFromNumber(selected.conv.number) || 'Non défini'}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
