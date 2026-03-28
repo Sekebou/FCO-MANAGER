@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Player, Member, Convocation } from '@/pages/Dashboard';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
@@ -45,6 +45,11 @@ const ConvocationWizard: React.FC<Props> = ({
   const [search, setSearch] = useState('');
   useBodyScrollLock(true);
   const [showNonConvoked, setShowNonConvoked] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [step]);
 
   const getPlayerPhoto = (playerId: string) => {
     const member = members.find(m => m.playerId === playerId);
@@ -492,7 +497,7 @@ const ConvocationWizard: React.FC<Props> = ({
         </div>
 
         {/* Body */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain">
+        <div ref={scrollRef} className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
