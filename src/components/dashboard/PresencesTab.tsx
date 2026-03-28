@@ -427,7 +427,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         )}
 
         {/* Presences list */}
-        {!isConvocationMode && !event.convocationsPublished && (
+        {!isConvocationMode && (
           <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
             <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
               <Users size={15} className="text-primary" /> Réponses des joueurs
