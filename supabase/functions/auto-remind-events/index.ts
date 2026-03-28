@@ -106,7 +106,8 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('date', tomorrowStr)
       .eq('type', 'training')
-      .is('reminded_at', null);
+      .is('reminded_at', null)
+      .neq('reason', '__ghost__');
 
     if (evError) throw evError;
     if (!targetEvents || targetEvents.length === 0) {

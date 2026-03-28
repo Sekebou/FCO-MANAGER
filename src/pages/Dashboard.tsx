@@ -344,6 +344,8 @@ const Dashboard = () => {
   const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
   const [unreadDiscussions, setUnreadDiscussions] = useState(0);
   const [matchSheets, setMatchSheets] = useState<MatchSheet[]>([]);
+  // Track ghost event IDs from raw fetches (before filtering) to hide their match sheets for non-owners
+  const [ghostEventIds, setGhostEventIds] = useState<Set<string>>(new Set());
 
   // Fetch unread discussions count
   useEffect(() => {
@@ -524,6 +526,7 @@ const Dashboard = () => {
   const visiblePlayers = isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id));
   const visiblePlayersForStats = (isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id))).filter(p => !nonPlayerRoleIds.includes(p.id));
   const visibleMembers = isCurrentUserGhost ? members : members.filter(m => !m.isGhost);
+  const visibleMatchSheets = matchSheets.filter(ms => !ms.eventId || !ghostEventIds.has(ms.eventId));
 
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {
@@ -581,8 +584,10 @@ const Dashboard = () => {
           supabase.from('match_sheets').select('*').order('date', { ascending: false }),
         ]);
 
+        const allEvents = (eventsData || []).map(mapEvent);
+        setGhostEventIds(new Set(allEvents.filter(e => e.reason === '__ghost__' && e.createdBy !== currentUser?.uid).map(e => e.id)));
         const freshPlayers = sortPlayersStable((playersData || []).map(mapPlayer));
-        const freshEvents = filterGhostEvents((eventsData || []).map(mapEvent), currentUser?.uid);
+        const freshEvents = filterGhostEvents(allEvents, currentUser?.uid);
         const freshNews = (newsData || []).map(mapNews);
         const freshMembers = (membersData || []).map(mapMember);
         const freshCards = (cardsData || []).map(mapCard);
@@ -697,7 +702,11 @@ const Dashboard = () => {
             supabase.from('championship_matches').select('*'),
             supabase.from('albums').select('*').order('created_at', { ascending: false }),
           ]);
-          if (evData) setEvents(filterGhostEvents(evData.map(mapEvent), currentUser?.uid));
+          if (evData) {
+            const allEv = evData.map(mapEvent);
+            setGhostEventIds(new Set(allEv.filter(e => e.reason === '__ghost__' && e.createdBy !== currentUser?.uid).map(e => e.id)));
+            setEvents(filterGhostEvents(allEv, currentUser?.uid));
+          }
           if (memData) setMembers(memData.map(mapMember));
           if (cardsData) setCards(cardsData.map(mapCard));
           if (champsData) setChampionships(champsData.map(mapChamp));
@@ -720,7 +729,12 @@ const Dashboard = () => {
         supabase.from('players').select('*').then(({ data }) => data && setPlayers(sortPlayersStable(data.map(mapPlayer))));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
-        supabase.from('events').select('*').order('date', { ascending: false }).then(({ data }) => data && setEvents(filterGhostEvents(data.map(mapEvent), currentUser?.uid)));
+        supabase.from('events').select('*').order('date', { ascending: false }).then(({ data }) => {
+          if (!data) return;
+          const allEv = data.map(mapEvent);
+          setGhostEventIds(new Set(allEv.filter(e => e.reason === '__ghost__' && e.createdBy !== currentUser?.uid).map(e => e.id)));
+          setEvents(filterGhostEvents(allEv, currentUser?.uid));
+        });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => {
         supabase.from('news').select('*').order('date', { ascending: false }).then(({ data }) => data && setNews(data.map(mapNews)));
@@ -1675,7 +1689,7 @@ const Dashboard = () => {
               }}
             />
           )}
-          {activeTab === 'stats' && <StatsTab players={visiblePlayersForStats} events={events} cards={cards} attendanceRecords={attendanceRecords} members={visibleMembers} championships={championships} champMatches={champMatches} matchSheets={matchSheets} currentUser={currentUser} canManage={canManage} updatePlayerStats={updatePlayerStats} deletePlayer={deletePlayer} getPlayerCards={getPlayerCards} deleteCard={deleteCard} onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }} />}
+          {activeTab === 'stats' && <StatsTab players={visiblePlayersForStats} events={events} cards={cards} attendanceRecords={attendanceRecords} members={visibleMembers} championships={championships} champMatches={champMatches} matchSheets={visibleMatchSheets} currentUser={currentUser} canManage={canManage} updatePlayerStats={updatePlayerStats} deletePlayer={deletePlayer} getPlayerCards={getPlayerCards} deleteCard={deleteCard} onAddCard={(playerId) => { setSelectedPlayerForCard(playerId); setShowAddCard(true); }} />}
           {activeTab === 'championnat' && <ChampionnatTab championships={championships} matches={champMatches} currentUserRole={currentUser?.role} canManage={canManage} canUpdateChampionnat={canUpdateChampionnat} onAddChampionship={addChampionship} onDeleteChampionship={deleteChampionship} onUpdateChampionship={updateChampionship} onAddMatch={addChampMatch} onUpdateMatchScore={updateMatchScore} onDeleteMatch={deleteChampMatch} onRefreshFromFFF={refreshFromFFF} dataLoaded={!loading} />}
           {activeTab === 'news' && <NewsTab news={news} comments={newsComments} members={members} currentUser={currentUser} canManage={canManage} canCreateNews={canCreateNews} deleteNews={deleteNews} toggleLike={toggleLike} addComment={addComment} deleteComment={deleteComment} onAddNews={() => setShowAddNews(true)} />}
           {activeTab === 'calendar' && <CalendarTab events={events} members={members} currentUser={currentUser} />}
@@ -1685,7 +1699,7 @@ const Dashboard = () => {
               <ParisTab currentUser={currentUser} championships={championships} />
             </div>
           )}
-          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={matchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} onMatchSheetUpdated={(updatedSheet) => { setMatchSheets(prev => { const next = prev.map(ms => ms.id === updatedSheet.id ? updatedSheet : ms); writeCache('matchSheets', next); return next; }); }} onDeleteMatchSheet={(sheetId) => { setConfirmModal({ title: 'Supprimer cette feuille de match ?', message: 'Cette action est irréversible. La composition sera définitivement supprimée.', onConfirm: async () => { setMatchSheets(prev => prev.filter(ms => ms.id !== sheetId)); try { await supabase.from('match_sheets').delete().eq('id', sheetId); toast.success('Feuille de match supprimée'); } catch { toast.error('Erreur lors de la suppression'); } } }); }} />}
+          {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={visibleMatchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} onMatchSheetUpdated={(updatedSheet) => { setMatchSheets(prev => { const next = prev.map(ms => ms.id === updatedSheet.id ? updatedSheet : ms); writeCache('matchSheets', next); return next; }); }} onDeleteMatchSheet={(sheetId) => { setConfirmModal({ title: 'Supprimer cette feuille de match ?', message: 'Cette action est irréversible. La composition sera définitivement supprimée.', onConfirm: async () => { setMatchSheets(prev => prev.filter(ms => ms.id !== sheetId)); try { await supabase.from('match_sheets').delete().eq('id', sheetId); toast.success('Feuille de match supprimée'); } catch { toast.error('Erreur lors de la suppression'); } } }); }} />}
           {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
