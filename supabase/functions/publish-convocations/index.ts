@@ -41,7 +41,7 @@ serve(async (req) => {
 
     // 3. Parse & validate body
     const body = await req.json();
-    const { eventId, convocations } = body;
+    const { eventId, convocations, customNotif } = body;
     if (!eventId || typeof eventId !== 'string') return json({ error: 'eventId required' }, 400);
     if (!convocations || typeof convocations !== 'object') return json({ error: 'convocations required' }, 400);
 
@@ -149,8 +149,8 @@ serve(async (req) => {
               const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
               const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-              const notifTitle = '✅ Convocation';
-              const notifBody = `Tu es convoqué pour ${event.title} le ${eventDate}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`;
+              const notifTitle = (customNotif && customNotif.title) ? customNotif.title : '✅ Convocation';
+              const notifBody = (customNotif && customNotif.body) ? customNotif.body : `Tu es convoqué pour ${event.title} le ${eventDate}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`;
 
               for (const fcmToken of tokens) {
                 try {
