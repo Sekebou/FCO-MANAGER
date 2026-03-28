@@ -140,7 +140,7 @@ const ConvocationWizard: React.FC<Props> = ({
       </div>
 
       {/* Player grid */}
-      <div className="flex-1 overflow-y-auto px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div ref={gridScrollRef} className="flex-1 overflow-y-auto px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="grid grid-cols-2 gap-2 py-1 pb-4">
           {filteredPlayers.map(player => {
             const isSelected = selectedIds.includes(player.id);
