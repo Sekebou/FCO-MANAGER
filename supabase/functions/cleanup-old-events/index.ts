@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
     // Fetch all match/training events up to today
     const eventsRes = await fetch(
-      `${supabaseUrl}/rest/v1/events?date=lte.${todayStr}&type=in.(match,training)&select=id,type,date,presences,time,duration,title,home_logo,away_logo`,
+      `${supabaseUrl}/rest/v1/events?date=lte.${todayStr}&type=in.(match,training)&reason=neq.__ghost__&select=id,type,date,presences,time,duration,title,home_logo,away_logo,reason`,
       { headers }
     );
     if (!eventsRes.ok) throw new Error(`Failed to fetch events: ${await eventsRes.text()}`);
