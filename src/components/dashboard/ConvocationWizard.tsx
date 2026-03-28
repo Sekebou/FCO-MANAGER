@@ -108,11 +108,7 @@ const ConvocationWizard: React.FC<Props> = ({
 
   const allHaveNumbers = selectedPlayers.every(p => draftConvocations[p.id]?.number);
   const canGoNext = step === 1 ? selectedIds.length > 0 : step === 2 ? allHaveNumbers : true;
-
-  // Default notification preview
-  const eventDateFormatted = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-  const defaultNotifTitle = '✅ Convocation';
-  const defaultNotifBody = `Tu es convoqué pour ${event.title} le ${eventDateFormatted}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`;
+  const canPublish = !!(customNotifTitle.trim() && customNotifBody.trim());
 
   // ─── STEP 1: Player Selection ───
   const renderStep1 = () => (
@@ -138,8 +134,8 @@ const ConvocationWizard: React.FC<Props> = ({
       </div>
 
       {/* Player grid */}
-      <div className="flex-1 overflow-y-auto px-4 pb-2">
-        <div className="grid grid-cols-2 gap-2 py-1">
+      <div className="flex-1 overflow-y-auto px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="grid grid-cols-2 gap-2 py-1 pb-4">
           {filteredPlayers.map(player => {
             const isSelected = selectedIds.includes(player.id);
             const photo = getPlayerPhoto(player.id);
@@ -614,13 +610,9 @@ const ConvocationWizard: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (customNotifTitle.trim() || customNotifBody.trim()) {
-                    onPublish({ title: customNotifTitle.trim() || defaultNotifTitle, body: customNotifBody.trim() || defaultNotifBody });
-                  } else {
-                    onPublish();
-                  }
+                  onPublish({ title: customNotifTitle.trim(), body: customNotifBody.trim() });
                 }}
-                disabled={publishing || !customNotifBody.trim()}
+                disabled={publishing || !canPublish}
                 className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50"
               >
                 {publishing ? (
