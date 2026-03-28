@@ -33,7 +33,7 @@ interface Props {
   deleteEvent: (eventId: string) => void;
   canDeleteEvent: (event: Event) => boolean;
   onAddEvent: () => void;
-  onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>) => Promise<void>;
+  onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>, customNotif?: { title: string; body: string }) => Promise<void>;
   onSendReminder?: (event: Event) => Promise<void>;
   onResetHeader?: () => void;
   onNavigateToMatchSheet?: (eventId: string) => void;
@@ -191,7 +191,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     }));
   };
 
-  const publishConvocations = async (eventId: string, convocationsOverride?: Record<string, Convocation>) => {
+  const publishConvocations = async (eventId: string, convocationsOverride?: Record<string, Convocation>, customNotif?: { title: string; body: string }) => {
     if (publishing) return;
     const event = events.find(e => e.id === eventId);
     if (!event) {
@@ -208,7 +208,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     setPublishing(true);
     try {
       // Add a timeout to prevent infinite hang on mobile
-      const publishPromise = onPublishAndNotifyConvocations(eventId, event, convsToPublish);
+      const publishPromise = onPublishAndNotifyConvocations(eventId, event, convsToPublish, customNotif);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Délai dépassé — vérifie ta connexion et réessaie')), 30000)
       );
