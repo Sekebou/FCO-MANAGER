@@ -1246,8 +1246,32 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     </div>
                   )}
                   {(isPast || isArchived) && (
-                    <div className="mx-3.5 mb-2 -mt-0.5">
+                    <div className="mx-3.5 mb-2 -mt-0.5 space-y-1.5">
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Clock size={8} /> Terminé</span>
+                      {isManager && (() => {
+                        const presences = event.presences || {};
+                        const presentIds = Object.entries(presences).filter(([, s]) => s === 'present').map(([id]) => id);
+                        const absentIds = Object.entries(presences).filter(([, s]) => s === 'absent').map(([id]) => id);
+                        const getName = (pid: string) => {
+                          const p = players.find(pl => pl.id === pid);
+                          return p ? p.name.split(' ').pop() || p.name : pid.slice(0, 6);
+                        };
+                        if (presentIds.length === 0 && absentIds.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1.5 text-[9px]">
+                            {presentIds.length > 0 && (
+                              <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
+                                <Check size={8} /> {presentIds.length} présent{presentIds.length > 1 ? 's' : ''}
+                              </span>
+                            )}
+                            {absentIds.length > 0 && (
+                              <span className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
+                                <X size={8} /> {absentIds.length} absent{absentIds.length > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </button>
