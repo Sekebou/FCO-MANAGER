@@ -531,6 +531,7 @@ const Dashboard = () => {
   const visiblePlayers = isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id));
   const visiblePlayersForStats = (isCurrentUserGhost ? players : players.filter(p => !ghostPlayerIds.includes(p.id))).filter(p => !nonPlayerRoleIds.includes(p.id));
   const visibleMembers = isCurrentUserGhost ? members : members.filter(m => !m.isGhost);
+  const visibleMatchSheets = matchSheets.filter(ms => !ms.eventId || !ghostEventIds.has(ms.eventId));
 
   // ===== DATA LOADING via Supabase =====
   useEffect(() => {
