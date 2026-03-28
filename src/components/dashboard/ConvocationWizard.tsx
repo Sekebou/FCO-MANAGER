@@ -291,13 +291,27 @@ const ConvocationWizard: React.FC<Props> = ({
   // ─── STEP 3: Review & Confirm ───
   const renderStep3 = () => (
       <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-4 py-3">
-        {/* Match info */}
-        <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 space-y-2">
-          <div className="flex items-center gap-2">
-            <Trophy size={16} className="text-accent shrink-0" />
-            <span className="font-bold text-sm text-foreground">{event.title}</span>
+        {/* Match info with logos */}
+        <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 space-y-3">
+          <div className="flex items-center justify-center gap-4">
+            {event.home_logo ? (
+              <img src={event.home_logo} alt="Domicile" className="w-10 h-10 object-contain" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                <Shield size={18} className="text-accent" />
+              </div>
+            )}
+            <span className="text-xs font-bold text-muted-foreground">VS</span>
+            {event.away_logo ? (
+              <img src={event.away_logo} alt="Extérieur" className="w-10 h-10 object-contain" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                <Shield size={18} className="text-muted-foreground" />
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-xs">
+          <p className="text-center font-bold text-sm text-foreground">{event.title}</p>
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
             <Clock size={12} />
             <span>
               {new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -305,7 +319,7 @@ const ConvocationWizard: React.FC<Props> = ({
             </span>
           </div>
           {event.location && (
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
               <MapPin size={12} />
               <span>{event.location}</span>
             </div>
@@ -317,7 +331,7 @@ const ConvocationWizard: React.FC<Props> = ({
           <div className="flex items-center gap-2 mb-2">
             <UserCheck size={14} className="text-accent" />
             <span className="text-sm font-bold text-foreground">
-              {selectedPlayers.length} convoqué{selectedPlayers.length > 1 ? 's' : ''}
+              {selectedPlayers.length} joueur{selectedPlayers.length > 1 ? 's' : ''} convoqué{selectedPlayers.length > 1 ? 's' : ''}
             </span>
           </div>
           <div className="space-y-1.5">
