@@ -538,9 +538,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   <div className="relative overflow-visible">
                                     <motion.button
                                       onClick={() => {
-                                        if (isManager) togglePresence(event.id, player.id, 'present');
+                                        const locked = event.convocationsPublished || isEventPast(event);
+                                        if (!locked || isManager) togglePresence(event.id, player.id, 'present');
                                       }}
-                                      disabled={!isManager}
+                                      disabled={(event.convocationsPublished || isEventPast(event)) && !isManager}
                                       whileTap={{ scale: 0.82 }}
                                       animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                       transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
