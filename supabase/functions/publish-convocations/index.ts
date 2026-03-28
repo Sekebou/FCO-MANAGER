@@ -45,6 +45,7 @@ serve(async (req) => {
     console.log('[publish-convocations] customNotif received:', JSON.stringify(customNotif));
     if (!eventId || typeof eventId !== 'string') return json({ error: 'eventId required' }, 400);
     if (!convocations || typeof convocations !== 'object') return json({ error: 'convocations required' }, 400);
+    if (!customNotif || !customNotif.title || !customNotif.body) return json({ error: 'customNotif (title + body) required' }, 400);
 
     // 4. Fetch event
     const { data: event, error: fetchErr } = await admin
@@ -149,9 +150,8 @@ serve(async (req) => {
               const projectId = serviceAccount.project_id;
               const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
-              const eventDate = new Date(event.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-              const notifTitle = (customNotif && customNotif.title) ? customNotif.title : '✅ Convocation';
-              const notifBody = (customNotif && customNotif.body) ? customNotif.body : `Tu es convoqué pour ${event.title} le ${eventDate}${event.time ? ' à ' + event.time : ''} ! Consulte les détails sur l'app.`;
+              const notifTitle = customNotif.title;
+              const notifBody = customNotif.body;
 
               for (const fcmToken of tokens) {
                 try {
