@@ -42,6 +42,7 @@ const ConvocationWizard: React.FC<Props> = ({
   const [step, setStep] = useState(1);
   const [search, setSearch] = useState('');
   useBodyScrollLock(true);
+  const [showNonConvoked, setShowNonConvoked] = useState(false);
 
   const getPlayerPhoto = (playerId: string) => {
     const member = members.find(m => m.playerId === playerId);
@@ -288,9 +289,7 @@ const ConvocationWizard: React.FC<Props> = ({
   );
 
   // ─── STEP 3: Review & Confirm ───
-  const renderStep3 = () => {
-    const [showNonConvoked, setShowNonConvoked] = useState(false);
-    return (
+  const renderStep3 = () => (
       <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-4 py-3">
         {/* Match info */}
         <div className="bg-secondary/40 rounded-2xl p-4 border border-border/50 space-y-2">
@@ -400,8 +399,7 @@ const ConvocationWizard: React.FC<Props> = ({
           </ul>
         </div>
       </div>
-    );
-  };
+  );
 
   return (
     <motion.div
