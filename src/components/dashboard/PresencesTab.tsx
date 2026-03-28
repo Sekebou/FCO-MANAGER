@@ -427,7 +427,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         )}
 
         {/* Presences list */}
-        {!isConvocationMode && !event.convocationsPublished && (
+        {!isConvocationMode && (
           <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
             <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
               <Users size={15} className="text-primary" /> Réponses des joueurs
@@ -439,17 +439,25 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const absentPlayers = eventPlayers.filter(p => presences[p.id] === 'absent');
               const waitingPlayers = eventPlayers.filter(p => !presences[p.id] || (presences[p.id] !== 'present' && presences[p.id] !== 'absent'));
 
-              const tabs = [
+              const convoEntries = event.convocationsPublished && event.convocations ? Object.values(event.convocations as Record<string, any>) : [];
+              const convokedPlayerIds = convoEntries.filter((c: any) => c.status === 'convoque').map((c: any) => c.playerId);
+              const convokedPlayers = eventPlayers.filter(p => convokedPlayerIds.includes(p.id));
+
+              const tabs: { key: string; label: string; count: number; icon: any; color: string; bgActive: string; dot: string }[] = [
                 { key: 'present', label: 'Présents', count: presentPlayers.length, icon: Check, color: 'text-accent', bgActive: 'bg-accent/15 border-accent/30', dot: 'bg-accent' },
                 { key: 'absent', label: 'Absents', count: absentPlayers.length, icon: X, color: 'text-destructive', bgActive: 'bg-destructive/15 border-destructive/30', dot: 'bg-destructive' },
                 { key: 'waiting', label: 'En attente', count: waitingPlayers.length, icon: Clock, color: 'text-warning', bgActive: 'bg-warning/15 border-warning/30', dot: 'bg-warning' },
               ];
+              if (convokedPlayers.length > 0) {
+                tabs.push({ key: 'convoked', label: 'Convoqués', count: convokedPlayers.length, icon: ClipboardCheck, color: 'text-primary', bgActive: 'bg-primary/15 border-primary/30', dot: 'bg-primary' });
+              }
 
               const presenceFilter = expandedPlayers[`filter_${event.id}`] as unknown as string || 'present';
               const setPresenceFilter = (f: string) => setExpandedPlayers(prev => ({ ...prev, [`filter_${event.id}`]: f as any }));
 
               const filteredPlayers = presenceFilter === 'present' ? presentPlayers
                 : presenceFilter === 'absent' ? absentPlayers
+                : presenceFilter === 'convoked' ? convokedPlayers
                 : waitingPlayers;
 
               return (
@@ -482,7 +490,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   <div className="space-y-1.5">
                     {filteredPlayers.length === 0 ? (
                       <p className="text-muted-foreground text-center py-6 text-sm">
-                        {presenceFilter === 'present' ? 'Aucun joueur présent' : presenceFilter === 'absent' ? 'Aucun joueur absent' : 'Aucun joueur en attente'}
+                        {presenceFilter === 'present' ? 'Aucun joueur présent' : presenceFilter === 'absent' ? 'Aucun joueur absent' : presenceFilter === 'convoked' ? 'Aucun joueur convoqué' : 'Aucun joueur en attente'}
                       </p>
                     ) : (
                       filteredPlayers.map(player => {
@@ -509,6 +517,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   );
                                 })()}
                                 <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
+                                {presenceFilter === 'convoked' && (() => {
+                                  const convo = event.convocations ? Object.values(event.convocations as Record<string, any>).find((c: any) => c.playerId === player.id) : null;
+                                  return convo?.number ? <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">#{convo.number}</span> : null;
+                                })()}
                               </div>
                               {isNonRespondingPlayer(player.id) ? (
                                 <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
@@ -1246,61 +1258,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     </div>
                   )}
                   {(isPast || isArchived) && (
-                    <div className="mx-3.5 mb-2 -mt-0.5 space-y-1.5">
+                    <div className="mx-3.5 mb-2 -mt-0.5 flex flex-wrap items-center gap-1.5">
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Clock size={8} /> Terminé</span>
-                      {isManager && (() => {
+                      {(() => {
                         const presences = event.presences || {};
-                        const presentIds = Object.entries(presences).filter(([, s]) => s === 'present').map(([id]) => id);
-                        const absentIds = Object.entries(presences).filter(([, s]) => s === 'absent').map(([id]) => id);
-                        const convos = event.convocations ? Object.values(event.convocations as Record<string, any>) : [];
-                        const convoNames = convos.map((c: any) => {
-                          const p = players.find(pl => pl.id === c.playerId);
-                          return { name: p ? p.name.split(' ').pop() || p.name : '?', number: c.number };
-                        }).sort((a: any, b: any) => (a.number || 99) - (b.number || 99));
-                        const getName = (pid: string) => {
-                          const p = players.find(pl => pl.id === pid);
-                          return p ? p.name.split(' ').pop() || p.name : pid.slice(0, 6);
-                        };
-                        const isConvoExpanded = expandedArchiveConvos[event.id] || false;
+                        const pCount = Object.values(presences).filter(s => s === 'present').length;
+                        const aCount = Object.values(presences).filter(s => s === 'absent').length;
+                        const convos = event.convocations ? Object.keys(event.convocations as Record<string, any>).length : 0;
                         return (
-                          <div className="space-y-1.5 text-[9px]">
-                            <div className="flex flex-wrap gap-1">
-                              {presentIds.length > 0 && (
-                                <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
-                                  <Check size={8} /> {presentIds.length}
-                                </span>
-                              )}
-                              {absentIds.length > 0 && (
-                                <span className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
-                                  <X size={8} /> {absentIds.length}
-                                </span>
-                              )}
-                              {convoNames.length > 0 && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setExpandedArchiveConvos(prev => ({ ...prev, [event.id]: !prev[event.id] })); }}
-                                  className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold"
-                                >
-                                  <ClipboardCheck size={8} /> {convoNames.length} convoqués {isConvoExpanded ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
-                                </button>
-                              )}
-                            </div>
-                            {presentIds.length > 0 && (
-                              <p className="text-accent/80 pl-0.5 leading-relaxed"><Check size={7} className="inline mr-0.5" />{presentIds.map(getName).join(', ')}</p>
-                            )}
-                            {absentIds.length > 0 && (
-                              <p className="text-destructive/80 pl-0.5 leading-relaxed"><X size={7} className="inline mr-0.5" />{absentIds.map(getName).join(', ')}</p>
-                            )}
-                            {isConvoExpanded && convoNames.length > 0 && (
-                              <div className="bg-primary/5 rounded-lg p-1.5 space-y-0.5">
-                                {convoNames.map((c: any, i: number) => (
-                                  <div key={i} className="flex items-center gap-1 text-foreground/80">
-                                    <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[7px] font-bold shrink-0">{c.number || '?'}</span>
-                                    <span>{c.name}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          <>
+                            {pCount > 0 && <span className="text-[9px] font-semibold bg-accent/10 text-accent px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><Check size={8} /> {pCount}</span>}
+                            {aCount > 0 && <span className="text-[9px] font-semibold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><X size={8} /> {aCount}</span>}
+                            {convos > 0 && <span className="text-[9px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><ClipboardCheck size={8} /> {convos}</span>}
+                          </>
                         );
                       })()}
                     </div>
