@@ -35,6 +35,7 @@ interface Props {
   onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>) => Promise<void>;
   onSendReminder?: (event: Event) => Promise<void>;
   onResetHeader?: () => void;
+  onNavigateToMatchSheet?: (eventId: string) => void;
   initialSelectedEventId?: string | null;
 }
 
@@ -43,7 +44,7 @@ const CONVOCATION_STATUSES = [
   { value: 'non_convoque', label: 'Non convoqué', shortLabel: 'Non convoqué', activeClass: 'bg-destructive text-destructive-foreground ring-2 ring-destructive/30 shadow-sm', dotClass: 'bg-destructive', icon: UserX },
 ] as const;
 
-const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onPublishAndNotifyConvocations, onSendReminder, onResetHeader, initialSelectedEventId }: Props) => {
+const PresencesTab = ({ events, players, members, championships, currentUser, canManage, canCreateEvent, canManageOwnPresence, togglePresence, deleteEvent, canDeleteEvent, onAddEvent, onPublishAndNotifyConvocations, onSendReminder, onResetHeader, onNavigateToMatchSheet, initialSelectedEventId }: Props) => {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialSelectedEventId || null);
   const [eventFilter, setEventFilter] = useState<'all' | 'match' | 'training'>('all');
   const [showArchived, setShowArchived] = useState(false);
@@ -409,16 +410,69 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </button>
         )}
 
-        {/* Convocations published - collapsible, replaces reminder */}
         {event.convocationsPublished && event.convocations && !isConvocationMode && (
-          <button
-            onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent text-sm font-semibold border border-accent/20"
-          >
-            <Shield size={14} /> Convocations publiées {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+          <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
+            <button
+              onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+              className="flex items-center gap-2 text-sm font-semibold text-foreground w-full"
+            >
+              <Shield size={16} className="text-accent" />
+              Convocations publiées
+              {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {isConvocationExpanded && (
+              <div className="space-y-1.5 mt-3 animate-fade-in">
+                {Object.entries(event.convocations)
+                  .sort((a, b) => {
+                    const order: Record<string, number> = { convoque: 0, non_convoque: 1 };
+                    return (order[a[1].status] ?? 1) - (order[b[1].status] ?? 1);
+                  })
+                  .map(([playerId, conv]) => {
+                    const player = players.find(p => p.id === playerId);
+                    if (!player) return null;
+                    const statusInfo = CONVOCATION_STATUSES.find(s => s.value === conv.status);
+                    const StatusIcon = statusInfo?.icon || UserX;
+                    const isMatchPast = new Date(event.date) < new Date();
+                    const canSeeDetails = isMatchPast || canManage();
+                    return (
+                      <div key={playerId} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-lg group hover:bg-secondary/70 transition-all">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
+                          <span className="font-medium text-sm text-foreground">{player.name}</span>
+                          {canSeeDetails && conv.position && <span className="text-[11px] text-muted-foreground/80 font-medium">{conv.position}</span>}
+                          {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60">#{conv.number}</span>}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <StatusIcon size={13} className="text-muted-foreground" />
+                          <span className="text-[11px] font-semibold text-muted-foreground">{statusInfo?.label}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {canManage() && (
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors">
+                      <Pencil size={14} /> Modifier
+                    </button>
+                    <button onClick={() => {
+                      void publishConvocations(event.id, event.convocations || {});
+                    }} disabled={publishing} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors disabled:opacity-50" title="Re-notifier les joueurs convoqués">
+                      <Bell size={14} /> {publishing ? 'Envoi…' : 'Re-notifier'}
+                    </button>
+                  </div>
+                )}
+                {onNavigateToMatchSheet && (
+                  <button
+                    onClick={() => onNavigateToMatchSheet(event.id)}
+                    className="w-full flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors mt-2 border border-primary/20"
+                  >
+                    <ExternalLink size={14} /> Voir la feuille de match
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         )}
-
         {/* Convocation button - for match events */}
         {event.type === 'match' && !isEventPast(event) && !event.convocationsPublished && canManage() && (
             <button onClick={() => startConvocationMode(event.id, event)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 text-sm font-semibold transition-all border border-accent/20">
@@ -629,64 +683,6 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </div>
         )}
 
-        {/* Convocation section - only for match events with published convocations */}
-        {event.type === 'match' && event.convocationsPublished && event.convocations && !isConvocationMode && (
-          <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
-            <div>
-              <button
-                onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
-                className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3 w-full"
-              >
-                <Shield size={16} className="text-accent" />
-                Convocations publiées
-                {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {isConvocationExpanded && (
-                <div className="space-y-1.5 animate-fade-in">
-                  {Object.entries(event.convocations)
-                    .sort((a, b) => {
-                      const order: Record<string, number> = { convoque: 0, non_convoque: 1 };
-                      return (order[a[1].status] ?? 1) - (order[b[1].status] ?? 1);
-                    })
-                    .map(([playerId, conv]) => {
-                      const player = players.find(p => p.id === playerId);
-                      if (!player) return null;
-                      const statusInfo = CONVOCATION_STATUSES.find(s => s.value === conv.status);
-                      const StatusIcon = statusInfo?.icon || UserX;
-                      const isMatchPast = new Date(event.date) < new Date();
-                      const canSeeDetails = isMatchPast || canManage();
-                      return (
-                        <div key={playerId} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-lg group hover:bg-secondary/70 transition-all">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
-                            <span className="font-medium text-sm text-foreground">{player.name}</span>
-                            {canSeeDetails && conv.position && <span className="text-[11px] text-muted-foreground/80 font-medium">{conv.position}</span>}
-                            {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60">#{conv.number}</span>}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <StatusIcon size={13} className="text-muted-foreground" />
-                            <span className="text-[11px] font-semibold text-muted-foreground">{statusInfo?.label}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  {canManage() && (
-                    <div className="mt-3 flex gap-2">
-                      <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors">
-                        <Pencil size={14} /> Modifier
-                      </button>
-                      <button onClick={() => {
-                        void publishConvocations(event.id, event.convocations || {});
-                      }} disabled={publishing} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors disabled:opacity-50" title="Re-notifier les joueurs convoqués">
-                        <Bell size={14} /> {publishing ? 'Envoi…' : 'Re-notifier'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Full-screen convocation modal */}
         <AnimatePresence>
@@ -1291,10 +1287,20 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   if (event.convocationsPublished) {
                     const isConvoked = event.convocations && Object.keys(event.convocations).length > 0 && Object.values(event.convocations as Record<string, any>).some((c: any) => c.playerId === currentUser.playerId);
                     return (
-                      <div className="flex items-center justify-center px-3.5 pb-2.5">
-                        <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 ${isConvoked ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
-                          {isConvoked ? <><Check size={12} /> Convoqué</> : <><ClipboardCheck size={12} /> Convocations publiées</>}
-                        </span>
+                      <div className="px-3.5 pb-2.5 space-y-1.5">
+                        <div className="flex items-center justify-center">
+                          <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 ${isConvoked ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                            {isConvoked ? <><Check size={12} /> Convoqué</> : <><ClipboardCheck size={12} /> Convocations publiées</>}
+                          </span>
+                        </div>
+                        {onNavigateToMatchSheet && event.type === 'match' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onNavigateToMatchSheet(event.id); }}
+                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                          >
+                            <ExternalLink size={11} /> Voir la feuille de match
+                          </button>
+                        )}
                       </div>
                     );
                   }
