@@ -96,7 +96,13 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
   const result: { id: string; name: string; conv: Convocation; x: number; y: number }[] = [];
   const handledIds = new Set<string>();
 
-  const defenseLine = basePlayers
+  // Resolve effective position: use explicit position, or infer from jersey number
+  const withPosition = basePlayers.map(p => {
+    const pos = p.conv.position || getDefaultPositionFromNumber(p.conv.number);
+    return { ...p, conv: { ...p.conv, position: pos } };
+  });
+
+  const defenseLine = withPosition
     .filter((p) => DEFENSE_POSITIONS.has(p.conv.position || ''))
     .sort((a, b) => (DEF_ORDER[a.conv.position || ''] ?? 2) - (DEF_ORDER[b.conv.position || ''] ?? 2));
 
