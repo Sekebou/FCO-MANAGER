@@ -706,7 +706,11 @@ const Dashboard = () => {
             supabase.from('championship_matches').select('*'),
             supabase.from('albums').select('*').order('created_at', { ascending: false }),
           ]);
-          if (evData) setEvents(filterGhostEvents(evData.map(mapEvent), currentUser?.uid));
+          if (evData) {
+            const allEv = evData.map(mapEvent);
+            setGhostEventIds(new Set(allEv.filter(e => e.reason === '__ghost__' && e.createdBy !== currentUser?.uid).map(e => e.id)));
+            setEvents(filterGhostEvents(allEv, currentUser?.uid));
+          }
           if (memData) setMembers(memData.map(mapMember));
           if (cardsData) setCards(cardsData.map(mapCard));
           if (champsData) setChampionships(champsData.map(mapChamp));
@@ -729,7 +733,12 @@ const Dashboard = () => {
         supabase.from('players').select('*').then(({ data }) => data && setPlayers(sortPlayersStable(data.map(mapPlayer))));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
-        supabase.from('events').select('*').order('date', { ascending: false }).then(({ data }) => data && setEvents(filterGhostEvents(data.map(mapEvent), currentUser?.uid)));
+        supabase.from('events').select('*').order('date', { ascending: false }).then(({ data }) => {
+          if (!data) return;
+          const allEv = data.map(mapEvent);
+          setGhostEventIds(new Set(allEv.filter(e => e.reason === '__ghost__' && e.createdBy !== currentUser?.uid).map(e => e.id)));
+          setEvents(filterGhostEvents(allEv, currentUser?.uid));
+        });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => {
         supabase.from('news').select('*').order('date', { ascending: false }).then(({ data }) => data && setNews(data.map(mapNews)));
