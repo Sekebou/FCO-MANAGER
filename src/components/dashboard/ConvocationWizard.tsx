@@ -204,11 +204,11 @@ const ConvocationWizard: React.FC<Props> = ({
                   )}
                   {presenceStatus === 'absent' && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive text-[9px] font-bold">
-                      <UserX size={8} /> Absent
+                      <UserX size={8} /> A répondu absent
                     </span>
                   )}
                   {!presenceStatus && (
-                    <span className="text-[9px] text-muted-foreground/50">Sans réponse</span>
+                    <span className="text-[9px] text-muted-foreground/50">En attente de réponse</span>
                   )}
                 </div>
               </motion.button>
