@@ -533,7 +533,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                 <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
                                   Non concerné
                                 </span>
-                              ) : canManageOwnPresence(player.id) || (isManager && isEventPast(event)) ? (
+                              ) : (canManageOwnPresence(player.id) && !event.convocationsPublished) || isManager ? (
                                 <div className="flex gap-1 shrink-0">
                                   <div className="relative overflow-visible">
                                     <motion.button
