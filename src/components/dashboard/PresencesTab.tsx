@@ -189,21 +189,34 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     }));
   };
 
-  const publishConvocations = async (eventId: string) => {
-    await confirmPublish(eventId);
-  };
-
-  const confirmPublish = async (eventId: string) => {
+  const publishConvocations = async (eventId: string, convocationsOverride?: Record<string, Convocation>) => {
     if (publishing) return;
     const event = events.find(e => e.id === eventId);
-    if (!event) return;
+    if (!event) {
+      setPublishError('Événement introuvable');
+      return;
+    }
+    const convsToPublish = convocationsOverride || draftConvocations;
+    const convokedCount = Object.values(convsToPublish).filter(c => c.status === 'convoque').length;
+    if (convokedCount === 0) {
+      setPublishError('Aucun joueur convoqué');
+      return;
+    }
     setPublishError(null);
     setPublishing(true);
     try {
-      await onPublishAndNotifyConvocations(eventId, event, draftConvocations);
+      // Add a timeout to prevent infinite hang on mobile
+      const publishPromise = onPublishAndNotifyConvocations(eventId, event, convsToPublish);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Délai dépassé — vérifie ta connexion et réessaie')), 30000)
+      );
+      await Promise.race([publishPromise, timeoutPromise]);
       setConvocationMode(null);
+      setConvocationSearch('');
+      setPublishError(null);
     } catch (err: any) {
-      setPublishError(err?.message || 'Échec de la publication');
+      const msg = err?.message || 'Échec de la publication';
+      setPublishError(msg);
       console.error('Publish convocations error:', err);
     } finally {
       setPublishing(false);
@@ -641,8 +654,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         <Pencil size={14} /> Modifier
                       </button>
                       <button onClick={() => {
-                        setDraftConvocations(event.convocations || {});
-                        void publishConvocations(event.id);
+                        void publishConvocations(event.id, event.convocations || {});
                       }} disabled={publishing} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors disabled:opacity-50" title="Re-notifier les joueurs convoqués">
                         <Bell size={14} /> {publishing ? 'Envoi…' : 'Re-notifier'}
                       </button>
@@ -830,19 +842,23 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </div>
 
                 {/* Modal footer */}
-                <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 flex gap-2">
-                  <button type="button" onClick={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
-                  <button type="button" onClick={() => void publishConvocations(event.id)} disabled={publishing} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50">
-                    <Send size={15} /> {publishing ? 'Envoi…' : 'Publier & Notifier'}
-                  </button>
-                </div>
-                {publishError && (
-                  <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 space-y-2">
+                  {publishError && (
                     <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
-                      {publishError}
+                      ⚠️ {publishError}
                     </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
+                    <button type="button" onClick={() => void publishConvocations(event.id)} disabled={publishing} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50">
+                      {publishing ? (
+                        <><span className="animate-spin inline-block w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full" /> Envoi…</>
+                      ) : (
+                        <><Send size={15} /> Publier & Notifier</>
+                      )}
+                    </button>
                   </div>
-                )}
+                </div>
               </motion.div>
             </motion.div>
           )}
