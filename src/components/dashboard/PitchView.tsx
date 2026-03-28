@@ -148,7 +148,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     group.forEach((p) => handledIds.add(p.id));
   });
 
-  basePlayers
+  withPosition
     .filter((p) => !handledIds.has(p.id))
     .forEach((p) => {
       const base = coords[p.conv.position || ''] || { x: 50, y: 50 };
