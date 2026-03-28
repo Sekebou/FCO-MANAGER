@@ -293,7 +293,14 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                         {selectedEquipe && (
                           <div>
                             <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Compétition</label>
-                            <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedCompetition} onChange={(e) => setSelectedCompetition(e.target.value)}>
+                            <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedCompetition} onChange={(e) => {
+                              setSelectedCompetition(e.target.value);
+                              // Auto-set team from competition's equipe code
+                              const comp = fffCompetitions.find(c => `${c.cpNo}-${c.phase}-${c.poule}` === e.target.value);
+                              if (comp) {
+                                setFormData(prev => ({ ...prev, team: equipeCodeToTeamLetter(comp.equipeCode) }));
+                              }
+                            }}>
                               <option value="">-- Choisir --</option>
                               {fffCompetitions.filter(c => c.equipe === selectedEquipe).map(c => (
                                 <option key={`${c.cpNo}-${c.phase}-${c.poule}`} value={`${c.cpNo}-${c.phase}-${c.poule}`}>{c.competitionName}</option>
