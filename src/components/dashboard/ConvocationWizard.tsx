@@ -50,10 +50,16 @@ const ConvocationWizard: React.FC<Props> = ({
   const [customNotifTitle, setCustomNotifTitle] = useState('');
   const [customNotifBody, setCustomNotifBody] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const gridScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
   }, [step]);
+
+  // Scroll grid to top when search changes so results stay visible above keyboard
+  useEffect(() => {
+    gridScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [search]);
 
   const getPlayerPhoto = (playerId: string) => {
     const member = members.find(m => m.playerId === playerId);
