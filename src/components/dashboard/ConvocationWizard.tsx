@@ -399,8 +399,7 @@ const ConvocationWizard: React.FC<Props> = ({
           </ul>
         </div>
       </div>
-    );
-  };
+  );
 
   return (
     <motion.div
