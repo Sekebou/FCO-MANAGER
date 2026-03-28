@@ -562,7 +562,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         {/* Players on field — scale positions to field area */}
         {positioned.map((p, idx) => {
           const isSelected = selectedPlayer === p.id;
-          const isGk = p.conv.position === 'Gardien';
+          const isGk = (p.conv.position || getDefaultPositionFromNumber(p.conv.number)) === 'Gardien';
           const lastName = p.name.split(' ').pop() || p.name;
           // Scale Y coordinates to the field portion only
           const scaledY = substitutePlayers.length > 0 ? p.y * 0.85 : p.y;
