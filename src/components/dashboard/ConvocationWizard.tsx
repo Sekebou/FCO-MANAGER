@@ -25,7 +25,7 @@ interface Props {
   draftConvocations: Record<string, Convocation>;
   updateDraft: (playerId: string, updates: Partial<Convocation>) => void;
   setDraftConvocations: React.Dispatch<React.SetStateAction<Record<string, Convocation>>>;
-  onPublish: () => void;
+  onPublish: (customNotif?: { title: string; body: string }) => void;
   onCancel: () => void;
   publishing: boolean;
   publishError: string | null;
@@ -35,16 +35,20 @@ const STEPS = [
   { num: 1, label: 'Sélection', icon: Users },
   { num: 2, label: 'Numéros', icon: Hash },
   { num: 3, label: 'Validation', icon: ClipboardList },
+  { num: 4, label: 'Notification', icon: Bell },
 ];
 
 const ConvocationWizard: React.FC<Props> = ({
   event, players, members, draftConvocations, updateDraft, setDraftConvocations,
   onPublish, onCancel, publishing, publishError,
 }) => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [search, setSearch] = useState('');
   useBodyScrollLock(true);
   const [showNonConvoked, setShowNonConvoked] = useState(false);
+  const [notifMode, setNotifMode] = useState<'default' | 'custom'>('default');
+  const [customNotifTitle, setCustomNotifTitle] = useState('');
+  const [customNotifBody, setCustomNotifBody] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
