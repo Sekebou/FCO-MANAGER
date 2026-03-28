@@ -4,7 +4,7 @@ import type { Player, Member, Convocation } from '@/pages/Dashboard';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import {
   Shield, X, Search, Check, UserCheck, UserX, ChevronRight, ChevronLeft,
-  Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash
+  Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash, MessageSquare, Sparkles
 } from 'lucide-react';
 
 interface Props {
