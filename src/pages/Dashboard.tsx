@@ -349,6 +349,7 @@ const Dashboard = () => {
   const [galleryPhotos, setGalleryPhotos] = useState<Photo[]>([]);
   const [unreadDiscussions, setUnreadDiscussions] = useState(0);
   const [matchSheets, setMatchSheets] = useState<MatchSheet[]>([]);
+  const ghostEventIdsRef = React.useRef<Set<string>>(new Set());
 
   // Fetch unread discussions count
   useEffect(() => {
