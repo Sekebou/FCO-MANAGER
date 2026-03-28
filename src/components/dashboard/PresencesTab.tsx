@@ -654,8 +654,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         <Pencil size={14} /> Modifier
                       </button>
                       <button onClick={() => {
-                        setDraftConvocations(event.convocations || {});
-                        void publishConvocations(event.id);
+                        void publishConvocations(event.id, event.convocations || {});
                       }} disabled={publishing} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors disabled:opacity-50" title="Re-notifier les joueurs convoqués">
                         <Bell size={14} /> {publishing ? 'Envoi…' : 'Re-notifier'}
                       </button>
