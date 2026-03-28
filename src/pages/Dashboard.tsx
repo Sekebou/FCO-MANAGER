@@ -582,7 +582,7 @@ const Dashboard = () => {
         ]);
 
         const freshPlayers = sortPlayersStable((playersData || []).map(mapPlayer));
-        const freshEvents = (eventsData || []).map(mapEvent);
+        const freshEvents = filterGhostEvents((eventsData || []).map(mapEvent), currentUser?.uid);
         const freshNews = (newsData || []).map(mapNews);
         const freshMembers = (membersData || []).map(mapMember);
         const freshCards = (cardsData || []).map(mapCard);
@@ -697,7 +697,7 @@ const Dashboard = () => {
             supabase.from('championship_matches').select('*'),
             supabase.from('albums').select('*').order('created_at', { ascending: false }),
           ]);
-          if (evData) setEvents(evData.map(mapEvent));
+          if (evData) setEvents(filterGhostEvents(evData.map(mapEvent), currentUser?.uid));
           if (memData) setMembers(memData.map(mapMember));
           if (cardsData) setCards(cardsData.map(mapCard));
           if (champsData) setChampionships(champsData.map(mapChamp));
@@ -720,7 +720,7 @@ const Dashboard = () => {
         supabase.from('players').select('*').then(({ data }) => data && setPlayers(sortPlayersStable(data.map(mapPlayer))));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
-        supabase.from('events').select('*').order('date', { ascending: false }).then(({ data }) => data && setEvents(data.map(mapEvent)));
+        supabase.from('events').select('*').order('date', { ascending: false }).then(({ data }) => data && setEvents(filterGhostEvents(data.map(mapEvent), currentUser?.uid)));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, () => {
         supabase.from('news').select('*').order('date', { ascending: false }).then(({ data }) => data && setNews(data.map(mapNews)));
@@ -1602,7 +1602,7 @@ const Dashboard = () => {
                     supabase.from('events').select('*').order('date', { ascending: true }),
                     supabase.from('match_sheets').select('*').order('date', { ascending: false }),
                   ]);
-                  if (freshEvents) setEvents(freshEvents.map(mapEvent));
+                  if (freshEvents) setEvents(filterGhostEvents(freshEvents.map(mapEvent), currentUser?.uid));
                   if (freshMatchSheets) setMatchSheets(freshMatchSheets.map(mapMatchSheet));
 
                   if (data?.notifiedCount > 0) {
