@@ -114,7 +114,8 @@ serve(async (req) => {
       }
     }
 
-    // 8. Send push notifications to convoked players (skip for ghost events)
+    // 8. Send push notifications to convoked players
+    // Ghost events: only notify the creator (for testing), not all players
     const isGhostEvent = event.reason === '__ghost__';
     const convokedPlayerIds = Object.entries(convocations)
       .filter(([, c]: [string, any]) => c.status === 'convoque')
@@ -122,21 +123,27 @@ serve(async (req) => {
 
     let notifiedCount = 0;
 
-    if (convokedPlayerIds.length > 0 && !isGhostEvent) {
-      // Find member user IDs linked to convoked player IDs
-      const { data: profiles } = await admin
-        .from('profiles')
-        .select('id, player_id')
-        .in('player_id', convokedPlayerIds);
+    if (convokedPlayerIds.length > 0) {
+      let targetUserIds: string[] = [];
 
-      const convokedUserIds = profiles?.map((p: any) => p.id) || [];
+      if (isGhostEvent) {
+        // Ghost event: only notify the creator
+        targetUserIds = [userId];
+      } else {
+        // Normal event: notify all convoked players
+        const { data: profiles } = await admin
+          .from('profiles')
+          .select('id, player_id')
+          .in('player_id', convokedPlayerIds);
+        targetUserIds = profiles?.map((p: any) => p.id) || [];
+      }
 
-      if (convokedUserIds.length > 0) {
+      if (targetUserIds.length > 0) {
         // Get FCM tokens
         const { data: tokenRows } = await admin
           .from('fcm_tokens')
           .select('token')
-          .in('user_id', convokedUserIds);
+          .in('user_id', targetUserIds);
 
         const tokens = tokenRows?.map((r: any) => r.token).filter(Boolean) || [];
 
