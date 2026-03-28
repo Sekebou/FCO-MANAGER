@@ -1253,6 +1253,16 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </button>
 
                 {!isPast && !isArchived && currentUser?.playerId && (() => {
+                  if (event.convocationsPublished) {
+                    const isConvoked = event.convocations && Object.keys(event.convocations).length > 0 && Object.values(event.convocations as Record<string, any>).some((c: any) => c.playerId === currentUser.playerId);
+                    return (
+                      <div className="flex items-center justify-center px-3.5 pb-2.5">
+                        <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 ${isConvoked ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                          {isConvoked ? <><Check size={12} /> Convoqué</> : <><ClipboardCheck size={12} /> Convocations publiées</>}
+                        </span>
+                      </div>
+                    );
+                  }
                   const isNonResponding = currentUser.role === 'dirigeant' || currentUser.role === 'photographe';
                   if (isNonResponding) {
                     return (
