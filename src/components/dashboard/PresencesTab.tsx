@@ -189,21 +189,34 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
     }));
   };
 
-  const publishConvocations = async (eventId: string) => {
-    await confirmPublish(eventId);
-  };
-
-  const confirmPublish = async (eventId: string) => {
+  const publishConvocations = async (eventId: string, convocationsOverride?: Record<string, Convocation>) => {
     if (publishing) return;
     const event = events.find(e => e.id === eventId);
-    if (!event) return;
+    if (!event) {
+      setPublishError('Événement introuvable');
+      return;
+    }
+    const convsToPublish = convocationsOverride || draftConvocations;
+    const convokedCount = Object.values(convsToPublish).filter(c => c.status === 'convoque').length;
+    if (convokedCount === 0) {
+      setPublishError('Aucun joueur convoqué');
+      return;
+    }
     setPublishError(null);
     setPublishing(true);
     try {
-      await onPublishAndNotifyConvocations(eventId, event, draftConvocations);
+      // Add a timeout to prevent infinite hang on mobile
+      const publishPromise = onPublishAndNotifyConvocations(eventId, event, convsToPublish);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Délai dépassé — vérifie ta connexion et réessaie')), 30000)
+      );
+      await Promise.race([publishPromise, timeoutPromise]);
       setConvocationMode(null);
+      setConvocationSearch('');
+      setPublishError(null);
     } catch (err: any) {
-      setPublishError(err?.message || 'Échec de la publication');
+      const msg = err?.message || 'Échec de la publication';
+      setPublishError(msg);
       console.error('Publish convocations error:', err);
     } finally {
       setPublishing(false);
