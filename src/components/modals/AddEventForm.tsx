@@ -366,6 +366,24 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                 <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><Pencil size={12} /> Saisie manuelle</span>
                 <button type="button" onClick={() => setMatchMode(null)} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">← Retour</button>
               </div>
+              {/* Team selector */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['A', 'B', 'C'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, team: t }))}
+                      className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${
+                        formData.team === t ? 'bg-accent/10 border-accent/30 text-accent scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                      }`}
+                    >
+                      Équipe {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="relative">
                 <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input type="text" placeholder="Titre (ex: Oisemont FC vs FC Paris)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
