@@ -1586,15 +1586,23 @@ const Dashboard = () => {
               onNavigateToMatchSheet={(eventId) => handleTabChange('matchsheets')}
               onPublishAndNotifyConvocations={async (eventId, event, convocations, customNotif) => {
                 try {
+                  console.log('[Dashboard] Publishing convocations with customNotif:', JSON.stringify(customNotif));
                   const { data, error } = await supabase.functions.invoke('publish-convocations', {
                     body: { eventId, convocations, customNotif },
                   });
 
+                  console.log('[Dashboard] publish-convocations response:', JSON.stringify({ data, error }));
+
                   if (error) throw new Error(error.message || 'Erreur lors de la publication');
                   if (data?.error) throw new Error(data.error);
 
-                  // Update local state
-                  setEvents(prev => prev.map(e => e.id === eventId ? { ...e, convocations: convocations as any, convocationsPublished: true } : e));
+                  // Force refresh events and match sheets from DB
+                  const [{ data: freshEvents }, { data: freshMatchSheets }] = await Promise.all([
+                    supabase.from('events').select('*').order('date', { ascending: true }),
+                    supabase.from('match_sheets').select('*').order('date', { ascending: false }),
+                  ]);
+                  if (freshEvents) setEvents(freshEvents.map(mapEvent));
+                  if (freshMatchSheets) setMatchSheets(freshMatchSheets.map(mapMatchSheet));
 
                   if (data?.notifiedCount > 0) {
                     toast.success(`Convocations publiées et ${data.notifiedCount} joueur(s) notifié(s) !`);

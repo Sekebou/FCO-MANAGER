@@ -42,6 +42,7 @@ serve(async (req) => {
     // 3. Parse & validate body
     const body = await req.json();
     const { eventId, convocations, customNotif } = body;
+    console.log('[publish-convocations] customNotif received:', JSON.stringify(customNotif));
     if (!eventId || typeof eventId !== 'string') return json({ error: 'eventId required' }, 400);
     if (!convocations || typeof convocations !== 'object') return json({ error: 'convocations required' }, 400);
 
@@ -105,10 +106,10 @@ serve(async (req) => {
             created_by: userId,
           });
         if (msErr) {
-          console.error('Match sheet insert error:', msErr);
-          // Non-blocking: continue even if this fails (e.g. duplicate)
+          console.error('Match sheet insert error:', JSON.stringify(msErr));
+        } else {
+          matchSheetCreated = true;
         }
-        matchSheetCreated = true;
       }
     }
 
