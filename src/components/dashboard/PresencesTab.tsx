@@ -745,37 +745,50 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   <X size={16} className="text-muted-foreground" />
                 </button>
               </div>
-              <div className="p-5 space-y-3">
-                <textarea
-                  placeholder="Raison de l'absence (facultatif)…"
-                  className="w-full p-3.5 bg-secondary border border-border rounded-xl h-24 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-destructive/30 focus:border-destructive/30 text-sm resize-none transition-all"
-                  value={absenceReason}
-                  onChange={(e) => setAbsenceReason(e.target.value)}
-                  maxLength={200}
-                  autoFocus
-                />
-                {absenceReason.length > 0 && (
-                  <p className="text-[10px] text-muted-foreground text-right">{absenceReason.length}/200</p>
+              <div className="p-5 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Choisis une raison <span className="text-destructive">*</span></p>
+                {ABSENCE_REASONS.map((reason) => (
+                  <button
+                    key={reason.label}
+                    onClick={() => {
+                      setAbsenceReason(reason.label);
+                      if (reason.label !== 'Autre') setAbsenceOtherText('');
+                    }}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border text-sm font-medium transition-all text-left ${
+                      absenceReason === reason.label
+                        ? 'border-destructive bg-destructive/10 text-foreground ring-2 ring-destructive/30'
+                        : 'border-border bg-secondary text-foreground hover:bg-secondary/80'
+                    }`}
+                  >
+                    <span className="text-lg">{reason.icon}</span>
+                    <span>{reason.label}</span>
+                    {absenceReason === reason.label && (
+                      <Check size={16} className="ml-auto text-destructive" />
+                    )}
+                  </button>
+                ))}
+                {absenceReason === 'Autre' && (
+                  <textarea
+                    placeholder="Précise ta raison…"
+                    className="w-full mt-2 p-3.5 bg-secondary border border-border rounded-xl h-20 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-destructive/30 focus:border-destructive/30 text-sm resize-none transition-all"
+                    value={absenceOtherText}
+                    onChange={(e) => setAbsenceOtherText(e.target.value)}
+                    maxLength={200}
+                    autoFocus
+                  />
                 )}
               </div>
-              <div className="flex gap-3 p-5 border-t border-border">
+              <div className="p-5 border-t border-border">
                 <button
+                  disabled={!absenceReason || (absenceReason === 'Autre' && !absenceOtherText.trim())}
                   onClick={() => {
-                    togglePresence(absenceModal.eventId, absenceModal.playerId, 'absent');
+                    const finalReason = absenceReason === 'Autre' ? absenceOtherText.trim() : absenceReason;
+                    togglePresence(absenceModal.eventId, absenceModal.playerId, 'absent', finalReason);
                     setAbsenceModal(null);
                   }}
-                  className="flex-1 py-3 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+                  className="w-full py-3.5 bg-destructive text-destructive-foreground rounded-xl font-semibold hover:brightness-110 transition-all text-sm shadow-lg shadow-destructive/20 disabled:opacity-40 disabled:pointer-events-none"
                 >
-                  Sans raison
-                </button>
-                <button
-                  onClick={() => {
-                    togglePresence(absenceModal.eventId, absenceModal.playerId, 'absent', absenceReason || undefined);
-                    setAbsenceModal(null);
-                  }}
-                  className="flex-1 py-3 bg-destructive text-destructive-foreground rounded-xl font-medium hover:brightness-110 transition-all text-sm shadow-lg shadow-destructive/20"
-                >
-                  Confirmer
+                  Confirmer l'absence
                 </button>
               </div>
             </motion.div>
