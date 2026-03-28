@@ -420,7 +420,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
           )}
 
           {/* Match GHOST mode */}
-          {formData.type === 'match' && matchMode === 'ghost' && (
+          {isGhostMode && matchMode === 'ghost' && (
             <div className="animate-fade-in space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-purple-500 flex items-center gap-1.5"><Ghost size={12} /> Mode fantôme</span>
