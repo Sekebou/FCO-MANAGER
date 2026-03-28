@@ -1287,10 +1287,20 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   if (event.convocationsPublished) {
                     const isConvoked = event.convocations && Object.keys(event.convocations).length > 0 && Object.values(event.convocations as Record<string, any>).some((c: any) => c.playerId === currentUser.playerId);
                     return (
-                      <div className="flex items-center justify-center px-3.5 pb-2.5">
-                        <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 ${isConvoked ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
-                          {isConvoked ? <><Check size={12} /> Convoqué</> : <><ClipboardCheck size={12} /> Convocations publiées</>}
-                        </span>
+                      <div className="px-3.5 pb-2.5 space-y-1.5">
+                        <div className="flex items-center justify-center">
+                          <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 ${isConvoked ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
+                            {isConvoked ? <><Check size={12} /> Convoqué</> : <><ClipboardCheck size={12} /> Convocations publiées</>}
+                          </span>
+                        </div>
+                        {onNavigateToMatchSheet && event.type === 'match' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onNavigateToMatchSheet(event.id); }}
+                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                          >
+                            <ExternalLink size={11} /> Voir la feuille de match
+                          </button>
+                        )}
                       </div>
                     );
                   }
