@@ -408,26 +408,6 @@ const ConvocationWizard: React.FC<Props> = ({
           </div>
         )}
 
-        {/* What will happen */}
-        <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20 space-y-2">
-          <p className="text-xs font-bold text-primary flex items-center gap-2">
-            <Bell size={13} /> Ce qui va se passer :
-          </p>
-          <ul className="text-xs text-muted-foreground space-y-1 pl-5">
-            <li className="flex items-start gap-2">
-              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
-              Création / mise à jour de la feuille de match
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
-              Les joueurs verront leur statut de convocation
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
-              Notification personnalisable à l'étape suivante
-            </li>
-          </ul>
-        </div>
       </div>
   );
 
@@ -540,6 +520,27 @@ const ConvocationWizard: React.FC<Props> = ({
         <p className="text-[10px] text-muted-foreground leading-relaxed">
           ℹ️ La notification {notifMode === 'custom' ? 'personnalisée' : 'automatique'} sera envoyée de manière <span className="font-bold text-foreground">identique à tous les joueurs convoqués</span> pour cet événement. Ce n'est pas un message individuel.
         </p>
+      </div>
+
+      {/* What will happen */}
+      <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20 space-y-2">
+        <p className="text-xs font-bold text-primary flex items-center gap-2">
+          <Bell size={13} /> Ce qui va se passer :
+        </p>
+        <ul className="text-xs text-muted-foreground space-y-1 pl-5">
+          <li className="flex items-start gap-2">
+            <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
+            Notification push aux joueurs convoqués
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
+            Création / mise à jour de la feuille de match
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
+            Les joueurs verront leur statut de convocation
+          </li>
+        </ul>
       </div>
     </div>
   );
