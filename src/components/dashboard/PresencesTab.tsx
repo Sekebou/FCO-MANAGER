@@ -4,6 +4,7 @@ import type { Event, Player, Member, Convocation } from '@/pages/Dashboard';
 import type { Championship } from '@/components/dashboard/ChampionnatTab';
 import { POSITIONS } from '@/pages/Dashboard';
 import PitchView from './PitchView';
+import ConvocationWizard from './ConvocationWizard';
 import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search, MessageSquare } from 'lucide-react';
 import { exportMatchSheet } from '@/lib/pdfExport';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
@@ -684,201 +685,21 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         )}
 
 
-        {/* Full-screen convocation modal */}
+        {/* Full-screen convocation wizard */}
         <AnimatePresence>
           {isConvocationMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center overflow-hidden"
-              onClick={(e) => { if (e.target === e.currentTarget) setConvocationMode(null); }}
-            >
-              <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="bg-card w-full max-h-[92vh] rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Modal header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-accent/10 rounded-xl flex items-center justify-center">
-                      <Shield size={18} className="text-accent" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-base text-foreground">Convocations</h3>
-                      <p className="text-[11px] text-muted-foreground">
-                        {(() => {
-                          const convokedCount = Object.values(draftConvocations).filter(c => c.status === 'convoque').length;
-                          return convokedCount > 0 ? `${convokedCount} convoqué${convokedCount > 1 ? 's' : ''}` : 'Sélectionnez les joueurs';
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                  <button onClick={() => { setConvocationMode(null); setConvocationSearch(''); }} className="w-9 h-9 rounded-xl bg-secondary hover:bg-secondary/80 flex items-center justify-center">
-                    <X size={18} className="text-muted-foreground" />
-                  </button>
-                </div>
-
-                {/* Search bar + quick actions */}
-                <div className="px-4 pt-3 pb-1 shrink-0">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Rechercher un joueur…"
-                      value={convocationSearch}
-                      onChange={e => setConvocationSearch(e.target.value)}
-                      className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
-                      style={{ fontSize: 16 }}
-                    />
-                    <Users size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
-                    {convocationSearch && (
-                      <button onClick={() => setConvocationSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                        <X size={12} className="text-muted-foreground" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Modal body - scrollable */}
-                <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
-                  {(() => {
-                    const search = convocationSearch.toLowerCase().trim();
-                    const presentPlayers = eventPlayers.filter(p => presences[p.id] === 'present');
-                    const waitingPlayers = eventPlayers.filter(p => !presences[p.id] || (presences[p.id] !== 'present' && presences[p.id] !== 'absent'));
-                    const absentPlayers = eventPlayers.filter(p => presences[p.id] === 'absent');
-
-                    const filterBySearch = (list: typeof eventPlayers) => search ? list.filter(p => p.name.toLowerCase().includes(search)) : list;
-
-                    // Within each group, sort convoqués first
-                    const sortByConvocation = (list: typeof eventPlayers) => [...list].sort((a, b) => {
-                      const order = (id: string) => {
-                        const s = draftConvocations[id]?.status;
-                        return s === 'convoque' ? 0 : s === 'non_convoque' ? 2 : 1;
-                      };
-                      return order(a.id) - order(b.id);
-                    });
-
-                    const filteredPresent = sortByConvocation(filterBySearch(presentPlayers));
-                    const filteredWaiting = sortByConvocation(filterBySearch(waitingPlayers));
-                    const filteredAbsent = sortByConvocation(filterBySearch(absentPlayers));
-
-                    if (filteredPresent.length === 0 && filteredWaiting.length === 0 && filteredAbsent.length === 0) {
-                      return <p className="text-center text-sm text-muted-foreground py-6">Aucun résultat pour "{convocationSearch}"</p>;
-                    }
-
-                    const renderPlayer = (player: typeof eventPlayers[0], statusTag?: string, tagColor?: string) => {
-                      const conv = draftConvocations[player.id];
-                      const isConvoked = conv?.status === 'convoque';
-                      const isNotConvoked = conv?.status === 'non_convoque';
-                      return (
-                        <div key={player.id} className={`p-3 rounded-2xl border transition-all ${
-                          isConvoked ? 'bg-accent/8 border-accent/30' :
-                          isNotConvoked ? 'bg-destructive/5 border-destructive/20' :
-                          'bg-secondary/30 border-transparent'
-                        }`}>
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              {(() => {
-                                const member = members.find(m => m.playerId === player.id);
-                                const photoURL = member?.photoURL;
-                                const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                                if (photoURL) return <img src={photoURL} alt={player.name} className="w-9 h-9 rounded-full object-cover shrink-0" />;
-                                return (
-                                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                    <span className="text-primary text-xs font-bold">{initials}</span>
-                                  </div>
-                                );
-                              })()}
-                              {(() => {
-                                const [firstName, ...rest] = player.name.split(' ');
-                                const lastName = rest.join(' ');
-                                return (
-                                  <div className="flex flex-col leading-tight min-w-0">
-                                    <span className="font-semibold text-sm text-foreground">{firstName}</span>
-                                    {lastName && <span className="text-xs font-medium text-foreground/60 uppercase tracking-wide">{lastName}</span>}
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                            <div className="flex gap-1.5 shrink-0">
-                              <motion.button
-                                onClick={() => updateDraft(player.id, { status: 'convoque' })}
-                                whileTap={{ scale: 0.9 }}
-                                className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isConvoked ? 'bg-accent text-accent-foreground shadow-md shadow-accent/30' : 'bg-card border border-border hover:border-accent/50 text-muted-foreground'}`}
-                              >
-                                <UserCheck size={14} /> Oui
-                              </motion.button>
-                              <motion.button
-                                onClick={() => updateDraft(player.id, { status: 'non_convoque' })}
-                                whileTap={{ scale: 0.9 }}
-                                className={`px-3 h-9 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all ${isNotConvoked ? 'bg-destructive text-destructive-foreground shadow-md shadow-destructive/30' : 'bg-card border border-border hover:border-destructive/50 text-muted-foreground'}`}
-                              >
-                                <UserX size={14} /> Non
-                              </motion.button>
-                            </div>
-                          </div>
-                          {isConvoked && (
-                            <div className="mt-2.5 flex gap-2 items-center">
-                              <input type="number" placeholder="N°" value={conv?.number || ''} onChange={e => {
-                                const num = e.target.value ? parseInt(e.target.value) : undefined;
-                                updateDraft(player.id, { number: num });
-                              }} className="flex-1 h-10 text-sm bg-secondary/60 border border-border/60 rounded-xl px-2 text-foreground text-center font-bold focus:outline-none focus:border-accent/50" style={{ fontSize: 16 }} min={1} max={99} />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    };
-
-                    const renderSection = (title: string, icon: React.ReactNode, players: typeof eventPlayers, tagColor: string) => {
-                      if (players.length === 0) return null;
-                      return (
-                        <div key={title}>
-                          <div className="flex items-center gap-2 pt-2 pb-1.5 px-1 sticky top-0 bg-card z-10">
-                            {icon}
-                            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{title}</span>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${tagColor}`}>{players.length}</span>
-                          </div>
-                          <div className="space-y-2">
-                            {players.map(p => renderPlayer(p))}
-                          </div>
-                        </div>
-                      );
-                    };
-
-                    return (
-                      <>
-                        {renderSection('Présents', <Check size={12} className="text-accent" />, filteredPresent, 'bg-accent/15 text-accent')}
-                        {renderSection('En attente', <Clock size={12} className="text-warning" />, filteredWaiting, 'bg-warning/15 text-warning')}
-                        {renderSection('Absents', <X size={12} className="text-destructive" />, filteredAbsent, 'bg-destructive/15 text-destructive')}
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {/* Modal footer */}
-                <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 space-y-2">
-                  {publishError && (
-                    <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
-                      ⚠️ {publishError}
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
-                    <button type="button" onClick={() => void publishConvocations(event.id)} disabled={publishing} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50">
-                      {publishing ? (
-                        <><span className="animate-spin inline-block w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full" /> Envoi…</>
-                      ) : (
-                        <><Send size={15} /> Publier & Notifier</>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
+            <ConvocationWizard
+              event={event}
+              players={eventPlayers}
+              members={members}
+              draftConvocations={draftConvocations}
+              updateDraft={updateDraft}
+              setDraftConvocations={setDraftConvocations}
+              onPublish={() => void publishConvocations(event.id)}
+              onCancel={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }}
+              publishing={publishing}
+              publishError={publishError}
+            />
           )}
         </AnimatePresence>
 
