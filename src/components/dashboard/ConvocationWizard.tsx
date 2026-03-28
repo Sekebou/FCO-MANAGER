@@ -573,6 +573,7 @@ const ConvocationWizard: React.FC<Props> = ({
                   {step === 1 && `${selectedIds.length} sélectionné${selectedIds.length > 1 ? 's' : ''}`}
                   {step === 2 && 'Attribution des numéros'}
                   {step === 3 && 'Vérification finale'}
+                  {step === 4 && 'Personnaliser la notification'}
                 </p>
               </div>
             </div>
@@ -591,7 +592,7 @@ const ConvocationWizard: React.FC<Props> = ({
                 <React.Fragment key={s.num}>
                   <button
                     onClick={() => {
-                      if (isDone) setStep(s.num);
+                      if (isDone) setStep(s.num as 1 | 2 | 3 | 4);
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
                       isActive
@@ -632,6 +633,7 @@ const ConvocationWizard: React.FC<Props> = ({
               {step === 1 && renderStep1()}
               {step === 2 && renderStep2()}
               {step === 3 && renderStep3()}
+              {step === 4 && renderStep4()}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -655,17 +657,17 @@ const ConvocationWizard: React.FC<Props> = ({
             ) : (
               <button
                 type="button"
-                onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)}
+                onClick={() => setStep(s => (s - 1) as 1 | 2 | 3 | 4)}
                 className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80 transition-all flex items-center justify-center gap-2"
               >
                 <ChevronLeft size={15} /> Retour
               </button>
             )}
 
-            {step < 3 ? (
+            {step < 4 ? (
               <button
                 type="button"
-                onClick={() => setStep(s => (s + 1) as 1 | 2 | 3)}
+                onClick={() => setStep(s => (s + 1) as 1 | 2 | 3 | 4)}
                 disabled={!canGoNext}
                 className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-40"
               >
@@ -674,8 +676,14 @@ const ConvocationWizard: React.FC<Props> = ({
             ) : (
               <button
                 type="button"
-                onClick={onPublish}
-                disabled={publishing}
+                onClick={() => {
+                  if (notifMode === 'custom' && (customNotifTitle.trim() || customNotifBody.trim())) {
+                    onPublish({ title: customNotifTitle.trim() || defaultNotifTitle, body: customNotifBody.trim() || defaultNotifBody });
+                  } else {
+                    onPublish();
+                  }
+                }}
+                disabled={publishing || (notifMode === 'custom' && !customNotifBody.trim())}
                 className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50"
               >
                 {publishing ? (
