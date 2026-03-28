@@ -409,11 +409,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </button>
         )}
 
-        {/* Convocations published badge */}
-        {!isEventPast(event) && event.convocationsPublished && (
-          <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent text-sm font-semibold border border-accent/20">
-            <ClipboardCheck size={14} /> Convocations publiées
-          </div>
+        {/* Convocations published - collapsible, replaces reminder */}
+        {event.convocationsPublished && event.convocations && !isConvocationMode && (
+          <button
+            onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent text-sm font-semibold border border-accent/20"
+          >
+            <Shield size={14} /> Convocations publiées {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
         )}
 
         {/* Convocation button - for match events */}
