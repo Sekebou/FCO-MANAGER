@@ -390,8 +390,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </div>
         </div>
 
-        {/* Reminder button - only for managers, non-past events */}
-        {!isEventPast(event) && canManage() && unknownCount > 0 && onSendReminder && (
+        {/* Reminder button - only for managers, non-past events, hide when convocations published */}
+        {!isEventPast(event) && canManage() && !event.convocationsPublished && unknownCount > 0 && onSendReminder && (
           <button
             onClick={async () => {
               setSendingReminder(true);
@@ -409,7 +409,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </button>
         )}
 
-        {/* Convocation button - BELOW reminder, for match events */}
+        {/* Convocations published badge */}
+        {!isEventPast(event) && event.convocationsPublished && (
+          <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent text-sm font-semibold border border-accent/20">
+            <ClipboardCheck size={14} /> Convocations publiées
+          </div>
+        )}
+
+        {/* Convocation button - for match events */}
         {event.type === 'match' && !isEventPast(event) && !event.convocationsPublished && canManage() && (
             <button onClick={() => startConvocationMode(event.id, event)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 text-sm font-semibold transition-all border border-accent/20">
               <Shield size={14} /> Gérer les convocations
