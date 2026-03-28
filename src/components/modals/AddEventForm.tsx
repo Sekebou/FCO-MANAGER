@@ -461,7 +461,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
           )}
 
           {/* Title for non-match types */}
-          {formData.type !== 'match' && (
+          {formData.type !== 'match' && !isGhostMode && (
             <div className="relative">
               <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input type="text" placeholder="Titre (ex: Entraînement du mardi)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
@@ -469,7 +469,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
           )}
 
           {/* Hide date/time: for match auto → only after FFF selection; for match manual → show; for others → show */}
-          {(formData.type !== 'match' || matchMode === 'manual' || (matchMode === 'auto' && fffMatchSelected)) && (
+          {(isGhostMode || formData.type !== 'match' || matchMode === 'manual' || (matchMode === 'auto' && fffMatchSelected)) && (
             <>
               <NativeDatePicker
                 value={formData.date}
