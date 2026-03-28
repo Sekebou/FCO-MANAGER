@@ -1246,61 +1246,19 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     </div>
                   )}
                   {(isPast || isArchived) && (
-                    <div className="mx-3.5 mb-2 -mt-0.5 space-y-1.5">
+                    <div className="mx-3.5 mb-2 -mt-0.5 flex flex-wrap items-center gap-1.5">
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full inline-flex items-center gap-1"><Clock size={8} /> Terminé</span>
-                      {isManager && (() => {
+                      {(() => {
                         const presences = event.presences || {};
-                        const presentIds = Object.entries(presences).filter(([, s]) => s === 'present').map(([id]) => id);
-                        const absentIds = Object.entries(presences).filter(([, s]) => s === 'absent').map(([id]) => id);
-                        const convos = event.convocations ? Object.values(event.convocations as Record<string, any>) : [];
-                        const convoNames = convos.map((c: any) => {
-                          const p = players.find(pl => pl.id === c.playerId);
-                          return { name: p ? p.name.split(' ').pop() || p.name : '?', number: c.number };
-                        }).sort((a: any, b: any) => (a.number || 99) - (b.number || 99));
-                        const getName = (pid: string) => {
-                          const p = players.find(pl => pl.id === pid);
-                          return p ? p.name.split(' ').pop() || p.name : pid.slice(0, 6);
-                        };
-                        const isConvoExpanded = expandedArchiveConvos[event.id] || false;
+                        const pCount = Object.values(presences).filter(s => s === 'present').length;
+                        const aCount = Object.values(presences).filter(s => s === 'absent').length;
+                        const convos = event.convocations ? Object.keys(event.convocations as Record<string, any>).length : 0;
                         return (
-                          <div className="space-y-1.5 text-[9px]">
-                            <div className="flex flex-wrap gap-1">
-                              {presentIds.length > 0 && (
-                                <span className="bg-accent/10 text-accent px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
-                                  <Check size={8} /> {presentIds.length}
-                                </span>
-                              )}
-                              {absentIds.length > 0 && (
-                                <span className="bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold">
-                                  <X size={8} /> {absentIds.length}
-                                </span>
-                              )}
-                              {convoNames.length > 0 && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setExpandedArchiveConvos(prev => ({ ...prev, [event.id]: !prev[event.id] })); }}
-                                  className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5 font-semibold"
-                                >
-                                  <ClipboardCheck size={8} /> {convoNames.length} convoqués {isConvoExpanded ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
-                                </button>
-                              )}
-                            </div>
-                            {presentIds.length > 0 && (
-                              <p className="text-accent/80 pl-0.5 leading-relaxed"><Check size={7} className="inline mr-0.5" />{presentIds.map(getName).join(', ')}</p>
-                            )}
-                            {absentIds.length > 0 && (
-                              <p className="text-destructive/80 pl-0.5 leading-relaxed"><X size={7} className="inline mr-0.5" />{absentIds.map(getName).join(', ')}</p>
-                            )}
-                            {isConvoExpanded && convoNames.length > 0 && (
-                              <div className="bg-primary/5 rounded-lg p-1.5 space-y-0.5">
-                                {convoNames.map((c: any, i: number) => (
-                                  <div key={i} className="flex items-center gap-1 text-foreground/80">
-                                    <span className="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[7px] font-bold shrink-0">{c.number || '?'}</span>
-                                    <span>{c.name}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          <>
+                            {pCount > 0 && <span className="text-[9px] font-semibold bg-accent/10 text-accent px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><Check size={8} /> {pCount}</span>}
+                            {aCount > 0 && <span className="text-[9px] font-semibold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><X size={8} /> {aCount}</span>}
+                            {convos > 0 && <span className="text-[9px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full inline-flex items-center gap-0.5"><ClipboardCheck size={8} /> {convos}</span>}
+                          </>
                         );
                       })()}
                     </div>
