@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock } from 'lucide-react';
+import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2 } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +34,7 @@ interface Props {
   championships?: Championship[];
   teamLogoMap?: Record<string, string>;
   onMatchSheetUpdated?: (sheet: MatchSheet) => void;
+  onDeleteMatchSheet?: (sheetId: string) => void;
 }
 
 const teamColors: Record<string, string> = {
@@ -42,7 +43,7 @@ const teamColors: Record<string, string> = {
   C: 'bg-amber-500/15 text-amber-500 border-amber-500/30',
 };
 
-const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, onMatchSheetUpdated }) => {
+const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, onMatchSheetUpdated, onDeleteMatchSheet }) => {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [localSheets, setLocalSheets] = useState(matchSheets);
@@ -401,6 +402,16 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                                 </span>
                               </div>
                             </div>
+
+                            {/* Delete button for managers */}
+                            {isManager && onDeleteMatchSheet && (
+                              <button
+                                onClick={() => onDeleteMatchSheet(ms.id)}
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-destructive/10 text-destructive text-xs font-semibold hover:bg-destructive/20 transition-all"
+                              >
+                                <Trash2 size={14} /> Supprimer cette feuille
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>

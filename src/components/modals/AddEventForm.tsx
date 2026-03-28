@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, FileText, Globe, ChevronDown, Clock, MapPin, Home, Pencil } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, FileText, Globe, ChevronDown, Clock, MapPin, Home, Pencil, Ghost, EyeOff } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
@@ -10,6 +10,8 @@ interface Props {
   onSubmit: (data: any) => void;
   onClose: () => void;
   isDirigeant?: boolean;
+  isAdminPlus?: boolean;
+  currentUserId?: string;
 }
 
 interface FFFMatchOption {
@@ -26,28 +28,33 @@ interface FFFMatchOption {
   month: string;
 }
 
-const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
+const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUserId }: Props) => {
   useBodyScrollLock();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string; date: string; type: string; recurrence: 'recurring' | 'ponctuel';
+    sendNotification: boolean; reason: string; time: string; location: string;
+    duration: string; homeLogo: string; awayLogo: string; team: string;
+  }>({
     title: '',
     date: '',
     type: isDirigeant ? 'training' : 'match',
-    recurrence: 'ponctuel' as 'recurring' | 'ponctuel',
+    recurrence: 'ponctuel',
     sendNotification: true,
     reason: '',
     time: '',
     location: '',
-    duration: '' as string,
-    homeLogo: '' as string,
-    awayLogo: '' as string,
-    team: '' as string,
+    duration: '',
+    homeLogo: '',
+    awayLogo: '',
+    team: '',
   });
   const [locationValid, setLocationValid] = useState(false);
   const [trainingLocationChoice, setTrainingLocationChoice] = useState<'stade' | 'salle' | 'autre' | null>(null);
 
   // Match creation mode: 'auto' (FFF) or 'manual'
-  const [matchMode, setMatchMode] = useState<'auto' | 'manual' | null>(null);
+  const [matchMode, setMatchMode] = useState<'auto' | 'manual' | 'ghost' | null>(null);
+  const [isGhostMode, setIsGhostMode] = useState(false);
 
   // FFF import state
   const [useFFimport, setUseFFFImport] = useState(false);
@@ -196,8 +203,8 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
 
         {/* Body */}
         <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
-          {/* Type selector */}
-          <div>
+          {/* Type selector - hidden in ghost mode */}
+          {!isGhostMode && <div>
             <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
             <div className="grid grid-cols-3 gap-2">
               {typeOptions.map(opt => (
@@ -217,10 +224,10 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* FFF Import toggle - only for match */}
-          {formData.type === 'match' && !matchMode && (
+          {formData.type === 'match' && !matchMode && !isGhostMode && (
             <div className="animate-fade-in space-y-2">
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mode de création</label>
               <button
@@ -252,6 +259,24 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                   <p className="text-[11px] text-muted-foreground mt-0.5">Saisir toutes les infos manuellement</p>
                 </div>
               </button>
+              {isAdminPlus && (
+                <button
+                  type="button"
+                  onClick={() => { setMatchMode('ghost'); setIsGhostMode(true); setFormData(prev => ({ ...prev, sendNotification: false })); }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-transparent bg-purple-500/5 hover:border-purple-500/30 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 group-hover:bg-purple-500/20 transition-colors">
+                    <Ghost size={18} className="text-purple-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-foreground">Fantôme</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-500 px-1.5 py-0.5 rounded-full">Test</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Événement invisible pour les autres, sans notification</p>
+                  </div>
+                </button>
+              )}
             </div>
           )}
 
@@ -394,8 +419,49 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
 
+          {/* Match GHOST mode */}
+          {isGhostMode && matchMode === 'ghost' && (
+            <div className="animate-fade-in space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-purple-500 flex items-center gap-1.5"><Ghost size={12} /> Mode fantôme</span>
+                <button type="button" onClick={() => { setMatchMode(null); setIsGhostMode(false); }} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">← Retour</button>
+              </div>
+              <div className="p-3 bg-purple-500/5 rounded-xl border border-purple-500/20 flex items-start gap-2">
+                <EyeOff size={14} className="text-purple-500 mt-0.5 shrink-0" />
+                <p className="text-[11px] text-muted-foreground">Cet événement sera invisible pour les autres membres. Aucune notification ne sera envoyée. Idéal pour tester les flux.</p>
+              </div>
+              {/* Type selector for ghost */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, type: 'match' }))} className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${formData.type === 'match' ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-secondary border-transparent text-muted-foreground'}`}>
+                    <Swords className="inline w-3.5 h-3.5 mr-1" />Match
+                  </button>
+                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, type: 'training' }))} className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${formData.type === 'training' ? 'bg-purple-500/10 border-purple-500/30 text-purple-600' : 'bg-secondary border-transparent text-muted-foreground'}`}>
+                    <Dumbbell className="inline w-3.5 h-3.5 mr-1" />Entraînement
+                  </button>
+                </div>
+              </div>
+              {/* Team selector */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['A', 'B', 'C'].map(t => (
+                    <button key={t} type="button" onClick={() => setFormData(prev => ({ ...prev, team: t }))} className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${formData.team === t ? 'bg-accent/10 border-accent/30 text-accent scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'}`}>
+                      Équipe {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="relative">
+                <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="text" placeholder="Titre du test (ex: Test convocation)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+              </div>
+            </div>
+          )}
+
           {/* Title for non-match types */}
-          {formData.type !== 'match' && (
+          {formData.type !== 'match' && !isGhostMode && (
             <div className="relative">
               <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input type="text" placeholder="Titre (ex: Entraînement du mardi)" className="w-full pl-10 pr-4 py-3 bg-secondary border border-border rounded-xl text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent/50 text-sm transition-all" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
@@ -403,7 +469,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           )}
 
           {/* Hide date/time: for match auto → only after FFF selection; for match manual → show; for others → show */}
-          {(formData.type !== 'match' || matchMode === 'manual' || (matchMode === 'auto' && fffMatchSelected)) && (
+          {(isGhostMode || formData.type !== 'match' || matchMode === 'manual' || (matchMode === 'auto' && fffMatchSelected)) && (
             <>
               <NativeDatePicker
                 value={formData.date}
@@ -473,7 +539,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
           )}
 
           {/* Location autocomplete - for match: only manual mode or auto after selection with override; for training: only "Autre"; for other: always */}
-          {(formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && matchMode === 'manual' && (!formData.location || showLocationOverride)) || (formData.type === 'match' && matchMode === 'auto' && fffMatchSelected && (!formData.location || showLocationOverride))) && (
+          {(isGhostMode || formData.type === 'other' || (formData.type === 'training' && trainingLocationChoice === 'autre') || (formData.type === 'match' && matchMode === 'manual' && (!formData.location || showLocationOverride)) || (formData.type === 'match' && matchMode === 'auto' && fffMatchSelected && (!formData.location || showLocationOverride))) && (
             <LocationAutocomplete
               value={formData.location}
               onChange={(location) => setFormData({ ...formData, location })}
@@ -501,7 +567,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             </div>
           )}
           {/* Notification - show only when mode is chosen for match, or for training */}
-          {((formData.type === 'match' && matchMode !== null) || formData.type === 'training') && (
+          {!isGhostMode && ((formData.type === 'match' && matchMode !== null) || formData.type === 'training') && (
             <div className="p-4 bg-accent/5 rounded-xl border border-accent/10 animate-fade-in">
               <label className="flex items-center gap-3 cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, sendNotification: !prev.sendNotification }))}>
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${formData.sendNotification ? 'bg-accent border-accent' : 'border-border'}`}>
@@ -524,11 +590,11 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
             Annuler
           </button>
           <button
-            onClick={() => onSubmit({ ...formData, duration: formData.duration ? parseInt(formData.duration, 10) : undefined })}
+            onClick={() => onSubmit({ ...formData, duration: formData.duration ? parseInt(formData.duration, 10) : undefined, ...(isGhostMode ? { reason: '__ghost__', sendNotification: false } : {}) })}
             disabled={!isFormValid}
-            className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
+            className={`flex-1 py-3 rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg ${isGhostMode ? 'bg-purple-500 text-white shadow-purple-500/20' : 'bg-accent text-accent-foreground shadow-accent/20'}`}
           >
-            Créer
+            {isGhostMode ? '👻 Créer (fantôme)' : 'Créer'}
           </button>
         </div>
       </div>
