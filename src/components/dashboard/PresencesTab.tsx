@@ -517,6 +517,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   );
                                 })()}
                                 <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
+                                {presenceFilter === 'convoked' && (() => {
+                                  const convo = event.convocations ? Object.values(event.convocations as Record<string, any>).find((c: any) => c.playerId === player.id) : null;
+                                  return convo?.number ? <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">#{convo.number}</span> : null;
+                                })()}
                               </div>
                               {isNonRespondingPlayer(player.id) ? (
                                 <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
