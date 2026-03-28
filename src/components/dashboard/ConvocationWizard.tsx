@@ -94,7 +94,8 @@ const ConvocationWizard: React.FC<Props> = ({
     }
   };
 
-  const canGoNext = step === 1 ? selectedIds.length > 0 : true;
+  const allHaveNumbers = selectedPlayers.every(p => draftConvocations[p.id]?.number);
+  const canGoNext = step === 1 ? selectedIds.length > 0 : step === 2 ? allHaveNumbers : true;
 
   // ─── STEP 1: Player Selection ───
   const renderStep1 = () => (
@@ -202,35 +203,54 @@ const ConvocationWizard: React.FC<Props> = ({
   );
 
   // ─── STEP 2: Number Assignment ───
+
   const renderStep2 = () => (
     <div className="flex flex-col h-full">
-      <div className="px-4 pt-3 pb-1 shrink-0">
-        <p className="text-xs text-muted-foreground">
-          Attribuez un numéro de maillot à chaque joueur (optionnel)
+      <div className="px-4 pt-3 pb-2 shrink-0">
+        <p className="text-sm font-semibold text-foreground">
+          Attribuez un numéro de maillot à chaque joueur
         </p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          Obligatoire pour la création de la feuille de match
+        </p>
+        {!allHaveNumbers && (
+          <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20">
+            <span className="text-orange-500 text-[10px] font-bold">⚠ {selectedPlayers.filter(p => !draftConvocations[p.id]?.number).length} joueur(s) sans numéro</span>
+          </div>
+        )}
       </div>
-      <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2 py-2">
+      <div className="flex-1 overflow-y-auto px-4 pb-2 space-y-2.5 py-2">
         {selectedPlayers.map((player, idx) => {
           const photo = getPlayerPhoto(player.id);
           const conv = draftConvocations[player.id];
+          const hasNumber = !!conv?.number;
           return (
             <motion.div
               key={player.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.03 }}
-              className="flex items-center gap-3 p-3 bg-secondary/40 rounded-2xl border border-border/50"
+              className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all ${
+                hasNumber
+                  ? 'bg-accent/5 border-accent/30'
+                  : 'bg-secondary/40 border-border/50'
+              }`}
             >
+              {/* Rank */}
+              <span className="text-[11px] font-bold text-muted-foreground/50 w-4 text-center shrink-0">
+                {idx + 1}
+              </span>
+
               {/* Avatar */}
               {photo ? (
-                <img src={photo} alt={player.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                <img src={photo} alt={player.name} className="w-11 h-11 rounded-full object-cover shrink-0 ring-2 ring-border" />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-full bg-accent/15 flex items-center justify-center shrink-0 ring-2 ring-border">
                   <span className="text-accent text-xs font-bold">{getInitials(player.name)}</span>
                 </div>
               )}
 
-              {/* Name */}
+              {/* Name + position */}
               <div className="flex-1 min-w-0">
                 <span className="font-semibold text-sm text-foreground block truncate">{player.name}</span>
                 {player.position && (
@@ -238,19 +258,24 @@ const ConvocationWizard: React.FC<Props> = ({
                 )}
               </div>
 
-              {/* Number input */}
-              <div className="shrink-0 relative">
+              {/* Number input — large, prominent */}
+              <div className="shrink-0 flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground font-medium">N°</span>
                 <input
                   type="number"
                   inputMode="numeric"
-                  placeholder="N°"
+                  placeholder="—"
                   value={conv?.number || ''}
                   onChange={e => {
                     const num = e.target.value ? parseInt(e.target.value) : undefined;
                     updateDraft(player.id, { number: num });
                   }}
-                  className="w-16 h-11 text-center text-lg font-bold bg-card border-2 border-border rounded-xl text-foreground focus:outline-none focus:border-accent transition-colors"
-                  style={{ fontSize: 18 }}
+                  className={`w-14 h-12 text-center text-xl font-black rounded-xl border-2 transition-all focus:outline-none ${
+                    hasNumber
+                      ? 'bg-accent/10 border-accent text-accent focus:border-accent'
+                      : 'bg-card border-border text-foreground focus:border-accent'
+                  }`}
+                  style={{ fontSize: 20 }}
                   min={1}
                   max={99}
                 />
