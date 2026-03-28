@@ -265,6 +265,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                     <button type="button" onClick={() => { setFffMatchSelected(false); setShowLocationOverride(false); }} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">Modifier</button>
                   </div>
                   <p className="text-sm font-bold text-foreground">{formData.title}</p>
+                  {formData.team && (
+                    <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">Équipe {formData.team}</span>
+                  )}
                   {formData.location && (
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {formData.location}</p>
                   )}
