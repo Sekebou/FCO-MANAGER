@@ -513,7 +513,8 @@ const ConvocationWizard: React.FC<Props> = ({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-card w-full max-h-[92vh] rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
+        className="bg-card w-full rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
+        style={{ maxHeight: viewportHeight ? `${Math.min(viewportHeight * 0.92, window.innerHeight * 0.92)}px` : '92vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with stepper */}
