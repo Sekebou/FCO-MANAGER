@@ -410,7 +410,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [nextMatch?.date]);
+  }, [nextMatch?.date, nextMatch?.time]);
 
   // Match status: 'live' (during 100min window), 'waiting' (after 100min, same day), false (not today)
   const getMatchStatus = (matchDate: string, matchTime?: string): 'live' | 'waiting' | false => {
