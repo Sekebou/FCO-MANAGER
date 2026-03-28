@@ -661,8 +661,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center overflow-hidden touch-none"
-              onMouseDown={(e) => { if (e.target === e.currentTarget) setConvocationMode(null); }}
+              className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center overflow-hidden"
+              onClick={(e) => { if (e.target === e.currentTarget) setConvocationMode(null); }}
             >
               <motion.div
                 initial={{ y: '100%' }}
@@ -670,7 +670,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
                 className="bg-card w-full max-h-[92vh] rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
-                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
@@ -831,8 +831,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
                 {/* Modal footer */}
                 <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 flex gap-2">
-                  <button onClick={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
-                  <button onClick={() => void publishConvocations(event.id)} disabled={publishing} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50">
+                  <button type="button" onClick={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
+                  <button type="button" onClick={() => void publishConvocations(event.id)} disabled={publishing} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50">
                     <Send size={15} /> {publishing ? 'Envoi…' : 'Publier & Notifier'}
                   </button>
                 </div>
