@@ -4,7 +4,7 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { getEquipes, getAllCompetitions, getTousMatchsAvenir, OISEMONT_CL_NO, type FFFCompetition, type FFFMonthGroup } from '@/lib/fffApi';
+import { getEquipes, getAllCompetitions, getTousMatchsAvenir, equipeCodeToTeamLetter, OISEMONT_CL_NO, type FFFCompetition, type FFFMonthGroup } from '@/lib/fffApi';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -41,6 +41,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
     duration: '' as string,
     homeLogo: '' as string,
     awayLogo: '' as string,
+    team: '' as string,
   });
   const [locationValid, setLocationValid] = useState(false);
   const [trainingLocationChoice, setTrainingLocationChoice] = useState<'stade' | 'salle' | 'autre' | null>(null);
@@ -264,6 +265,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                     <button type="button" onClick={() => { setFffMatchSelected(false); setShowLocationOverride(false); }} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">Modifier</button>
                   </div>
                   <p className="text-sm font-bold text-foreground">{formData.title}</p>
+                  {formData.team && (
+                    <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">Équipe {formData.team}</span>
+                  )}
                   {formData.location && (
                     <p className="text-[11px] text-muted-foreground flex items-center gap-1"><MapPin size={10} /> {formData.location}</p>
                   )}
@@ -292,7 +296,14 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
                         {selectedEquipe && (
                           <div>
                             <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Compétition</label>
-                            <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedCompetition} onChange={(e) => setSelectedCompetition(e.target.value)}>
+                            <select className="w-full py-2.5 px-3 bg-card border border-border rounded-xl text-foreground text-sm outline-none focus:ring-2 focus:ring-primary/50 appearance-none" value={selectedCompetition} onChange={(e) => {
+                              setSelectedCompetition(e.target.value);
+                              // Auto-set team from competition's equipe code
+                              const comp = fffCompetitions.find(c => `${c.cpNo}-${c.phase}-${c.poule}` === e.target.value);
+                              if (comp) {
+                                setFormData(prev => ({ ...prev, team: equipeCodeToTeamLetter(comp.equipeCode) }));
+                              }
+                            }}>
                               <option value="">-- Choisir --</option>
                               {fffCompetitions.filter(c => c.equipe === selectedEquipe).map(c => (
                                 <option key={`${c.cpNo}-${c.phase}-${c.poule}`} value={`${c.cpNo}-${c.phase}-${c.poule}`}>{c.competitionName}</option>
@@ -357,6 +368,24 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><Pencil size={12} /> Saisie manuelle</span>
                 <button type="button" onClick={() => setMatchMode(null)} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline">← Retour</button>
+              </div>
+              {/* Team selector */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Équipe</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['A', 'B', 'C'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, team: t }))}
+                      className={`py-2.5 px-2 rounded-xl text-xs font-semibold border-2 transition-all ${
+                        formData.team === t ? 'bg-accent/10 border-accent/30 text-accent scale-[1.02]' : 'bg-secondary border-transparent text-muted-foreground hover:border-border'
+                      }`}
+                    >
+                      Équipe {t}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="relative">
                 <Type size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />

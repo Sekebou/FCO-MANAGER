@@ -155,12 +155,19 @@ export async function getClassement(cpNo: number, phase = 1, poule = 1) {
 
 export interface FFFCompetition {
   equipe: string;
+  equipeCode: number;
   category: string;
   competition: any;
   cpNo: number;
   phase: number;
   poule: number;
   competitionName: string;
+}
+
+/** Map FFF equipe code (1,2,3) to team letter (A,B,C) */
+export function equipeCodeToTeamLetter(code: number): string {
+  const map: Record<number, string> = { 1: 'A', 2: 'B', 3: 'C' };
+  return map[code] || String.fromCharCode(64 + code); // fallback D, E, F...
 }
 
 /** Extrait toutes les compétitions actives (non éliminé) d'un club */
@@ -172,6 +179,7 @@ export function getAllCompetitions(equipes: any[]): FFFCompetition[] {
       if (eng.en_elimine === 'O') continue;
       result.push({
         equipe: eq.short_name || eq.name,
+        equipeCode: eq.code || 1,
         category: eq.category_label || '',
         competition: eng.competition,
         cpNo: eng.competition?.cp_no || eng.cp_no,
