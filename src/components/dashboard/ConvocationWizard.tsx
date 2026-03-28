@@ -51,6 +51,22 @@ const ConvocationWizard: React.FC<Props> = ({
   const [customNotifBody, setCustomNotifBody] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridScrollRef = useRef<HTMLDivElement>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  // Track visual viewport to adapt to virtual keyboard
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      setViewportHeight(vv.height);
+    };
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    return () => {
+      vv.removeEventListener('resize', onResize);
+      vv.removeEventListener('scroll', onResize);
+    };
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0 });
@@ -497,7 +513,8 @@ const ConvocationWizard: React.FC<Props> = ({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-card w-full max-h-[92vh] rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
+        className="bg-card w-full rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
+        style={{ maxHeight: viewportHeight ? `${Math.min(viewportHeight * 0.92, window.innerHeight * 0.92)}px` : '92vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with stepper */}
