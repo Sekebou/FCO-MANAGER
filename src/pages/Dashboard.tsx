@@ -1583,6 +1583,7 @@ const Dashboard = () => {
           )}
           {activeTab === 'presences' && (
             <PresencesTab events={events} players={visiblePlayers} members={visibleMembers} currentUser={currentUser} canManage={canManage} canCreateEvent={canCreateEvent} canManageOwnPresence={canManageOwnPresence} togglePresence={togglePresence} deleteEvent={deleteEvent} canDeleteEvent={canDeleteEvent} onAddEvent={() => setShowAddEvent(true)} championships={championships} initialSelectedEventId={pendingEventId} onResetHeader={() => { setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(null); }}
+              onNavigateToMatchSheet={(eventId) => handleTabChange('matchsheets')}
               onPublishAndNotifyConvocations={async (eventId, event, convocations) => {
                 try {
                   const { data, error } = await supabase.functions.invoke('publish-convocations', {
