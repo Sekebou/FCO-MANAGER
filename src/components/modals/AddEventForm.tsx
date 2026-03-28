@@ -592,9 +592,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
           <button
             onClick={() => onSubmit({ ...formData, duration: formData.duration ? parseInt(formData.duration, 10) : undefined, ...(isGhostMode ? { reason: '__ghost__', sendNotification: false } : {}) })}
             disabled={!isFormValid}
-            className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
+            className={`flex-1 py-3 rounded-xl font-medium hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg ${isGhostMode ? 'bg-purple-500 text-white shadow-purple-500/20' : 'bg-accent text-accent-foreground shadow-accent/20'}`}
           >
-            Créer
+            {isGhostMode ? '👻 Créer (fantôme)' : 'Créer'}
           </button>
         </div>
       </div>
