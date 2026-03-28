@@ -369,7 +369,7 @@ const ConvocationWizard: React.FC<Props> = ({
               className="flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
             >
               <UserX size={13} />
-              <span>{nonSelectedPlayers.length} non convoqué{nonSelectedPlayers.length > 1 ? 's' : ''}</span>
+              <span>{nonSelectedPlayers.length} joueur{nonSelectedPlayers.length > 1 ? 's' : ''} non convoqué{nonSelectedPlayers.length > 1 ? 's' : ''}</span>
               <ChevronRight size={12} className={`transition-transform ${showNonConvoked ? 'rotate-90' : ''}`} />
             </button>
             <AnimatePresence>
