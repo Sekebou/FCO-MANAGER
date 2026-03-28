@@ -255,6 +255,24 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
                   <p className="text-[11px] text-muted-foreground mt-0.5">Saisir toutes les infos manuellement</p>
                 </div>
               </button>
+              {isAdminPlus && (
+                <button
+                  type="button"
+                  onClick={() => { setMatchMode('ghost'); setIsGhostMode(true); setFormData(prev => ({ ...prev, sendNotification: false })); }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl border-2 border-transparent bg-purple-500/5 hover:border-purple-500/30 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 group-hover:bg-purple-500/20 transition-colors">
+                    <Ghost size={18} className="text-purple-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-foreground">Fantôme</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-500 px-1.5 py-0.5 rounded-full">Test</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Événement invisible pour les autres, sans notification</p>
+                  </div>
+                </button>
+              )}
             </div>
           )}
 
