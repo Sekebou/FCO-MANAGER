@@ -63,6 +63,25 @@ const ATK_ORDER: Record<string, number> = {
   'Ailier droit': 2,
 };
 
+// Default position based on jersey number (standard football conventions)
+function getDefaultPositionFromNumber(num?: number): string {
+  if (!num) return '';
+  switch (num) {
+    case 1: return 'Gardien';
+    case 2: return 'Latéral droit';
+    case 3: return 'Latéral gauche';
+    case 4: return 'Défenseur central';
+    case 5: return 'Défenseur central';
+    case 6: return 'Milieu défensif';
+    case 7: return 'Ailier droit';
+    case 8: return 'Milieu central';
+    case 9: return 'Attaquant';
+    case 10: return 'Milieu offensif';
+    case 11: return 'Ailier gauche';
+    default: return '';
+  }
+}
+
 function distributeEvenly(count: number, left: number, right: number, compact?: boolean): number[] {
   const mid = (left + right) / 2;
   if (count === 1) return [mid];
