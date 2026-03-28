@@ -82,7 +82,7 @@ serve(async (req) => {
         // Update existing
         const { error: msErr } = await admin
           .from('match_sheets')
-          .update({ convocations, home_team: homeTeam, away_team: awayTeam, team: event.team || 'Équipe A' })
+          .update({ convocations, home_team: homeTeam, away_team: awayTeam, team: event.team || 'A' })
           .eq('id', existingSheet.id);
         if (msErr) console.error('Match sheet update error:', msErr);
         matchSheetCreated = true;
@@ -96,7 +96,7 @@ serve(async (req) => {
             date: event.date,
             time: event.time || null,
             location: event.location || null,
-            team: event.team || 'Équipe A',
+            team: event.team || 'A',
             home_team: homeTeam,
             away_team: awayTeam,
             home_logo: event.home_logo || null,
