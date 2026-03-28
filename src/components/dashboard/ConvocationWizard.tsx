@@ -416,19 +416,132 @@ const ConvocationWizard: React.FC<Props> = ({
           <ul className="text-xs text-muted-foreground space-y-1 pl-5">
             <li className="flex items-start gap-2">
               <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
-              Notification push aux joueurs convoqués
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
               Création / mise à jour de la feuille de match
             </li>
             <li className="flex items-start gap-2">
               <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
               Les joueurs verront leur statut de convocation
             </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
+              Notification personnalisable à l'étape suivante
+            </li>
           </ul>
         </div>
       </div>
+  );
+
+  // ─── STEP 4: Notification ───
+  const renderStep4 = () => (
+    <div className="flex flex-col h-full px-4 py-3 space-y-4">
+      <p className="text-sm font-semibold text-foreground">
+        Choisissez la notification à envoyer aux {selectedPlayers.length} joueur{selectedPlayers.length > 1 ? 's' : ''} convoqué{selectedPlayers.length > 1 ? 's' : ''}
+      </p>
+
+      {/* Option 1: Default */}
+      <button
+        type="button"
+        onClick={() => setNotifMode('default')}
+        className={`w-full text-left p-4 rounded-2xl border-2 transition-all space-y-2 ${
+          notifMode === 'default'
+            ? 'border-accent bg-accent/5'
+            : 'border-border/50 bg-secondary/30'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} className={notifMode === 'default' ? 'text-accent' : 'text-muted-foreground'} />
+          <span className={`text-sm font-bold ${notifMode === 'default' ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Notification automatique
+          </span>
+          {notifMode === 'default' && (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+              <Check size={12} className="text-accent-foreground" strokeWidth={3} />
+            </motion.div>
+          )}
+        </div>
+        {/* Preview */}
+        <div className="bg-card rounded-xl p-3 border border-border/50 space-y-1">
+          <p className="text-xs font-bold text-foreground">{defaultNotifTitle}</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">{defaultNotifBody}</p>
+        </div>
+      </button>
+
+      {/* Option 2: Custom */}
+      <button
+        type="button"
+        onClick={() => setNotifMode('custom')}
+        className={`w-full text-left p-4 rounded-2xl border-2 transition-all space-y-2 ${
+          notifMode === 'custom'
+            ? 'border-accent bg-accent/5'
+            : 'border-border/50 bg-secondary/30'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <MessageSquare size={14} className={notifMode === 'custom' ? 'text-accent' : 'text-muted-foreground'} />
+          <span className={`text-sm font-bold ${notifMode === 'custom' ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Notification personnalisée
+          </span>
+          {notifMode === 'custom' && (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="ml-auto w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+              <Check size={12} className="text-accent-foreground" strokeWidth={3} />
+            </motion.div>
+          )}
+        </div>
+      </button>
+
+      {/* Custom fields */}
+      <AnimatePresence>
+        {notifMode === 'custom' && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden space-y-3"
+          >
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">Titre de la notification</label>
+              <input
+                type="text"
+                value={customNotifTitle}
+                onChange={e => setCustomNotifTitle(e.target.value)}
+                placeholder="Ex: Convocation importante"
+                className="w-full h-11 bg-secondary/60 border border-border/60 rounded-xl px-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
+                style={{ fontSize: 16 }}
+                maxLength={100}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground mb-1 block">Message</label>
+              <textarea
+                value={customNotifBody}
+                onChange={e => setCustomNotifBody(e.target.value)}
+                placeholder="Ex: Rendez-vous au stade à 13h30, ramenez vos protège-tibias !"
+                className="w-full min-h-[100px] bg-secondary/60 border border-border/60 rounded-xl p-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50 resize-none"
+                style={{ fontSize: 16 }}
+                maxLength={500}
+              />
+              <p className="text-[10px] text-muted-foreground/50 mt-1 text-right">{customNotifBody.length}/500</p>
+            </div>
+
+            {/* Preview */}
+            {(customNotifTitle || customNotifBody) && (
+              <div className="bg-card rounded-xl p-3 border border-border/50 space-y-1">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Aperçu</p>
+                <p className="text-xs font-bold text-foreground">{customNotifTitle || 'Sans titre'}</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{customNotifBody || 'Sans message'}</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Info banner */}
+      <div className="bg-secondary/40 rounded-xl p-3 border border-border/40">
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          ℹ️ La notification {notifMode === 'custom' ? 'personnalisée' : 'automatique'} sera envoyée de manière <span className="font-bold text-foreground">identique à tous les joueurs convoqués</span> pour cet événement. Ce n'est pas un message individuel.
+        </p>
+      </div>
+    </div>
   );
 
   return (
