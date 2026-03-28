@@ -630,13 +630,13 @@ const ConvocationWizard: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (notifMode === 'custom' && (customNotifTitle.trim() || customNotifBody.trim())) {
+                  if (customNotifTitle.trim() || customNotifBody.trim()) {
                     onPublish({ title: customNotifTitle.trim() || defaultNotifTitle, body: customNotifBody.trim() || defaultNotifBody });
                   } else {
                     onPublish();
                   }
                 }}
-                disabled={publishing || (notifMode === 'custom' && !customNotifBody.trim())}
+                disabled={publishing || !customNotifBody.trim()}
                 className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50"
               >
                 {publishing ? (
