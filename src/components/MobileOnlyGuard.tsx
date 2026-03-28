@@ -29,8 +29,6 @@ const isMobileOrTablet = () => {
  * - Any browser (mobile or desktop) → BLOCKED
  */
 const isAllowed = () => {
-  // Temporarily allow all access (mobile web included)
-  return true;
   if (isCapacitorNative()) return true;
   if (typeof window !== "undefined") {
     // Allow Lovable preview access
