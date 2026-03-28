@@ -680,7 +680,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             {canSeeReason && (
                               <div className="flex items-start gap-1.5 px-3 py-1.5 ml-9">
                                 <MessageSquare size={11} className="text-destructive/50 shrink-0 mt-0.5" />
-                                <span className="text-[11px] text-destructive/70 italic leading-snug">« {absReason} »</span>
+                                <span className="text-[11px] text-destructive/70 italic leading-snug line-clamp-1 break-all">« {absReason} »</span>
                               </div>
                             )}
                           </div>
@@ -774,7 +774,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     className="w-full mt-2 p-3.5 bg-secondary border border-border rounded-xl h-20 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-destructive/30 focus:border-destructive/30 text-sm resize-none transition-all"
                     value={absenceOtherText}
                     onChange={(e) => setAbsenceOtherText(e.target.value)}
-                    maxLength={200}
+                    maxLength={50}
                     autoFocus
                   />
                 )}
@@ -1297,7 +1297,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     className="w-full mt-2 p-3.5 bg-secondary border border-border rounded-xl h-20 text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-destructive/30 focus:border-destructive/30 text-sm resize-none transition-all"
                     value={absenceOtherText}
                     onChange={(e) => setAbsenceOtherText(e.target.value)}
-                    maxLength={200}
+                    maxLength={50}
                     autoFocus
                   />
                 )}
