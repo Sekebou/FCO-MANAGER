@@ -114,7 +114,7 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     });
   }
 
-  const attackLine = basePlayers
+  const attackLine = withPosition
     .filter((p) => ATTACK_POSITIONS.has(p.conv.position || ''))
     .sort((a, b) => (ATK_ORDER[a.conv.position || ''] ?? 1) - (ATK_ORDER[b.conv.position || ''] ?? 1));
 
@@ -126,8 +126,8 @@ function getSpreadCoords(basePlayers: { id: string; name: string; conv: Convocat
     });
   }
 
-  const midGroups: Record<string, typeof basePlayers> = {};
-  basePlayers
+  const midGroups: Record<string, typeof withPosition> = {};
+  withPosition
     .filter((p) => MIDFIELD_POSITIONS.has(p.conv.position || '') && !handledIds.has(p.id))
     .forEach((p) => {
       const pos = p.conv.position || '';
