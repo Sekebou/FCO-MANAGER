@@ -842,19 +842,23 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </div>
 
                 {/* Modal footer */}
-                <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 flex gap-2">
-                  <button type="button" onClick={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
-                  <button type="button" onClick={() => void publishConvocations(event.id)} disabled={publishing} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50">
-                    <Send size={15} /> {publishing ? 'Envoi…' : 'Publier & Notifier'}
-                  </button>
-                </div>
-                {publishError && (
-                  <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 border-t border-border shrink-0 space-y-2">
+                  {publishError && (
                     <p className="rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
-                      {publishError}
+                      ⚠️ {publishError}
                     </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { setConvocationMode(null); setConvocationSearch(''); setPublishError(null); }} className="flex-1 py-3 rounded-xl bg-secondary text-muted-foreground text-sm font-medium hover:bg-secondary/80 transition-all">Annuler</button>
+                    <button type="button" onClick={() => void publishConvocations(event.id)} disabled={publishing} className="flex-1 py-3 rounded-xl bg-accent text-accent-foreground text-sm font-bold hover:bg-accent/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50">
+                      {publishing ? (
+                        <><span className="animate-spin inline-block w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full" /> Envoi…</>
+                      ) : (
+                        <><Send size={15} /> Publier & Notifier</>
+                      )}
+                    </button>
                   </div>
-                )}
+                </div>
               </motion.div>
             </motion.div>
           )}
