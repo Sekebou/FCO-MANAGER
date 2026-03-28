@@ -114,14 +114,15 @@ serve(async (req) => {
       }
     }
 
-    // 8. Send push notifications to convoked players
+    // 8. Send push notifications to convoked players (skip for ghost events)
+    const isGhostEvent = event.reason === '__ghost__';
     const convokedPlayerIds = Object.entries(convocations)
       .filter(([, c]: [string, any]) => c.status === 'convoque')
       .map(([playerId]) => playerId);
 
     let notifiedCount = 0;
 
-    if (convokedPlayerIds.length > 0) {
+    if (convokedPlayerIds.length > 0 && !isGhostEvent) {
       // Find member user IDs linked to convoked player IDs
       const { data: profiles } = await admin
         .from('profiles')
