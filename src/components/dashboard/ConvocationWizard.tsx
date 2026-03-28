@@ -537,7 +537,7 @@ const ConvocationWizard: React.FC<Props> = ({
           </div>
 
           {/* Stepper */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center justify-center gap-0.5">
             {STEPS.map((s, i) => {
               const StepIcon = s.icon;
               const isActive = step === s.num;
