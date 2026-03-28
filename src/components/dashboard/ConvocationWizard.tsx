@@ -199,7 +199,7 @@ const ConvocationWizard: React.FC<Props> = ({
                   )}
                   {presenceStatus === 'present' && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-accent/15 text-accent text-[9px] font-bold">
-                      <Check size={8} strokeWidth={3} /> Présent
+                      <Check size={8} strokeWidth={3} /> A répondu présent
                     </span>
                   )}
                   {presenceStatus === 'absent' && (
