@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CalendarDays, Type, Bell, Swords, Dumbbell, FileText, Globe, ChevronDown, Clock, MapPin, Home, Pencil } from 'lucide-react';
+import { X, CalendarDays, Type, Bell, Swords, Dumbbell, FileText, Globe, ChevronDown, Clock, MapPin, Home, Pencil, Ghost, EyeOff } from 'lucide-react';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
@@ -10,6 +10,8 @@ interface Props {
   onSubmit: (data: any) => void;
   onClose: () => void;
   isDirigeant?: boolean;
+  isAdminPlus?: boolean;
+  currentUserId?: string;
 }
 
 interface FFFMatchOption {
@@ -26,7 +28,7 @@ interface FFFMatchOption {
   month: string;
 }
 
-const AddEventForm = ({ onSubmit, onClose, isDirigeant }: Props) => {
+const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUserId }: Props) => {
   useBodyScrollLock();
 
   const [formData, setFormData] = useState({
