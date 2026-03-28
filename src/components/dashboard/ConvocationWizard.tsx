@@ -149,7 +149,7 @@ const ConvocationWizard: React.FC<Props> = ({
                 key={player.id}
                 onClick={() => togglePlayer(player.id)}
                 whileTap={{ scale: 0.95 }}
-                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
+                className={`relative overflow-hidden flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
                   isSelected
                     ? 'border-accent bg-accent/10 shadow-md shadow-accent/10'
                     : 'border-transparent bg-secondary/40 hover:bg-secondary/60'
