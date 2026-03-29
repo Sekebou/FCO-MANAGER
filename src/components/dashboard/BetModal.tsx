@@ -131,6 +131,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         p_prediction: prediction,
         p_odds: selectedOdd,
         p_amount: amount,
+        p_team: team || null,
       });
 
       if (error) {
@@ -163,6 +164,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         odds: selectedOdd,
         amount,
         newBalance,
+        team,
       });
 
       toast.success(`Pari de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
