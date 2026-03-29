@@ -3,6 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 export const OISEMONT_CL_NO = 3246;
 export const OISEMONT_AFFILIATION = 508456;
 
+/** Suffixe le nom d'Oisemont selon la catégorie d'équipe (A=rien, B=2, C=3) */
+export function getOisemontDisplayName(name: string, teamCategory?: string): string {
+  if (!name) return name;
+  const isOisemont = name.toUpperCase().includes('OISEMONT');
+  if (!isOisemont) return name;
+  if (teamCategory === 'B') return name.replace(/(\s*\d+)?$/i, '') + ' 2';
+  if (teamCategory === 'C') return name.replace(/(\s*\d+)?$/i, '') + ' 3';
+  return name;
+}
+
 // In-memory cache with 15min TTL to reduce cloud edge function invocations
 const fffCache = new Map<string, { data: any; ts: number }>();
 const fffInFlight = new Map<string, Promise<any>>();
