@@ -9,7 +9,7 @@ import type { Championship } from './ChampionnatTab';
 import {
   getEquipes, getTeamChampionship, getTousMatchsAvenir,
   mapClassementToStandings, getClassement,
-  OISEMONT_CL_NO, decodeFFFApiRef,
+  OISEMONT_CL_NO, decodeFFFApiRef, getOisemontDisplayName,
   type FFFMonthGroup, type FFFLiveMatch, type ScrapedStanding
 } from '@/lib/fffApi';
 import BetModal, { generateOdds, type BetPlacementPayload } from './BetModal';
@@ -103,8 +103,13 @@ function teamsLikelyMatch(a?: string, b?: string) {
   return overlap.length > 0 && overlap.length === Math.min(ta.length, tb.length);
 }
 
-function getMatchTeamName(side?: { short_name?: string; name?: string }) {
+function getMatchTeamName(side?: { short_name?: string; name?: string; club?: { cl_no?: number } }) {
   return side?.short_name || side?.name || '';
+}
+
+function getDisplayTeamName(side?: { short_name?: string; name?: string; club?: { cl_no?: number } }, teamCategory?: string) {
+  const raw = side?.short_name || side?.name || '';
+  return getOisemontDisplayName(raw, teamCategory);
 }
 
 const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
@@ -609,15 +614,20 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
     setSettlingMatch(matchKey);
     try {
-      const distinctDates = [...new Set(betsForMatch.map(b => b.matchDate))];
       let totalSettled = 0;
       let finalResult: any = null;
+      // Group bets by their exact stored team names + date to settle correctly
+      const betGroups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string }>();
+      for (const b of betsForMatch) {
+        const key = `${b.homeTeam}||${b.awayTeam}||${b.matchDate}`;
+        if (!betGroups.has(key)) betGroups.set(key, { homeTeam: b.homeTeam, awayTeam: b.awayTeam, matchDate: b.matchDate });
+      }
 
-      for (const rawDate of distinctDates) {
+      for (const group of betGroups.values()) {
         const { data, error } = await supabase.rpc('settle_match_bets', {
-          p_home_team: homeTeam,
-          p_away_team: awayTeam,
-          p_match_date: rawDate,
+          p_home_team: group.homeTeam,
+          p_away_team: group.awayTeam,
+          p_match_date: group.matchDate,
           p_home_score: homeScore,
           p_away_score: awayScore,
         });
@@ -776,8 +786,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               const matchStatus = nextMatch.date ? getMatchStatus(nextMatch.date, nextMatch.time) : false;
               const live = matchStatus === 'live';
               const waiting = matchStatus === 'waiting';
-              const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
-              const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
+              const homeName = getDisplayTeamName(nextMatch.home, selectedTeam);
+              const awayName = getDisplayTeamName(nextMatch.away, selectedTeam);
               const homeLogo = nextMatch.home?.club?.logo;
               const awayLogo = nextMatch.away?.club?.logo;
               const alreadyBet = hasBetOnMatch(homeName, awayName, nextMatch.date || '');
@@ -1158,8 +1168,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               {settleCards.map(({ team, loading: teamLoading, match, bets: teamBets, matchKey }) => {
                 const scores = settleScores[matchKey] || { home: '', away: '' };
                 const isSettling = settlingMatch === matchKey;
-                const homeName = match ? getMatchTeamName(match.home) : '';
-                const awayName = match ? getMatchTeamName(match.away) : '';
+                const homeName = match ? getDisplayTeamName(match.home, team) : '';
+                const awayName = match ? getDisplayTeamName(match.away, team) : '';
                 const homeLogo = match?.home?.club?.logo;
                 const awayLogo = match?.away?.club?.logo;
                 const matchDateFormatted = match?.date
