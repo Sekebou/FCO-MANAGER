@@ -614,6 +614,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
     setSettlingMatch(matchKey);
     try {
+      let totalSettled = 0;
+      let finalResult: any = null;
       // Group bets by their exact stored team names + date to settle correctly
       const betGroups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string }>();
       for (const b of betsForMatch) {
