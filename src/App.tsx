@@ -56,10 +56,12 @@ const App = () => {
             <Route path="*" element={
               <AuthProvider>
                 <MobileOnlyGuard>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <ForceUpdateGuard>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </ForceUpdateGuard>
                 </MobileOnlyGuard>
               </AuthProvider>
             } />
