@@ -103,7 +103,11 @@ function teamsLikelyMatch(a?: string, b?: string) {
   return overlap.length > 0 && overlap.length === Math.min(ta.length, tb.length);
 }
 
-function getMatchTeamName(side?: { short_name?: string; name?: string; club?: { cl_no?: number } }, teamCategory?: string) {
+function getMatchTeamName(side?: { short_name?: string; name?: string; club?: { cl_no?: number } }) {
+  return side?.short_name || side?.name || '';
+}
+
+function getDisplayTeamName(side?: { short_name?: string; name?: string; club?: { cl_no?: number } }, teamCategory?: string) {
   const raw = side?.short_name || side?.name || '';
   return getOisemontDisplayName(raw, teamCategory);
 }
