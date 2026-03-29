@@ -355,37 +355,69 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   // Current team data
   const currentData = teamData[selectedTeam] || { upcoming: [], classement: [], loading: true };
 
+  const isMatchStarted = (matchDate: string, matchTime?: string): boolean => {
+    if (!matchDate) return false;
+    const mDate = new Date(matchDate);
+    const now = new Date();
+    const matchDay = mDate.toISOString().split('T')[0];
+    const today = now.toISOString().split('T')[0];
+
+    if (matchDay < today) return true;
+    if (matchDay > today) return false;
+    if (!matchTime) return true;
+
+    const timeParts = matchTime.replace('H', ':').split(':');
+    const kickoffHour = parseInt(timeParts[0], 10);
+    const kickoffMin = parseInt(timeParts[1] || '0', 10);
+    if (Number.isNaN(kickoffHour)) return true;
+
+    const kickoff = new Date(now);
+    kickoff.setHours(kickoffHour, kickoffMin, 0, 0);
+    return now.getTime() >= kickoff.getTime();
+  };
+
   // Helper: check if a match date+time is finished (3h after kickoff)
   const isMatchFinished = (matchDate: string, matchTime?: string): boolean => {
     if (!matchDate) return false;
     const mDate = new Date(matchDate);
     const now = new Date();
-    // If match day is in the past, it's finished
-    if (mDate.toISOString().split('T')[0] < now.toISOString().split('T')[0]) return true;
-    // If same day, check time
-    if (mDate.toISOString().split('T')[0] === now.toISOString().split('T')[0] && matchTime) {
-      const timeParts = matchTime.replace('H', ':').split(':');
-      const kickoffHour = parseInt(timeParts[0], 10);
-      const kickoffMin = parseInt(timeParts[1] || '0', 10);
-      if (!isNaN(kickoffHour)) {
-        const kickoff = new Date(now);
-        kickoff.setHours(kickoffHour, kickoffMin, 0, 0);
-        // Consider finished 3h after kickoff
-        if ((now.getTime() - kickoff.getTime()) / 60000 > 180) return true;
-      }
-    }
-    return false;
+    const matchDay = mDate.toISOString().split('T')[0];
+    const today = now.toISOString().split('T')[0];
+
+    if (matchDay < today) return true;
+    if (matchDay > today) return false;
+    if (!matchTime) return false;
+
+    const timeParts = matchTime.replace('H', ':').split(':');
+    const kickoffHour = parseInt(timeParts[0], 10);
+    const kickoffMin = parseInt(timeParts[1] || '0', 10);
+    if (Number.isNaN(kickoffHour)) return false;
+
+    const kickoff = new Date(now);
+    kickoff.setHours(kickoffHour, kickoffMin, 0, 0);
+    return (now.getTime() - kickoff.getTime()) / 60000 > 180;
   };
 
-  // Next match for selected team (skip finished matches)
+  // Next match for selected team: keep a started match only while bets are still pending, otherwise skip to the next bettable match
   const nextMatch: FFFLiveMatch | null = useMemo(() => {
+    const matchHasPendingBets = (match: FFFLiveMatch) => {
+      const homeName = getMatchTeamName(match.home);
+      const awayName = getMatchTeamName(match.away);
+      return allPendingBets.some((bet) =>
+        normalizeDateKey(bet.matchDate) === normalizeDateKey(match.date) &&
+        teamsLikelyMatch(bet.homeTeam, homeName) &&
+        teamsLikelyMatch(bet.awayTeam, awayName)
+      );
+    };
+
     for (const group of currentData.upcoming) {
       for (const m of group.matchs) {
-        if (m.date && !isMatchFinished(m.date, m.time)) return m;
+        if (!m.date) continue;
+        if (!isMatchStarted(m.date, m.time) || matchHasPendingBets(m)) return m;
       }
     }
     return null;
-  }, [currentData.upcoming]);
+  }, [currentData.upcoming, allPendingBets]);
 
   // Countdown timer
   useEffect(() => {
