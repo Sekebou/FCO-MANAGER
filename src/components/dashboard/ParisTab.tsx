@@ -781,8 +781,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               const matchStatus = nextMatch.date ? getMatchStatus(nextMatch.date, nextMatch.time) : false;
               const live = matchStatus === 'live';
               const waiting = matchStatus === 'waiting';
-              const homeName = nextMatch.home?.short_name || nextMatch.home?.name || '';
-              const awayName = nextMatch.away?.short_name || nextMatch.away?.name || '';
+              const homeName = getDisplayTeamName(nextMatch.home, selectedTeam);
+              const awayName = getDisplayTeamName(nextMatch.away, selectedTeam);
               const homeLogo = nextMatch.home?.club?.logo;
               const awayLogo = nextMatch.away?.club?.logo;
               const alreadyBet = hasBetOnMatch(homeName, awayName, nextMatch.date || '');
@@ -1163,8 +1163,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               {settleCards.map(({ team, loading: teamLoading, match, bets: teamBets, matchKey }) => {
                 const scores = settleScores[matchKey] || { home: '', away: '' };
                 const isSettling = settlingMatch === matchKey;
-                const homeName = match ? getMatchTeamName(match.home) : '';
-                const awayName = match ? getMatchTeamName(match.away) : '';
+                const homeName = match ? getDisplayTeamName(match.home, team) : '';
+                const awayName = match ? getDisplayTeamName(match.away, team) : '';
                 const homeLogo = match?.home?.club?.logo;
                 const awayLogo = match?.away?.club?.logo;
                 const matchDateFormatted = match?.date
