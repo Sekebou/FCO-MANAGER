@@ -398,12 +398,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return (now.getTime() - kickoff.getTime()) / 60000 > 180;
   };
 
-  // Next match for selected team: keep a started match only while bets are still pending, otherwise skip to the next bettable match
+  // Next match for selected team: skip started matches once all bets for that match are settled
   const nextMatch: FFFLiveMatch | null = useMemo(() => {
+    const pendingBets = bets.filter((bet) => bet.status === 'pending');
+
     const matchHasPendingBets = (match: FFFLiveMatch) => {
       const homeName = getMatchTeamName(match.home);
       const awayName = getMatchTeamName(match.away);
-      return allPendingBets.some((bet) =>
+      return pendingBets.some((bet) =>
         normalizeDateKey(bet.matchDate) === normalizeDateKey(match.date) &&
         teamsLikelyMatch(bet.homeTeam, homeName) &&
         teamsLikelyMatch(bet.awayTeam, awayName)
@@ -417,7 +419,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       }
     }
     return null;
-  }, [currentData.upcoming, allPendingBets]);
+  }, [currentData.upcoming, bets]);
 
   // Countdown timer
   useEffect(() => {
