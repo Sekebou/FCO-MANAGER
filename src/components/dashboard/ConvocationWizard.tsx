@@ -146,10 +146,16 @@ const ConvocationWizard: React.FC<Props> = ({
       <div className="px-4 pt-3 pb-2 shrink-0">
         <div className="relative">
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Rechercher un joueur…"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onFocus={() => {
+              setTimeout(() => {
+                searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }, 300);
+            }}
             className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
             style={{ fontSize: 16 }}
           />
