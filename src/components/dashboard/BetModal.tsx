@@ -15,6 +15,7 @@ export interface BetPlacementPayload {
   odds: number;
   amount: number;
   newBalance: number;
+  team?: string;
 }
 
 interface BetModalProps {
@@ -28,6 +29,7 @@ interface BetModalProps {
   awayLogo?: string | null;
   userId: string;
   userName: string;
+  team?: string;
 }
 
 /** Generate odds based on standings positions.

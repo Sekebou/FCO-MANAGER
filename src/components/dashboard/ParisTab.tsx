@@ -680,6 +680,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         payout: 0,
         status: 'pending',
         createdAt: new Date().toISOString(),
+        team: bet.team || null,
       }, ...prev];
     });
 
