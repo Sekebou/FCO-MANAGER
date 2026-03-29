@@ -111,6 +111,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
   const upcomingEvents = showArchived ? archivedEvents : activeEvents;
 
+  // Helper: get event title with Oisemont suffix (2/3) applied
+  const getDisplayTitle = (event: Event): string => {
+    if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return event.title;
+    const parts = event.title.split(/\s+vs\s+/i);
+    const homeName = getOisemontDisplayName((parts[0] || '').trim(), event.team || undefined);
+    const awayName = getOisemontDisplayName((parts[1] || '').trim(), event.team || undefined);
+    return `${homeName} vs ${awayName}`;
+  };
+
   // Helper: resolve logos for a match event
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
     if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return null;
