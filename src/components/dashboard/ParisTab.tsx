@@ -9,7 +9,7 @@ import type { Championship } from './ChampionnatTab';
 import {
   getEquipes, getTeamChampionship, getTousMatchsAvenir,
   mapClassementToStandings, getClassement,
-  OISEMONT_CL_NO, decodeFFFApiRef,
+  OISEMONT_CL_NO, decodeFFFApiRef, getOisemontDisplayName,
   type FFFMonthGroup, type FFFLiveMatch, type ScrapedStanding
 } from '@/lib/fffApi';
 import BetModal, { generateOdds, type BetPlacementPayload } from './BetModal';
