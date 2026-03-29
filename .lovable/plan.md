@@ -1,23 +1,27 @@
 
 
-## Correction des équipes incorrectes sur les événements
+## Modification du flux des paris : suppression de la dépendance aux résultats FFF
 
-### Problème identifié
+### Problème actuel
+- Le match passe en LIVE pendant 100 minutes, puis affiche "En attente du résultat FFF"
+- La progression vers le match suivant nécessite un score officiel FFF + règlement des paris
+- L'admin règle manuellement les paris mais le système attend quand même les scores FFF
 
-Après vérification croisée de **tous les événements** avec les données officielles FFF (calendrier D2/D4/D6), j'ai trouvé **2 événements avec une équipe incorrecte** :
+### Changements prévus
 
-| Match | Date | Heure | Équipe actuelle | Équipe correcte | Affichage actuel → corrigé |
-|-------|------|-------|----------------|----------------|---------------------------|
-| NESLOIS AS DU PAYS vs OISEMONT | 26 avr. | 12:30 | B | **A** | "OISEMONT FC 2" → **"OISEMONT FC"** |
-| OISEMONT FC vs WOIGNARUE CO | 31 mai | 15:00 | C | **B** | "OISEMONT FC 3" → **"OISEMONT FC 2"** |
+**Fichier : `src/components/dashboard/ParisTab.tsx`**
 
-Tous les autres événements sont corrects selon les championnats FFF.
+1. **Réduire le LIVE de 100min à 60min** (fonction `getMatchStatus`, ligne 479)
 
-### Plan
+2. **Changer le texte "En attente du résultat FFF" → "En attente"** (ligne 918)
 
-**Étape unique** : Exécuter 2 UPDATE SQL via l'outil d'insertion pour corriger le champ `team` :
-- `a6850ae0` → team = 'A' (NESLOIS est en D2)
-- `238e0a1f` → team = 'B' (WOIGNARUE du 31 mai est en D4, pas D6)
+3. **Modifier `isMatchSettled`** (ligne 408-420) : Un match est considéré comme réglé si :
+   - Le match est terminé (jour passé OU 3h après le coup d'envoi via `isMatchFinished`)
+   - ET aucun pari pending ne reste sur ce match
+   - Plus besoin de score FFF (`home_score`/`away_score`)
 
-Aucune modification de code nécessaire — le problème est uniquement dans les données.
+4. **Modifier `isMatchDone` dans `settleCards`** (ligne 567-569) : Même logique — retirer l'exigence de score FFF, utiliser la logique temporelle + absence de paris pending
+
+### Résultat attendu
+- Match → LIVE (1h) → "En attente" → Admin règle les paris → Le match disparaît → Prochain match affiché
 
