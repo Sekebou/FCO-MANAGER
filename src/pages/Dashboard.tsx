@@ -38,6 +38,7 @@ import AvatarModal from '@/components/modals/AvatarModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import InvitePlayerForm from '@/components/modals/InvitePlayerForm';
 import SendPushNotifForm from '@/components/modals/SendPushNotifForm';
+import VersionManagerModal from '@/components/modals/VersionManagerModal';
 
 
 export interface Player {
@@ -451,6 +452,7 @@ const Dashboard = () => {
   const [showAdminResetPassword, setShowAdminResetPassword] = useState(false);
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showPushTest, setShowPushTest] = useState(false);
+  const [showVersionManager, setShowVersionManager] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarFocusLicense, setAvatarFocusLicense] = useState(false);
   const [showLicenseReminder, setShowLicenseReminder] = useState(false);
