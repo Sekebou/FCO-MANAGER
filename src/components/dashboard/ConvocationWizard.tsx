@@ -54,6 +54,8 @@ const ConvocationWizard: React.FC<Props> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Track visual viewport to adapt to virtual keyboard
   useEffect(() => {
@@ -61,6 +63,9 @@ const ConvocationWizard: React.FC<Props> = ({
     if (!vv) return;
     const onResize = () => {
       setViewportHeight(vv.height);
+      // Detect keyboard: viewport significantly smaller than window
+      const isKb = vv.height < window.innerHeight * 0.75;
+      setKeyboardOpen(isKb);
     };
     vv.addEventListener('resize', onResize);
     vv.addEventListener('scroll', onResize);
