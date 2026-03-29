@@ -614,15 +614,18 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
     setSettlingMatch(matchKey);
     try {
-      const distinctDates = [...new Set(betsForMatch.map(b => b.matchDate))];
-      let totalSettled = 0;
-      let finalResult: any = null;
+      // Group bets by their exact stored team names + date to settle correctly
+      const betGroups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string }>();
+      for (const b of betsForMatch) {
+        const key = `${b.homeTeam}||${b.awayTeam}||${b.matchDate}`;
+        if (!betGroups.has(key)) betGroups.set(key, { homeTeam: b.homeTeam, awayTeam: b.awayTeam, matchDate: b.matchDate });
+      }
 
-      for (const rawDate of distinctDates) {
+      for (const group of betGroups.values()) {
         const { data, error } = await supabase.rpc('settle_match_bets', {
-          p_home_team: homeTeam,
-          p_away_team: awayTeam,
-          p_match_date: rawDate,
+          p_home_team: group.homeTeam,
+          p_away_team: group.awayTeam,
+          p_match_date: group.matchDate,
           p_home_score: homeScore,
           p_away_score: awayScore,
         });
