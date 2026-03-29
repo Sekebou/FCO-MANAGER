@@ -404,10 +404,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return (now.getTime() - kickoff.getTime()) / 60000 > 180;
   };
 
-  // Helper: match is fully settled = has FFF score AND no pending bets left
+  // Helper: match is fully settled = match finished AND no pending bets left (no FFF score needed)
   const isMatchSettled = useCallback((match: FFFLiveMatch) => {
-    const hasScore = match.home_score != null && match.away_score != null;
-    if (!hasScore) return false;
+    if (!isMatchFinished(match.date, match.time)) return false;
     const homeName = getMatchTeamName(match.home);
     const awayName = getMatchTeamName(match.away);
     const hasPending = bets.some(bet =>
@@ -476,7 +475,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     const diffMin = (now.getTime() - kickoff.getTime()) / 60000;
 
     if (diffMin < 0) return false; // Before kickoff
-    if (diffMin <= 100) return 'live'; // During match (~90min + extra time)
+    if (diffMin <= 60) return 'live'; // During match (~60min)
     return 'waiting'; // Match over, waiting for result
   };
 
@@ -563,10 +562,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         );
       };
 
-      // A match is "done" only if it has an official FFF score AND no pending bets
+      // A match is "done" if it's finished (time-based) AND no pending bets remain
       const isMatchDone = (match: any) => {
-        const hasScore = match.home_score != null && match.away_score != null;
-        return hasScore && !matchHasPendingBets(match);
+        return isMatchFinished(match.date, match.time) && !matchHasPendingBets(match);
       };
 
       // Find first match that is NOT done yet (stays on current match until settled)
@@ -915,7 +913,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       {waiting && (
                         <div className="flex items-center justify-center gap-2 mb-3 py-2">
                           <Clock size={14} className="text-amber-500" />
-                          <span className="text-xs font-semibold text-amber-500">En attente du résultat FFF</span>
+                          <span className="text-xs font-semibold text-amber-500">En attente</span>
                         </div>
                       )}
 
