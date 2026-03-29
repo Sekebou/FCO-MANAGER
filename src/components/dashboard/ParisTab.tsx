@@ -28,6 +28,7 @@ interface Bet {
   payout: number;
   status: string;
   createdAt: string;
+  team: string | null;
 }
 
 interface Props {
@@ -39,7 +40,7 @@ const mapBet = (r: any): Bet => ({
   id: r.id, userId: r.user_id, userName: r.user_name,
   homeTeam: r.home_team, awayTeam: r.away_team, matchDate: r.match_date,
   prediction: r.prediction, odds: r.odds, amount: r.amount, payout: r.payout,
-  status: r.status, createdAt: r.created_at,
+  status: r.status, createdAt: r.created_at, team: r.team || null,
 });
 
 type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard' | 'settle';
@@ -117,7 +118,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [betsLoaded, setBetsLoaded] = useState(false);
   const [balance, setBalance] = useState(100);
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
-  const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string } | null>(null);
+  const [betModal, setBetModal] = useState<{ home: string; away: string; date: string; homeLogo?: string; awayLogo?: string; team?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
   const [authUserId, setAuthUserId] = useState<string | null>(null);
@@ -501,11 +502,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       normalizeDateKey(b.matchDate) === normalizeDateKey(matchDate)
     );
 
-  const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string) =>
+  const hasBetOnMatch = (homeTeam: string, awayTeam: string, matchDate: string, team?: string) =>
     !betsLoaded || myBets.some(b =>
       teamsLikelyMatch(b.homeTeam, homeTeam) &&
       teamsLikelyMatch(b.awayTeam, awayTeam) &&
-      normalizeDateKey(b.matchDate) === normalizeDateKey(matchDate)
+      normalizeDateKey(b.matchDate) === normalizeDateKey(matchDate) &&
+      (team ? b.team === team : true)
     );
 
   const isAdminPlus = currentUser?.role === 'admin+';
@@ -797,7 +799,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               const awayName = getDisplayTeamName(nextMatch.away, selectedTeam);
               const homeLogo = nextMatch.home?.club?.logo;
               const awayLogo = nextMatch.away?.club?.logo;
-              const alreadyBet = hasBetOnMatch(homeName, awayName, nextMatch.date || '');
+              const alreadyBet = hasBetOnMatch(homeName, awayName, nextMatch.date || '', selectedTeam);
               const matchBets = getPendingBetsForMatch(homeName, awayName, nextMatch.date || '');
 
               // Ranks for smart odds
@@ -955,6 +957,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             date: nextMatch.date,
                             homeLogo: homeLogo || undefined,
                             awayLogo: awayLogo || undefined,
+                            team: selectedTeam,
                           })}
                           className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent/20 hover:brightness-110 transition-all"
                         >
@@ -1306,6 +1309,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           awayLogo={betModal.awayLogo}
           userId={authUserId}
           userName={currentUser.name}
+          team={betModal.team}
         />
       )}
     </div>
