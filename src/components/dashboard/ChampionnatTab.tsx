@@ -859,7 +859,7 @@ const ChampionnatTab: React.FC<Props> = ({
                         ) : (
                           <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0 text-[9px] font-bold text-muted-foreground">{s.team?.charAt(0)}</div>
                         )}
-                        <span className={`text-[11px] leading-tight truncate ${isOisemont ? 'font-extrabold text-accent' : 'font-semibold text-foreground'}`}>{s.team}</span>
+                        <span className={`text-[11px] leading-tight truncate ${isOisemont ? 'font-extrabold text-accent' : 'font-semibold text-foreground'}`}>{isOisemont ? getOisemontDisplayName(s.team || '', selectedTeam) : s.team}</span>
                       </div>
                       <span className={`text-center text-xs font-black ${isOisemont ? 'text-accent' : 'text-foreground'}`}>{s.points}</span>
                       <span className="text-center text-[11px] text-muted-foreground">{s.played}</span>
