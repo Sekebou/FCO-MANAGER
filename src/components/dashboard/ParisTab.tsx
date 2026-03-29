@@ -798,8 +798,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               const awayClNo = nextMatch.away?.club?.cl_no;
               const homeStanding = currentData.classement.find(s => s.clNo === homeClNo);
               const awayStanding = currentData.classement.find(s => s.clNo === awayClNo);
-              const homeRank = homeStanding ? currentData.classement.indexOf(homeStanding) + 1 : undefined;
-              const awayRank = awayStanding ? currentData.classement.indexOf(awayStanding) + 1 : undefined;
+              const homeRank = homeStanding?.rank;
+              const awayRank = awayStanding?.rank;
               const odds = generateOdds(homeName, awayName, nextMatch.date || '', homeRank, awayRank, currentData.classement.length || undefined);
               const locationLink = buildLocationLink(nextMatch.terrain);
               const locationLabel = [nextMatch.terrain?.name, nextMatch.terrain?.city].filter(Boolean).join(', ');
