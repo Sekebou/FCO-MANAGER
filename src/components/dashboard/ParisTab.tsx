@@ -561,10 +561,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         );
       };
 
-      // Priority: first finished match with unsettled bets, then next upcoming match
-      const finishedWithBets = allMatches.find(m => m.date && isMatchFinished(m.date, m.time) && matchHasPendingBets(m));
-      const nextUpcoming = allMatches.find(m => m.date && !isMatchFinished(m.date, m.time));
-      const nextTeamMatch = finishedWithBets || nextUpcoming || null;
+      // A match is "done" only if it has an official FFF score AND no pending bets
+      const isMatchDone = (match: any) => {
+        const hasScore = match.home_score != null && match.away_score != null;
+        return hasScore && !matchHasPendingBets(match);
+      };
+
+      // Find first match that is NOT done yet (stays on current match until settled)
+      const nextTeamMatch = allMatches.find(m => m.date && !isMatchDone(m)) || null;
 
       const teamMatchBets = allPendingBets.filter((bet) => {
         if (!nextTeamMatch) return false;
