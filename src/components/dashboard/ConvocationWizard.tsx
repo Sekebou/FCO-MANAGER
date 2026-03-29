@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Player, Member, Convocation } from '@/pages/Dashboard';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { getOisemontDisplayName } from '@/lib/fffApi';
 import {
   Shield, X, Search, Check, UserCheck, UserX, ChevronRight, ChevronLeft,
   Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash, MessageSquare, Sparkles
@@ -16,6 +17,7 @@ interface Props {
     location?: string;
     type: string;
     presences?: Record<string, string>;
+    team?: string;
     convocations?: Record<string, Convocation>;
     homeLogo?: string;
     awayLogo?: string;
@@ -345,7 +347,11 @@ const ConvocationWizard: React.FC<Props> = ({
               </div>
             )}
           </div>
-          <p className="text-center font-bold text-sm text-foreground">{event.title}</p>
+          <p className="text-center font-bold text-sm text-foreground">{(() => {
+            if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return event.title;
+            const parts = event.title.split(/\s+vs\s+/i);
+            return `${getOisemontDisplayName(parts[0].trim(), event.team || undefined)} vs ${getOisemontDisplayName((parts[1] || '').trim(), event.team || undefined)}`;
+          })()}</p>
           <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
             <Clock size={12} />
             <span>

@@ -111,6 +111,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
   const upcomingEvents = showArchived ? archivedEvents : activeEvents;
 
+  // Helper: get event title with Oisemont suffix (2/3) applied
+  const getDisplayTitle = (event: Event): string => {
+    if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return event.title;
+    const parts = event.title.split(/\s+vs\s+/i);
+    const homeName = getOisemontDisplayName((parts[0] || '').trim(), event.team || undefined);
+    const awayName = getOisemontDisplayName((parts[1] || '').trim(), event.team || undefined);
+    return `${homeName} vs ${awayName}`;
+  };
+
   // Helper: resolve logos for a match event
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
     if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return null;
@@ -280,7 +289,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 {event.type === 'match' ? <Trophy size={20} className="text-accent" /> : event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{event.title}</h3>
+                <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{getDisplayTitle(event)}</h3>
                 {/* Date/time in header only for non-training (training shows in enriched section) */}
                 {event.type !== 'training' && (
                   <p className="text-muted-foreground text-sm">
@@ -1077,7 +1086,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${event.type === 'training' ? 'bg-purple-500/10' : 'bg-muted'}`}>
                             {event.type === 'training' ? <Dumbbell size={28} className="text-purple-600" /> : <Calendar size={28} className="text-muted-foreground" />}
                           </div>
-                          <h3 className="font-bold text-sm text-foreground text-center leading-tight line-clamp-2 max-w-[220px]">{event.title}</h3>
+                          <h3 className="font-bold text-sm text-foreground text-center leading-tight line-clamp-2 max-w-[220px]">{getDisplayTitle(event)}</h3>
                           {event.duration && (
                             <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1"><Timer size={10} className="shrink-0" /> {event.duration} min</span>
                           )}

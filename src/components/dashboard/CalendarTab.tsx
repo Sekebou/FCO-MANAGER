@@ -3,6 +3,7 @@ import type { Event, Member } from '@/pages/Dashboard';
 import RoleBadge from '@/components/ui/role-badge';
 import { Swords, Dumbbell, CalendarDays } from 'lucide-react';
 import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
+import { getOisemontDisplayName } from '@/lib/fffApi';
 
 interface AppUser {
   uid: string;
@@ -86,7 +87,11 @@ const CalendarTab = ({ events, members, currentUser }: Props) => {
                   {event.awayLogo && <img src={event.awayLogo} alt="" className="w-5 h-5 rounded-full object-contain bg-white" />}
                 </div>
               )}
-              <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} truncate`}>{event.title}</h4>
+              <h4 className={`font-semibold text-sm sm:text-base ${isPast ? 'text-muted-foreground' : 'text-foreground'} truncate`}>{(() => {
+                if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return event.title;
+                const parts = event.title.split(/\s+vs\s+/i);
+                return `${getOisemontDisplayName(parts[0].trim(), event.team || undefined)} vs ${getOisemontDisplayName((parts[1] || '').trim(), event.team || undefined)}`;
+              })()}</h4>
               <StatusBadge status={status} />
             </div>
             <div className="text-xs sm:text-sm text-muted-foreground mt-0.5 space-y-0.5">
