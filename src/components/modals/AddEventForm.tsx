@@ -4,7 +4,7 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { getEquipes, getAllCompetitions, getTousMatchsAvenir, equipeCodeToTeamLetter, OISEMONT_CL_NO, type FFFCompetition, type FFFMonthGroup } from '@/lib/fffApi';
+import { getEquipes, getAllCompetitions, getTousMatchsAvenir, equipeCodeToTeamLetter, OISEMONT_CL_NO, getOisemontDisplayName, type FFFCompetition, type FFFMonthGroup } from '@/lib/fffApi';
 
 interface Props {
   onSubmit: (data: any) => void;
