@@ -103,8 +103,9 @@ function teamsLikelyMatch(a?: string, b?: string) {
   return overlap.length > 0 && overlap.length === Math.min(ta.length, tb.length);
 }
 
-function getMatchTeamName(side?: { short_name?: string; name?: string }) {
-  return side?.short_name || side?.name || '';
+function getMatchTeamName(side?: { short_name?: string; name?: string; club?: { cl_no?: number } }, teamCategory?: string) {
+  const raw = side?.short_name || side?.name || '';
+  return getOisemontDisplayName(raw, teamCategory);
 }
 
 const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
