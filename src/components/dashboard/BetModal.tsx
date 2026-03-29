@@ -15,6 +15,7 @@ export interface BetPlacementPayload {
   odds: number;
   amount: number;
   newBalance: number;
+  team?: string;
 }
 
 interface BetModalProps {
@@ -28,6 +29,7 @@ interface BetModalProps {
   awayLogo?: string | null;
   userId: string;
   userName: string;
+  team?: string;
 }
 
 /** Generate odds based on standings positions.
@@ -85,7 +87,7 @@ function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, hom
 
 export { generateOdds };
 
-const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName }) => {
+const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName, team }) => {
   useBodyScrollLock(isOpen);
   const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
   const [amount, setAmount] = useState(10);
@@ -129,6 +131,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         p_prediction: prediction,
         p_odds: selectedOdd,
         p_amount: amount,
+        p_team: team || null,
       });
 
       if (error) {
@@ -161,6 +164,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         odds: selectedOdd,
         amount,
         newBalance,
+        team,
       });
 
       toast.success(`Pari de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
