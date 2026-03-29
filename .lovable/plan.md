@@ -1,60 +1,23 @@
 
 
-## Plan : Assistant de convocations en 3 étapes
+## Correction des équipes incorrectes sur les événements
 
-Refonte du modal de convocations actuel (mono-écran) en un wizard guidé en 3 étapes dans un seul modal plein écran, avec navigation par stepper visuel.
+### Problème identifié
 
-### Vue d'ensemble
+Après vérification croisée de **tous les événements** avec les données officielles FFF (calendrier D2/D4/D6), j'ai trouvé **2 événements avec une équipe incorrecte** :
 
-```text
-┌─────────────────────────────────┐
-│  Stepper:  ① ── ② ── ③         │
-├─────────────────────────────────┤
-│                                 │
-│  Étape 1: Sélection joueurs    │
-│  Étape 2: Attribution numéros  │
-│  Étape 3: Récapitulatif        │
-│                                 │
-├─────────────────────────────────┤
-│  [Annuler]    [Suivant / Pub.] │
-└─────────────────────────────────┘
-```
+| Match | Date | Heure | Équipe actuelle | Équipe correcte | Affichage actuel → corrigé |
+|-------|------|-------|----------------|----------------|---------------------------|
+| NESLOIS AS DU PAYS vs OISEMONT | 26 avr. | 12:30 | B | **A** | "OISEMONT FC 2" → **"OISEMONT FC"** |
+| OISEMONT FC vs WOIGNARUE CO | 31 mai | 15:00 | C | **B** | "OISEMONT FC 3" → **"OISEMONT FC 2"** |
 
-### Étape 1 — Sélectionner les joueurs
+Tous les autres événements sont corrects selon les championnats FFF.
 
-- Grille de cartes joueurs (photo + nom + poste) avec toggle tap pour sélectionner/désélectionner
-- Visuel clair : carte sélectionnée = bordure accent + check vert, non sélectionné = grisé
-- Barre de recherche en haut
-- Compteur de sélectionnés en temps réel dans le header
-- Bouton « Suivant » actif dès qu'au moins 1 joueur sélectionné
+### Plan
 
-### Étape 2 — Attribuer les numéros
+**Étape unique** : Exécuter 2 UPDATE SQL via l'outil d'insertion pour corriger le champ `team` :
+- `a6850ae0` → team = 'A' (NESLOIS est en D2)
+- `238e0a1f` → team = 'B' (WOIGNARUE du 31 mai est en D4, pas D6)
 
-- Liste uniquement des joueurs sélectionnés à l'étape 1
-- Chaque ligne : photo + nom + input numéro de maillot (pré-rempli si existant)
-- Design épuré, inputs bien espacés, clavier numérique natif
-- Possibilité de passer sans numéro (optionnel)
-- Bouton « Suivant »
-
-### Étape 3 — Récapitulatif & validation
-
-- Résumé visuel : nombre de convoqués, liste avec noms + numéros
-- Liste des non-convoqués en section repliée
-- Infos match (titre, date, heure, lieu)
-- Rappel de ce qui va se passer : « Notification push aux joueurs + Création feuille de match »
-- Bouton « Publier & Notifier » (accent, proéminent)
-
-### Détails techniques
-
-**Fichier principal modifié** : `src/components/dashboard/PresencesTab.tsx`
-- Nouveau state `convocationStep: 1 | 2 | 3` pour gérer la navigation
-- Remplacement du contenu du modal `AnimatePresence` existant par le wizard 3 étapes
-- Réutilisation de `draftConvocations`, `updateDraft`, `publishConvocations` existants
-- L'étape 1 utilise un statut simplifié (sélectionné = `convoque`, non sélectionné = pas dans le draft)
-- L'étape 2 ne montre que les joueurs dont `status === 'convoque'`
-- L'étape 3 appelle `publishConvocations()` existant sans changement backend
-
-**Optionnel — Composant séparé** : Si le code devient trop long, extraction dans `src/components/dashboard/ConvocationWizard.tsx` recevant les mêmes props.
-
-Aucune modification base de données ou edge function nécessaire — le flux backend reste identique.
+Aucune modification de code nécessaire — le problème est uniquement dans les données.
 
