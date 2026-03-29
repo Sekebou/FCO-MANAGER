@@ -506,7 +506,23 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const settleCards = useMemo(() => {
     return settleTeams.map((team) => {
       const data = teamData[team] || { upcoming: [], classement: [], loading: true };
-      const nextTeamMatch = data.upcoming.flatMap(group => group.matchs).find(match => match.date && !isMatchFinished(match.date, match.time)) || null;
+      const allMatches = data.upcoming.flatMap(group => group.matchs);
+
+      // Helper: check if a match still has unsettled pending bets
+      const matchHasPendingBets = (match: any) => {
+        const homeName = getMatchTeamName(match.home);
+        const awayName = getMatchTeamName(match.away);
+        return allPendingBets.some(bet =>
+          normalizeDateKey(bet.matchDate) === normalizeDateKey(match.date)
+          && teamsLikelyMatch(bet.homeTeam, homeName)
+          && teamsLikelyMatch(bet.awayTeam, awayName)
+        );
+      };
+
+      // Priority: first finished match with unsettled bets, then next upcoming match
+      const finishedWithBets = allMatches.find(m => m.date && isMatchFinished(m.date, m.time) && matchHasPendingBets(m));
+      const nextUpcoming = allMatches.find(m => m.date && !isMatchFinished(m.date, m.time));
+      const nextTeamMatch = finishedWithBets || nextUpcoming || null;
 
       const teamMatchBets = allPendingBets.filter((bet) => {
         if (!nextTeamMatch) return false;
