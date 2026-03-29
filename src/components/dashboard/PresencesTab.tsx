@@ -114,8 +114,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
     if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return null;
     const parts = event.title.split(/\s+vs\s+/i);
-    const homeName = (parts[0] || '').trim();
-    const awayName = (parts[1] || '').trim();
+    const homeName = getOisemontDisplayName((parts[0] || '').trim(), event.team || undefined);
+    const awayName = getOisemontDisplayName((parts[1] || '').trim(), event.team || undefined);
     // Prefer logos stored on event
     if (event.homeLogo || event.awayLogo) return { homeLogo: event.homeLogo, awayLogo: event.awayLogo, homeName, awayName };
     // Fallback: look up from championships teamLogos
