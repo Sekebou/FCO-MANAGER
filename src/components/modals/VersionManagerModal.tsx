@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { APP_VERSION } from '@/lib/appVersion';
+import { getAppVersion } from '@/lib/appVersion';
 import { Smartphone, Apple, Shield, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,7 @@ interface VersionManagerModalProps {
 const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose }) => {
   const [iosVersion, setIosVersion] = useState('');
   const [androidVersion, setAndroidVersion] = useState('');
+  const [currentVersion, setCurrentVersion] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -23,11 +24,11 @@ const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose
     if (!open) return;
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('app_config')
-        .select('key, value')
-        .in('key', ['min_version_ios', 'min_version_android']);
-
+      const [version, { data }] = await Promise.all([
+        getAppVersion(),
+        supabase.from('app_config').select('key, value').in('key', ['min_version_ios', 'min_version_android']),
+      ]);
+      setCurrentVersion(version);
       if (data) {
         for (const row of data) {
           if (row.key === 'min_version_ios') setIosVersion(row.value);
@@ -46,21 +47,11 @@ const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose
       toast.error('Format invalide. Utilise le format X.Y.Z (ex: 1.2.0)');
       return;
     }
-
     setSaving(true);
     try {
-      const { error: e1 } = await supabase
-        .from('app_config')
-        .update({ value: iosVersion, updated_at: new Date().toISOString() })
-        .eq('key', 'min_version_ios');
-
-      const { error: e2 } = await supabase
-        .from('app_config')
-        .update({ value: androidVersion, updated_at: new Date().toISOString() })
-        .eq('key', 'min_version_android');
-
+      const { error: e1 } = await supabase.from('app_config').update({ value: iosVersion, updated_at: new Date().toISOString() }).eq('key', 'min_version_ios');
+      const { error: e2 } = await supabase.from('app_config').update({ value: androidVersion, updated_at: new Date().toISOString() }).eq('key', 'min_version_android');
       if (e1 || e2) throw new Error('Erreur lors de la sauvegarde');
-
       toast.success('Versions minimales mises à jour !');
       onClose();
     } catch (err: any) {
@@ -90,12 +81,9 @@ const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose
             className="bg-card w-full border-x border-t border-border shadow-2xl rounded-t-3xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
-
-            {/* Header */}
             <div className="px-5 pb-3 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-accent/10 rounded-xl flex items-center justify-center">
@@ -110,19 +98,15 @@ const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose
                 <X size={18} className="text-muted-foreground" />
               </button>
             </div>
-
-            {/* Content */}
             <div className="px-5 py-4 space-y-4">
               {loading ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">Chargement...</div>
               ) : (
                 <>
                   <div className="bg-secondary/50 rounded-xl p-3 border border-border/50">
-                    <p className="text-xs text-muted-foreground mb-1">Version actuelle de l'app</p>
-                    <p className="text-sm font-semibold text-foreground">{APP_VERSION}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Ta version actuelle</p>
+                    <p className="text-sm font-semibold text-foreground">{currentVersion}</p>
                   </div>
-
-                  {/* iOS */}
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                       <Apple size={16} />
@@ -137,8 +121,6 @@ const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose
                       inputMode="decimal"
                     />
                   </div>
-
-                  {/* Android */}
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                       <Smartphone size={16} />
@@ -153,13 +135,11 @@ const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose
                       inputMode="decimal"
                     />
                   </div>
-
                   <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3">
                     <p className="text-xs text-destructive font-medium">
-                      ⚠️ Assure-toi que la nouvelle version est déjà disponible sur les stores avant de changer ces valeurs, sinon les joueurs seront bloqués !
+                      ⚠️ Assure-toi que la nouvelle version est déjà disponible sur les stores avant de changer ces valeurs !
                     </p>
                   </div>
-
                   <button
                     onClick={handleSave}
                     disabled={saving}
@@ -171,8 +151,6 @@ const VersionManagerModal: React.FC<VersionManagerModalProps> = ({ open, onClose
                 </>
               )}
             </div>
-
-            {/* Safe area bottom */}
             <div className="h-[env(safe-area-inset-bottom)]" />
           </motion.div>
         </motion.div>

@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { APP_VERSION, isVersionOutdated } from "@/lib/appVersion";
+import { getAppVersion, isVersionOutdated } from "@/lib/appVersion";
 import { Download } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { Capacitor } from "@capacitor/core";
@@ -17,10 +17,14 @@ interface ForceUpdateGuardProps {
 const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
   const [outdated, setOutdated] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState('');
 
   useEffect(() => {
     const check = async () => {
       try {
+        const appVersion = await getAppVersion();
+        setCurrentVersion(appVersion);
+
         const platform = Capacitor.getPlatform();
         const key = platform === "ios" ? "min_version_ios" : "min_version_android";
 
@@ -30,11 +34,11 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
           .eq("key", key)
           .single();
 
-        if (data?.value && isVersionOutdated(APP_VERSION, data.value)) {
+        if (data?.value && isVersionOutdated(appVersion, data.value)) {
           setOutdated(true);
         }
       } catch {
-        // Silently fail — don't block the app if check fails
+        // Silently fail
       } finally {
         setChecked(true);
       }
@@ -43,7 +47,6 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
   }, []);
 
   if (!checked) return null;
-
   if (!outdated) return <>{children}</>;
 
   const platform = Capacitor.getPlatform();
@@ -56,16 +59,13 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
           <img src={clubLogo} alt="FCO Logo" className="w-14 h-14 object-contain" />
         </div>
-
         <h1 className="text-2xl font-bold text-foreground mb-2 uppercase tracking-wide">
           Mise à jour requise
         </h1>
-
         <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
           Une nouvelle version de FCO Manager est disponible. 
           Mets à jour l'application pour continuer à l'utiliser.
         </p>
-
         <a
           href={storeUrl}
           target="_blank"
@@ -75,9 +75,8 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
           <Download size={18} />
           Mettre à jour sur {storeName}
         </a>
-
         <p className="mt-4 text-xs text-muted-foreground/60">
-          Version actuelle : {APP_VERSION}
+          Version actuelle : {currentVersion}
         </p>
       </div>
     </div>
