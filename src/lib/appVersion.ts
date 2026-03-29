@@ -1,8 +1,33 @@
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+
 /**
- * Current app version — must be bumped on each store release.
- * Used by ForceUpdateGuard to compare against the minimum version in the database.
+ * Fallback version used on web (preview). 
+ * On native (iOS/Android), the real version is read from the app bundle.
  */
-export const APP_VERSION = '1.0.0';
+const FALLBACK_VERSION = '1.0.0';
+
+let cachedVersion: string | null = null;
+
+/**
+ * Get the native app version (from Info.plist / build.gradle).
+ * Returns the fallback on web.
+ */
+export async function getAppVersion(): Promise<string> {
+  if (cachedVersion) return cachedVersion;
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const info = await App.getInfo();
+      cachedVersion = info.version;
+      return cachedVersion;
+    } catch {
+      return FALLBACK_VERSION;
+    }
+  }
+
+  return FALLBACK_VERSION;
+}
 
 /**
  * Compare two semver strings (e.g. "1.2.3").
