@@ -10,7 +10,7 @@ import {
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
   extractTeamLogosFromResults,
-  encodeFFFApiRef, decodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship,
+  encodeFFFApiRef, decodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship, getOisemontDisplayName,
   getTousMatchsAvenir, getTousResultats, clearFFFCache,
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
@@ -949,8 +949,8 @@ const ChampionnatTab: React.FC<Props> = ({
                   </div>
                   {group.matchs.map((match: FFFLiveMatch, idx: number) => {
                     const isHome = match.home?.club?.cl_no === OISEMONT_CL_NO;
-                    const homeName = match.home?.short_name || match.home?.name || '';
-                    const awayName = match.away?.short_name || match.away?.name || '';
+                    const homeName = getOisemontDisplayName(match.home?.short_name || match.home?.name || '', selectedTeam);
+                    const awayName = getOisemontDisplayName(match.away?.short_name || match.away?.name || '', selectedTeam);
                     const homeLogo = match.home?.club?.logo;
                     const awayLogo = match.away?.club?.logo;
                     const mDate = match.date ? new Date(match.date) : null;
@@ -1060,8 +1060,8 @@ const ChampionnatTab: React.FC<Props> = ({
                     const homeScore = match.home_score ?? null;
                     const awayScore = match.away_score ?? null;
                     const isHome = match.home?.club?.cl_no === OISEMONT_CL_NO;
-                    const homeName = match.home?.short_name || match.home?.name || '';
-                    const awayName = match.away?.short_name || match.away?.name || '';
+                    const homeName = getOisemontDisplayName(match.home?.short_name || match.home?.name || '', selectedTeam);
+                    const awayName = getOisemontDisplayName(match.away?.short_name || match.away?.name || '', selectedTeam);
                     const homeLogo = match.home?.club?.logo;
                     const awayLogo = match.away?.club?.logo;
                     const isHomeWin = homeScore !== null && awayScore !== null && homeScore > awayScore;
