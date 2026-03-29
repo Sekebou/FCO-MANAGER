@@ -1086,7 +1086,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${event.type === 'training' ? 'bg-purple-500/10' : 'bg-muted'}`}>
                             {event.type === 'training' ? <Dumbbell size={28} className="text-purple-600" /> : <Calendar size={28} className="text-muted-foreground" />}
                           </div>
-                          <h3 className="font-bold text-sm text-foreground text-center leading-tight line-clamp-2 max-w-[220px]">{event.title}</h3>
+                          <h3 className="font-bold text-sm text-foreground text-center leading-tight line-clamp-2 max-w-[220px]">{getDisplayTitle(event)}</h3>
                           {event.duration && (
                             <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1"><Timer size={10} className="shrink-0" /> {event.duration} min</span>
                           )}
