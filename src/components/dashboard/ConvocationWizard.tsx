@@ -54,6 +54,8 @@ const ConvocationWizard: React.FC<Props> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Track visual viewport to adapt to virtual keyboard
   useEffect(() => {
@@ -61,6 +63,9 @@ const ConvocationWizard: React.FC<Props> = ({
     if (!vv) return;
     const onResize = () => {
       setViewportHeight(vv.height);
+      // Detect keyboard: viewport significantly smaller than window
+      const isKb = vv.height < window.innerHeight * 0.75;
+      setKeyboardOpen(isKb);
     };
     vv.addEventListener('resize', onResize);
     vv.addEventListener('scroll', onResize);
@@ -141,10 +146,16 @@ const ConvocationWizard: React.FC<Props> = ({
       <div className="px-4 pt-3 pb-2 shrink-0">
         <div className="relative">
           <input
+            ref={searchInputRef}
             type="text"
             placeholder="Rechercher un joueur…"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onFocus={() => {
+              setTimeout(() => {
+                searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }, 300);
+            }}
             className="w-full h-10 bg-secondary/60 border border-border/60 rounded-xl pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent/50"
             style={{ fontSize: 16 }}
           />
@@ -511,15 +522,15 @@ const ConvocationWizard: React.FC<Props> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex items-end justify-center"
+      className={`fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex justify-center ${keyboardOpen ? 'items-start' : 'items-end'}`}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <motion.div
-        initial={{ y: '100%' }}
+        initial={{ y: keyboardOpen ? '-100%' : '100%' }}
         animate={{ y: 0 }}
-        exit={{ y: '100%' }}
+        exit={{ y: keyboardOpen ? '-100%' : '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-card w-full rounded-t-3xl border-t border-x border-border shadow-2xl flex flex-col"
+        className={`bg-card w-full border-x border-border shadow-2xl flex flex-col ${keyboardOpen ? 'rounded-b-3xl border-b' : 'rounded-t-3xl border-t'}`}
         style={{ maxHeight: viewportHeight ? `${Math.min(viewportHeight * 0.92, window.innerHeight * 0.92)}px` : '92vh' }}
         onClick={(e) => e.stopPropagation()}
       >
