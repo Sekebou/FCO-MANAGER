@@ -289,7 +289,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 {event.type === 'match' ? <Trophy size={20} className="text-accent" /> : event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{event.title}</h3>
+                <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{getDisplayTitle(event)}</h3>
                 {/* Date/time in header only for non-training (training shows in enriched section) */}
                 {event.type !== 'training' && (
                   <p className="text-muted-foreground text-sm">
