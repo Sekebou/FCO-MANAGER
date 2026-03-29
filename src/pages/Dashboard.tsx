@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket, Smartphone
 } from 'lucide-react';
 import clubLogo from '@/assets/logo.png';
 import { toast } from 'sonner';
@@ -38,6 +38,7 @@ import AvatarModal from '@/components/modals/AvatarModal';
 import ConfirmModal from '@/components/modals/ConfirmModal';
 import InvitePlayerForm from '@/components/modals/InvitePlayerForm';
 import SendPushNotifForm from '@/components/modals/SendPushNotifForm';
+import VersionManagerModal from '@/components/modals/VersionManagerModal';
 
 
 export interface Player {
@@ -451,6 +452,7 @@ const Dashboard = () => {
   const [showAdminResetPassword, setShowAdminResetPassword] = useState(false);
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showPushTest, setShowPushTest] = useState(false);
+  const [showVersionManager, setShowVersionManager] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarFocusLicense, setAvatarFocusLicense] = useState(false);
   const [showLicenseReminder, setShowLicenseReminder] = useState(false);
@@ -1579,9 +1581,14 @@ const Dashboard = () => {
               <HeaderPoints userId={currentUser?.uid} />
               <NotificationBell />
               {currentUser?.role === 'admin+' && (
-                <button onClick={() => setShowPushTest(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Test Push Notification">
-                  <Send size={14} className="sm:hidden" /><Send size={16} className="hidden sm:block" />
-                </button>
+                <>
+                  <button onClick={() => setShowVersionManager(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Versions requises">
+                    <Smartphone size={14} className="sm:hidden" /><Smartphone size={16} className="hidden sm:block" />
+                  </button>
+                  <button onClick={() => setShowPushTest(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Test Push Notification">
+                    <Send size={14} className="sm:hidden" /><Send size={16} className="hidden sm:block" />
+                  </button>
+                </>
               )}
               <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Changer mot de passe">
                 <Lock size={14} className="sm:hidden" /><Lock size={16} className="hidden sm:block" />
@@ -1837,6 +1844,7 @@ const Dashboard = () => {
       {showAdminResetPassword && selectedMemberForReset && <AdminResetPasswordForm member={selectedMemberForReset} onClose={() => { setShowAdminResetPassword(false); setSelectedMemberForReset(null); }} />}
       {showAvatarModal && currentUser && <AvatarModal currentUser={currentUser} onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }} onAvatarUpdated={(photoURL) => setCurrentUser({ ...currentUser, photoURL })} focusLicense={avatarFocusLicense} onStartTutorial={() => setShowTutorial(true)} />}
       {showPushTest && <SendPushNotifForm onClose={() => setShowPushTest(false)} />}
+      <VersionManagerModal open={showVersionManager} onClose={() => setShowVersionManager(false)} />
       {showLicenseReminder && (
         <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setShowLicenseReminder(false)}>
           <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
