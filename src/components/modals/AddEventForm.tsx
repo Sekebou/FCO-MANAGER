@@ -97,8 +97,9 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
           if (matchDate && matchDate < now) continue;
 
           const isHome = m.home?.club?.cl_no === OISEMONT_CL_NO;
-          const homeN = m.home?.short_name || m.home?.name || '';
-          const awayN = m.away?.short_name || m.away?.name || '';
+          const teamLetter = equipeCodeToTeamLetter(comp.equipeCode);
+          const homeN = getOisemontDisplayName(m.home?.short_name || m.home?.name || '', teamLetter);
+          const awayN = getOisemontDisplayName(m.away?.short_name || m.away?.name || '', teamLetter);
           const terrain = m.terrain;
           let loc = '';
           if (terrain) loc = [terrain.name, terrain.city].filter(Boolean).join(', ');
