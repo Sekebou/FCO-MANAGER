@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Player, Member, Convocation } from '@/pages/Dashboard';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { getOisemontDisplayName } from '@/lib/fffApi';
 import {
   Shield, X, Search, Check, UserCheck, UserX, ChevronRight, ChevronLeft,
   Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash, MessageSquare, Sparkles
@@ -16,6 +17,7 @@ interface Props {
     location?: string;
     type: string;
     presences?: Record<string, string>;
+    team?: string;
     convocations?: Record<string, Convocation>;
     homeLogo?: string;
     awayLogo?: string;
