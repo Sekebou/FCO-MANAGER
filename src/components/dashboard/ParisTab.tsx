@@ -403,28 +403,31 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return (now.getTime() - kickoff.getTime()) / 60000 > 180;
   };
 
-  // Next match for selected team: skip started matches once all bets for that match are settled
+  // Helper: match is fully settled = has FFF score AND no pending bets left
+  const isMatchSettled = useCallback((match: FFFLiveMatch) => {
+    const hasScore = match.home_score != null && match.away_score != null;
+    if (!hasScore) return false;
+    const homeName = getMatchTeamName(match.home);
+    const awayName = getMatchTeamName(match.away);
+    const hasPending = bets.some(bet =>
+      bet.status === 'pending' &&
+      normalizeDateKey(bet.matchDate) === normalizeDateKey(match.date) &&
+      teamsLikelyMatch(bet.homeTeam, homeName) &&
+      teamsLikelyMatch(bet.awayTeam, awayName)
+    );
+    return !hasPending;
+  }, [bets]);
+
+  // Next match for selected team: only skip matches that have a score AND no pending bets
   const nextMatch: FFFLiveMatch | null = useMemo(() => {
-    const pendingBets = bets.filter((bet) => bet.status === 'pending');
-
-    const matchHasPendingBets = (match: FFFLiveMatch) => {
-      const homeName = getMatchTeamName(match.home);
-      const awayName = getMatchTeamName(match.away);
-      return pendingBets.some((bet) =>
-        normalizeDateKey(bet.matchDate) === normalizeDateKey(match.date) &&
-        teamsLikelyMatch(bet.homeTeam, homeName) &&
-        teamsLikelyMatch(bet.awayTeam, awayName)
-      );
-    };
-
     for (const group of currentData.upcoming) {
       for (const m of group.matchs) {
         if (!m.date) continue;
-        if (!isMatchStarted(m.date, m.time) || matchHasPendingBets(m)) return m;
+        if (!isMatchSettled(m)) return m;
       }
     }
     return null;
-  }, [currentData.upcoming, bets]);
+  }, [currentData.upcoming, isMatchSettled]);
 
   // Countdown timer
   useEffect(() => {
