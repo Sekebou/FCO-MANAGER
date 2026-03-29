@@ -7,6 +7,7 @@ import PitchView from './PitchView';
 import ConvocationWizard from './ConvocationWizard';
 import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search, MessageSquare, Briefcase, Baby, Frown, HeartPulse, PenLine } from 'lucide-react';
 import { exportMatchSheet } from '@/lib/pdfExport';
+import { getOisemontDisplayName } from '@/lib/fffApi';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
 import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
@@ -114,8 +115,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const getMatchLogos = (event: Event): { homeLogo?: string; awayLogo?: string; homeName: string; awayName: string } | null => {
     if (event.type !== 'match' || !event.title.toLowerCase().includes(' vs ')) return null;
     const parts = event.title.split(/\s+vs\s+/i);
-    const homeName = (parts[0] || '').trim();
-    const awayName = (parts[1] || '').trim();
+    const homeName = getOisemontDisplayName((parts[0] || '').trim(), event.team || undefined);
+    const awayName = getOisemontDisplayName((parts[1] || '').trim(), event.team || undefined);
     // Prefer logos stored on event
     if (event.homeLogo || event.awayLogo) return { homeLogo: event.homeLogo, awayLogo: event.awayLogo, homeName, awayName };
     // Fallback: look up from championships teamLogos
