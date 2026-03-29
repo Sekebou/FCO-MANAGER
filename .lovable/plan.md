@@ -1,27 +1,27 @@
 
 
-## Modification du flux des paris : suppression de la dépendance aux résultats FFF
+## Correction de l'affichage du modal Convocations avec clavier virtuel
 
-### Problème actuel
-- Le match passe en LIVE pendant 100 minutes, puis affiche "En attente du résultat FFF"
-- La progression vers le match suivant nécessite un score officiel FFF + règlement des paris
-- L'admin règle manuellement les paris mais le système attend quand même les scores FFF
+### Probleme identifie
+Sur le screenshot, quand le clavier s'ouvre, le modal bascule en haut de l'ecran (`items-start`) avec un arrondi en bas, mais cela cree un rendu peu naturel : un espace gris visible entre le contenu et le clavier, et le modal semble "detache" — pas du tout natif.
 
-### Changements prévus
+### Solution
+Arreter de basculer le modal de bas vers haut quand le clavier s'ouvre. A la place, garder le modal toujours ancre en bas (comportement bottom-sheet natif iOS/Android) et simplement reduire sa hauteur maximale pour correspondre exactement au `visualViewport.height`. Cela donne un rendu ou le modal reste colle au-dessus du clavier.
 
-**Fichier : `src/components/dashboard/ParisTab.tsx`**
+### Changements — `src/components/dashboard/ConvocationWizard.tsx`
 
-1. **Réduire le LIVE de 100min à 60min** (fonction `getMatchStatus`, ligne 479)
+1. **Conteneur overlay** (ligne 525) : Supprimer la logique conditionnelle `keyboardOpen ? 'items-start' : 'items-end'` → toujours `items-end`
 
-2. **Changer le texte "En attente du résultat FFF" → "En attente"** (ligne 918)
+2. **Modal sheet** (lignes 529-533) :
+   - Supprimer les animations conditionnelles basees sur `keyboardOpen` — toujours animer depuis le bas (`y: '100%'`)
+   - Supprimer la classe conditionnelle `keyboardOpen ? 'rounded-b-3xl border-b' : 'rounded-t-3xl border-t'` → toujours `rounded-t-3xl border-t`
 
-3. **Modifier `isMatchSettled`** (ligne 408-420) : Un match est considéré comme réglé si :
-   - Le match est terminé (jour passé OU 3h après le coup d'envoi via `isMatchFinished`)
-   - ET aucun pari pending ne reste sur ce match
-   - Plus besoin de score FFF (`home_score`/`away_score`)
+3. **Max-height** (ligne 534) : Utiliser directement `viewportHeight * 0.95` quand le viewport est disponible, ce qui s'adapte automatiquement a l'espace restant au-dessus du clavier
 
-4. **Modifier `isMatchDone` dans `settleCards`** (ligne 567-569) : Même logique — retirer l'exigence de score FFF, utiliser la logique temporelle + absence de paris pending
+4. **Variable `keyboardOpen`** : Conserver le state pour d'eventuels ajustements futurs, mais ne plus l'utiliser pour le positionnement du modal
 
-### Résultat attendu
-- Match → LIVE (1h) → "En attente" → Admin règle les paris → Le match disparaît → Prochain match affiché
+### Resultat attendu
+- Le modal reste toujours en bas de l'ecran (bottom-sheet classique)
+- Quand le clavier s'ouvre, le modal se reduit en hauteur pour rester au-dessus du clavier
+- Plus de gap ni de basculement haut/bas — rendu natif propre sur iOS et Android
 
