@@ -7,6 +7,7 @@ import PitchView from './PitchView';
 import ConvocationWizard from './ConvocationWizard';
 import { Calendar, CalendarDays, Plus, Check, X, Trash2, Clock, Shield, Send, ChevronDown, ChevronUp, UserCheck, UserX, Pencil, Bell, MapPin, ExternalLink, ClipboardCheck, Coins, ArrowLeft, Users, Dumbbell, Trophy, ChevronRight, Timer, User, Download, Archive, Search, MessageSquare, Briefcase, Baby, Frown, HeartPulse, PenLine } from 'lucide-react';
 import { exportMatchSheet } from '@/lib/pdfExport';
+import { getOisemontDisplayName } from '@/lib/fffApi';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import RoleBadge from '@/components/ui/role-badge';
 import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
