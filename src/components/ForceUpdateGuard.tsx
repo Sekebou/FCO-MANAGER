@@ -21,10 +21,13 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
   useEffect(() => {
     const check = async () => {
       try {
+        const platform = Capacitor.getPlatform();
+        const key = platform === "ios" ? "min_version_ios" : "min_version_android";
+
         const { data } = await supabase
           .from("app_config")
           .select("value")
-          .eq("key", "min_version")
+          .eq("key", key)
           .single();
 
         if (data?.value && isVersionOutdated(APP_VERSION, data.value)) {
