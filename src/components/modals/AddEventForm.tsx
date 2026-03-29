@@ -26,6 +26,7 @@ interface FFFMatchOption {
   homeName: string;
   awayName: string;
   month: string;
+  teamLetter: string;
 }
 
 const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUserId }: Props) => {
@@ -140,6 +141,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
             homeName: homeN,
             awayName: awayN,
             month: group.mois,
+            teamLetter,
           });
         }
       }
@@ -160,6 +162,7 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
       location: match.location,
       homeLogo: match.homeLogo || '',
       awayLogo: match.awayLogo || '',
+      team: match.teamLetter,
     }));
     setLocationValid(true);
     setFffMatchSelected(true);
