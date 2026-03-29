@@ -6,8 +6,8 @@ import clubLogo from "@/assets/logo.png";
 import { Capacitor } from "@capacitor/core";
 
 const STORE_URLS = {
-  ios: "https://apps.apple.com/app/fco-manager/id6746268498",
-  android: "https://play.google.com/store/apps/details?id=com.sekebou.fcomanager",
+  ios: "https://apps.apple.com/fr/app/fco-manager/id6760185315",
+  android: "https://play.google.com/store/apps/details?id=com.sekebou.fcomanager&pcampaignid=web_share",
 };
 
 interface ForceUpdateGuardProps {
