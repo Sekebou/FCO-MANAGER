@@ -2000,7 +2000,12 @@ const Dashboard = () => {
         <WinCelebration
           totalWon={winCelebration.totalWon}
           matchCount={winCelebration.matchCount}
-          onClose={() => setWinCelebration(null)}
+          onClose={() => {
+            if (currentUser) {
+              localStorage.setItem(`fco_last_win_seen_${currentUser.uid}`, new Date().toISOString());
+            }
+            setWinCelebration(null);
+          }}
         />
       )}
     </div>
