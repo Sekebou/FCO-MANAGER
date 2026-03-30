@@ -463,7 +463,7 @@ const Dashboard = () => {
   const [eventCreatedResult, setEventCreatedResult] = useState<{ title: string; date: string; type: string; notified: boolean; notifCount: number } | null>(null);
 
   // ═══ WIN CELEBRATION ═══
-  const [winCelebration, setWinCelebration] = useState<{ totalWon: number; matchCount: number } | null>(null);
+  const [winCelebration, setWinCelebration] = useState<{ totalWon: number; matchCount: number; seenAt: string } | null>(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -481,12 +481,15 @@ const Dashboard = () => {
         .select('payout, settled_at')
         .eq('user_id', currentUser.uid)
         .eq('status', 'won')
-        .gt('settled_at', lastSeen);
+        .gt('settled_at', lastSeen)
+        .order('settled_at', { ascending: false });
 
       if (wonBets && wonBets.length > 0) {
-        const totalWon = wonBets.reduce((sum, b) => sum + (b.payout || 0), 0);
-        if (totalWon > 0) {
-          setWinCelebration({ totalWon, matchCount: wonBets.length });
+        const settledWins = wonBets.filter(b => !!b.settled_at);
+        const totalWon = settledWins.reduce((sum, b) => sum + (b.payout || 0), 0);
+        const seenAt = settledWins[0]?.settled_at;
+        if (totalWon > 0 && seenAt) {
+          setWinCelebration({ totalWon, matchCount: settledWins.length, seenAt });
         }
       }
     };
@@ -512,6 +515,45 @@ const Dashboard = () => {
 
     return () => { clearTimeout(timer); supabase.removeChannel(channel); };
   }, [currentUser]);
+
+  const handleCloseWinCelebration = async () => {
+    const seenAt = winCelebration?.seenAt ?? new Date().toISOString();
+
+    if (currentUser) {
+      try {
+        const { data: pointsRow, error: readError } = await supabase
+          .from('user_points')
+          .select('id')
+          .eq('user_id', currentUser.uid)
+          .maybeSingle();
+
+        if (readError) throw readError;
+
+        if (pointsRow?.id) {
+          const { error: updateError } = await supabase
+            .from('user_points')
+            .update({ last_win_seen_at: seenAt, updated_at: new Date().toISOString() })
+            .eq('id', pointsRow.id);
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('user_points')
+            .insert({
+              user_id: currentUser.uid,
+              balance: 100,
+              total_bet: 0,
+              total_won: 0,
+              last_win_seen_at: seenAt,
+            });
+          if (insertError) throw insertError;
+        }
+      } catch (error) {
+        console.error('Failed to persist win celebration state:', error);
+      }
+    }
+
+    setWinCelebration(null);
+  };
 
   const canManage = () => currentUser && (currentUser.role === 'admin+' || currentUser.role === 'admin' || currentUser.role === 'entraineur');
   const canManagePhotos = () => !!(currentUser && (currentUser.role === 'admin+' || currentUser.role === 'admin' || currentUser.role === 'photographe'));
@@ -2005,12 +2047,7 @@ const Dashboard = () => {
         <WinCelebration
           totalWon={winCelebration.totalWon}
           matchCount={winCelebration.matchCount}
-          onClose={() => {
-            if (currentUser) {
-              supabase.from('user_points').update({ last_win_seen_at: new Date().toISOString() } as any).eq('user_id', currentUser.uid).then(() => {});
-            }
-            setWinCelebration(null);
-          }}
+          onClose={handleCloseWinCelebration}
         />
       )}
     </div>
