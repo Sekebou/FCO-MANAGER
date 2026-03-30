@@ -1646,37 +1646,43 @@ const Dashboard = () => {
                 <AnimatePresence>
                   {settingsMenuOpen && (
                     <>
-                      <div className="fixed inset-0 z-40" onClick={() => setSettingsMenuOpen(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: -8 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 z-50 w-52 bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
-                      >
-                        {currentUser?.role === 'admin+' && (
-                          <>
-                            <button onClick={() => { setSettingsMenuOpen(false); setShowVersionManager(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
-                              <Smartphone size={16} className="text-muted-foreground" />
-                              <span>Versions requises</span>
-                            </button>
-                            <button onClick={() => { setSettingsMenuOpen(false); setShowPushTest(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
-                              <Send size={16} className="text-muted-foreground" />
-                              <span>Notification push</span>
+                      {createPortal(
+                        <div className="fixed inset-0 z-[100]" onClick={() => setSettingsMenuOpen(false)}>
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: -8 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute right-3 w-52 bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
+                            style={{ top: `calc(env(safe-area-inset-top) + 60px)` }}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {currentUser?.role === 'admin+' && (
+                              <>
+                                <button onClick={() => { setSettingsMenuOpen(false); setShowVersionManager(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
+                                  <Smartphone size={16} className="text-muted-foreground" />
+                                  <span>Versions requises</span>
+                                </button>
+                                <button onClick={() => { setSettingsMenuOpen(false); setShowPushTest(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
+                                  <Send size={16} className="text-muted-foreground" />
+                                  <span>Notification push</span>
+                                </button>
+                                <div className="border-t border-border" />
+                              </>
+                            )}
+                            <button onClick={() => { setSettingsMenuOpen(false); setShowChangePassword(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
+                              <Lock size={16} className="text-muted-foreground" />
+                              <span>Mot de passe</span>
                             </button>
                             <div className="border-t border-border" />
-                          </>
-                        )}
-                        <button onClick={() => { setSettingsMenuOpen(false); setShowChangePassword(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
-                          <Lock size={16} className="text-muted-foreground" />
-                          <span>Mot de passe</span>
-                        </button>
-                        <div className="border-t border-border" />
-                        <button onClick={() => { setSettingsMenuOpen(false); handleLogout(); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors">
-                          <LogOut size={16} />
-                          <span>Déconnexion</span>
-                        </button>
-                      </motion.div>
+                            <button onClick={() => { setSettingsMenuOpen(false); handleLogout(); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors">
+                              <LogOut size={16} />
+                              <span>Déconnexion</span>
+                            </button>
+                          </motion.div>
+                        </div>,
+                        document.body
+                      )}
                     </>
                   )}
                 </AnimatePresence>
