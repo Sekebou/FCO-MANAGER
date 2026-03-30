@@ -1,0 +1,1 @@
+UPDATE bets SET team = 'A' WHERE id = '01fd2b96-da81-4d8c-a226-783ff7289fb4' AND team IS NULL;
