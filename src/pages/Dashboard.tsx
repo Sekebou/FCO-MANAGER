@@ -482,9 +482,6 @@ const Dashboard = () => {
         const totalWon = wonBets.reduce((sum, b) => sum + (b.payout || 0), 0);
         if (totalWon > 0) {
           setWinCelebration({ totalWon, matchCount: wonBets.length });
-          // Mark as seen with the latest settled_at
-          const latest = wonBets.reduce((max, b) => b.settled_at && b.settled_at > max ? b.settled_at : max, lastSeen);
-          localStorage.setItem(lastSeenKey, latest);
         }
       }
     };
@@ -2003,7 +2000,12 @@ const Dashboard = () => {
         <WinCelebration
           totalWon={winCelebration.totalWon}
           matchCount={winCelebration.matchCount}
-          onClose={() => setWinCelebration(null)}
+          onClose={() => {
+            if (currentUser) {
+              localStorage.setItem(`fco_last_win_seen_${currentUser.uid}`, new Date().toISOString());
+            }
+            setWinCelebration(null);
+          }}
         />
       )}
     </div>
