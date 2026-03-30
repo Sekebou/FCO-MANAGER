@@ -47,7 +47,9 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
   }, []);
 
   if (!checked) return null;
-  if (!outdated) return <>{children}</>;
+  // TEMP: force display for preview — remove after validation
+  const forcePreview = true;
+  if (!outdated && !forcePreview) return <>{children}</>;
 
   const platform = Capacitor.getPlatform();
   const storeUrl = platform === "ios" ? STORE_URLS.ios : STORE_URLS.android;
