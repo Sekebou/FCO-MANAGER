@@ -468,8 +468,13 @@ const Dashboard = () => {
   useEffect(() => {
     if (!currentUser) return;
     const checkUnseenWins = async () => {
-      const lastSeenKey = `fco_last_win_seen_${currentUser.uid}`;
-      const lastSeen = localStorage.getItem(lastSeenKey) || '1970-01-01T00:00:00Z';
+      // Read last_win_seen_at from DB (persists across rebuilds, unlike localStorage)
+      const { data: pointsRow } = await supabase
+        .from('user_points')
+        .select('last_win_seen_at')
+        .eq('user_id', currentUser.uid)
+        .maybeSingle();
+      const lastSeen = (pointsRow as any)?.last_win_seen_at || '1970-01-01T00:00:00Z';
 
       const { data: wonBets } = await supabase
         .from('bets')
@@ -2002,7 +2007,7 @@ const Dashboard = () => {
           matchCount={winCelebration.matchCount}
           onClose={() => {
             if (currentUser) {
-              localStorage.setItem(`fco_last_win_seen_${currentUser.uid}`, new Date().toISOString());
+              supabase.from('user_points').update({ last_win_seen_at: new Date().toISOString() } as any).eq('user_id', currentUser.uid).then(() => {});
             }
             setWinCelebration(null);
           }}

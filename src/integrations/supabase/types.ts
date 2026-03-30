@@ -896,6 +896,7 @@ export type Database = {
           balance: number
           created_at: string
           id: string
+          last_win_seen_at: string | null
           total_bet: number
           total_won: number
           updated_at: string
@@ -905,6 +906,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          last_win_seen_at?: string | null
           total_bet?: number
           total_won?: number
           updated_at?: string
@@ -914,6 +916,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          last_win_seen_at?: string | null
           total_bet?: number
           total_won?: number
           updated_at?: string
