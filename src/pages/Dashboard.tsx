@@ -453,6 +453,7 @@ const Dashboard = () => {
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showPushTest, setShowPushTest] = useState(false);
   const [showVersionManager, setShowVersionManager] = useState(false);
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarFocusLicense, setAvatarFocusLicense] = useState(false);
   const [showLicenseReminder, setShowLicenseReminder] = useState(false);
@@ -1624,22 +1625,62 @@ const Dashboard = () => {
               </button>
               <HeaderPoints userId={currentUser?.uid} />
               <NotificationBell />
-              {currentUser?.role === 'admin+' && (
-                <>
-                  <button onClick={() => setShowVersionManager(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Versions requises">
-                    <Smartphone size={14} className="sm:hidden" /><Smartphone size={16} className="hidden sm:block" />
-                  </button>
-                  <button onClick={() => setShowPushTest(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Test Push Notification">
-                    <Send size={14} className="sm:hidden" /><Send size={16} className="hidden sm:block" />
-                  </button>
-                </>
-              )}
-              <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Changer mot de passe">
-                <Lock size={14} className="sm:hidden" /><Lock size={16} className="hidden sm:block" />
-              </button>
-              <button onClick={handleLogout} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-destructive/20 flex items-center justify-center text-primary-foreground/50 hover:text-destructive transition-all shrink-0" title="Déconnexion">
-                <LogOut size={14} className="sm:hidden" /><LogOut size={16} className="hidden sm:block" />
-              </button>
+              {/* Unified settings menu */}
+              <div className="relative shrink-0">
+                <button
+                  onClick={() => setSettingsMenuOpen(prev => !prev)}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-all shrink-0 ${settingsMenuOpen ? 'bg-white/20 text-primary-foreground' : 'hover:bg-white/10 text-primary-foreground/50 hover:text-primary-foreground'}`}
+                  title="Menu"
+                >
+                  {currentUser?.role === 'admin+' ? (
+                    <Shield size={15} className="sm:hidden" />
+                  ) : (
+                    <Menu size={15} className="sm:hidden" />
+                  )}
+                  {currentUser?.role === 'admin+' ? (
+                    <Shield size={17} className="hidden sm:block" />
+                  ) : (
+                    <Menu size={17} className="hidden sm:block" />
+                  )}
+                </button>
+                <AnimatePresence>
+                  {settingsMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setSettingsMenuOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: -8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 z-50 w-52 bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
+                      >
+                        {currentUser?.role === 'admin+' && (
+                          <>
+                            <button onClick={() => { setSettingsMenuOpen(false); setShowVersionManager(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
+                              <Smartphone size={16} className="text-muted-foreground" />
+                              <span>Versions requises</span>
+                            </button>
+                            <button onClick={() => { setSettingsMenuOpen(false); setShowPushTest(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
+                              <Send size={16} className="text-muted-foreground" />
+                              <span>Notification push</span>
+                            </button>
+                            <div className="border-t border-border" />
+                          </>
+                        )}
+                        <button onClick={() => { setSettingsMenuOpen(false); setShowChangePassword(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-secondary/60 transition-colors">
+                          <Lock size={16} className="text-muted-foreground" />
+                          <span>Mot de passe</span>
+                        </button>
+                        <div className="border-t border-border" />
+                        <button onClick={() => { setSettingsMenuOpen(false); handleLogout(); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors">
+                          <LogOut size={16} />
+                          <span>Déconnexion</span>
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
