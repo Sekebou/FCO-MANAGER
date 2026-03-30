@@ -2007,7 +2007,7 @@ const Dashboard = () => {
           matchCount={winCelebration.matchCount}
           onClose={() => {
             if (currentUser) {
-              localStorage.setItem(`fco_last_win_seen_${currentUser.uid}`, new Date().toISOString());
+              supabase.from('user_points').update({ last_win_seen_at: new Date().toISOString() } as any).eq('user_id', currentUser.uid).then(() => {});
             }
             setWinCelebration(null);
           }}
