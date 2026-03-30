@@ -151,12 +151,26 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
             // Unlock 1h after match start (date + time), using Europe/Paris timezone
-            const matchDateTime = new Date(ms.date + (ms.time ? 'T' + ms.time : 'T00:00'));
-            // Convert "now" to Paris time for comparison
-            const parisNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
-            const unlockTime = new Date(matchDateTime.getTime() + 60 * 60 * 1000); // +1h
-            const isPast = parisNow >= unlockTime;
-            const isLocked = !isManager && !isPast;
+            // If no time is set, the sheet stays locked (cannot compute unlock time)
+            let isLocked = !isManager;
+            if (ms.time && ms.date) {
+              // Build a Date in Europe/Paris by appending the offset manually
+              // Parse date + time as-is (they represent Paris local time)
+              const matchDateTimeStr = ms.date + 'T' + ms.time + ':00';
+              // Create a formatter to get current Paris time as comparable ISO
+              const parisFormatter = new Intl.DateTimeFormat('sv-SE', {
+                timeZone: 'Europe/Paris',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false,
+              });
+              const parisNowStr = parisFormatter.format(now).replace(' ', 'T');
+              // Both strings are in Paris local time, compare directly
+              const matchMs = new Date(matchDateTimeStr).getTime();
+              const parisNowMs = new Date(parisNowStr).getTime();
+              const unlockMs = matchMs + 60 * 60 * 1000; // +1h after kickoff
+              isLocked = !isManager && parisNowMs < unlockMs;
+            }
             const hasScore = ms.homeScore != null && ms.awayScore != null;
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
 
