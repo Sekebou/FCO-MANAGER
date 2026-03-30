@@ -56,7 +56,25 @@ const ConvocationWizard: React.FC<Props> = ({
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [safeAreaTop, setSafeAreaTop] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Read safe-area-inset-top once on mount
+  useEffect(() => {
+    const el = document.documentElement;
+    const raw = getComputedStyle(el).getPropertyValue('--sat').trim();
+    if (raw) {
+      setSafeAreaTop(parseFloat(raw) || 50);
+    } else {
+      // Fallback: create a temp element to measure env(safe-area-inset-top)
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;top:0;left:0;height:env(safe-area-inset-top,50px);pointer-events:none;visibility:hidden;';
+      document.body.appendChild(probe);
+      const h = probe.getBoundingClientRect().height;
+      document.body.removeChild(probe);
+      setSafeAreaTop(h > 0 ? h : 50);
+    }
+  }, []);
 
   // Track visual viewport to adapt to virtual keyboard
   useEffect(() => {
@@ -551,7 +569,7 @@ const ConvocationWizard: React.FC<Props> = ({
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className="bg-card w-full border-x border-border shadow-2xl flex flex-col rounded-t-3xl border-t"
-        style={{ maxHeight: viewportHeight ? `${Math.max(360, viewportHeight * 0.92)}px` : '88vh' }}
+        style={{ maxHeight: viewportHeight ? `${Math.max(360, viewportHeight - safeAreaTop - 8)}px` : '88vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with stepper */}
