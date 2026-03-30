@@ -453,6 +453,7 @@ const Dashboard = () => {
   const [selectedMemberForReset, setSelectedMemberForReset] = useState<Member | null>(null);
   const [showPushTest, setShowPushTest] = useState(false);
   const [showVersionManager, setShowVersionManager] = useState(false);
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [avatarFocusLicense, setAvatarFocusLicense] = useState(false);
   const [showLicenseReminder, setShowLicenseReminder] = useState(false);
