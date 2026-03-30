@@ -151,25 +151,35 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
             // Unlock 1h after match start (date + time), using Europe/Paris timezone
-            // If no time is set, the sheet stays locked (cannot compute unlock time)
+            // If no time is set, the sheet stays locked forever for non-managers
             let isLocked = !isManager;
             if (ms.time && ms.date) {
-              // Build a Date in Europe/Paris by appending the offset manually
-              // Parse date + time as-is (they represent Paris local time)
-              const matchDateTimeStr = ms.date + 'T' + ms.time + ':00';
-              // Create a formatter to get current Paris time as comparable ISO
-              const parisFormatter = new Intl.DateTimeFormat('sv-SE', {
+              // Get current time in Europe/Paris as UTC Date
+              const parisFormatter = new Intl.DateTimeFormat('en-US', {
                 timeZone: 'Europe/Paris',
                 year: 'numeric', month: '2-digit', day: '2-digit',
                 hour: '2-digit', minute: '2-digit', second: '2-digit',
                 hour12: false,
               });
-              const parisNowStr = parisFormatter.format(now).replace(' ', 'T');
-              // Both strings are in Paris local time, compare directly
-              const matchMs = new Date(matchDateTimeStr).getTime();
-              const parisNowMs = new Date(parisNowStr).getTime();
-              const unlockMs = matchMs + 60 * 60 * 1000; // +1h after kickoff
-              isLocked = !isManager && parisNowMs < unlockMs;
+              const parts = parisFormatter.formatToParts(now);
+              const pv = (t: string) => parts.find(p => p.type === t)?.value || '00';
+              const parisNowMinutes = parseInt(pv('hour')) * 60 + parseInt(pv('minute'));
+              const parisNowDate = `${pv('year')}-${pv('month')}-${pv('day')}`;
+
+              // Match time is stored as Paris local time (HH:MM)
+              const [mH, mM] = ms.time.split(':').map(Number);
+              const matchMinutes = mH * 60 + mM;
+              const unlockMinutes = matchMinutes + 60; // +1h after kickoff
+
+              // Compare: same day check first, then cross-day
+              if (parisNowDate > ms.date) {
+                // We're past the match day entirely → unlocked
+                isLocked = false;
+              } else if (parisNowDate === ms.date) {
+                // Same day: check if current time >= kickoff + 1h
+                isLocked = !isManager && parisNowMinutes < unlockMinutes;
+              }
+              // else parisNowDate < ms.date → future match, stays locked
             }
             const hasScore = ms.homeScore != null && ms.awayScore != null;
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
