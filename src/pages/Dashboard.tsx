@@ -482,9 +482,6 @@ const Dashboard = () => {
         const totalWon = wonBets.reduce((sum, b) => sum + (b.payout || 0), 0);
         if (totalWon > 0) {
           setWinCelebration({ totalWon, matchCount: wonBets.length });
-          // Mark as seen with the latest settled_at
-          const latest = wonBets.reduce((max, b) => b.settled_at && b.settled_at > max ? b.settled_at : max, lastSeen);
-          localStorage.setItem(lastSeenKey, latest);
         }
       }
     };
