@@ -151,10 +151,10 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
           {filtered.map(ms => {
             const isExpanded = expandedId === ms.id;
             // Unlock 1h after match start (date + time), using Europe/Paris timezone
-            // If no time is set, the sheet stays locked forever for non-managers
+            // If no time is set but date is past → unlock automatically
             let isLocked = !isManager;
-            if (ms.time && ms.date) {
-              // Get current time in Europe/Paris as UTC Date
+            if (ms.date) {
+              // Get current time in Europe/Paris
               const parisFormatter = new Intl.DateTimeFormat('en-US', {
                 timeZone: 'Europe/Paris',
                 year: 'numeric', month: '2-digit', day: '2-digit',
@@ -166,20 +166,19 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               const parisNowMinutes = parseInt(pv('hour')) * 60 + parseInt(pv('minute'));
               const parisNowDate = `${pv('year')}-${pv('month')}-${pv('day')}`;
 
-              // Match time is stored as Paris local time (HH:MM)
-              const [mH, mM] = ms.time.split(':').map(Number);
-              const matchMinutes = mH * 60 + mM;
-              const unlockMinutes = matchMinutes + 60; // +1h after kickoff
-
-              // Compare: same day check first, then cross-day
               if (parisNowDate > ms.date) {
-                // We're past the match day entirely → unlocked
+                // Past match day → always unlocked
                 isLocked = false;
               } else if (parisNowDate === ms.date) {
-                // Same day: check if current time >= kickoff + 1h
-                isLocked = !isManager && parisNowMinutes < unlockMinutes;
+                if (ms.time) {
+                  // Same day with time: check if current time >= kickoff + 1h
+                  const [mH, mM] = ms.time.split(':').map(Number);
+                  const unlockMinutes = mH * 60 + mM + 60;
+                  isLocked = !isManager && parisNowMinutes < unlockMinutes;
+                }
+                // Same day without time → stays locked (match might not have started)
               }
-              // else parisNowDate < ms.date → future match, stays locked
+              // else future date → stays locked
             }
             const hasScore = ms.homeScore != null && ms.awayScore != null;
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
