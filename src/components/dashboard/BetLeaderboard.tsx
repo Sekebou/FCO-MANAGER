@@ -76,38 +76,32 @@ const BetLeaderboard: React.FC = () => {
         </div>
       </div>
       <div className="divide-y divide-border/20">
-        <AnimatePresence initial={false}>
-          {visibleEntries.map((e, i) => (
-            <motion.div
-              key={e.user_id}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2, delay: i >= DEFAULT_VISIBLE ? (i - DEFAULT_VISIBLE) * 0.03 : 0 }}
-              className="flex items-center gap-3 px-5 py-3 hover:bg-secondary/30 transition-colors overflow-hidden"
-            >
-              <span className={`text-sm font-black w-6 text-center ${i < 3 ? 'text-yellow-600' : 'text-muted-foreground'}`}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-              </span>
-              {e.photo_url ? (
-                <img src={e.photo_url} alt="" className="w-7 h-7 rounded-full object-cover ring-1 ring-border/30 shrink-0" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                  {e.user_name.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.user_name}</span>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Coins size={11} /> {e.balance}
-                </span>
-                <span className="flex items-center gap-1 font-bold text-emerald-600">
-                  <TrendingUp size={11} /> +{e.total_won}
-                </span>
+        {visibleEntries.map((e, i) => (
+          <div
+            key={e.user_id}
+            className="flex items-center gap-3 px-5 py-3 hover:bg-secondary/30 transition-colors"
+          >
+            <span className={`text-sm font-black w-6 text-center ${i < 3 ? 'text-yellow-600' : 'text-muted-foreground'}`}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+            </span>
+            {e.photo_url ? (
+              <img src={e.photo_url} alt="" className="w-7 h-7 rounded-full object-cover ring-1 ring-border/30 shrink-0" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                {e.user_name.charAt(0).toUpperCase()}
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            )}
+            <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.user_name}</span>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <Coins size={11} /> {e.balance}
+              </span>
+              <span className="flex items-center gap-1 font-bold text-emerald-600">
+                <TrendingUp size={11} /> +{e.total_won}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Toggle button */}
