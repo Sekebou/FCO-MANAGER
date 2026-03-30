@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.place_bet(uuid, text, text, text, text, text, numeric, integer);

@@ -976,34 +976,20 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
-      place_bet:
-        | {
-            Args: {
-              p_amount: number
-              p_away_team: string
-              p_home_team: string
-              p_match_date: string
-              p_odds: number
-              p_prediction: string
-              p_user_id: string
-              p_user_name: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_amount: number
-              p_away_team: string
-              p_home_team: string
-              p_match_date: string
-              p_odds: number
-              p_prediction: string
-              p_team?: string
-              p_user_id: string
-              p_user_name: string
-            }
-            Returns: Json
-          }
+      place_bet: {
+        Args: {
+          p_amount: number
+          p_away_team: string
+          p_home_team: string
+          p_match_date: string
+          p_odds: number
+          p_prediction: string
+          p_team?: string
+          p_user_id: string
+          p_user_name: string
+        }
+        Returns: Json
+      }
       register_user: {
         Args: {
           p_email: string
