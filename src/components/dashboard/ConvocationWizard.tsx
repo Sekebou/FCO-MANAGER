@@ -55,18 +55,28 @@ const ConvocationWizard: React.FC<Props> = ({
   const gridScrollRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Track visual viewport to adapt to virtual keyboard
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
+
     const onResize = () => {
-      setViewportHeight(vv.height);
-      // Detect keyboard: viewport significantly smaller than window
-      const isKb = vv.height < window.innerHeight * 0.75;
+      const nextViewportHeight = vv.height;
+      setViewportHeight(nextViewportHeight);
+
+      // iOS keyboard inset (layout viewport - visual viewport)
+      const inset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
+      setKeyboardInset(inset);
+
+      // Keyboard detection (more reliable on iOS + Android)
+      const isKb = inset > 80 || vv.height < window.innerHeight * 0.82;
       setKeyboardOpen(isKb);
     };
+
+    onResize();
     vv.addEventListener('resize', onResize);
     vv.addEventListener('scroll', onResize);
     return () => {
@@ -169,7 +179,15 @@ const ConvocationWizard: React.FC<Props> = ({
       </div>
 
       {/* Player grid */}
-      <div ref={gridScrollRef} className="flex-1 overflow-y-auto px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div
+        ref={gridScrollRef}
+        className="flex-1 overflow-y-auto px-4 pb-2"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollPaddingBottom: keyboardOpen ? '9rem' : '0px',
+          paddingBottom: keyboardOpen ? '9rem' : undefined,
+        }}
+      >
         <div className="grid grid-cols-2 gap-2 py-1 pb-4">
           {filteredPlayers.map(player => {
             const isSelected = selectedIds.includes(player.id);
@@ -524,6 +542,7 @@ const ConvocationWizard: React.FC<Props> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-foreground/60 backdrop-blur-md z-[70] flex justify-center items-end"
+      style={{ paddingBottom: keyboardInset ? `${keyboardInset}px` : undefined }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
       <motion.div
@@ -532,7 +551,7 @@ const ConvocationWizard: React.FC<Props> = ({
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className="bg-card w-full border-x border-border shadow-2xl flex flex-col rounded-t-3xl border-t"
-        style={{ maxHeight: viewportHeight ? `${viewportHeight * 0.95}px` : '92vh' }}
+        style={{ maxHeight: viewportHeight ? `${Math.max(360, viewportHeight * 0.98)}px` : '92vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with stepper */}
