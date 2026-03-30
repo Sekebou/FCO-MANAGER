@@ -47,9 +47,7 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
   }, []);
 
   if (!checked) return null;
-  // TEMP: force display for preview — remove after validation
-  const forcePreview = true;
-  if (!outdated && !forcePreview) return <>{children}</>;
+  if (!outdated) return <>{children}</>;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6 text-center">
