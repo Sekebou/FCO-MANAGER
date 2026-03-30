@@ -552,11 +552,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       const data = teamData[team] || { upcoming: [], classement: [], loading: true };
       const allMatches = data.upcoming.flatMap(group => group.matchs);
 
-      // Helper: check if a match still has unsettled pending bets
+      // Only consider bets that belong to THIS team category
+      const teamPendingBets = allPendingBets.filter(b => b.team === team);
+
+      // Helper: check if a match still has unsettled pending bets for THIS team
       const matchHasPendingBets = (match: any) => {
         const homeName = getMatchTeamName(match.home);
         const awayName = getMatchTeamName(match.away);
-        return allPendingBets.some(bet =>
+        return teamPendingBets.some(bet =>
           normalizeDateKey(bet.matchDate) === normalizeDateKey(match.date)
           && teamsLikelyMatch(bet.homeTeam, homeName)
           && teamsLikelyMatch(bet.awayTeam, awayName)
@@ -571,7 +574,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       // Find first match that is NOT done yet (stays on current match until settled)
       const nextTeamMatch = allMatches.find(m => m.date && !isMatchDone(m)) || null;
 
-      const teamMatchBets = allPendingBets.filter((bet) => {
+      const teamMatchBets = teamPendingBets.filter((bet) => {
         if (!nextTeamMatch) return false;
         const homeName = getMatchTeamName(nextTeamMatch.home);
         const awayName = getMatchTeamName(nextTeamMatch.away);
