@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Trophy, Coins, TrendingUp } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Trophy, Coins, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
 interface LeaderboardEntry {
@@ -14,22 +14,24 @@ interface LeaderboardEntry {
 
 const CACHE_KEY = 'fco_leaderboard';
 const CACHE_TTL = 15 * 60 * 1000; // 15 min
+const DEFAULT_VISIBLE = 5;
 
 const BetLeaderboard: React.FC = () => {
   const [entries, setEntries] = useState<LeaderboardEntry[]>(() => {
     try { const c = localStorage.getItem(CACHE_KEY); if (c) { const { ts, data } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) return (data as LeaderboardEntry[]).filter(p => p.user_name && p.user_name !== 'Joueur'); } } catch {} return [];
   });
   const [loading, setLoading] = useState(entries.length === 0);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    // Skip fetch if cache is fresh
     try {
       const c = localStorage.getItem(CACHE_KEY);
       if (c) { const { ts } = JSON.parse(c); if (Date.now() - ts < CACHE_TTL) { setLoading(false); return; } }
     } catch {}
 
     const fetch = async () => {
-      const { data: allPoints } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('balance', { ascending: false }).limit(20);
+      // Fetch ALL users with points (no limit)
+      const { data: allPoints } = await supabase.from('user_points').select('user_id, balance, total_won, total_bet').order('balance', { ascending: false });
       if (!allPoints || allPoints.length === 0) { setLoading(false); return; }
       const points = allPoints.filter(p => p.total_bet > 0);
       if (points.length === 0) { setLoading(false); return; }
@@ -55,6 +57,9 @@ const BetLeaderboard: React.FC = () => {
 
   if (loading || entries.length === 0) return null;
 
+  const visibleEntries = expanded ? entries : entries.slice(0, DEFAULT_VISIBLE);
+  const hasMore = entries.length > DEFAULT_VISIBLE;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -67,35 +72,63 @@ const BetLeaderboard: React.FC = () => {
         </div>
         <div>
           <h3 className="font-bold text-foreground text-sm">Classement Points</h3>
-          <p className="text-[11px] text-muted-foreground">Top 10 — Le plus de points</p>
+          <p className="text-[11px] text-muted-foreground">{entries.length} parieur{entries.length > 1 ? 's' : ''}</p>
         </div>
       </div>
       <div className="divide-y divide-border/20">
-        {entries.map((e, i) => (
-          <div key={e.user_id} className="flex items-center gap-3 px-5 py-3 hover:bg-secondary/30 transition-colors">
-            <span className={`text-sm font-black w-6 text-center ${i < 3 ? 'text-yellow-600' : 'text-muted-foreground'}`}>
-              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-            </span>
-            {/* Avatar */}
-            {e.photo_url ? (
-              <img src={e.photo_url} alt="" className="w-7 h-7 rounded-full object-cover ring-1 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            ) : (
-              <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                {e.user_name.charAt(0).toUpperCase()}
+        <AnimatePresence initial={false}>
+          {visibleEntries.map((e, i) => (
+            <motion.div
+              key={e.user_id}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, delay: i >= DEFAULT_VISIBLE ? (i - DEFAULT_VISIBLE) * 0.03 : 0 }}
+              className="flex items-center gap-3 px-5 py-3 hover:bg-secondary/30 transition-colors overflow-hidden"
+            >
+              <span className={`text-sm font-black w-6 text-center ${i < 3 ? 'text-yellow-600' : 'text-muted-foreground'}`}>
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+              </span>
+              {e.photo_url ? (
+                <img src={e.photo_url} alt="" className="w-7 h-7 rounded-full object-cover ring-1 ring-border/30 shrink-0" onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                  {e.user_name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.user_name}</span>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Coins size={11} /> {e.balance}
+                </span>
+                <span className="flex items-center gap-1 font-bold text-emerald-600">
+                  <TrendingUp size={11} /> +{e.total_won}
+                </span>
               </div>
-            )}
-            <span className="text-xs font-semibold text-foreground flex-1 truncate">{e.user_name}</span>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Coins size={11} /> {e.balance}
-              </span>
-              <span className="flex items-center gap-1 font-bold text-emerald-600">
-                <TrendingUp size={11} /> +{e.total_won}
-              </span>
-            </div>
-          </div>
-        ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
+
+      {/* Toggle button */}
+      {hasMore && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-semibold text-accent hover:bg-secondary/30 transition-colors border-t border-border/30"
+        >
+          {expanded ? (
+            <>
+              <ChevronUp size={14} />
+              Voir moins
+            </>
+          ) : (
+            <>
+              <ChevronDown size={14} />
+              Voir plus ({entries.length - DEFAULT_VISIBLE} autres)
+            </>
+          )}
+        </button>
+      )}
     </motion.div>
   );
 };
