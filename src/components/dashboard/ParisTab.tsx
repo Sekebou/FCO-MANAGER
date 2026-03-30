@@ -800,7 +800,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               const homeLogo = nextMatch.home?.club?.logo;
               const awayLogo = nextMatch.away?.club?.logo;
               const alreadyBet = hasBetOnMatch(homeName, awayName, nextMatch.date || '', selectedTeam);
-              const matchBets = getPendingBetsForMatch(homeName, awayName, nextMatch.date || '');
+              const matchBets = getPendingBetsForMatch(homeName, awayName, nextMatch.date || '', selectedTeam);
 
               // Ranks for smart odds
               const homeClNo = nextMatch.home?.club?.cl_no;
