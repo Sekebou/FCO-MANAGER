@@ -57,6 +57,7 @@ export interface Convocation {
   number?: number;
   customX?: number;
   customY?: number;
+  virtualName?: string; // For replacement players without an account
 }
 
 export const POSITIONS = [
