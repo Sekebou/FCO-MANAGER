@@ -238,7 +238,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               .filter(([, c]) => c.status === 'convoque')
               .map(([playerId, conv]) => {
                 const player = players.find(p => p.id === playerId);
-                const name = player?.name || 'Joueur supprimé';
+                const name = conv.virtualName || player?.name || 'Joueur supprimé';
                 return { id: playerId, name, conv };
               })
               .filter(Boolean) as { id: string; name: string; conv: Convocation }[];
