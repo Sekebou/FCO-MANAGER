@@ -292,7 +292,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 {event.type === 'match' ? <Trophy size={20} className="text-accent" /> : event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
               </div>
               <div className="min-w-0">
-                {editingTitle && event.type === 'other' ? (
+                {editingTitle && (event.type === 'other' || (event.type === 'match' && !event.team)) ? (
                   <div className="flex items-center gap-1.5">
                     <input
                       autoFocus
@@ -313,7 +313,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 ) : (
                   <div className="flex items-center gap-1.5">
                     <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{getDisplayTitle(event)}</h3>
-                    {event.type === 'other' && canManage() && renameEvent && (
+                    {(event.type === 'other' || (event.type === 'match' && !event.team)) && canManage() && renameEvent && (
                       <button onClick={() => { setEditTitleValue(event.title); setEditingTitle(true); }} className="p-1 rounded-lg text-muted-foreground/50 hover:text-accent hover:bg-accent/10 transition-all shrink-0">
                         <Pencil size={13} />
                       </button>
