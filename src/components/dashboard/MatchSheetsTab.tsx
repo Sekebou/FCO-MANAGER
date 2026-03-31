@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw } from 'lucide-react';
+import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw, UserRoundX, X } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
