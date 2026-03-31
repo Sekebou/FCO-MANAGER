@@ -292,7 +292,34 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 {event.type === 'match' ? <Trophy size={20} className="text-accent" /> : event.type === 'training' ? <Dumbbell size={20} className="text-purple-600" /> : <Calendar size={20} className="text-muted-foreground" />}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{getDisplayTitle(event)}</h3>
+                {editingTitle && event.type === 'other' ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      autoFocus
+                      className="font-bold text-sm text-foreground leading-tight bg-secondary/60 border border-border rounded-lg px-2 py-1 w-full outline-none focus:ring-2 focus:ring-accent/30"
+                      value={editTitleValue}
+                      onChange={(e) => setEditTitleValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && editTitleValue.trim()) {
+                          renameEvent?.(event.id, editTitleValue.trim());
+                          setEditingTitle(false);
+                        }
+                        if (e.key === 'Escape') setEditingTitle(false);
+                      }}
+                    />
+                    <button onClick={() => { if (editTitleValue.trim()) { renameEvent?.(event.id, editTitleValue.trim()); } setEditingTitle(false); }} className="p-1 rounded-lg text-accent hover:bg-accent/10"><Check size={16} /></button>
+                    <button onClick={() => setEditingTitle(false)} className="p-1 rounded-lg text-muted-foreground hover:bg-muted"><X size={16} /></button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-bold text-sm text-foreground leading-tight line-clamp-2">{getDisplayTitle(event)}</h3>
+                    {event.type === 'other' && canManage() && renameEvent && (
+                      <button onClick={() => { setEditTitleValue(event.title); setEditingTitle(true); }} className="p-1 rounded-lg text-muted-foreground/50 hover:text-accent hover:bg-accent/10 transition-all shrink-0">
+                        <Pencil size={13} />
+                      </button>
+                    )}
+                  </div>
+                )}
                 {/* Date/time in header only for non-training (training shows in enriched section) */}
                 {event.type !== 'training' && (
                   <p className="text-muted-foreground text-sm">
