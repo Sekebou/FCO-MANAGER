@@ -316,6 +316,15 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                             <span className="text-sm text-muted-foreground font-bold">-</span>
                             <span className="text-2xl font-black text-foreground">{ms.awayScore}</span>
                           </div>
+                        ) : isManager && ms.team ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRefreshScore(ms); }}
+                            disabled={refreshingId === ms.id}
+                            className="flex flex-col items-center gap-1 group"
+                          >
+                            <RefreshCw size={16} className={`text-primary group-hover:text-primary/80 transition-colors ${refreshingId === ms.id ? 'animate-spin' : ''}`} />
+                            <span className="text-[9px] font-bold text-primary/70">Score</span>
+                          </button>
                         ) : (
                           <span className="text-xs font-black text-muted-foreground tracking-widest">VS</span>
                         )}
