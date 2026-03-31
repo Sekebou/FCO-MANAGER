@@ -33,6 +33,7 @@ interface Props {
   togglePresence: (eventId: string, playerId: string, status: string, absenceReason?: string) => void;
   deleteEvent: (eventId: string) => void;
   canDeleteEvent: (event: Event) => boolean;
+  renameEvent?: (eventId: string, newTitle: string) => void;
   onAddEvent: () => void;
   onPublishAndNotifyConvocations: (eventId: string, event: Event, convocations: Record<string, Convocation>, customNotif?: { title: string; body: string }) => Promise<void>;
   onSendReminder?: (event: Event) => Promise<void>;
