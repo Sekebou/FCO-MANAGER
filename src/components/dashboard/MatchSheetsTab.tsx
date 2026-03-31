@@ -157,6 +157,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [swapModal, localSheets, onMatchSheetUpdated]);
 
+  const now = new Date();
 
   // Build a logo lookup from championships teamLogos + event-based teamLogoMap
   const getTeamLogo = (teamName: string): string | null => {
