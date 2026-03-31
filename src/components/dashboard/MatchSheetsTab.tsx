@@ -77,36 +77,28 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   }, [onMatchSheetUpdated]);
 
   const handleRefreshScore = useCallback(async (ms: MatchSheet) => {
-    if (!ms.homeTeam || !ms.awayTeam) {
-      toast.error('Équipes non définies pour cette feuille');
-      return;
-    }
+    if (ms.homeScore != null && ms.awayScore != null) return;
     setRefreshingId(ms.id);
     try {
-      // Search championship_matches for a matching result
-      const { data: matches, error } = await supabase
-        .from('championship_matches')
-        .select('home_score, away_score, played')
-        .or(`and(home_team.ilike.%${ms.homeTeam}%,away_team.ilike.%${ms.awayTeam}%),and(home_team.ilike.%${ms.awayTeam}%,away_team.ilike.%${ms.homeTeam}%)`)
-        .eq('date', ms.date);
-
+      const { data, error } = await supabase.rpc('refresh_match_sheet_score', { p_sheet_id: ms.id });
       if (error) throw error;
-
-      const played = matches?.find(m => m.played && m.home_score != null && m.away_score != null);
-      if (!played) {
+      const result = data as any;
+      if (result?.already_set) {
+        setLocalSheets((prev) => {
+          const next = prev.map(s => s.id === ms.id ? { ...s, homeScore: result.home_score, awayScore: result.away_score } : s);
+          const updatedSheet = next.find(s => s.id === ms.id);
+          if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
+          return next;
+        });
+        toast.info('Score déjà enregistré');
+        return;
+      }
+      if (!result?.found) {
         toast.info('Score pas encore disponible pour ce match');
         return;
       }
-
-      // Check if teams are in the same order or reversed
-      const { error: updateErr } = await supabase
-        .from('match_sheets')
-        .update({ home_score: played.home_score, away_score: played.away_score })
-        .eq('id', ms.id);
-      if (updateErr) throw updateErr;
-
       setLocalSheets((prev) => {
-        const next = prev.map(s => s.id === ms.id ? { ...s, homeScore: played.home_score, awayScore: played.away_score } : s);
+        const next = prev.map(s => s.id === ms.id ? { ...s, homeScore: result.home_score, awayScore: result.away_score } : s);
         const updatedSheet = next.find(s => s.id === ms.id);
         if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
         return next;
