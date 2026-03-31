@@ -64,6 +64,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
   const [absenceModal, setAbsenceModal] = useState<{ eventId: string; playerId: string } | null>(null);
   const [absenceReason, setAbsenceReason] = useState('');
   const [absenceOtherText, setAbsenceOtherText] = useState('');
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editTitleValue, setEditTitleValue] = useState('');
 
   const ABSENCE_REASONS = [
     { label: 'Travail', icon: Briefcase },
