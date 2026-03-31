@@ -316,7 +316,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                             <span className="text-sm text-muted-foreground font-bold">-</span>
                             <span className="text-2xl font-black text-foreground">{ms.awayScore}</span>
                           </div>
-                        ) : isManager && ms.team ? (
+                        ) : ms.team ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRefreshScore(ms); }}
                             disabled={refreshingId === ms.id}
