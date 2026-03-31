@@ -993,6 +993,7 @@ export type Database = {
         }
         Returns: Json
       }
+      refresh_match_sheet_score: { Args: { p_sheet_id: string }; Returns: Json }
       register_user: {
         Args: {
           p_email: string
