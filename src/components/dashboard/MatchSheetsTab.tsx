@@ -115,7 +115,48 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [onMatchSheetUpdated]);
 
-  const now = new Date();
+  const handleSwapPlayer = useCallback(async (replacementId: string, replacementName: string, isVirtual: boolean) => {
+    if (!swapModal) return;
+    const { sheetId, playerId, conv } = swapModal;
+    try {
+      const sheet = localSheets.find(s => s.id === sheetId);
+      if (!sheet) return;
+      const updatedConvocations = { ...sheet.convocations };
+      // Remove old player
+      delete updatedConvocations[playerId];
+      // Add replacement with same number/position/coords
+      const newConv: Convocation = {
+        status: 'convoque',
+        number: conv.number,
+        position: conv.position,
+        customX: conv.customX,
+        customY: conv.customY,
+        ...(isVirtual ? { virtualName: replacementName } : {}),
+      };
+      updatedConvocations[replacementId] = newConv;
+
+      const { error } = await supabase
+        .from('match_sheets')
+        .update({ convocations: updatedConvocations as any })
+        .eq('id', sheetId);
+      if (error) throw error;
+
+      setLocalSheets((prev) => {
+        const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
+        const updatedSheet = next.find(s => s.id === sheetId);
+        if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
+        return next;
+      });
+      toast.success(`${replacementName} remplace le joueur`);
+      setSwapModal(null);
+      setSwapSearch('');
+      setSwapCustomName('');
+      setSwapMode('list');
+    } catch {
+      toast.error('Erreur lors du remplacement');
+    }
+  }, [swapModal, localSheets, onMatchSheetUpdated]);
+
 
   // Build a logo lookup from championships teamLogos + event-based teamLogoMap
   const getTeamLogo = (teamName: string): string | null => {
