@@ -188,8 +188,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
             // Unlock 1h after match start (date + time), using Europe/Paris timezone
             // If no time is set but date is past → unlock automatically
             let isLocked = !isManager;
+            let matchEnded = false; // true when 2h+ after kickoff → reload allowed
             if (ms.date) {
-              // Get current time in Europe/Paris
               const parisFormatter = new Intl.DateTimeFormat('en-US', {
                 timeZone: 'Europe/Paris',
                 year: 'numeric', month: '2-digit', day: '2-digit',
@@ -202,18 +202,17 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               const parisNowDate = `${pv('year')}-${pv('month')}-${pv('day')}`;
 
               if (parisNowDate > ms.date) {
-                // Past match day → always unlocked
                 isLocked = false;
+                matchEnded = true;
               } else if (parisNowDate === ms.date) {
                 if (ms.time) {
-                  // Same day with time: check if current time >= kickoff + 1h
                   const [mH, mM] = ms.time.split(':').map(Number);
-                  const unlockMinutes = mH * 60 + mM + 60;
+                  const unlockMinutes = mH * 60 + mM + 60; // 1h for composition unlock
+                  const scoreMinutes = mH * 60 + mM + 120; // 2h for score reload
                   isLocked = !isManager && parisNowMinutes < unlockMinutes;
+                  matchEnded = parisNowMinutes >= scoreMinutes;
                 }
-                // Same day without time → stays locked (match might not have started)
               }
-              // else future date → stays locked
             }
             const hasScore = ms.homeScore != null && ms.awayScore != null;
             const hasConvocations = Object.values(ms.convocations).some(c => c.status === 'convoque');
