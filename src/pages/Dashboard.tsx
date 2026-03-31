@@ -1174,6 +1174,17 @@ const Dashboard = () => {
     });
   };
 
+  const renameEvent = async (eventId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase.from('events').update({ title: newTitle }).eq('id', eventId);
+      if (error) throw error;
+      setEvents(prev => prev.map(e => e.id === eventId ? { ...e, title: newTitle } : e));
+      toast.success('Titre modifié');
+    } catch (err: any) {
+      toast.error('Erreur : ' + (err.message || 'impossible de renommer'));
+    }
+  };
+
   const addNews = async (newsData: any) => {
     if (!canCreateNews()) return;
     try {
