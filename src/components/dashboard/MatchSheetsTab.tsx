@@ -53,6 +53,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     setLocalSheets(matchSheets);
   }, [matchSheets]);
 
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
+
   const handleUpdateConvocations = useCallback(async (sheetId: string, updated: Record<string, any>) => {
     try {
       const { error } = await supabase
@@ -60,10 +62,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .update({ convocations: updated as any })
         .eq('id', sheetId);
       if (error) throw error;
-      // Update local state
       setLocalSheets((prev) => {
         const next = prev.map((ms) => ms.id === sheetId ? { ...ms, convocations: updated } : ms);
-        // Also update parent state + cache
         const updatedSheet = next.find((ms) => ms.id === sheetId);
         if (updatedSheet && onMatchSheetUpdated) {
           onMatchSheetUpdated(updatedSheet);
@@ -73,6 +73,49 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       toast.success('Disposition sauvegardée');
     } catch {
       toast.error('Erreur lors de la sauvegarde');
+    }
+  }, [onMatchSheetUpdated]);
+
+  const handleRefreshScore = useCallback(async (ms: MatchSheet) => {
+    if (!ms.homeTeam || !ms.awayTeam) {
+      toast.error('Équipes non définies pour cette feuille');
+      return;
+    }
+    setRefreshingId(ms.id);
+    try {
+      // Search championship_matches for a matching result
+      const { data: matches, error } = await supabase
+        .from('championship_matches')
+        .select('home_score, away_score, played')
+        .or(`and(home_team.ilike.%${ms.homeTeam}%,away_team.ilike.%${ms.awayTeam}%),and(home_team.ilike.%${ms.awayTeam}%,away_team.ilike.%${ms.homeTeam}%)`)
+        .eq('date', ms.date);
+
+      if (error) throw error;
+
+      const played = matches?.find(m => m.played && m.home_score != null && m.away_score != null);
+      if (!played) {
+        toast.info('Score pas encore disponible pour ce match');
+        return;
+      }
+
+      // Check if teams are in the same order or reversed
+      const { error: updateErr } = await supabase
+        .from('match_sheets')
+        .update({ home_score: played.home_score, away_score: played.away_score })
+        .eq('id', ms.id);
+      if (updateErr) throw updateErr;
+
+      setLocalSheets((prev) => {
+        const next = prev.map(s => s.id === ms.id ? { ...s, homeScore: played.home_score, awayScore: played.away_score } : s);
+        const updatedSheet = next.find(s => s.id === ms.id);
+        if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
+        return next;
+      });
+      toast.success('Score mis à jour !');
+    } catch {
+      toast.error('Erreur lors de la récupération du score');
+    } finally {
+      setRefreshingId(null);
     }
   }, [onMatchSheetUpdated]);
 
