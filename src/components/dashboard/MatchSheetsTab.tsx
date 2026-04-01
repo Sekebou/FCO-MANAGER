@@ -59,6 +59,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   const [swapSearch, setSwapSearch] = useState('');
   const [swapCustomName, setSwapCustomName] = useState('');
   const [swapMode, setSwapMode] = useState<'list' | 'custom'>('list');
+  useBodyScrollLock(!!swapModal);
 
   const handleUpdateConvocations = useCallback(async (sheetId: string, updated: Record<string, any>) => {
     try {
