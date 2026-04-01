@@ -26,6 +26,29 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isNonPlayer = currentUser.role === 'photographe';
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const isAdminPlus = currentUser.role === 'admin+';
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('Compte supprimé avec succès');
+      await supabase.auth.signOut();
+      onAccountDeleted?.();
+    } catch (err: any) {
+      toast.error('Erreur: ' + err.message);
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   useEffect(() => {
     const loadLicenseData = async () => {
