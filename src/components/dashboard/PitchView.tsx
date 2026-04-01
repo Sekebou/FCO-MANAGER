@@ -5,7 +5,6 @@ import { Move, Check, RotateCcw, ArrowLeftRight, ChevronDown, UserRoundX } from 
 import type { Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { POSITIONS } from '@/pages/Dashboard';
 
 interface Player {
   id: string;
