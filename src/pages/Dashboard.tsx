@@ -394,21 +394,17 @@ const Dashboard = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
     let rafId: number | null = null;
     const onScroll = () => {
       if (rafId) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const currentY = window.scrollY;
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const currentY = container.scrollTop;
+        const maxScroll = container.scrollHeight - container.clientHeight;
 
-        // Ignore bounce/elastic overscroll at top or bottom
-        if (currentY < 0 || currentY > maxScroll) {
-          lastScrollY.current = currentY;
-          return;
-        }
-        // Near bottom — ignore small movements (elastic bounce)
-        if (currentY >= maxScroll - 5) {
+        if (currentY < 0 || currentY > maxScroll + 5) {
           lastScrollY.current = currentY;
           return;
         }
@@ -429,8 +425,8 @@ const Dashboard = () => {
         lastScrollY.current = currentY;
       });
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); if (rafId) cancelAnimationFrame(rafId); };
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => { container.removeEventListener('scroll', onScroll); if (rafId) cancelAnimationFrame(rafId); };
   }, []);
 
   useEffect(() => {
