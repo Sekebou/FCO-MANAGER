@@ -217,6 +217,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
   );
 };
 
+const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, onMatchSheetUpdated, onDeleteMatchSheet }) => {
 
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
