@@ -16,9 +16,6 @@ const config: CapacitorConfig = {
         },
       }
     : {}),
-  ios: {
-    contentInset: 'automatic',
-  },
   android: {
     webContentsDebuggingEnabled: false,
   },
