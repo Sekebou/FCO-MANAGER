@@ -1586,7 +1586,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex flex-col pb-24">
+    <div className="fixed inset-0 bg-secondary/30 flex flex-col overflow-hidden">
       {/* Header */}
       {/* Header */}
       <header className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${headerVisible ? 'top-0 translate-y-0' : 'top-0 -translate-y-full'}`}>
