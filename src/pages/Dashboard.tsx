@@ -1932,7 +1932,7 @@ const Dashboard = () => {
       {showAddCard && <AddCardForm players={visiblePlayers} selectedPlayerId={selectedPlayerForCard} cards={cards} onSubmit={addCard} onClose={() => { setShowAddCard(false); setSelectedPlayerForCard(null); }} />}
       {showChangePassword && <ChangePasswordForm onClose={() => setShowChangePassword(false)} />}
       {showAdminResetPassword && selectedMemberForReset && <AdminResetPasswordForm member={selectedMemberForReset} onClose={() => { setShowAdminResetPassword(false); setSelectedMemberForReset(null); }} />}
-      {showAvatarModal && currentUser && <AvatarModal currentUser={currentUser} onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }} onAvatarUpdated={(photoURL) => setCurrentUser({ ...currentUser, photoURL })} focusLicense={avatarFocusLicense} onStartTutorial={() => setShowTutorial(true)} />}
+      {showAvatarModal && currentUser && <AvatarModal currentUser={currentUser} onClose={() => { setShowAvatarModal(false); setAvatarFocusLicense(false); }} onAvatarUpdated={(photoURL) => setCurrentUser({ ...currentUser, photoURL })} focusLicense={avatarFocusLicense} onStartTutorial={() => setShowTutorial(true)} onAccountDeleted={() => { navigate('/auth'); }} />}
       {showPushTest && <SendPushNotifForm onClose={() => setShowPushTest(false)} />}
       <VersionManagerModal open={showVersionManager} onClose={() => setShowVersionManager(false)} />
       {showLicenseReminder && (
