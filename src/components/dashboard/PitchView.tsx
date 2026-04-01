@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback, forwardRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Move, Check, RotateCcw, ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { Move, Check, RotateCcw, ArrowLeftRight, ChevronDown, UserRoundX } from 'lucide-react';
 import type { Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 
