@@ -123,12 +123,20 @@
     -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
     overscroll-behavior: none;
+    overflow: hidden;
+    height: 100%;
+    position: fixed;
+    width: 100%;
   }
 
   /* Prevent iOS rubber-band bounce scroll */
   body {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
+    overflow: hidden;
+    height: 100%;
+    position: fixed;
+    width: 100%;
   }
 
   /* Force all interactive elements to use manipulation touch-action */

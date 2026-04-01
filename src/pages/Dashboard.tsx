@@ -332,7 +332,7 @@ const Dashboard = () => {
   }, [activeTab]);
 
   const [pendingEventId, setPendingEventId] = useState<string | null>(null);
-  const handleTabChange = (tab: string, eventId?: string) => { window.scrollTo(0, 0); setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(eventId || null); setActiveTab(tab); };
+  const handleTabChange = (tab: string, eventId?: string) => { if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0; setHeaderVisible(true); lastDirection.current = null; directionChangeY.current = 0; lastScrollY.current = 0; setPendingEventId(eventId || null); setActiveTab(tab); };
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -391,23 +391,20 @@ const Dashboard = () => {
   const lastScrollY = useRef(0);
   const lastDirection = useRef<'up' | 'down' | null>(null);
   const directionChangeY = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
     let rafId: number | null = null;
     const onScroll = () => {
       if (rafId) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const currentY = window.scrollY;
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const currentY = container.scrollTop;
+        const maxScroll = container.scrollHeight - container.clientHeight;
 
-        // Ignore bounce/elastic overscroll at top or bottom
-        if (currentY < 0 || currentY > maxScroll) {
-          lastScrollY.current = currentY;
-          return;
-        }
-        // Near bottom — ignore small movements (elastic bounce)
-        if (currentY >= maxScroll - 5) {
+        if (currentY < 0 || currentY > maxScroll + 5) {
           lastScrollY.current = currentY;
           return;
         }
@@ -428,8 +425,8 @@ const Dashboard = () => {
         lastScrollY.current = currentY;
       });
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => { window.removeEventListener('scroll', onScroll); if (rafId) cancelAnimationFrame(rafId); };
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => { container.removeEventListener('scroll', onScroll); if (rafId) cancelAnimationFrame(rafId); };
   }, []);
 
   useEffect(() => {
@@ -1589,10 +1586,10 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex flex-col pb-24">
+    <div className="fixed inset-0 bg-secondary/30 flex flex-col overflow-hidden">
       {/* Header */}
       {/* Header */}
-      <header className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${headerVisible ? 'top-0 translate-y-0' : 'top-0 -translate-y-full'}`}>
+      <header className={`bg-primary border-b border-primary/80 z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 shrink-0 ${headerVisible ? 'translate-y-0' : '-translate-y-full h-0 overflow-hidden'}`}>
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
           <div className="flex justify-between items-center h-16 lg:h-20 overflow-hidden">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
@@ -1694,7 +1691,7 @@ const Dashboard = () => {
       {/* Welcome banner removed — HomeTab is the new landing */}
 
       {/* Content */}
-      <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
+      <main ref={scrollContainerRef} className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1 overflow-y-auto overscroll-none pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="animate-fade-in">
           {activeTab === 'home' && (
             <HomeTab currentUser={currentUser} events={events} players={visiblePlayers} news={news} members={visibleMembers} onNavigate={handleTabChange} />
