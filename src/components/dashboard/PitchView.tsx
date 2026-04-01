@@ -792,30 +792,33 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         </AnimatePresence>
       </div>
 
-      {/* Swap pick modal — choose which convoked player to replace */}
-      <AnimatePresence>
-        {swapPickMode && onSwapPlayer && (
+      {/* Swap pick modal — rendered via portal to avoid overflow issues */}
+      {swapPickMode && onSwapPlayer && createPortal(
+        <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-6"
             onClick={() => setSwapPickMode(false)}
           >
             <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              className="bg-card border border-border rounded-2xl w-full max-w-sm max-h-[60vh] flex flex-col shadow-2xl"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border rounded-2xl w-full max-w-[340px] max-h-[65vh] flex flex-col shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <h3 className="text-sm font-bold text-foreground">Quel joueur remplacer ?</h3>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Remplacer un joueur</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Sélectionnez le joueur à remplacer</p>
+                </div>
                 <button onClick={() => setSwapPickMode(false)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                   <span className="text-muted-foreground text-lg leading-none">×</span>
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-1">
+              <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
                 {Object.entries(convocations)
                   .filter(([, c]) => c.status === 'convoque')
                   .sort((a, b) => (a[1].number || 99) - (b[1].number || 99))
@@ -829,24 +832,22 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                           setSwapPickMode(false);
                           onSwapPlayer(pid, name, conv);
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary active:bg-secondary transition-colors text-left"
                       >
                         <span className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary shrink-0">
                           {conv.number || '?'}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-foreground truncate">{name}</p>
-                          <p className="text-[10px] text-muted-foreground">{conv.position || 'Poste non défini'}</p>
-                        </div>
-                        <UserRoundX size={14} className="text-muted-foreground shrink-0" />
+                        <span className="text-xs font-semibold text-foreground truncate flex-1">{name}</span>
+                        <UserRoundX size={14} className="text-muted-foreground/50 shrink-0" />
                       </button>
                     );
                   })}
               </div>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 });
