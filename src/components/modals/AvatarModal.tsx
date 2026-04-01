@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen, AlertTriangle } from 'lucide-react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
 interface Props {
