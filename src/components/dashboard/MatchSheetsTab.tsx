@@ -136,7 +136,6 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
       style={{ paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
       onClick={onClose}
     >
-    >
       <motion.div
         ref={containerRef}
         initial={{ y: '100%' }}
