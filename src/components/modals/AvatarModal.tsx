@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen } from 'lucide-react';
+import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen, AlertTriangle } from 'lucide-react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { toast } from 'sonner';
 import NativeDatePicker from '@/components/ui/native-date-picker';
@@ -12,9 +12,10 @@ interface Props {
   onAvatarUpdated: (photoURL: string | null) => void;
   focusLicense?: boolean;
   onStartTutorial?: () => void;
+  onAccountDeleted?: () => void;
 }
 
-const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial }: Props) => {
+const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial, onAccountDeleted }: Props) => {
   useBodyScrollLock();
   const licenseRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -25,6 +26,29 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isNonPlayer = currentUser.role === 'photographe';
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const isAdminPlus = currentUser.role === 'admin+';
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success('Compte supprimé avec succès');
+      await supabase.auth.signOut();
+      onAccountDeleted?.();
+    } catch (err: any) {
+      toast.error('Erreur: ' + err.message);
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   useEffect(() => {
     const loadLicenseData = async () => {
@@ -214,6 +238,46 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
             <BookOpen size={16} /> Revoir le tutoriel
           </button>
         </div>
+
+        {/* Delete account */}
+        {!isAdminPlus && (
+          <div className="px-5 pb-5">
+            <div className="border-t border-border pt-4">
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full text-destructive/70 py-2.5 rounded-xl font-medium hover:bg-destructive/10 transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle size={14} /> Supprimer mon compte
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="bg-destructive/10 rounded-xl p-3 text-center">
+                    <p className="text-sm font-semibold text-destructive">Êtes-vous sûr ?</p>
+                    <p className="text-xs text-muted-foreground mt-1">Cette action est irréversible. Toutes vos données seront supprimées définitivement.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={deleting}
+                      className="flex-1 py-2.5 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                      className="flex-1 py-2.5 bg-destructive text-destructive-foreground rounded-xl font-medium hover:bg-destructive/90 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      Confirmer
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {(isNonPlayer || !currentUser.playerId) && <div className="pb-2" />}
       </div>
