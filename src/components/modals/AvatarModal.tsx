@@ -18,12 +18,16 @@ interface Props {
 
 const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial }: Props) => {
   useBodyScrollLock();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const licenseRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(currentUser.photoURL || null);
   const [licenseExpiry, setLicenseExpiry] = useState('');
   const [loadingLicense, setLoadingLicense] = useState(true);
   const [savingLicense, setSavingLicense] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isNonPlayer = currentUser.role === 'photographe';
