@@ -1691,7 +1691,7 @@ const Dashboard = () => {
       {/* Welcome banner removed — HomeTab is the new landing */}
 
       {/* Content */}
-      <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1">
+      <main ref={scrollContainerRef} className="mx-auto w-full max-w-7xl px-3 py-4 sm:p-6 lg:px-10 flex-1 overflow-y-auto overscroll-none pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="animate-fade-in">
           {activeTab === 'home' && (
             <HomeTab currentUser={currentUser} events={events} players={visiblePlayers} news={news} members={visibleMembers} onNavigate={handleTabChange} />
