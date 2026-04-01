@@ -185,8 +185,10 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
+                  ref={searchInputRef}
                   value={swapSearch}
                   onChange={e => onSwapSearchChange(e.target.value)}
+                  onFocus={() => setTimeout(() => searchInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
                   placeholder="Rechercher un joueur..."
                   className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   style={{ fontSize: '16px' }}
