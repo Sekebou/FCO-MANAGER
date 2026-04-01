@@ -391,6 +391,7 @@ const Dashboard = () => {
   const lastScrollY = useRef(0);
   const lastDirection = useRef<'up' | 'down' | null>(null);
   const directionChangeY = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let rafId: number | null = null;
