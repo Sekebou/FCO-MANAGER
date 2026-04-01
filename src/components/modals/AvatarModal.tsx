@@ -239,6 +239,46 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
           </button>
         </div>
 
+        {/* Delete account */}
+        {!isAdminPlus && (
+          <div className="px-5 pb-5">
+            <div className="border-t border-border pt-4">
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full text-destructive/70 py-2.5 rounded-xl font-medium hover:bg-destructive/10 transition-all text-sm flex items-center justify-center gap-2"
+                >
+                  <AlertTriangle size={14} /> Supprimer mon compte
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="bg-destructive/10 rounded-xl p-3 text-center">
+                    <p className="text-sm font-semibold text-destructive">Êtes-vous sûr ?</p>
+                    <p className="text-xs text-muted-foreground mt-1">Cette action est irréversible. Toutes vos données seront supprimées définitivement.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={deleting}
+                      className="flex-1 py-2.5 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleting}
+                      className="flex-1 py-2.5 bg-destructive text-destructive-foreground rounded-xl font-medium hover:bg-destructive/90 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                      Confirmer
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {(isNonPlayer || !currentUser.playerId) && <div className="pb-2" />}
       </div>
     </div>
