@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { AppUser } from '@/contexts/AuthContext';
-import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, Camera, Trash2, X, Upload, Calendar, CheckCircle2, BookOpen, AlertTriangle } from 'lucide-react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 
 interface Props {
@@ -16,12 +18,16 @@ interface Props {
 
 const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial }: Props) => {
   useBodyScrollLock();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const licenseRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(currentUser.photoURL || null);
   const [licenseExpiry, setLicenseExpiry] = useState('');
   const [loadingLicense, setLoadingLicense] = useState(true);
   const [savingLicense, setSavingLicense] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isNonPlayer = currentUser.role === 'photographe';
@@ -211,12 +217,75 @@ const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = fal
             onClick={() => { onClose(); onStartTutorial?.(); }}
             className="w-full bg-secondary text-foreground py-2.5 rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm flex items-center justify-center gap-2"
           >
-            <BookOpen size={16} /> Revoir le tutoriel
+           <BookOpen size={16} /> Revoir le tutoriel
+          </button>
+        </div>
+
+        {/* Delete account */}
+        <div className="px-5 pb-5">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full bg-destructive/10 text-destructive py-2.5 rounded-xl font-medium hover:bg-destructive/20 transition-all text-sm flex items-center justify-center gap-2"
+          >
+            <Trash2 size={16} /> Supprimer mon compte
           </button>
         </div>
 
         {(isNonPlayer || !currentUser.playerId) && <div className="pb-2" />}
       </div>
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-[80]" onClick={() => !deleting && setShowDeleteConfirm(false)}>
+          <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center pt-8 pb-4 px-6">
+              <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-4">
+                <AlertTriangle size={28} className="text-destructive" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground text-center">Supprimer ton compte ?</h3>
+              <p className="text-sm text-muted-foreground text-center mt-2 leading-relaxed">
+                Cette action est <strong>irréversible</strong>. Toutes tes données seront supprimées : profil, statistiques, présences, paris, messages, et ton compte sera définitivement effacé.
+              </p>
+            </div>
+            <div className="flex gap-3 p-5 border-t border-border">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 py-3 px-4 bg-secondary text-foreground rounded-xl font-medium hover:bg-secondary/80 transition-all text-sm disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) throw new Error('Non connecté');
+                    const res = await supabase.functions.invoke('delete-account', {
+                      headers: { Authorization: `Bearer ${session.access_token}` },
+                    });
+                    if (res.error) throw res.error;
+                    const body = res.data;
+                    if (body?.error) throw new Error(body.error);
+                    toast.success('Compte supprimé avec succès');
+                    await logout();
+                    navigate('/auth');
+                  } catch (err: any) {
+                    console.error('Delete account error:', err);
+                    toast.error(err.message || 'Erreur lors de la suppression');
+                    setDeleting(false);
+                  }
+                }}
+                disabled={deleting}
+                className="flex-1 py-3 px-4 bg-destructive text-destructive-foreground rounded-xl font-medium hover:bg-destructive/90 transition-all text-sm shadow-lg shadow-destructive/20 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                {deleting ? 'Suppression...' : 'Confirmer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
