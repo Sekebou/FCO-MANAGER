@@ -1589,7 +1589,7 @@ const Dashboard = () => {
     <div className="fixed inset-0 bg-secondary/30 flex flex-col overflow-hidden">
       {/* Header */}
       {/* Header */}
-      <header className={`bg-primary border-b border-primary/80 sticky z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 lg:top-0 ${headerVisible ? 'top-0 translate-y-0' : 'top-0 -translate-y-full'}`}>
+      <header className={`bg-primary border-b border-primary/80 z-50 pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-in-out lg:translate-y-0 shrink-0 ${headerVisible ? 'translate-y-0' : '-translate-y-full h-0 overflow-hidden'}`}>
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
           <div className="flex justify-between items-center h-16 lg:h-20 overflow-hidden">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
