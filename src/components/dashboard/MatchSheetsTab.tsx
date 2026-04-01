@@ -198,7 +198,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
             </div>
 
             {/* Player list */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-3 space-y-0.5">
+            <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-3 space-y-0.5" style={{ paddingBottom: keyboardOpen ? '120px' : undefined }}>
               {available.length === 0 ? (
                 <p className="text-center text-xs text-muted-foreground py-6">
                   {q ? 'Aucun joueur trouvé' : 'Aucun joueur disponible'}
