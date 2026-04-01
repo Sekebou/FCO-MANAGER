@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Move, Check, RotateCcw, ArrowLeftRight, ChevronDown, UserRoundX } from 'lucide-react';
 import type { Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 interface Player {
   id: string;
@@ -316,6 +317,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [swapPickMode, setSwapPickMode] = useState(false);
+  useBodyScrollLock(swapPickMode);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimestampRef = useRef(0);

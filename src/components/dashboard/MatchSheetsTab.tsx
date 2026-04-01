@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw, X } from 'lucide-react';
 import PitchView from './PitchView';
@@ -58,6 +59,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   const [swapSearch, setSwapSearch] = useState('');
   const [swapCustomName, setSwapCustomName] = useState('');
   const [swapMode, setSwapMode] = useState<'list' | 'custom'>('list');
+  useBodyScrollLock(!!swapModal);
 
   const handleUpdateConvocations = useCallback(async (sheetId: string, updated: Record<string, any>) => {
     try {
@@ -550,14 +552,14 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-6 pb-20"
             onClick={() => setSwapModal(null)}
           >
             <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              className="bg-card border border-border rounded-2xl w-full max-w-sm max-h-[70vh] flex flex-col shadow-2xl"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card border border-border rounded-2xl w-full max-w-[340px] max-h-[65vh] flex flex-col shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
