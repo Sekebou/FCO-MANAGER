@@ -456,6 +456,12 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                               players={players}
                               isManager={isManager}
                               onUpdateConvocations={(updated) => handleUpdateConvocations(ms.id, updated)}
+                              onSwapPlayer={isManager ? (playerId, playerName, conv) => {
+                                setSwapModal({ sheetId: ms.id, playerId, playerName, conv });
+                                setSwapSearch('');
+                                setSwapCustomName('');
+                                setSwapMode('list');
+                              } : undefined}
                             />
                           ) : (
                             <div className="text-center py-8">
