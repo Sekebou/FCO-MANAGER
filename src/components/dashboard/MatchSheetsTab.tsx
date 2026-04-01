@@ -133,7 +133,9 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+      style={{ paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
       onClick={onClose}
+    >
     >
       <motion.div
         ref={containerRef}
