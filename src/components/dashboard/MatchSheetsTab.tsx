@@ -64,26 +64,60 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
   onClose, onSwapModeChange, onSwapSearchChange, onSwapCustomNameChange, onSwapPlayer,
 }) => {
   useBodyScrollLock();
-  const [maxH, setMaxH] = useState('70vh');
   const containerRef = useRef<HTMLDivElement>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const [safeAreaTop, setSafeAreaTop] = useState(0);
 
-  // Dynamically adjust height when keyboard opens/closes
+  // Read safe-area-inset-top once on mount
   useEffect(() => {
-    const update = () => {
-      const vv = window.visualViewport;
-      if (vv) {
-        const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0', 10);
-        setMaxH(`${vv.height - safeTop - 24}px`);
-      }
+    const el = document.documentElement;
+    const raw = getComputedStyle(el).getPropertyValue('--sat').trim();
+    if (raw) {
+      setSafeAreaTop(parseFloat(raw) || 50);
+    } else {
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;top:0;left:0;height:env(safe-area-inset-top,50px);pointer-events:none;visibility:hidden;';
+      document.body.appendChild(probe);
+      const h = probe.getBoundingClientRect().height;
+      document.body.removeChild(probe);
+      setSafeAreaTop(h > 0 ? h : 50);
+    }
+  }, []);
+
+  // Track visual viewport to adapt to virtual keyboard
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onResize = () => {
+      setViewportHeight(vv.height);
+      const inset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
+      setKeyboardInset(inset);
+      const isKb = inset > 80 || vv.height < window.innerHeight * 0.82;
+      setKeyboardOpen(isKb);
     };
-    update();
-    window.visualViewport?.addEventListener('resize', update);
-    window.visualViewport?.addEventListener('scroll', update);
+
+    onResize();
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
     return () => {
-      window.visualViewport?.removeEventListener('resize', update);
-      window.visualViewport?.removeEventListener('scroll', update);
+      vv.removeEventListener('resize', onResize);
+      vv.removeEventListener('scroll', onResize);
     };
   }, []);
+
+  // Scroll list to top when search changes
+  useEffect(() => {
+    listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [swapSearch]);
+
+  const maxH = viewportHeight
+    ? `${Math.max(320, viewportHeight - safeAreaTop - 8)}px`
+    : '70vh';
 
   const sheet = localSheets.find(s => s.id === swapModal.sheetId);
   const convokedIds = sheet ? Object.keys(sheet.convocations).filter(id => sheet.convocations[id]?.status === 'convoque') : [];
@@ -99,6 +133,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+      style={{ paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
       onClick={onClose}
     >
       <motion.div
@@ -150,8 +185,10 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
+                  ref={searchInputRef}
                   value={swapSearch}
                   onChange={e => onSwapSearchChange(e.target.value)}
+                  onFocus={() => setTimeout(() => searchInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
                   placeholder="Rechercher un joueur..."
                   className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   style={{ fontSize: '16px' }}
@@ -161,7 +198,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
             </div>
 
             {/* Player list */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-3 space-y-0.5">
+            <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-3 space-y-0.5" style={{ paddingBottom: keyboardOpen ? '120px' : undefined }}>
               {available.length === 0 ? (
                 <p className="text-center text-xs text-muted-foreground py-6">
                   {q ? 'Aucun joueur trouvé' : 'Aucun joueur disponible'}
