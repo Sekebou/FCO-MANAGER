@@ -15,7 +15,7 @@ interface Props {
   onAccountDeleted?: () => void;
 }
 
-const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial }: Props) => {
+const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial, onAccountDeleted }: Props) => {
   useBodyScrollLock();
   const licenseRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
