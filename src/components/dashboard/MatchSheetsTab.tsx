@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw, UserRoundX, X } from 'lucide-react';
+import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw, X } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
@@ -456,6 +456,12 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                               players={players}
                               isManager={isManager}
                               onUpdateConvocations={(updated) => handleUpdateConvocations(ms.id, updated)}
+                              onSwapPlayer={isManager ? (playerId, playerName, conv) => {
+                                setSwapModal({ sheetId: ms.id, playerId, playerName, conv });
+                                setSwapSearch('');
+                                setSwapCustomName('');
+                                setSwapMode('list');
+                              } : undefined}
                             />
                           ) : (
                             <div className="text-center py-8">
@@ -464,34 +470,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                             </div>
                           )}
 
-                          {/* Swap player section for managers */}
-                          {isManager && convokedPlayers.length > 0 && (
-                            <div className="mt-3 space-y-2">
-                              <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-                                <UserRoundX size={12} />
-                                Remplacer un joueur
-                              </div>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {convokedPlayers.map(p => (
-                                  <button
-                                    key={p.id}
-                                    onClick={() => {
-                                      setSwapModal({ sheetId: ms.id, playerId: p.id, playerName: p.name, conv: p.conv });
-                                      setSwapSearch('');
-                                      setSwapCustomName('');
-                                      setSwapMode('list');
-                                    }}
-                                    className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors text-left"
-                                  >
-                                    <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary shrink-0">
-                                      {p.conv.number || '?'}
-                                    </span>
-                                    <span className="text-[11px] font-semibold text-foreground truncate">{p.name}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
 
                           <div className="my-4 flex items-center gap-3">
                             <Separator className="flex-1" />
