@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw, X } from 'lucide-react';
@@ -44,7 +44,181 @@ const teamColors: Record<string, string> = {
   C: 'bg-amber-500/15 text-amber-500 border-amber-500/30',
 };
 
+/* ── Swap Player Bottom-Sheet Modal ── */
+interface SwapPlayerModalProps {
+  swapModal: { sheetId: string; playerId: string; playerName: string; conv: Convocation };
+  swapMode: 'list' | 'custom';
+  swapSearch: string;
+  swapCustomName: string;
+  localSheets: MatchSheet[];
+  players: Player[];
+  onClose: () => void;
+  onSwapModeChange: (mode: 'list' | 'custom') => void;
+  onSwapSearchChange: (v: string) => void;
+  onSwapCustomNameChange: (v: string) => void;
+  onSwapPlayer: (id: string, name: string, isVirtual: boolean) => void;
+}
+
+const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
+  swapModal, swapMode, swapSearch, swapCustomName, localSheets, players,
+  onClose, onSwapModeChange, onSwapSearchChange, onSwapCustomNameChange, onSwapPlayer,
+}) => {
+  useBodyScrollLock();
+  const [maxH, setMaxH] = useState('70vh');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamically adjust height when keyboard opens/closes
+  useEffect(() => {
+    const update = () => {
+      const vv = window.visualViewport;
+      if (vv) {
+        const safeTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0', 10);
+        setMaxH(`${vv.height - safeTop - 24}px`);
+      }
+    };
+    update();
+    window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('scroll', update);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('scroll', update);
+    };
+  }, []);
+
+  const sheet = localSheets.find(s => s.id === swapModal.sheetId);
+  const convokedIds = sheet ? Object.keys(sheet.convocations).filter(id => sheet.convocations[id]?.status === 'convoque') : [];
+  const q = swapSearch.toLowerCase().trim();
+  const available = players
+    .filter(p => !convokedIds.includes(p.id))
+    .filter(p => !q || p.name.toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        ref={containerRef}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
+        style={{ maxHeight: maxH }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Drag indicator */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-2 border-b border-border">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Remplacer {swapModal.playerName}</h3>
+            <p className="text-[10px] text-muted-foreground">N°{swapModal.conv.number || '?'} — {swapModal.conv.position || 'Poste non défini'}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+            <X size={16} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Toggle: list / custom */}
+        <div className="flex gap-1.5 px-5 pt-3">
+          <button
+            onClick={() => onSwapModeChange('list')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${swapMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+          >
+            Joueur inscrit
+          </button>
+          <button
+            onClick={() => onSwapModeChange('custom')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${swapMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+          >
+            Nom libre
+          </button>
+        </div>
+
+        {swapMode === 'list' ? (
+          <>
+            {/* Search */}
+            <div className="px-5 pt-3">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={swapSearch}
+                  onChange={e => onSwapSearchChange(e.target.value)}
+                  placeholder="Rechercher un joueur..."
+                  className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  style={{ fontSize: '16px' }}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Player list */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-3 space-y-0.5">
+              {available.length === 0 ? (
+                <p className="text-center text-xs text-muted-foreground py-6">
+                  {q ? 'Aucun joueur trouvé' : 'Aucun joueur disponible'}
+                </p>
+              ) : (
+                available.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => onSwapPlayer(p.id, p.name, false)}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-colors text-left"
+                  >
+                    <span className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-black text-primary shrink-0">
+                      {p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{p.position || 'Non défini'}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </>
+        ) : (
+          /* Custom name input */
+          <div className="px-5 py-4 space-y-3">
+            <p className="text-xs text-muted-foreground">Entrez le nom du joueur remplaçant (même sans compte)</p>
+            <input
+              value={swapCustomName}
+              onChange={e => onSwapCustomNameChange(e.target.value)}
+              placeholder="Prénom Nom"
+              className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              style={{ fontSize: '16px' }}
+              autoFocus
+              maxLength={50}
+            />
+            <button
+              onClick={() => {
+                const name = swapCustomName.trim();
+                if (!name) { toast.error('Entrez un nom'); return; }
+                const virtualId = `virtual_${Date.now()}`;
+                onSwapPlayer(virtualId, name, true);
+              }}
+              disabled={!swapCustomName.trim()}
+              className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all"
+            >
+              Confirmer le remplacement
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, onMatchSheetUpdated, onDeleteMatchSheet }) => {
+
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [localSheets, setLocalSheets] = useState(matchSheets);
@@ -545,131 +719,22 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         </div>
       )}
 
-      {/* Swap Modal */}
+      {/* Swap Modal — bottom-sheet optimized for mobile keyboard */}
       <AnimatePresence>
         {swapModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-6 pb-20"
-            onClick={() => setSwapModal(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-card border border-border rounded-2xl w-full max-w-[340px] max-h-[65vh] flex flex-col shadow-2xl"
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">Remplacer {swapModal.playerName}</h3>
-                  <p className="text-[10px] text-muted-foreground">N°{swapModal.conv.number || '?'} — {swapModal.conv.position || 'Poste non défini'}</p>
-                </div>
-                <button onClick={() => setSwapModal(null)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-                  <X size={16} className="text-muted-foreground" />
-                </button>
-              </div>
-
-              {/* Toggle: list / custom */}
-              <div className="flex gap-1 px-4 pt-3">
-                <button
-                  onClick={() => setSwapMode('list')}
-                  className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-colors ${swapMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
-                >
-                  Joueur inscrit
-                </button>
-                <button
-                  onClick={() => setSwapMode('custom')}
-                  className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition-colors ${swapMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
-                >
-                  Nom libre
-                </button>
-              </div>
-
-              {swapMode === 'list' ? (
-                <>
-                  {/* Search */}
-                  <div className="px-4 pt-3">
-                    <div className="relative">
-                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                      <input
-                        value={swapSearch}
-                        onChange={e => setSwapSearch(e.target.value)}
-                        placeholder="Rechercher un joueur..."
-                        className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-
-                  {/* Player list */}
-                  <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
-                    {(() => {
-                      const sheet = localSheets.find(s => s.id === swapModal.sheetId);
-                      const convokedIds = sheet ? Object.keys(sheet.convocations).filter(id => sheet.convocations[id]?.status === 'convoque') : [];
-                      const q = swapSearch.toLowerCase().trim();
-                      const available = players
-                        .filter(p => !convokedIds.includes(p.id))
-                        .filter(p => !q || p.name.toLowerCase().includes(q))
-                        .sort((a, b) => a.name.localeCompare(b.name));
-
-                      if (available.length === 0) {
-                        return (
-                          <p className="text-center text-xs text-muted-foreground py-6">
-                            {q ? 'Aucun joueur trouvé' : 'Aucun joueur disponible'}
-                          </p>
-                        );
-                      }
-
-                      return available.map(p => (
-                        <button
-                          key={p.id}
-                          onClick={() => handleSwapPlayer(p.id, p.name, false)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors text-left"
-                        >
-                          <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary shrink-0">
-                            {p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{p.position || 'Non défini'}</p>
-                          </div>
-                        </button>
-                      ));
-                    })()}
-                  </div>
-                </>
-              ) : (
-                /* Custom name input */
-                <div className="px-4 py-4 space-y-3">
-                  <p className="text-[11px] text-muted-foreground">Entrez le nom du joueur remplaçant (même sans compte)</p>
-                  <input
-                    value={swapCustomName}
-                    onChange={e => setSwapCustomName(e.target.value)}
-                    placeholder="Prénom Nom"
-                    className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    autoFocus
-                    maxLength={50}
-                  />
-                  <button
-                    onClick={() => {
-                      const name = swapCustomName.trim();
-                      if (!name) { toast.error('Entrez un nom'); return; }
-                      const virtualId = `virtual_${Date.now()}`;
-                      handleSwapPlayer(virtualId, name, true);
-                    }}
-                    disabled={!swapCustomName.trim()}
-                    className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50 transition-all"
-                  >
-                    Confirmer le remplacement
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
+          <SwapPlayerModal
+            swapModal={swapModal}
+            swapMode={swapMode}
+            swapSearch={swapSearch}
+            swapCustomName={swapCustomName}
+            localSheets={localSheets}
+            players={players}
+            onClose={() => setSwapModal(null)}
+            onSwapModeChange={setSwapMode}
+            onSwapSearchChange={setSwapSearch}
+            onSwapCustomNameChange={setSwapCustomName}
+            onSwapPlayer={handleSwapPlayer}
+          />
         )}
       </AnimatePresence>
     </div>
