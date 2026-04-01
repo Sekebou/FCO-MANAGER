@@ -311,7 +311,7 @@ const DraggablePlayer: React.FC<{
   );
 };
 
-const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, isManager = false, onUpdateConvocations }, ref) => {
+const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, isManager = false, onUpdateConvocations, onSwapPlayer }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [localConvocations, setLocalConvocations] = useState(convocations);
