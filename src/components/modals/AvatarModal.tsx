@@ -12,6 +12,7 @@ interface Props {
   onAvatarUpdated: (photoURL: string | null) => void;
   focusLicense?: boolean;
   onStartTutorial?: () => void;
+  onAccountDeleted?: () => void;
 }
 
 const AvatarModal = ({ currentUser, onClose, onAvatarUpdated, focusLicense = false, onStartTutorial }: Props) => {
