@@ -122,13 +122,15 @@
     -webkit-text-size-adjust: 100%;
     -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    background: hsl(var(--primary));
   }
 
-  /* Prevent iOS rubber-band bounce scroll */
+  /* Prevent iOS rubber-band bounce scroll + kill black bars */
   body {
-    overscroll-behavior: none;
+    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: auto;
+    background: hsl(var(--background));
   }
 
   /* Force all interactive elements to use manipulation touch-action */
