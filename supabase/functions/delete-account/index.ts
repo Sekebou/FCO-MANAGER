@@ -106,6 +106,17 @@ Deno.serve(async (req) => {
       await adminClient.from("players").delete().eq("id", playerId);
     }
 
+    // Audit log (before deleting auth user)
+    await adminClient.from("audit_logs").insert({
+      action: "self_delete_account",
+      target_name: profile?.name || "Inconnu",
+      target_email: profile?.email || null,
+      target_role: profile?.role || null,
+      performed_by: userId,
+      performed_by_name: profile?.name || "Inconnu",
+      details: { player_id: playerId || null, self_deletion: true },
+    });
+
     // 12. Delete auth user
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
     if (deleteError) throw deleteError;
