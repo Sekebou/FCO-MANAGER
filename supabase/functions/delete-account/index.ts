@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
     const userId = user.id;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Get player_id from profile
+    // Get profile info for audit log
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("player_id")
+      .select("player_id, name, email, role")
       .eq("id", userId)
       .single();
 
