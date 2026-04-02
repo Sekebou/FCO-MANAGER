@@ -1067,6 +1067,16 @@ const Dashboard = () => {
           if (playerId) {
             await supabase.from('players').delete().eq('id', playerId);
           }
+          // Audit log
+          await supabase.from('audit_logs').insert({
+            action: 'delete_member',
+            target_name: targetMember?.name || 'Inconnu',
+            target_email: targetMember?.email || null,
+            target_role: targetMember?.role || null,
+            performed_by: currentUser?.uid,
+            performed_by_name: currentUser?.name || 'Inconnu',
+            details: { member_id: memberId, player_id: playerId || null }
+          });
           toast.success('Membre supprimé avec succès');
           setMembers(prev => prev.filter(m => m.id !== memberId));
           if (playerId) {
