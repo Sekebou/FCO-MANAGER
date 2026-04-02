@@ -26,10 +26,10 @@ Deno.serve(async (req) => {
     const userId = user.id;
     const adminClient = createClient(supabaseUrl, serviceKey);
 
-    // Get player_id from profile
+    // Get profile info for audit log
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("player_id")
+      .select("player_id, name, email, role")
       .eq("id", userId)
       .single();
 
@@ -105,6 +105,17 @@ Deno.serve(async (req) => {
     if (playerId) {
       await adminClient.from("players").delete().eq("id", playerId);
     }
+
+    // Audit log (before deleting auth user)
+    await adminClient.from("audit_logs").insert({
+      action: "self_delete_account",
+      target_name: profile?.name || "Inconnu",
+      target_email: profile?.email || null,
+      target_role: profile?.role || null,
+      performed_by: userId,
+      performed_by_name: profile?.name || "Inconnu",
+      details: { player_id: playerId || null, self_deletion: true },
+    });
 
     // 12. Delete auth user
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);

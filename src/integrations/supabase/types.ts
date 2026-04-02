@@ -121,6 +121,42 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          performed_by: string | null
+          performed_by_name: string | null
+          target_email: string | null
+          target_name: string
+          target_role: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          performed_by?: string | null
+          performed_by_name?: string | null
+          target_email?: string | null
+          target_name: string
+          target_role?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          performed_by?: string | null
+          performed_by_name?: string | null
+          target_email?: string | null
+          target_name?: string
+          target_role?: string | null
+        }
+        Relationships: []
+      }
       bets: {
         Row: {
           amount: number
