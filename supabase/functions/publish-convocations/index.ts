@@ -214,6 +214,29 @@ serve(async (req) => {
 
     console.log(`[publish-convocations] user=${userId} event=${eventId} convoked=${convokedPlayerIds.length} notified=${notifiedCount} matchSheet=${matchSheetCreated}`);
 
+    // 9. Log notification in audit_logs
+    const { data: publisherProfile } = await admin
+      .from('profiles')
+      .select('name')
+      .eq('id', userId)
+      .single();
+
+    await admin.from('audit_logs').insert({
+      action: 'publish_convocation',
+      target_name: event.title,
+      performed_by: userId,
+      performed_by_name: publisherProfile?.name || 'Inconnu',
+      details: {
+        event_id: eventId,
+        event_date: event.date,
+        notif_title: customNotif.title,
+        notif_body: customNotif.body,
+        convoked_count: convokedPlayerIds.length,
+        notified_count: notifiedCount,
+        match_sheet_created: matchSheetCreated,
+      },
+    });
+
     return json({
       published: true,
       matchSheetCreated,
