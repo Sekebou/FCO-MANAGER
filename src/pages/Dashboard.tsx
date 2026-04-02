@@ -1025,7 +1025,7 @@ const Dashboard = () => {
             target_name: targetPlayer?.name || 'Inconnu',
             target_email: linked?.[0]?.email || null,
             target_role: linked?.[0]?.role || null,
-            performed_by: currentUser?.id,
+            performed_by: currentUser?.uid,
             performed_by_name: currentUser?.name || 'Inconnu',
             details: { player_id: playerId, had_profile: !!(linked && linked.length > 0) }
           });
