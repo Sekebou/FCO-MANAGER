@@ -1007,17 +1007,28 @@ const Dashboard = () => {
 
   const deletePlayer = async (playerId: string) => {
     if (!canManage()) return;
+    const targetPlayer = players.find(p => p.id === playerId);
     setConfirmModal({
       title: 'Supprimer ce joueur ?',
       message: 'Cette action est irréversible.',
       onConfirm: async () => {
         try {
           // Find and delete linked profile
-          const { data: linked } = await supabase.from('profiles').select('id').eq('player_id', playerId);
+          const { data: linked } = await supabase.from('profiles').select('id, email, role').eq('player_id', playerId);
           if (linked && linked.length > 0) {
             await supabase.from('profiles').delete().eq('id', linked[0].id);
           }
           await supabase.from('players').delete().eq('id', playerId);
+          // Audit log
+          await supabase.from('audit_logs').insert({
+            action: 'delete_player',
+            target_name: targetPlayer?.name || 'Inconnu',
+            target_email: linked?.[0]?.email || null,
+            target_role: linked?.[0]?.role || null,
+            performed_by: currentUser?.id,
+            performed_by_name: currentUser?.name || 'Inconnu',
+            details: { player_id: playerId, had_profile: !!(linked && linked.length > 0) }
+          });
         } catch (err: any) { toast.error('Erreur: ' + err.message); }
       }
     });
