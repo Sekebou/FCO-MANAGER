@@ -20,12 +20,19 @@ const ForceUpdateGuard = ({ children }: ForceUpdateGuardProps) => {
   const [currentVersion, setCurrentVersion] = useState('');
 
   useEffect(() => {
+    const platform = Capacitor.getPlatform();
+
+    // Skip force update check on web (preview)
+    if (platform === "web") {
+      setChecked(true);
+      return;
+    }
+
     const check = async () => {
       try {
         const appVersion = await getAppVersion();
         setCurrentVersion(appVersion);
 
-        const platform = Capacitor.getPlatform();
         const key = platform === "ios" ? "min_version_ios" : "min_version_android";
 
         const { data } = await supabase
