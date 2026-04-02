@@ -573,7 +573,8 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Compute streak from results (last 5)
   const computeStreak = (): string[] => {
-    const results: string[] = [];
+    // Collect all played matches with their dates
+    const allMatches: { date: string; result: string }[] = [];
     for (const g of liveResults) {
       for (const m of g.matchs) {
         const hs = m.home_score ?? null;
@@ -582,12 +583,13 @@ const ChampionnatTab: React.FC<Props> = ({
         const isHome = m.home?.club?.cl_no === OISEMONT_CL_NO;
         const ourScore = isHome ? hs : as;
         const theirScore = isHome ? as : hs;
-        if (ourScore > theirScore) results.push('V');
-        else if (ourScore === theirScore) results.push('N');
-        else results.push('D');
+        const result = ourScore > theirScore ? 'V' : ourScore === theirScore ? 'N' : 'D';
+        allMatches.push({ date: m.date || '', result });
       }
     }
-    return results.slice(0, 5);
+    // Sort by date descending (most recent first)
+    allMatches.sort((a, b) => b.date.localeCompare(a.date));
+    return allMatches.slice(0, 5).map(m => m.result);
   };
 
   return (
