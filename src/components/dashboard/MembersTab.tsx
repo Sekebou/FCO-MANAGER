@@ -30,21 +30,27 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   const [localDisplayRoles, setLocalDisplayRoles] = useState<Record<string, string | undefined>>({});
 
   // Fetch points for all members
+  // Only fetch points once on mount, not on every members change
+  const pointsFetched = useRef(false);
   useEffect(() => {
+    if (pointsFetched.current) return;
+    pointsFetched.current = true;
     const fetchPoints = async () => {
-      const { data: pointsData } = await supabase.from('user_points').select('user_id, balance');
+      const [{ data: pointsData }, { data: txData }] = await Promise.all([
+        supabase.from('user_points').select('user_id, balance'),
+        supabase
+          .from('points_transactions')
+          .select('user_id, amount, description')
+          .eq('type', 'bet')
+          .gt('amount', 0)
+          .order('created_at', { ascending: false })
+          .limit(200),
+      ]);
       if (pointsData) {
         const map: Record<string, number> = {};
         pointsData.forEach(p => { map[p.user_id] = p.balance; });
         setUserPoints(map);
       }
-      const { data: txData } = await supabase
-        .from('points_transactions')
-        .select('user_id, amount, description')
-        .eq('type', 'bet')
-        .gt('amount', 0)
-        .order('created_at', { ascending: false })
-        .limit(200);
       if (txData) {
         const gains: Record<string, { amount: number; desc: string }> = {};
         txData.forEach(tx => {
@@ -54,7 +60,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
       }
     };
     fetchPoints();
-  }, [members]);
+  }, []);
 
   const handleRoleChangeConfirm = async () => {
     if (!roleChangeRequest || !confirmPassword) return;
