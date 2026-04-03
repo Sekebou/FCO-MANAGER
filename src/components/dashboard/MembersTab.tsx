@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin, ChevronDown, Coins } from 'lucide-react';
@@ -30,21 +30,27 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
   const [localDisplayRoles, setLocalDisplayRoles] = useState<Record<string, string | undefined>>({});
 
   // Fetch points for all members
+  // Only fetch points once on mount, not on every members change
+  const pointsFetched = useRef(false);
   useEffect(() => {
+    if (pointsFetched.current) return;
+    pointsFetched.current = true;
     const fetchPoints = async () => {
-      const { data: pointsData } = await supabase.from('user_points').select('user_id, balance');
+      const [{ data: pointsData }, { data: txData }] = await Promise.all([
+        supabase.from('user_points').select('user_id, balance'),
+        supabase
+          .from('points_transactions')
+          .select('user_id, amount, description')
+          .eq('type', 'bet')
+          .gt('amount', 0)
+          .order('created_at', { ascending: false })
+          .limit(200),
+      ]);
       if (pointsData) {
         const map: Record<string, number> = {};
         pointsData.forEach(p => { map[p.user_id] = p.balance; });
         setUserPoints(map);
       }
-      const { data: txData } = await supabase
-        .from('points_transactions')
-        .select('user_id, amount, description')
-        .eq('type', 'bet')
-        .gt('amount', 0)
-        .order('created_at', { ascending: false })
-        .limit(200);
       if (txData) {
         const gains: Record<string, { amount: number; desc: string }> = {};
         txData.forEach(tx => {
@@ -54,7 +60,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
       }
     };
     fetchPoints();
-  }, [members]);
+  }, []);
 
   const handleRoleChangeConfirm = async () => {
     if (!roleChangeRequest || !confirmPassword) return;
@@ -175,7 +181,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             const hasDisplayRole = currentDisplayRole && currentDisplayRole !== member.role && (member.role === 'admin' || member.role === 'admin+');
 
             return (
-              <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in flex flex-col">
+              <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
                 {/* Colored header band */}
                 <div className={`h-1.5 sm:h-2 bg-gradient-to-r ${config.gradient}`} />
 
@@ -281,13 +287,13 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
                       license.status === 'expiring' ? 'bg-warning/10 text-warning border border-warning/20' :
                       'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}>
-                      <span className="relative flex h-3 w-3 shrink-0">
-                        <span className={`absolute inline-flex h-full w-full rounded-full ${
-                          license.status === 'active' ? 'bg-accent glow-pulse-green' :
-                          license.status === 'expiring' ? 'bg-warning glow-pulse-orange' :
-                          'bg-destructive glow-pulse-red'
+                       <span className="flex h-3 w-3 shrink-0">
+                        <span className={`inline-flex h-full w-full rounded-full ${
+                          license.status === 'active' ? 'bg-accent' :
+                          license.status === 'expiring' ? 'bg-warning' :
+                          'bg-destructive'
                         }`} />
-                      </span>
+                       </span>
                       <div>
                         {license.status === 'expired' && `Licence expirée depuis ${license.days} jour${license.days > 1 ? 's' : ''} — Renouvellement requis`}
                         {license.status === 'expiring' && `Licence à renouveler dans ${license.days} jour${license.days > 1 ? 's' : ''}`}
@@ -456,7 +462,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
 
       {/* Password confirmation modal for role change */}
       {roleChangeRequest && (
-        <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => { setRoleChangeRequest(null); setConfirmPassword(''); }}>
+        <div className="fixed inset-0 bg-foreground/80 flex items-center justify-center p-4 z-50" onClick={() => { setRoleChangeRequest(null); setConfirmPassword(''); }}>
           <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b border-border">
               <div className="flex items-center gap-3">
