@@ -181,7 +181,7 @@ const MembersTab = ({ members, players, cards, currentUser, canManage, getPlayer
             const hasDisplayRole = currentDisplayRole && currentDisplayRole !== member.role && (member.role === 'admin' || member.role === 'admin+');
 
             return (
-              <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in flex flex-col">
+              <div key={member.id} className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
                 {/* Colored header band */}
                 <div className={`h-1.5 sm:h-2 bg-gradient-to-r ${config.gradient}`} />
 
