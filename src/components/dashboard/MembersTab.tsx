@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { Member, Player, Card } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { Users, Activity, Target, Trophy, Lock, Mail, CalendarDays, Shield, Dumbbell, UserCircle, Trash2, Plus, Camera, X, KeyRound, Loader2, Briefcase, Send, MapPin, ChevronDown, Coins } from 'lucide-react';
