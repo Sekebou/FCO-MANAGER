@@ -539,6 +539,15 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     </div>
                   </div>
 
+                  {/* Friendly match label */}
+                  {hasVs && ms.title.toLowerCase().includes('amical') && (
+                    <div className="px-4 -mb-1">
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                        Match amical
+                      </span>
+                    </div>
+                  )}
+
                   {hasVs ? (
                     /* ── VS Layout ── */
                     <div className="flex items-center justify-between px-4 py-3">
