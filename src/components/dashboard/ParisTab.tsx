@@ -60,6 +60,32 @@ function buildLocationLink(terrain?: { city?: string; name?: string }) {
   return `https://waze.com/ul?q=${encodeURIComponent(parts)}&navigate=yes`;
 }
 
+// Manual time overrides for matches where kickoff was rearranged outside FFF
+const MATCH_TIME_OVERRIDES: Record<string, string> = {
+  // GAMACHES AS vs OISEMONT FC — 12 avril 2026 — arrangement avec Gamache
+  '2026-04-12__GAMACHES': '13:00',
+};
+
+function applyTimeOverrides(upcoming: FFFMonthGroup[]): FFFMonthGroup[] {
+  return upcoming.map(group => ({
+    ...group,
+    matchs: group.matchs.map(m => {
+      const dateKey = normalizeDateKey(m.date);
+      for (const [key, newTime] of Object.entries(MATCH_TIME_OVERRIDES)) {
+        const [d, teamFragment] = key.split('__');
+        if (dateKey === d) {
+          const home = (m.home?.short_name || m.home?.name || '').toUpperCase();
+          const away = (m.away?.short_name || m.away?.name || '').toUpperCase();
+          if (home.includes(teamFragment) || away.includes(teamFragment)) {
+            return { ...m, time: newTime };
+          }
+        }
+      }
+      return m;
+    }),
+  }));
+}
+
 function normalizeDateKey(dateStr?: string) {
   if (!dateStr) return '';
   const direct = /^\d{4}-\d{2}-\d{2}/.exec(dateStr)?.[0];
