@@ -332,7 +332,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         }
       }
 
-      setTeamData(prev => ({ ...prev, [team]: { upcoming, classement, loading: false } }));
+      setTeamData(prev => ({ ...prev, [team]: { upcoming: applyTimeOverrides(upcoming), classement, loading: false } }));
       try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: { upcoming, classement: rawClassement }, ts: Date.now() })); } catch {}
     } catch (err) {
       console.error(`Error loading FFF for team ${team}:`, err);
