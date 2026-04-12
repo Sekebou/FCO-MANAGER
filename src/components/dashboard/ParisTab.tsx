@@ -598,7 +598,20 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       };
 
       // Find first match that is NOT done yet (stays on current match until settled)
-      const nextTeamMatch = allMatches.find(m => m.date && !isMatchDone(m)) || null;
+      let nextTeamMatch: any = allMatches.find(m => m.date && !isMatchDone(m)) || null;
+
+      // Fallback: if no upcoming FFF match found but there are pending bets,
+      // create a synthetic match entry from bet data (happens when FFF already published the score)
+      if (!nextTeamMatch && teamPendingBets.length > 0) {
+        const firstBet = teamPendingBets[0];
+        nextTeamMatch = {
+          date: firstBet.matchDate,
+          time: null,
+          home: { short_name: firstBet.homeTeam, club: {} },
+          away: { short_name: firstBet.awayTeam, club: {} },
+          _synthetic: true,
+        };
+      }
 
       const teamMatchBets = teamPendingBets.filter((bet) => {
         if (!nextTeamMatch) return false;
