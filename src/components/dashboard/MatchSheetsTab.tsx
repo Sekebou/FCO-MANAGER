@@ -522,7 +522,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     <div className="flex items-center gap-2 flex-wrap">
                       {ms.team && (
                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${teamColors[ms.team] || 'bg-muted text-muted-foreground border-border'}`}>
-                          Équipe {ms.team}
+                          Équipe {ms.team?.replace(/^Équipe\s*/i, '')}
                         </span>
                       )}
                       <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
