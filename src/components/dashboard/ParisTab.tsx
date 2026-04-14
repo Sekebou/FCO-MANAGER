@@ -584,6 +584,27 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       // Only consider bets that belong to THIS team category
       const teamPendingBets = allPendingBets.filter(b => b.team === team);
 
+      const pendingBetGroups = teamPendingBets.reduce<Array<{ homeTeam: string; awayTeam: string; matchDate: string; bets: Bet[] }>>((groups, bet) => {
+        const existingGroup = groups.find(group =>
+          normalizeDateKey(group.matchDate) === normalizeDateKey(bet.matchDate)
+          && teamsLikelyMatch(group.homeTeam, bet.homeTeam)
+          && teamsLikelyMatch(group.awayTeam, bet.awayTeam)
+        );
+
+        if (existingGroup) {
+          existingGroup.bets.push(bet);
+        } else {
+          groups.push({
+            homeTeam: bet.homeTeam,
+            awayTeam: bet.awayTeam,
+            matchDate: bet.matchDate,
+            bets: [bet],
+          });
+        }
+
+        return groups;
+      }, []).sort((a, b) => normalizeDateKey(a.matchDate).localeCompare(normalizeDateKey(b.matchDate)));
+
       // Helper: check if a match still has unsettled pending bets for THIS team
       const matchHasPendingBets = (match: any) => {
         const homeName = getMatchTeamName(match.home);
@@ -600,8 +621,47 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         return isMatchFinished(match.date, match.time) && !matchHasPendingBets(match);
       };
 
-      // Find first match that is NOT done yet (stays on current match until settled)
-      let nextTeamMatch: any = allMatches.find(m => m.date && !isMatchDone(m)) || null;
+      const lockedPendingGroup = pendingBetGroups.find((group) => {
+        const matchingFFFMatch = allMatches.find((match) => {
+          const homeName = getMatchTeamName(match.home);
+          const awayName = getMatchTeamName(match.away);
+
+          return normalizeDateKey(match.date) === normalizeDateKey(group.matchDate)
+            && teamsLikelyMatch(group.homeTeam, homeName)
+            && teamsLikelyMatch(group.awayTeam, awayName);
+        });
+
+        if (!matchingFFFMatch) {
+          return isMatchStarted(group.matchDate);
+        }
+
+        return isMatchStarted(matchingFFFMatch.date, matchingFFFMatch.time);
+      });
+
+      // Tant qu'un match commencé n'est pas réglé, on reste dessus.
+      let nextTeamMatch: any = null;
+
+      if (lockedPendingGroup) {
+        nextTeamMatch = allMatches.find((match) => {
+          const homeName = getMatchTeamName(match.home);
+          const awayName = getMatchTeamName(match.away);
+
+          return normalizeDateKey(match.date) === normalizeDateKey(lockedPendingGroup.matchDate)
+            && teamsLikelyMatch(lockedPendingGroup.homeTeam, homeName)
+            && teamsLikelyMatch(lockedPendingGroup.awayTeam, awayName);
+        }) || {
+          date: lockedPendingGroup.matchDate,
+          time: null,
+          home: { short_name: lockedPendingGroup.homeTeam, club: {} },
+          away: { short_name: lockedPendingGroup.awayTeam, club: {} },
+          _synthetic: true,
+        };
+      }
+
+      // Sinon, on prend le premier match non terminé normalement
+      if (!nextTeamMatch) {
+        nextTeamMatch = allMatches.find(m => m.date && !isMatchDone(m)) || null;
+      }
 
       // Fallback: if no upcoming FFF match found but there are pending bets,
       // create a synthetic match entry from bet data (happens when FFF already published the score)
