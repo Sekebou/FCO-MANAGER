@@ -433,6 +433,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   // Helper: match is fully settled = match finished AND no pending bets left (no FFF score needed)
   const isMatchSettled = useCallback((match: FFFLiveMatch) => {
     if (!isMatchFinished(match.date, match.time)) return false;
+    // Don't skip any finished match until bets are fully loaded,
+    // otherwise an empty array makes us think everything is settled
+    if (!betsLoaded) return false;
     const homeName = getMatchTeamName(match.home);
     const awayName = getMatchTeamName(match.away);
     const hasPending = bets.some(bet =>
@@ -442,7 +445,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       teamsLikelyMatch(bet.awayTeam, awayName)
     );
     return !hasPending;
-  }, [bets]);
+  }, [bets, betsLoaded]);
 
   // Next match for selected team: only skip matches that have a score AND no pending bets
   const nextMatch: FFFLiveMatch | null = useMemo(() => {
