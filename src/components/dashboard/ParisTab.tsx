@@ -1477,17 +1477,102 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </div>
                           </div>
 
-                          {/* Settle button - full width */}
-                          <button
-                            onClick={() => handleSettle(matchKey, homeName, awayName, teamBets)}
-                            disabled={isSettling || !scores.home || !scores.away || teamBets.length === 0}
-                            className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all shadow-sm"
-                          >
-                            {isSettling ? <Loader2 size={16} className="animate-spin" /> : <Gavel size={16} />}
-                            {teamBets.length > 0
-                              ? `Régler ${teamBets.length} pari${teamBets.length > 1 ? 's' : ''}`
-                              : 'Aucun pari à régler'}
-                          </button>
+                          {/* Settle button for match + exact_score bets */}
+                          {(() => {
+                            const matchBetsCount = teamBets.filter(b => b.betType === 'match' || b.betType === 'exact_score').length;
+                            return (
+                              <button
+                                onClick={() => handleSettle(matchKey, homeName, awayName, teamBets)}
+                                disabled={isSettling || !scores.home || !scores.away || matchBetsCount === 0}
+                                className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all shadow-sm"
+                              >
+                                {isSettling ? <Loader2 size={16} className="animate-spin" /> : <Gavel size={16} />}
+                                {matchBetsCount > 0
+                                  ? `Régler ${matchBetsCount} pari${matchBetsCount > 1 ? 's' : ''} résultat`
+                                  : 'Aucun pari résultat'}
+                              </button>
+                            );
+                          })()}
+
+                          {/* Scorer bets settlement */}
+                          {(() => {
+                            const scorerBets = teamBets.filter(b => b.betType === 'scorer');
+                            if (scorerBets.length === 0) return null;
+                            const selectedIds = settleScorers[matchKey] || [];
+                            const uniqueScorers = [...new Map(scorerBets.map(b => [b.scorerPlayerId, { id: b.scorerPlayerId!, name: b.scorerPlayerName || '?' }])).values()];
+                            const isScorerSettling = settlingScorers === matchKey;
+
+                            // Load players list for this match if not loaded
+                            if (!settlePlayersList[matchKey] && !isScorerSettling) {
+                              const matchDateKey = normalizeDateKey(match.date);
+                              supabase
+                                .from('events')
+                                .select('convocations')
+                                .eq('date', matchDateKey)
+                                .eq('team', team)
+                                .eq('convocations_published', true)
+                                .limit(1)
+                                .then(({ data: events }) => {
+                                  if (events?.[0]?.convocations) {
+                                    const convos = events[0].convocations as Record<string, any>;
+                                    const playerIds = Object.entries(convos)
+                                      .filter(([, v]) => v === true || v === 'titulaire' || v === 'remplacant')
+                                      .map(([id]) => id);
+                                    if (playerIds.length > 0) {
+                                      supabase.from('players').select('id, name, position').in('id', playerIds).then(({ data: pData }) => {
+                                        if (pData) setSettlePlayersList(prev => ({ ...prev, [matchKey]: pData.map(p => ({ id: p.id, name: p.name, position: p.position || '' })) }));
+                                      });
+                                    }
+                                  }
+                                });
+                            }
+
+                            const allPlayers = settlePlayersList[matchKey] || uniqueScorers.map(s => ({ ...s, position: '' }));
+
+                            return (
+                              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                                <p className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                                  <Target size={13} className="text-purple-500" />
+                                  Régler {scorerBets.length} pari{scorerBets.length > 1 ? 's' : ''} buteur
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">Sélectionne les joueurs qui ont marqué :</p>
+                                <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                                  {allPlayers.map(player => {
+                                    const isSelected = selectedIds.includes(player.id);
+                                    return (
+                                      <button
+                                        key={player.id}
+                                        onClick={() => {
+                                          setSettleScorers(prev => {
+                                            const current = prev[matchKey] || [];
+                                            return { ...prev, [matchKey]: isSelected ? current.filter(id => id !== player.id) : [...current, player.id] };
+                                          });
+                                        }}
+                                        className={cn(
+                                          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all text-xs",
+                                          isSelected ? "bg-purple-500/15 border border-purple-500/30" : "bg-secondary/50 border border-border/30 hover:bg-secondary"
+                                        )}
+                                      >
+                                        <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0", isSelected ? "border-purple-500 bg-purple-500" : "border-border")}>
+                                          {isSelected && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                        </div>
+                                        <span className={cn("font-semibold flex-1", isSelected ? "text-purple-600 dark:text-purple-400" : "text-foreground")}>{player.name}</span>
+                                        {player.position && <span className="text-[9px] text-muted-foreground">{player.position}</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <button
+                                  onClick={() => handleSettleScorers(matchKey, homeName, awayName, teamBets)}
+                                  disabled={isScorerSettling || selectedIds.length === 0}
+                                  className="w-full py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
+                                >
+                                  {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
+                                  Régler paris buteur
+                                </button>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
