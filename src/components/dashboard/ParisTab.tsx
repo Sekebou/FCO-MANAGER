@@ -1068,18 +1068,47 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       )}
 
                       {/* Bet button */}
-                      {currentUser && !live && !waiting && !alreadyBet && (
+                      {currentUser && !live && !waiting && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
-                          onClick={() => nextMatch.date && setBetModal({
-                            home: homeName,
-                            away: awayName,
-                            date: nextMatch.date,
-                            homeLogo: homeLogo || undefined,
-                            awayLogo: awayLogo || undefined,
-                            team: selectedTeam,
-                          })}
+                          onClick={async () => {
+                            if (!nextMatch.date) return;
+                            // Load convocated players from events with published convocations
+                            let players: { id: string; name: string; position: string }[] = [];
+                            try {
+                              const matchDateKey = normalizeDateKey(nextMatch.date);
+                              const { data: events } = await supabase
+                                .from('events')
+                                .select('convocations')
+                                .eq('date', matchDateKey)
+                                .eq('team', selectedTeam)
+                                .eq('convocations_published', true)
+                                .limit(1);
+                              if (events?.[0]?.convocations) {
+                                const convos = events[0].convocations as Record<string, any>;
+                                const playerIds = Object.entries(convos)
+                                  .filter(([, v]) => v === true || v === 'titulaire' || v === 'remplacant')
+                                  .map(([id]) => id);
+                                if (playerIds.length > 0) {
+                                  const { data: pData } = await supabase
+                                    .from('players')
+                                    .select('id, name, position')
+                                    .in('id', playerIds);
+                                  if (pData) players = pData.map(p => ({ id: p.id, name: p.name, position: p.position || 'Non défini' }));
+                                }
+                              }
+                            } catch {}
+                            setConvocatedPlayers(players);
+                            setBetModal({
+                              home: homeName,
+                              away: awayName,
+                              date: nextMatch.date,
+                              homeLogo: homeLogo || undefined,
+                              awayLogo: awayLogo || undefined,
+                              team: selectedTeam,
+                            });
+                          }}
                           className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent/20 hover:brightness-110 transition-all"
                         >
                           <Zap size={15} />
