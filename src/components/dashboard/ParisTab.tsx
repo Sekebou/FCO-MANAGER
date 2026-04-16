@@ -1460,6 +1460,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           userId={authUserId}
           userName={currentUser.name}
           team={betModal.team}
+          convocatedPlayers={convocatedPlayers}
         />
       )}
     </div>
