@@ -1153,7 +1153,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       <div className="space-y-2">
                         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Paris en cours sur ce match</h3>
                         {visibleBets.map(bet => {
-                          const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                          const predLabel = getBetLabel(bet);
                           const isMe = bet.userId === currentUser?.uid;
                           return (
                             <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
@@ -1253,7 +1253,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     {/* Pending bets list */}
                     <div className="space-y-2">
                       {myPendingBets.map(bet => {
-                        const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                        const predLabel = getBetLabel(bet);
                         return (
                           <div key={bet.id} className="bg-card rounded-xl border border-border/50 p-3">
                             <div className="flex items-center justify-between mb-1.5">
@@ -1285,7 +1285,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     {myBets.filter(b => b.status !== 'pending').map(bet => {
                       const config = STATUS_CONFIG[bet.status] || STATUS_CONFIG.pending;
                       const StatusIcon = config.icon;
-                      const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                      const predLabel = getBetLabel(bet);
 
                       return (
                         <div key={bet.id} className="bg-card rounded-xl border border-border p-3">
