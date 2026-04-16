@@ -46,6 +46,11 @@ const mapBet = (r: any): Bet => ({
   homeTeam: r.home_team, awayTeam: r.away_team, matchDate: r.match_date,
   prediction: r.prediction, odds: r.odds, amount: r.amount, payout: r.payout,
   status: r.status, createdAt: r.created_at, team: r.team || null,
+  betType: r.bet_type || 'match',
+  scorerPlayerId: r.scorer_player_id || null,
+  scorerPlayerName: r.scorer_player_name || null,
+  predictedScoreHome: r.predicted_score_home ?? null,
+  predictedScoreAway: r.predicted_score_away ?? null,
 });
 
 type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard' | 'settle';
