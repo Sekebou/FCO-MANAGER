@@ -786,6 +786,44 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     }
   }, [settleScores]);
 
+  const handleSettleScorers = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[]) => {
+    const scorerIds = settleScorers[matchKey] || [];
+    if (scorerIds.length === 0) {
+      toast.error('Sélectionne au moins un buteur');
+      return;
+    }
+    const scorerBets = betsForMatch.filter(b => b.betType === 'scorer');
+    if (scorerBets.length === 0) {
+      toast.error('Aucun pari buteur à régler');
+      return;
+    }
+    setSettlingScorers(matchKey);
+    try {
+      const betGroups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string }>();
+      for (const b of scorerBets) {
+        const key = `${b.homeTeam}||${b.awayTeam}||${b.matchDate}`;
+        if (!betGroups.has(key)) betGroups.set(key, { homeTeam: b.homeTeam, awayTeam: b.awayTeam, matchDate: b.matchDate });
+      }
+      let totalSettled = 0;
+      for (const group of betGroups.values()) {
+        const { data, error } = await supabase.rpc('settle_scorer_bets', {
+          p_home_team: group.homeTeam,
+          p_away_team: group.awayTeam,
+          p_match_date: group.matchDate,
+          p_scorer_player_ids: scorerIds,
+        } as any);
+        if (error) throw error;
+        totalSettled += (data as any)?.settled || 0;
+      }
+      toast.success(`${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''}`);
+      setSettleScorers(prev => { const next = { ...prev }; delete next[matchKey]; return next; });
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors du règlement');
+    } finally {
+      setSettlingScorers(null);
+    }
+  }, [settleScorers]);
+
   const handleBetPlaced = useCallback((bet: BetPlacementPayload) => {
     setBets(prev => {
       const alreadyExists = prev.some(existing =>
