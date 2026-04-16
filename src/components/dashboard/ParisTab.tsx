@@ -29,6 +29,11 @@ interface Bet {
   status: string;
   createdAt: string;
   team: string | null;
+  betType: string;
+  scorerPlayerId: string | null;
+  scorerPlayerName: string | null;
+  predictedScoreHome: number | null;
+  predictedScoreAway: number | null;
 }
 
 interface Props {
