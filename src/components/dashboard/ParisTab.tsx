@@ -63,6 +63,18 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; co
 
 const BASE_TEAMS = ['A', 'B', 'C'];
 
+function getBetLabel(bet: Bet): string {
+  if (bet.betType === 'scorer') return `⚽ ${bet.scorerPlayerName || '?'}`;
+  if (bet.betType === 'exact_score') return `📊 ${bet.predictedScoreHome ?? 0}-${bet.predictedScoreAway ?? 0}`;
+  return bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+}
+
+function getBetTypeTag(betType: string): { label: string; color: string } {
+  if (betType === 'scorer') return { label: 'Buteur', color: 'text-purple-500 bg-purple-500/10' };
+  if (betType === 'exact_score') return { label: 'Score', color: 'text-blue-500 bg-blue-500/10' };
+  return { label: 'Résultat', color: 'text-accent bg-accent/10' };
+}
+
 function buildLocationLink(terrain?: { city?: string; name?: string }) {
   if (!terrain) return null;
   const parts = [terrain.name, terrain.city].filter(Boolean).join(', ');
