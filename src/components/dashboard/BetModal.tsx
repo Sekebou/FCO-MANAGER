@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Trophy, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Trophy, ChevronRight, Target, Hash, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { cn } from '@/lib/utils';
+
+export type BetType = 'match' | 'scorer' | 'exact_score';
 
 export interface BetPlacementPayload {
   userId: string;
@@ -11,11 +14,22 @@ export interface BetPlacementPayload {
   homeTeam: string;
   awayTeam: string;
   matchDate: string;
-  prediction: 'home' | 'draw' | 'away';
+  prediction: string;
   odds: number;
   amount: number;
   newBalance: number;
   team?: string;
+  betType?: BetType;
+  scorerPlayerId?: string;
+  scorerPlayerName?: string;
+  predictedScoreHome?: number;
+  predictedScoreAway?: number;
+}
+
+interface ConvocatedPlayer {
+  id: string;
+  name: string;
+  position: string;
 }
 
 interface BetModalProps {
@@ -30,36 +44,26 @@ interface BetModalProps {
   userId: string;
   userName: string;
   team?: string;
+  convocatedPlayers?: ConvocatedPlayer[];
 }
 
-/** Generate odds based on standings positions.
- * homeRank / awayRank: position in standings (1 = first). 
- * If not provided, falls back to deterministic hash. 
- * Lower rank = stronger team = lower odds for their win. */
+/** Generate odds based on standings positions. */
 function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, homeRank?: number, awayRank?: number, totalTeams?: number): { home: number; draw: number; away: number } {
   const total = totalTeams || 12;
   
   if (homeRank && awayRank) {
-    // Normalize ranks: 0 = best, 1 = worst
     const homeStrength = 1 - ((homeRank - 1) / (total - 1));
     const awayStrength = 1 - ((awayRank - 1) / (total - 1));
-    
-    // Home advantage + strength difference
-    const homePower = homeStrength + 0.1; // slight home advantage
+    const homePower = homeStrength + 0.1;
     const awayPower = awayStrength;
     const totalPower = homePower + awayPower;
-    
-    // Convert to probabilities (with draw share)
     const drawBase = 0.22;
     const homeProb = (homePower / totalPower) * (1 - drawBase);
     const awayProb = (awayPower / totalPower) * (1 - drawBase);
-    
-    // Convert probabilities to odds (with ~10% margin)
     const margin = 1.10;
     const homeOdd = Math.max(1.15, Math.min(8.0, margin / homeProb));
     const drawOdd = Math.max(2.5, Math.min(6.0, margin / drawBase));
     const awayOdd = Math.max(1.15, Math.min(8.0, margin / awayProb));
-    
     return {
       home: Math.round(homeOdd * 100) / 100,
       draw: Math.round(drawOdd * 100) / 100,
@@ -67,7 +71,6 @@ function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, hom
     };
   }
   
-  // Fallback: deterministic hash
   let hash = 0;
   const str = `${homeTeam}-${awayTeam}-${matchDate}`;
   for (let i = 0; i < str.length; i++) {
@@ -87,15 +90,66 @@ function generateOdds(homeTeam: string, awayTeam: string, matchDate: string, hom
 
 export { generateOdds };
 
-const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName, team }) => {
+/** Generate scorer odds based on position */
+function getScorerOdds(position: string): number {
+  const pos = (position || '').toLowerCase();
+  if (pos.includes('gardien') || pos.includes('goal')) return 20;
+  if (pos.includes('défenseur') || pos.includes('def') || pos.includes('arrière') || pos.includes('latéral') || pos.includes('libero') || pos.includes('central')) return 5;
+  if (pos.includes('milieu') || pos.includes('mil')) return 3;
+  if (pos.includes('attaquant') || pos.includes('att') || pos.includes('avant') || pos.includes('ailier') || pos.includes('buteur')) return 2;
+  return 3; // default
+}
+
+/** Generate exact score odds */
+function getExactScoreOdds(home: number, away: number): number {
+  const total = home + away;
+  const diff = Math.abs(home - away);
+  // Common scores
+  if (total <= 2 && diff <= 1) return 5;    // 1-0, 0-1, 1-1, 0-0, 2-0, 0-2
+  if (total <= 3 && diff <= 2) return 7;    // 2-1, 1-2, 3-0, 0-3
+  if (total <= 4) return 10;                // 2-2, 3-1, 1-3, 4-0
+  return 15;                                // 5-0, 4-3, etc.
+}
+
+const POSITION_ORDER: Record<string, number> = {
+  'gardien': 0, 'goal': 0,
+  'défenseur': 1, 'arrière': 1, 'latéral': 1, 'central': 1, 'libero': 1,
+  'milieu': 2,
+  'attaquant': 3, 'ailier': 3, 'avant': 3, 'buteur': 3,
+};
+
+function getPositionSort(position: string): number {
+  const pos = (position || '').toLowerCase();
+  for (const [key, val] of Object.entries(POSITION_ORDER)) {
+    if (pos.includes(key)) return val;
+  }
+  return 2;
+}
+
+const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeTeam, awayTeam, matchDate, homeLogo, awayLogo, userId, userName, team, convocatedPlayers }) => {
   useBodyScrollLock(isOpen);
+  const [betType, setBetType] = useState<BetType>('match');
   const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
   const [amount, setAmount] = useState(10);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeBetsCount, setActiveBetsCount] = useState(0);
 
+  // Scorer state
+  const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
+
+  // Exact score state
+  const [scoreHome, setScoreHome] = useState(0);
+  const [scoreAway, setScoreAway] = useState(0);
+
   const odds = generateOdds(homeTeam, awayTeam, matchDate);
+
+  const sortedPlayers = useMemo(() => {
+    if (!convocatedPlayers) return [];
+    return [...convocatedPlayers].sort((a, b) => getPositionSort(a.position) - getPositionSort(b.position));
+  }, [convocatedPlayers]);
+
+  const hasConvocations = !!convocatedPlayers && convocatedPlayers.length > 0;
 
   useEffect(() => {
     if (!isOpen || !userId) return;
@@ -115,59 +169,88 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
     fetchData();
   }, [isOpen, userId, homeTeam, awayTeam, matchDate]);
 
-  const selectedOdd = prediction === 'home' ? odds.home : prediction === 'draw' ? odds.draw : prediction === 'away' ? odds.away : 0;
-  const potentialWin = Math.round(amount * selectedOdd);
+  // Reset sub-selections when switching bet type
+  useEffect(() => {
+    setPrediction(null);
+    setSelectedScorer(null);
+    setScoreHome(0);
+    setScoreAway(0);
+  }, [betType]);
+
+  const currentOdd = useMemo(() => {
+    if (betType === 'match') {
+      return prediction === 'home' ? odds.home : prediction === 'draw' ? odds.draw : prediction === 'away' ? odds.away : 0;
+    }
+    if (betType === 'scorer' && selectedScorer) {
+      return getScorerOdds(selectedScorer.position);
+    }
+    if (betType === 'exact_score') {
+      return getExactScoreOdds(scoreHome, scoreAway);
+    }
+    return 0;
+  }, [betType, prediction, odds, selectedScorer, scoreHome, scoreAway]);
+
+  const potentialWin = Math.round(amount * currentOdd);
+
+  const canPlace = useMemo(() => {
+    if (amount < 1 || amount > balance) return false;
+    if (betType === 'match') return !!prediction;
+    if (betType === 'scorer') return !!selectedScorer;
+    if (betType === 'exact_score') return true; // 0-0 is valid
+    return false;
+  }, [betType, prediction, selectedScorer, amount, balance]);
 
   const handleBet = async () => {
-    if (!prediction || amount < 1 || amount > balance) return;
+    if (!canPlace) return;
     setLoading(true);
     try {
+      const predictionValue = betType === 'match' ? prediction!
+        : betType === 'scorer' ? 'scorer'
+        : `${scoreHome}-${scoreAway}`;
+
       const { data, error } = await supabase.rpc('place_bet', {
         p_user_id: userId,
         p_user_name: userName,
         p_match_date: matchDate,
         p_home_team: homeTeam,
         p_away_team: awayTeam,
-        p_prediction: prediction,
-        p_odds: selectedOdd,
+        p_prediction: predictionValue,
+        p_odds: currentOdd,
         p_amount: amount,
         p_team: team || null,
-      });
+        p_bet_type: betType,
+        p_scorer_player_id: selectedScorer?.id || null,
+        p_scorer_player_name: selectedScorer?.name || null,
+        p_predicted_score_home: betType === 'exact_score' ? scoreHome : null,
+        p_predicted_score_away: betType === 'exact_score' ? scoreAway : null,
+      } as any);
 
       if (error) {
-        // Extract user-friendly message from postgres exception
         const msg = error.message || 'Erreur lors du pari';
-        if (msg.includes('déjà parié')) {
-          toast.error('Tu as déjà parié sur ce match !');
-        } else if (msg.includes('Solde insuffisant') || msg.includes('Insufficient')) {
-          toast.error('Solde insuffisant !');
-        } else if (msg.includes('Mise invalide')) {
-          toast.error('Mise invalide (1-500 pts)');
-        } else {
-          toast.error(msg);
-        }
+        if (msg.includes('déjà')) toast.error('Tu as déjà ce pari sur ce match !');
+        else if (msg.includes('Solde')) toast.error('Solde insuffisant !');
+        else toast.error(msg);
         setLoading(false);
         return;
       }
 
       const newBalance = typeof data === 'object' && data !== null && 'new_balance' in data
-        ? Number((data as { new_balance?: number }).new_balance ?? balance - amount)
+        ? Number((data as any).new_balance ?? balance - amount)
         : balance - amount;
 
       onBetPlaced?.({
-        userId,
-        userName,
-        homeTeam,
-        awayTeam,
-        matchDate,
-        prediction,
-        odds: selectedOdd,
-        amount,
-        newBalance,
-        team,
+        userId, userName, homeTeam, awayTeam, matchDate,
+        prediction: predictionValue,
+        odds: currentOdd, amount, newBalance, team,
+        betType,
+        scorerPlayerId: selectedScorer?.id,
+        scorerPlayerName: selectedScorer?.name,
+        predictedScoreHome: betType === 'exact_score' ? scoreHome : undefined,
+        predictedScoreAway: betType === 'exact_score' ? scoreAway : undefined,
       });
 
-      toast.success(`Pari de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
+      const typeLabel = betType === 'scorer' ? 'Pari buteur' : betType === 'exact_score' ? 'Pari score exact' : 'Pari';
+      toast.success(`${typeLabel} de ${amount} pts placé ! Gain potentiel: ${potentialWin} pts`);
       onClose();
     } catch (err) {
       console.error(err);
@@ -178,6 +261,12 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   };
 
   if (!isOpen) return null;
+
+  const betTypes: { id: BetType; label: string; icon: React.ElementType; disabled?: boolean; disabledReason?: string }[] = [
+    { id: 'match', label: 'Résultat', icon: Trophy },
+    { id: 'scorer', label: 'Buteur', icon: Target, disabled: !hasConvocations, disabledReason: 'Disponible après la convocation' },
+    { id: 'exact_score', label: 'Score exact', icon: Hash },
+  ];
 
   return (
     <div className="fixed inset-0 bg-foreground/60 backdrop-blur-md flex items-end sm:items-center justify-center z-[70]" onClick={onClose}>
@@ -232,53 +321,165 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
             </div>
           </div>
 
-          {/* Pronostic — qui va gagner ? */}
-          <div>
-            <label className="block text-xs font-bold text-foreground mb-3">Qui va gagner ?</label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { key: 'home' as const, label: homeTeam, odd: odds.home },
-                { key: 'draw' as const, label: 'Nul', odd: odds.draw },
-                { key: 'away' as const, label: awayTeam, odd: odds.away },
-              ]).map(o => {
-                const selected = prediction === o.key;
-                return (
-                  <motion.button
-                    key={o.key}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setPrediction(o.key)}
-                    className={`relative flex flex-col items-center gap-1.5 py-4 px-2 rounded-2xl border-2 transition-all ${
-                      selected
-                        ? 'border-accent bg-gradient-to-b from-accent/15 to-accent/5 shadow-lg shadow-accent/10'
-                        : 'border-border bg-card hover:border-muted-foreground/30 hover:bg-secondary/50'
-                    }`}
-                  >
-                    {selected && (
-                      <motion.div
-                        layoutId="bet-check"
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center"
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      >
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-foreground"/></svg>
-                      </motion.div>
-                    )}
-                    <span className={`text-[9px] font-semibold uppercase tracking-wide ${selected ? 'text-accent/70' : 'text-muted-foreground/60'}`}>
-                      Cote
-                    </span>
-                    <span className={`text-2xl font-black ${selected ? 'text-accent' : 'text-foreground'}`}>
-                      {o.odd}
-                    </span>
-                    <span className={`text-[10px] font-semibold leading-tight text-center line-clamp-2 ${selected ? 'text-accent' : 'text-muted-foreground'}`}>
-                      {o.label}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </div>
+          {/* Bet type selector */}
+          <div className="flex bg-secondary/50 rounded-xl p-1 border border-border/50">
+            {betTypes.map(bt => {
+              const Icon = bt.icon;
+              return (
+                <button
+                  key={bt.id}
+                  onClick={() => !bt.disabled && setBetType(bt.id)}
+                  disabled={bt.disabled}
+                  title={bt.disabled ? bt.disabledReason : undefined}
+                  className={cn(
+                    "flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-[10px] font-semibold transition-all",
+                    betType === bt.id
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : bt.disabled
+                        ? "text-muted-foreground/30 cursor-not-allowed"
+                        : "text-muted-foreground hover:bg-secondary"
+                  )}
+                >
+                  <Icon size={14} />
+                  {bt.label}
+                </button>
+              );
+            })}
           </div>
 
+          {/* ═══ MATCH BET ═══ */}
+          <AnimatePresence mode="wait">
+            {betType === 'match' && (
+              <motion.div key="match" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+                <label className="block text-xs font-bold text-foreground mb-3">Qui va gagner ?</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { key: 'home' as const, label: homeTeam, odd: odds.home },
+                    { key: 'draw' as const, label: 'Nul', odd: odds.draw },
+                    { key: 'away' as const, label: awayTeam, odd: odds.away },
+                  ]).map(o => {
+                    const selected = prediction === o.key;
+                    return (
+                      <motion.button
+                        key={o.key}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setPrediction(o.key)}
+                        className={`relative flex flex-col items-center gap-1.5 py-4 px-2 rounded-2xl border-2 transition-all ${
+                          selected
+                            ? 'border-accent bg-gradient-to-b from-accent/15 to-accent/5 shadow-lg shadow-accent/10'
+                            : 'border-border bg-card hover:border-muted-foreground/30 hover:bg-secondary/50'
+                        }`}
+                      >
+                        {selected && (
+                          <motion.div
+                            layoutId="bet-check"
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center"
+                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                          >
+                            <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-foreground"/></svg>
+                          </motion.div>
+                        )}
+                        <span className={`text-[9px] font-semibold uppercase tracking-wide ${selected ? 'text-accent/70' : 'text-muted-foreground/60'}`}>Cote</span>
+                        <span className={`text-2xl font-black ${selected ? 'text-accent' : 'text-foreground'}`}>{o.odd}</span>
+                        <span className={`text-[10px] font-semibold leading-tight text-center line-clamp-2 ${selected ? 'text-accent' : 'text-muted-foreground'}`}>{o.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ═══ SCORER BET ═══ */}
+            {betType === 'scorer' && (
+              <motion.div key="scorer" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+                <label className="block text-xs font-bold text-foreground mb-3">Qui va marquer ?</label>
+                <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
+                  {sortedPlayers.map(player => {
+                    const playerOdd = getScorerOdds(player.position);
+                    const selected = selectedScorer?.id === player.id;
+                    return (
+                      <motion.button
+                        key={player.id}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setSelectedScorer(selected ? null : player)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 transition-all text-left",
+                          selected
+                            ? "border-accent bg-accent/10"
+                            : "border-border bg-card hover:border-muted-foreground/30"
+                        )}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                          <User size={14} className="text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("text-xs font-bold truncate", selected ? "text-accent" : "text-foreground")}>{player.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{player.position}</p>
+                        </div>
+                        <div className={cn(
+                          "px-2.5 py-1 rounded-lg text-xs font-black",
+                          selected ? "bg-accent text-accent-foreground" : "bg-secondary text-foreground"
+                        )}>
+                          x{playerOdd}
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* ═══ EXACT SCORE BET ═══ */}
+            {betType === 'exact_score' && (
+              <motion.div key="exact_score" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
+                <label className="block text-xs font-bold text-foreground mb-3">Score exact</label>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-bold text-muted-foreground truncate max-w-[80px] text-center">{homeTeam}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setScoreHome(Math.max(0, scoreHome - 1))}
+                        className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-lg font-black text-foreground hover:bg-secondary/80 active:scale-95 transition-all"
+                      >−</button>
+                      <div className="w-12 h-12 rounded-xl bg-card border-2 border-accent/40 flex items-center justify-center text-xl font-black text-accent">
+                        {scoreHome}
+                      </div>
+                      <button
+                        onClick={() => setScoreHome(Math.min(9, scoreHome + 1))}
+                        className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-lg font-black text-foreground hover:bg-secondary/80 active:scale-95 transition-all"
+                      >+</button>
+                    </div>
+                  </div>
+                  <span className="text-xl font-black text-muted-foreground mt-4">-</span>
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-bold text-muted-foreground truncate max-w-[80px] text-center">{awayTeam}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setScoreAway(Math.max(0, scoreAway - 1))}
+                        className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-lg font-black text-foreground hover:bg-secondary/80 active:scale-95 transition-all"
+                      >−</button>
+                      <div className="w-12 h-12 rounded-xl bg-card border-2 border-accent/40 flex items-center justify-center text-xl font-black text-accent">
+                        {scoreAway}
+                      </div>
+                      <button
+                        onClick={() => setScoreAway(Math.min(9, scoreAway + 1))}
+                        className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-lg font-black text-foreground hover:bg-secondary/80 active:scale-95 transition-all"
+                      >+</button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center mt-3">
+                  <div className="bg-accent/10 border border-accent/20 rounded-xl px-4 py-2 text-center">
+                    <span className="text-[10px] text-muted-foreground font-medium">Cote </span>
+                    <span className="text-lg font-black text-accent">x{getExactScoreOdds(scoreHome, scoreAway)}</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Amount slider */}
-          {prediction && (
+          {(canPlace || (betType === 'exact_score')) && currentOdd > 0 && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 bg-secondary/30 rounded-2xl p-4 border border-border/50">
               <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mise</label>
               <div className="flex items-center gap-3">
@@ -303,7 +504,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
             </motion.div>
           )}
 
-          {/* How to earn points — collapsible */}
+          {/* How to earn points */}
           <details className="group">
             <summary className="flex items-center gap-1.5 cursor-pointer text-[11px] text-muted-foreground hover:text-foreground transition-colors select-none">
               <Gift size={13} className="text-amber-400" />
@@ -342,7 +543,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={handleBet}
-              disabled={!prediction || amount < 1 || amount > balance || loading}
+              disabled={!canPlace || loading}
               className="flex-1 py-3 bg-accent text-accent-foreground rounded-xl font-semibold hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-lg shadow-accent/20"
             >
               {loading ? 'En cours...' : 'Valider le pari'}

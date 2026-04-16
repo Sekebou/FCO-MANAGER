@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,11 @@ interface Bet {
   status: string;
   createdAt: string;
   team: string | null;
+  betType: string;
+  scorerPlayerId: string | null;
+  scorerPlayerName: string | null;
+  predictedScoreHome: number | null;
+  predictedScoreAway: number | null;
 }
 
 interface Props {
@@ -41,6 +46,11 @@ const mapBet = (r: any): Bet => ({
   homeTeam: r.home_team, awayTeam: r.away_team, matchDate: r.match_date,
   prediction: r.prediction, odds: r.odds, amount: r.amount, payout: r.payout,
   status: r.status, createdAt: r.created_at, team: r.team || null,
+  betType: r.bet_type || 'match',
+  scorerPlayerId: r.scorer_player_id || null,
+  scorerPlayerName: r.scorer_player_name || null,
+  predictedScoreHome: r.predicted_score_home ?? null,
+  predictedScoreAway: r.predicted_score_away ?? null,
 });
 
 type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard' | 'settle';
@@ -52,6 +62,18 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; co
 };
 
 const BASE_TEAMS = ['A', 'B', 'C'];
+
+function getBetLabel(bet: Bet): string {
+  if (bet.betType === 'scorer') return `⚽ ${bet.scorerPlayerName || '?'}`;
+  if (bet.betType === 'exact_score') return `📊 ${bet.predictedScoreHome ?? 0}-${bet.predictedScoreAway ?? 0}`;
+  return bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+}
+
+function getBetTypeTag(betType: string): { label: string; color: string } {
+  if (betType === 'scorer') return { label: 'Buteur', color: 'text-purple-500 bg-purple-500/10' };
+  if (betType === 'exact_score') return { label: 'Score', color: 'text-blue-500 bg-blue-500/10' };
+  return { label: 'Résultat', color: 'text-accent bg-accent/10' };
+}
 
 function buildLocationLink(terrain?: { city?: string; name?: string }) {
   if (!terrain) return null;
@@ -148,6 +170,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [loading, setLoading] = useState(true);
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
   const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [convocatedPlayers, setConvocatedPlayers] = useState<{ id: string; name: string; position: string }[]>([]);
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
@@ -551,6 +574,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   // Settlement state for admin+
   const [settleScores, setSettleScores] = useState<Record<string, { home: string; away: string }>>({});
   const [settlingMatch, setSettlingMatch] = useState<string | null>(null);
+  const [settleScorers, setSettleScorers] = useState<Record<string, string[]>>({}); // matchKey -> player_id[]
+  const [settlingScorers, setSettlingScorers] = useState<string | null>(null);
+  const [settlePlayersList, setSettlePlayersList] = useState<Record<string, { id: string; name: string; position: string }[]>>({});
 
   // Group pending bets by normalized match for settlement
   const pendingMatchGroups = useMemo(() => {
@@ -760,6 +786,44 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     }
   }, [settleScores]);
 
+  const handleSettleScorers = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[]) => {
+    const scorerIds = settleScorers[matchKey] || [];
+    if (scorerIds.length === 0) {
+      toast.error('Sélectionne au moins un buteur');
+      return;
+    }
+    const scorerBets = betsForMatch.filter(b => b.betType === 'scorer');
+    if (scorerBets.length === 0) {
+      toast.error('Aucun pari buteur à régler');
+      return;
+    }
+    setSettlingScorers(matchKey);
+    try {
+      const betGroups = new Map<string, { homeTeam: string; awayTeam: string; matchDate: string }>();
+      for (const b of scorerBets) {
+        const key = `${b.homeTeam}||${b.awayTeam}||${b.matchDate}`;
+        if (!betGroups.has(key)) betGroups.set(key, { homeTeam: b.homeTeam, awayTeam: b.awayTeam, matchDate: b.matchDate });
+      }
+      let totalSettled = 0;
+      for (const group of betGroups.values()) {
+        const { data, error } = await supabase.rpc('settle_scorer_bets', {
+          p_home_team: group.homeTeam,
+          p_away_team: group.awayTeam,
+          p_match_date: group.matchDate,
+          p_scorer_player_ids: scorerIds,
+        } as any);
+        if (error) throw error;
+        totalSettled += (data as any)?.settled || 0;
+      }
+      toast.success(`${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''}`);
+      setSettleScorers(prev => { const next = { ...prev }; delete next[matchKey]; return next; });
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur lors du règlement');
+    } finally {
+      setSettlingScorers(null);
+    }
+  }, [settleScorers]);
+
   const handleBetPlaced = useCallback((bet: BetPlacementPayload) => {
     setBets(prev => {
       const alreadyExists = prev.some(existing =>
@@ -785,6 +849,11 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         status: 'pending',
         createdAt: new Date().toISOString(),
         team: bet.team || null,
+        betType: bet.betType || 'match',
+        scorerPlayerId: bet.scorerPlayerId || null,
+        scorerPlayerName: bet.scorerPlayerName || null,
+        predictedScoreHome: bet.predictedScoreHome ?? null,
+        predictedScoreAway: bet.predictedScoreAway ?? null,
       }, ...prev];
     });
 
@@ -1052,18 +1121,47 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       )}
 
                       {/* Bet button */}
-                      {currentUser && !live && !waiting && !alreadyBet && (
+                      {currentUser && !live && !waiting && (
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
-                          onClick={() => nextMatch.date && setBetModal({
-                            home: homeName,
-                            away: awayName,
-                            date: nextMatch.date,
-                            homeLogo: homeLogo || undefined,
-                            awayLogo: awayLogo || undefined,
-                            team: selectedTeam,
-                          })}
+                          onClick={async () => {
+                            if (!nextMatch.date) return;
+                            // Load convocated players from events with published convocations
+                            let players: { id: string; name: string; position: string }[] = [];
+                            try {
+                              const matchDateKey = normalizeDateKey(nextMatch.date);
+                              const { data: events } = await supabase
+                                .from('events')
+                                .select('convocations')
+                                .eq('date', matchDateKey)
+                                .eq('team', selectedTeam)
+                                .eq('convocations_published', true)
+                                .limit(1);
+                              if (events?.[0]?.convocations) {
+                                const convos = events[0].convocations as Record<string, any>;
+                                const playerIds = Object.entries(convos)
+                                  .filter(([, v]) => v === true || v === 'titulaire' || v === 'remplacant')
+                                  .map(([id]) => id);
+                                if (playerIds.length > 0) {
+                                  const { data: pData } = await supabase
+                                    .from('players')
+                                    .select('id, name, position')
+                                    .in('id', playerIds);
+                                  if (pData) players = pData.map(p => ({ id: p.id, name: p.name, position: p.position || 'Non défini' }));
+                                }
+                              }
+                            } catch {}
+                            setConvocatedPlayers(players);
+                            setBetModal({
+                              home: homeName,
+                              away: awayName,
+                              date: nextMatch.date,
+                              homeLogo: homeLogo || undefined,
+                              awayLogo: awayLogo || undefined,
+                              team: selectedTeam,
+                            });
+                          }}
                           className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-accent/20 hover:brightness-110 transition-all"
                         >
                           <Zap size={15} />
@@ -1096,7 +1194,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       <div className="space-y-2">
                         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Paris en cours sur ce match</h3>
                         {visibleBets.map(bet => {
-                          const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                          const predLabel = getBetLabel(bet);
                           const isMe = bet.userId === currentUser?.uid;
                           return (
                             <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
@@ -1108,9 +1206,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
                                   {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
+                                  {bet.betType !== 'match' && (() => {
+                                    const tag = getBetTypeTag(bet.betType);
+                                    return <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${tag.color}`}>{tag.label}</span>;
+                                  })()}
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
                                   {isMe ? (
@@ -1196,7 +1298,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     {/* Pending bets list */}
                     <div className="space-y-2">
                       {myPendingBets.map(bet => {
-                        const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                        const predLabel = getBetLabel(bet);
                         return (
                           <div key={bet.id} className="bg-card rounded-xl border border-border/50 p-3">
                             <div className="flex items-center justify-between mb-1.5">
@@ -1228,7 +1330,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     {myBets.filter(b => b.status !== 'pending').map(bet => {
                       const config = STATUS_CONFIG[bet.status] || STATUS_CONFIG.pending;
                       const StatusIcon = config.icon;
-                      const predLabel = bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
+                      const predLabel = getBetLabel(bet);
 
                       return (
                         <div key={bet.id} className="bg-card rounded-xl border border-border p-3">
@@ -1379,17 +1481,102 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </div>
                           </div>
 
-                          {/* Settle button - full width */}
-                          <button
-                            onClick={() => handleSettle(matchKey, homeName, awayName, teamBets)}
-                            disabled={isSettling || !scores.home || !scores.away || teamBets.length === 0}
-                            className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all shadow-sm"
-                          >
-                            {isSettling ? <Loader2 size={16} className="animate-spin" /> : <Gavel size={16} />}
-                            {teamBets.length > 0
-                              ? `Régler ${teamBets.length} pari${teamBets.length > 1 ? 's' : ''}`
-                              : 'Aucun pari à régler'}
-                          </button>
+                          {/* Settle button for match + exact_score bets */}
+                          {(() => {
+                            const matchBetsCount = teamBets.filter(b => b.betType === 'match' || b.betType === 'exact_score').length;
+                            return (
+                              <button
+                                onClick={() => handleSettle(matchKey, homeName, awayName, teamBets)}
+                                disabled={isSettling || !scores.home || !scores.away || matchBetsCount === 0}
+                                className="w-full py-3 bg-accent text-accent-foreground rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all shadow-sm"
+                              >
+                                {isSettling ? <Loader2 size={16} className="animate-spin" /> : <Gavel size={16} />}
+                                {matchBetsCount > 0
+                                  ? `Régler ${matchBetsCount} pari${matchBetsCount > 1 ? 's' : ''} résultat`
+                                  : 'Aucun pari résultat'}
+                              </button>
+                            );
+                          })()}
+
+                          {/* Scorer bets settlement */}
+                          {(() => {
+                            const scorerBets = teamBets.filter(b => b.betType === 'scorer');
+                            if (scorerBets.length === 0) return null;
+                            const selectedIds = settleScorers[matchKey] || [];
+                            const uniqueScorers = [...new Map(scorerBets.map(b => [b.scorerPlayerId, { id: b.scorerPlayerId!, name: b.scorerPlayerName || '?' }])).values()];
+                            const isScorerSettling = settlingScorers === matchKey;
+
+                            // Load players list for this match if not loaded
+                            if (!settlePlayersList[matchKey] && !isScorerSettling) {
+                              const matchDateKey = normalizeDateKey(match.date);
+                              supabase
+                                .from('events')
+                                .select('convocations')
+                                .eq('date', matchDateKey)
+                                .eq('team', team)
+                                .eq('convocations_published', true)
+                                .limit(1)
+                                .then(({ data: events }) => {
+                                  if (events?.[0]?.convocations) {
+                                    const convos = events[0].convocations as Record<string, any>;
+                                    const playerIds = Object.entries(convos)
+                                      .filter(([, v]) => v === true || v === 'titulaire' || v === 'remplacant')
+                                      .map(([id]) => id);
+                                    if (playerIds.length > 0) {
+                                      supabase.from('players').select('id, name, position').in('id', playerIds).then(({ data: pData }) => {
+                                        if (pData) setSettlePlayersList(prev => ({ ...prev, [matchKey]: pData.map(p => ({ id: p.id, name: p.name, position: p.position || '' })) }));
+                                      });
+                                    }
+                                  }
+                                });
+                            }
+
+                            const allPlayers = settlePlayersList[matchKey] || uniqueScorers.map(s => ({ ...s, position: '' }));
+
+                            return (
+                              <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                                <p className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                                  <Target size={13} className="text-purple-500" />
+                                  Régler {scorerBets.length} pari{scorerBets.length > 1 ? 's' : ''} buteur
+                                </p>
+                                <p className="text-[10px] text-muted-foreground">Sélectionne les joueurs qui ont marqué :</p>
+                                <div className="space-y-1 max-h-[150px] overflow-y-auto">
+                                  {allPlayers.map(player => {
+                                    const isSelected = selectedIds.includes(player.id);
+                                    return (
+                                      <button
+                                        key={player.id}
+                                        onClick={() => {
+                                          setSettleScorers(prev => {
+                                            const current = prev[matchKey] || [];
+                                            return { ...prev, [matchKey]: isSelected ? current.filter(id => id !== player.id) : [...current, player.id] };
+                                          });
+                                        }}
+                                        className={cn(
+                                          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all text-xs",
+                                          isSelected ? "bg-purple-500/15 border border-purple-500/30" : "bg-secondary/50 border border-border/30 hover:bg-secondary"
+                                        )}
+                                      >
+                                        <div className={cn("w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0", isSelected ? "border-purple-500 bg-purple-500" : "border-border")}>
+                                          {isSelected && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                        </div>
+                                        <span className={cn("font-semibold flex-1", isSelected ? "text-purple-600 dark:text-purple-400" : "text-foreground")}>{player.name}</span>
+                                        {player.position && <span className="text-[9px] text-muted-foreground">{player.position}</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <button
+                                  onClick={() => handleSettleScorers(matchKey, homeName, awayName, teamBets)}
+                                  disabled={isScorerSettling || selectedIds.length === 0}
+                                  className="w-full py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
+                                >
+                                  {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
+                                  Régler paris buteur
+                                </button>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -1415,6 +1602,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           userId={authUserId}
           userName={currentUser.name}
           team={betModal.team}
+          convocatedPlayers={convocatedPlayers}
         />
       )}
     </div>
