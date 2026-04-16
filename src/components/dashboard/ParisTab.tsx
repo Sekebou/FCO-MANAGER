@@ -574,6 +574,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   // Settlement state for admin+
   const [settleScores, setSettleScores] = useState<Record<string, { home: string; away: string }>>({});
   const [settlingMatch, setSettlingMatch] = useState<string | null>(null);
+  const [settleScorers, setSettleScorers] = useState<Record<string, string[]>>({}); // matchKey -> player_id[]
+  const [settlingScorers, setSettlingScorers] = useState<string | null>(null);
+  const [settlePlayersList, setSettlePlayersList] = useState<Record<string, { id: string; name: string; position: string }[]>>({});
 
   // Group pending bets by normalized match for settlement
   const pendingMatchGroups = useMemo(() => {
