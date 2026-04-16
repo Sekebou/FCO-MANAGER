@@ -161,13 +161,18 @@ export type Database = {
         Row: {
           amount: number
           away_team: string
+          bet_type: string
           created_at: string
           home_team: string
           id: string
           match_date: string
           odds: number
           payout: number
+          predicted_score_away: number | null
+          predicted_score_home: number | null
           prediction: string
+          scorer_player_id: string | null
+          scorer_player_name: string | null
           settled_at: string | null
           status: string
           team: string | null
@@ -177,13 +182,18 @@ export type Database = {
         Insert: {
           amount: number
           away_team: string
+          bet_type?: string
           created_at?: string
           home_team: string
           id?: string
           match_date: string
           odds: number
           payout?: number
+          predicted_score_away?: number | null
+          predicted_score_home?: number | null
           prediction: string
+          scorer_player_id?: string | null
+          scorer_player_name?: string | null
           settled_at?: string | null
           status?: string
           team?: string | null
@@ -193,20 +203,33 @@ export type Database = {
         Update: {
           amount?: number
           away_team?: string
+          bet_type?: string
           created_at?: string
           home_team?: string
           id?: string
           match_date?: string
           odds?: number
           payout?: number
+          predicted_score_away?: number | null
+          predicted_score_home?: number | null
           prediction?: string
+          scorer_player_id?: string | null
+          scorer_player_name?: string | null
           settled_at?: string | null
           status?: string
           team?: string | null
           user_id?: string
           user_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bets_scorer_player_id_fkey"
+            columns: ["scorer_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cards: {
         Row: {
@@ -1019,10 +1042,15 @@ export type Database = {
         Args: {
           p_amount: number
           p_away_team: string
+          p_bet_type?: string
           p_home_team: string
           p_match_date: string
           p_odds: number
+          p_predicted_score_away?: number
+          p_predicted_score_home?: number
           p_prediction: string
+          p_scorer_player_id?: string
+          p_scorer_player_name?: string
           p_team?: string
           p_user_id: string
           p_user_name: string
@@ -1049,6 +1077,15 @@ export type Database = {
           p_home_score: number
           p_home_team: string
           p_match_date: string
+        }
+        Returns: Json
+      }
+      settle_scorer_bets: {
+        Args: {
+          p_away_team: string
+          p_home_team: string
+          p_match_date: string
+          p_scorer_player_ids: string[]
         }
         Returns: Json
       }
