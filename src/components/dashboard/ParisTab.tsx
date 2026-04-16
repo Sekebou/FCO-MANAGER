@@ -1206,9 +1206,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
                                   {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
+                                  {bet.betType !== 'match' && (() => {
+                                    const tag = getBetTypeTag(bet.betType);
+                                    return <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${tag.color}`}>{tag.label}</span>;
+                                  })()}
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
                                   {isMe ? (
