@@ -623,12 +623,55 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </div>
         )}
 
-        {/* Presences list */}
-        {!isConvocationMode && (
-          <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
-            <h4 className="font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-              <Users size={15} className="text-primary" /> Réponses des joueurs
-            </h4>
+        {/* Presences list — collapsible (collapsed by default when convocations published) */}
+        {!isConvocationMode && (() => {
+          const responsesKey = `responses_${event.id}`;
+          const isCollapsibleByDefault = !!event.convocationsPublished;
+          const stored = expandedPlayers[responsesKey] as unknown as string | undefined;
+          // open = expanded, closed = collapsed. If never toggled: collapsed when convocations published, open otherwise.
+          const isOpen = stored === 'open' ? true : stored === 'closed' ? false : !isCollapsibleByDefault;
+          const toggleOpen = () => setExpandedPlayers(prev => ({ ...prev, [responsesKey]: (isOpen ? 'closed' : 'open') as any }));
+
+          // Compute counts for the header summary
+          const presentCountAll = eventPlayers.filter(p => presences[p.id] === 'present' && !isNonRespondingPlayer(p.id)).length;
+          const absentCountAll = eventPlayers.filter(p => presences[p.id] === 'absent' && !isNonRespondingPlayer(p.id)).length;
+          const waitingCountAll = eventPlayers.filter(p => !isNonRespondingPlayer(p.id) && (!presences[p.id] || (presences[p.id] !== 'present' && presences[p.id] !== 'absent'))).length;
+
+          return (
+          <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+            <button
+              onClick={toggleOpen}
+              className="w-full flex items-center justify-between gap-2 p-3 hover:bg-secondary/30 transition-colors"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <Users size={15} className="text-primary" />
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-sm font-bold text-foreground leading-tight">Réponses des joueurs</p>
+                  <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">
+                    {isOpen ? 'Toucher pour replier' : 'Toucher pour déplier'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-accent/15 text-accent text-[10px] font-black" title="Présents">{presentCountAll}</span>
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-destructive/15 text-destructive text-[10px] font-black" title="Absents">{absentCountAll}</span>
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-warning/15 text-warning text-[10px] font-black" title="En attente">{waitingCountAll}</span>
+                {isOpen ? <ChevronUp size={16} className="text-muted-foreground ml-1" /> : <ChevronDown size={16} className="text-muted-foreground ml-1" />}
+              </div>
+            </button>
+
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-3 pb-3 pt-1">
 
             {/* Status filter tabs */}
             {(() => {
@@ -815,8 +858,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </>
               );
             })()}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        )}
+          );
+        })()}
 
 
         {/* Full-screen convocation wizard */}
