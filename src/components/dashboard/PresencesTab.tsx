@@ -1123,10 +1123,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   {/* Personal convocation banner (preview) */}
                   {iAmConvoked && !isPast && (
                     <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-r from-primary/15 to-accent/15 border-b border-primary/30">
-                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-primary">
-                        <Shield size={12} /> Tu es convoqué
+                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-primary min-w-0">
+                        <Shield size={12} className="shrink-0" />
+                        <span className="truncate">
+                          Tu es convoqué{event.createdByName ? <> par <span className="font-black">{event.createdByName}</span></> : ''}
+                        </span>
                       </span>
-                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${myPresenceBadge.cls}`}>
+                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm shrink-0 ${myPresenceBadge.cls}`}>
                         <MyPresenceIcon size={10} /> {myPresenceBadge.label}
                       </span>
                     </div>
