@@ -127,13 +127,25 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         <div>
           <SectionHeader icon={Trophy} title={`Prochain${nextMatches.length > 1 ? 's' : ''} match${nextMatches.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
           <div className="space-y-2">
-            {nextMatches.map((match) => (
+            {nextMatches.map((match) => {
+              const myPid = currentUser?.playerId;
+              const iAmConvoked = !!(myPid && match.convocationsPublished && match.convocations && (match.convocations as any)[myPid]);
+              const publisher = match.convocationsPublishedByName || match.createdByName;
+              return (
               <button
                 key={match.id}
                 onClick={() => handleMatchClick(match.id)}
-                className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 active:scale-[0.98] transition-transform"
+                className="w-full text-left bg-card border border-border/50 rounded-2xl overflow-hidden active:scale-[0.98] transition-transform"
               >
-                <div className="flex items-center gap-3">
+                {iAmConvoked && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary/15 to-accent/15 border-b border-primary/30 text-[11px] font-bold text-primary">
+                    <Shield size={11} className="shrink-0" />
+                    <span className="truncate">
+                      Tu es convoqué{publisher ? <> par <span className="font-black">{publisher}</span></> : ''}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 p-3.5">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     {match.homeLogo ? (
                       <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain" style={{ mixBlendMode: 'multiply' }} />
@@ -162,7 +174,8 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                   <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
                 </div>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
