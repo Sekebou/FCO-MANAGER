@@ -467,26 +467,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           const myPresence = myPlayerId ? (event.presences || {})[myPlayerId] : undefined;
           return (
             <>
-              {/* Personal banner: visible only when current player is convoked */}
-              {iAmConvoked && (
-                <div className="bg-gradient-to-r from-primary/15 to-accent/15 border-2 border-primary/40 rounded-2xl p-3.5 shadow-sm animate-fade-in">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                      <Shield size={18} className="text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-foreground">Tu es convoqué pour ce match 🎯</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {myPresence === 'present'
-                          ? 'Tu as confirmé ta présence ✓'
-                          : myPresence === 'absent'
-                            ? "Tu t'es déclaré absent"
-                            : 'Merci de confirmer ta présence ci-dessous'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Personal banner moved to preview card */}
               <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
                 <button
                   onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
