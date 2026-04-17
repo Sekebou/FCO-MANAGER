@@ -858,8 +858,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </>
               );
             })()}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        )}
+          );
+        })()}
 
 
         {/* Full-screen convocation wizard */}
