@@ -1169,19 +1169,22 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   className="w-full text-left"
                 >
                   {/* Personal convocation banner (preview) */}
-                  {iAmConvoked && !isPast && (
-                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-r from-primary/15 to-accent/15 border-b border-primary/30">
-                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-primary min-w-0">
-                        <Shield size={12} className="shrink-0" />
-                        <span className="truncate">
-                          Tu es convoqué{event.createdByName ? <> par <span className="font-black">{event.createdByName}</span></> : ''}
+                  {iAmConvoked && !isPast && (() => {
+                    const publisher = event.convocationsPublishedByName || event.createdByName;
+                    return (
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-r from-primary/15 to-accent/15 border-b border-primary/30">
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-primary min-w-0">
+                          <Shield size={12} className="shrink-0" />
+                          <span className="truncate">
+                            Tu es convoqué{publisher ? <> par <span className="font-black">{publisher}</span></> : ''}
+                          </span>
                         </span>
-                      </span>
-                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm shrink-0 ${myPresenceBadge.cls}`}>
-                        <MyPresenceIcon size={10} /> {myPresenceBadge.label}
-                      </span>
-                    </div>
-                  )}
+                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm shrink-0 ${myPresenceBadge.cls}`}>
+                          <MyPresenceIcon size={10} /> {myPresenceBadge.label}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   {/* Match card: special layout with logos */}
                   {isMatch && matchInfo ? (
                     <div className="p-4 sm:p-5">
