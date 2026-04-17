@@ -1200,53 +1200,80 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   }
                   const myStatus = (event.presences || {})[currentUser.playerId!];
                   return (
-                    <div className="flex items-center gap-1.5 px-3.5 pb-2.5">
-                      <div className="relative flex-1 overflow-visible">
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
-                          animate={myStatus === 'present' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
-                          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-                          onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
-                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'}`}
-                        >
-                          <Check size={12} /> Présent
-                        </motion.button>
-                        <AnimatePresence>
-                          {myStatus === 'present' && (
-                            <>
-                              <motion.span key={`qp1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -8, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-sm">✓</motion.span>
-                              <motion.span key={`qp2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 10, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-[10px]">✓</motion.span>
-                            </>
+                    <div className="px-3.5 pb-2.5 space-y-1.5">
+                      {isConvoked && (
+                        <div className="rounded-xl bg-gradient-to-r from-accent/15 to-accent/5 border border-accent/30 p-2.5 space-y-1.5">
+                          <div className="flex items-start gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
+                              <Shield size={12} className="text-accent" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-bold text-accent leading-tight">Tu es convoqué pour ce match</p>
+                              {event.createdByName && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                                  Par <span className="font-semibold text-foreground">{event.createdByName}</span> — confirme ta présence
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          {onNavigateToMatchSheet && event.type === 'match' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onNavigateToMatchSheet(event.id); }}
+                              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                            >
+                              <ExternalLink size={10} /> Voir la feuille de match
+                            </button>
                           )}
-                        </AnimatePresence>
-                      </div>
-                      <div className="relative flex-1 overflow-visible">
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
-                          animate={myStatus === 'absent' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
-                          transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (myStatus === 'absent') {
-                              togglePresence(event.id, currentUser.playerId!, 'absent');
-                            } else {
-                              setAbsenceModal({ eventId: event.id, playerId: currentUser.playerId! });
-                              setAbsenceReason('');
-                              setAbsenceOtherText('');
-                            }
-                          }}
-                          className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'}`}
-                        >
-                          <X size={12} /> Absent
-                        </motion.button>
-                        <AnimatePresence>
-                          {myStatus === 'absent' && (
-                            <>
-                              <motion.span key={`qa1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -6, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-sm">✕</motion.span>
-                              <motion.span key={`qa2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 8, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-[10px]">✕</motion.span>
-                            </>
-                          )}
-                        </AnimatePresence>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative flex-1 overflow-visible">
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            animate={myStatus === 'present' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
+                            transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                            onClick={(e) => { e.stopPropagation(); togglePresence(event.id, currentUser.playerId!, 'present'); }}
+                            className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${myStatus === 'present' ? 'bg-accent text-accent-foreground shadow-sm shadow-accent/30' : 'bg-secondary border border-border text-muted-foreground hover:border-accent/50'}`}
+                          >
+                            <Check size={12} /> {isConvoked ? 'Confirmer présent' : 'Présent'}
+                          </motion.button>
+                          <AnimatePresence>
+                            {myStatus === 'present' && (
+                              <>
+                                <motion.span key={`qp1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -8, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-sm">✓</motion.span>
+                                <motion.span key={`qp2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 10, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-accent font-black text-[10px]">✓</motion.span>
+                              </>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                        <div className="relative flex-1 overflow-visible">
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            animate={myStatus === 'absent' ? { scale: [1, 1.15, 0.95, 1.05, 1] } : { scale: 1 }}
+                            transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (myStatus === 'absent') {
+                                togglePresence(event.id, currentUser.playerId!, 'absent');
+                              } else {
+                                setAbsenceModal({ eventId: event.id, playerId: currentUser.playerId! });
+                                setAbsenceReason('');
+                                setAbsenceOtherText('');
+                              }
+                            }}
+                            className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold transition-all ${myStatus === 'absent' ? 'bg-destructive text-destructive-foreground shadow-sm shadow-destructive/30' : 'bg-secondary border border-border text-muted-foreground hover:border-destructive/50'}`}
+                          >
+                            <X size={12} /> Absent
+                          </motion.button>
+                          <AnimatePresence>
+                            {myStatus === 'absent' && (
+                              <>
+                                <motion.span key={`qa1-${event.id}`} initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -28, x: -6, scale: 1.6 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-sm">✕</motion.span>
+                                <motion.span key={`qa2-${event.id}`} initial={{ opacity: 0.8, y: 0, scale: 0.5 }} animate={{ opacity: 0, y: -22, x: 8, scale: 1.2 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none text-destructive font-black text-[10px]">✕</motion.span>
+                                </>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       </div>
                     </div>
                   );
