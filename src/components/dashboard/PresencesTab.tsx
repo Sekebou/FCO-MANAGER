@@ -484,18 +484,26 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                     const StatusIcon = statusInfo?.icon || UserX;
                     const isMatchPast = new Date(event.date) < new Date();
                     const canSeeDetails = isMatchPast || canManage();
+                    const presenceStatus = (event.presences || {})[playerId];
+                    const presenceInfo = presenceStatus === 'present'
+                      ? { label: 'A confirmé', icon: Check, cls: 'bg-accent/15 text-accent border-accent/30' }
+                      : presenceStatus === 'absent'
+                        ? { label: 'A décliné', icon: X, cls: 'bg-destructive/15 text-destructive border-destructive/30' }
+                        : { label: 'En attente', icon: Clock, cls: 'bg-warning/15 text-warning border-warning/30' };
+                    const PresenceIcon = presenceInfo.icon;
                     return (
-                      <div key={playerId} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-lg group hover:bg-secondary/70 transition-all">
-                        <div className="flex items-center gap-2.5">
+                      <div key={playerId} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-lg group hover:bg-secondary/70 transition-all gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
-                          <span className="font-medium text-sm text-foreground">{player.name}</span>
-                          {canSeeDetails && conv.position && <span className="text-[11px] text-muted-foreground/80 font-medium">{conv.position}</span>}
-                          {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60">#{conv.number}</span>}
+                          <span className="font-medium text-sm text-foreground truncate">{player.name}</span>
+                          {canSeeDetails && conv.position && <span className="text-[11px] text-muted-foreground/80 font-medium shrink-0">{conv.position}</span>}
+                          {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60 shrink-0">#{conv.number}</span>}
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <StatusIcon size={13} className="text-muted-foreground" />
-                          <span className="text-[11px] font-semibold text-muted-foreground">{statusInfo?.label}</span>
-                        </div>
+                        {conv.status === 'convoque' && (
+                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${presenceInfo.cls}`}>
+                            <PresenceIcon size={10} /> {presenceInfo.label}
+                          </span>
+                        )}
                       </div>
                     );
                   })}
