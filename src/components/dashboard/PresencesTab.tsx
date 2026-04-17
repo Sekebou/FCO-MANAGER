@@ -1043,6 +1043,18 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               const isArchived = showArchived && isEventTerminated(event);
               const matchInfo = getMatchLogos(event);
               const isMatch = !!matchInfo;
+              const myPlayerId = currentUser?.playerId;
+              const myConv = (event.convocationsPublished && event.convocations && myPlayerId)
+                ? (event.convocations as Record<string, any>)[myPlayerId]
+                : null;
+              const iAmConvoked = myConv?.status === 'convoque';
+              const myPresence = myPlayerId ? (event.presences || {})[myPlayerId] : undefined;
+              const myPresenceBadge = myPresence === 'present'
+                ? { label: 'Présent', icon: Check, cls: 'bg-accent text-accent-foreground' }
+                : myPresence === 'absent'
+                  ? { label: 'Absent', icon: X, cls: 'bg-destructive text-destructive-foreground' }
+                  : { label: 'À confirmer', icon: Clock, cls: 'bg-warning text-warning-foreground' };
+              const MyPresenceIcon = myPresenceBadge.icon;
 
               return (
                 <div key={event.id}>
