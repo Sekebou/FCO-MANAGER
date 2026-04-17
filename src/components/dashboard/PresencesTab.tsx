@@ -500,9 +500,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                           {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60 shrink-0">#{conv.number}</span>}
                         </div>
                         {conv.status === 'convoque' && (
-                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold shrink-0 ${presenceInfo.cls}`}>
-                            <PresenceIcon size={10} /> {presenceInfo.label}
-                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold bg-primary/10 text-primary border-primary/30">
+                              <Shield size={10} /> Convoqué
+                            </span>
+                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold ${presenceInfo.cls}`}>
+                              <PresenceIcon size={10} /> {presenceInfo.label}
+                            </span>
+                          </div>
                         )}
                       </div>
                     );
