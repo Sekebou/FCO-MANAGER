@@ -1370,9 +1370,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-[11px] font-bold text-accent leading-tight">Tu es convoqué pour ce match</p>
-                              {event.createdByName && (
+                              {(event.convocationsPublishedByName || event.createdByName) && (
                                 <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
-                                  Par <span className="font-semibold text-foreground">{event.createdByName}</span> — confirme ta présence
+                                  Par <span className="font-semibold text-foreground">{event.convocationsPublishedByName || event.createdByName}</span> — confirme ta présence
                                 </p>
                               )}
                             </div>
