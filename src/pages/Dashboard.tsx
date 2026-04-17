@@ -85,6 +85,8 @@ export interface Event {
   absenceReasons?: Record<string, string>;
   convocations?: Record<string, Convocation>;
   convocationsPublished?: boolean;
+  convocationsPublishedByName?: string;
+  convocationsPublishedAt?: string;
   createdBy?: string;
   createdByName?: string;
   createdAt?: string;
@@ -162,7 +164,7 @@ const tabs = [
 // ---- Supabase helpers: map DB snake_case → app camelCase ----
 const mapPlayer = (r: any): Player => ({ id: r.id, name: r.name, position: r.position || 'Non défini', matches: r.matches ?? 0, goals: r.goals ?? 0, assists: r.assists ?? 0, licenseExpiry: r.license_expiry || undefined });
 const sortPlayersStable = (list: Player[]) => [...list].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
-const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, absenceReasons: r.absence_reasons as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location, duration: r.duration ?? undefined, homeLogo: r.home_logo || undefined, awayLogo: r.away_logo || undefined });
+const mapEvent = (r: any): Event => ({ id: r.id, title: r.title, date: r.date, type: r.type, team: r.team, reason: r.reason, recurrence: r.recurrence, presences: r.presences as any || {}, absenceReasons: r.absence_reasons as any || {}, convocations: r.convocations as any || {}, convocationsPublished: r.convocations_published ?? false, convocationsPublishedByName: r.convocations_published_by_name || undefined, convocationsPublishedAt: r.convocations_published_at || undefined, createdBy: r.created_by, createdByName: r.created_by_name, createdAt: r.created_at, time: r.time, location: r.location, duration: r.duration ?? undefined, homeLogo: r.home_logo || undefined, awayLogo: r.away_logo || undefined });
 const filterGhostEvents = (events: Event[], userId?: string) => events.filter(e => e.reason !== '__ghost__' || e.createdBy === userId);
 const mapNews = (r: any): NewsItem => ({ id: r.id, title: r.title, content: r.content, author: r.author, authorId: r.author_id, date: r.date, likes: r.likes || [] });
 const mapMember = (r: any): Member => ({ id: r.id, name: r.name, email: r.email, role: r.role, displayRole: r.display_role || undefined, playerId: r.player_id, photoURL: r.photo_url, createdAt: r.created_at, username: r.username, licenseExpiry: r.license_expiry, isGhost: r.is_ghost ?? false });
