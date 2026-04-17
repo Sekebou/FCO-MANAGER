@@ -486,6 +486,9 @@ export type Database = {
           away_logo: string | null
           convocations: Json | null
           convocations_published: boolean | null
+          convocations_published_at: string | null
+          convocations_published_by: string | null
+          convocations_published_by_name: string | null
           created_at: string
           created_by: string | null
           created_by_name: string | null
@@ -508,6 +511,9 @@ export type Database = {
           away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
+          convocations_published_at?: string | null
+          convocations_published_by?: string | null
+          convocations_published_by_name?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
@@ -530,6 +536,9 @@ export type Database = {
           away_logo?: string | null
           convocations?: Json | null
           convocations_published?: boolean | null
+          convocations_published_at?: string | null
+          convocations_published_by?: string | null
+          convocations_published_by_name?: string | null
           created_at?: string
           created_by?: string | null
           created_by_name?: string | null
