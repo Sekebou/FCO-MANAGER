@@ -462,84 +462,141 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
 
         {event.convocationsPublished && event.convocations && !isConvocationMode && (() => {
           const myPlayerId = currentUser?.playerId;
-          const myConv = myPlayerId ? (event.convocations as Record<string, Convocation>)[myPlayerId] : null;
-          const iAmConvoked = myConv?.status === 'convoque';
-          const myPresence = myPlayerId ? (event.presences || {})[myPlayerId] : undefined;
+          const convocationsMap = event.convocations as Record<string, Convocation>;
+          const convokedEntries = Object.entries(convocationsMap).filter(([, c]) => c.status === 'convoque');
+          const presencesMap = event.presences || {};
+          const presentCount = convokedEntries.filter(([pid]) => presencesMap[pid] === 'present').length;
+          const absentCount = convokedEntries.filter(([pid]) => presencesMap[pid] === 'absent').length;
+          const waitingCount = convokedEntries.length - presentCount - absentCount;
+          const isMatchPast = new Date(event.date) < new Date();
+          const canSeeDetails = isMatchPast || canManage();
+
+          // Status pill helper — uniform shape for all states
+          const renderPill = (status: string | undefined) => {
+            const info = status === 'present'
+              ? { label: 'Présent', Icon: Check, cls: 'bg-accent text-accent-foreground' }
+              : status === 'absent'
+                ? { label: 'Absent', Icon: X, cls: 'bg-destructive text-destructive-foreground' }
+                : { label: 'En attente', Icon: Clock, cls: 'bg-warning text-warning-foreground' };
+            const { Icon } = info;
+            return (
+              <span className={`inline-flex items-center gap-1 h-6 px-2 rounded-full text-[10px] font-bold shrink-0 ${info.cls}`}>
+                <Icon size={11} strokeWidth={3} /> {info.label}
+              </span>
+            );
+          };
+
           return (
-            <>
-              {/* Personal banner moved to preview card */}
-              <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
-                <button
-                  onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
-                  className="flex items-center gap-2 text-sm font-semibold text-foreground w-full"
-                >
-                  <Shield size={16} className="text-accent" />
-                  Convocations publiées
-                  {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                </button>
-                {isConvocationExpanded && (
-                  <div className="space-y-1.5 mt-3 animate-fade-in">
-                    {Object.entries(event.convocations)
-                      .sort((a, b) => {
-                        const order: Record<string, number> = { convoque: 0, non_convoque: 1 };
-                        return (order[a[1].status] ?? 1) - (order[b[1].status] ?? 1);
-                      })
-                      .map(([playerId, conv]) => {
-                        const player = players.find(p => p.id === playerId);
-                        if (!player) return null;
-                        const statusInfo = CONVOCATION_STATUSES.find(s => s.value === conv.status);
-                        const isMatchPast = new Date(event.date) < new Date();
-                        const canSeeDetails = isMatchPast || canManage();
-                        const presenceStatus = (event.presences || {})[playerId];
-                        const presenceInfo = presenceStatus === 'present'
-                          ? { label: 'Présent', icon: Check, cls: 'bg-accent/15 text-accent border-accent/30' }
-                          : presenceStatus === 'absent'
-                            ? { label: 'Absent', icon: X, cls: 'bg-destructive/15 text-destructive border-destructive/30' }
-                            : { label: 'En attente', icon: Clock, cls: 'bg-warning/15 text-warning border-warning/30' };
-                        const PresenceIcon = presenceInfo.icon;
-                        const isMe = playerId === myPlayerId;
-                        return (
-                          <div key={playerId} className={`flex items-center justify-between p-2.5 rounded-lg transition-all gap-2 ${isMe ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/40 hover:bg-secondary/70'}`}>
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
-                              <span className="font-medium text-sm text-foreground truncate">
-                                {player.name}{isMe && <span className="ml-1 text-[10px] font-bold text-primary">(toi)</span>}
-                              </span>
-                              {canSeeDetails && conv.position && <span className="text-[11px] text-muted-foreground/80 font-medium shrink-0">{conv.position}</span>}
-                              {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60 shrink-0">#{conv.number}</span>}
-                            </div>
-                            {conv.status === 'convoque' && (
-                              <span className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-bold shrink-0 ${presenceInfo.cls}`}>
-                                <PresenceIcon size={11} /> {presenceInfo.label}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                {canManage() && (
-                  <div className="mt-3 flex gap-2">
-                    <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors">
-                      <Pencil size={14} /> Modifier
-                    </button>
-                    <button onClick={() => {
-                      void publishConvocations(event.id, event.convocations || {});
-                    }} disabled={publishing} className="flex-1 flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors disabled:opacity-50" title="Re-notifier les joueurs convoqués">
-                      <Bell size={14} /> {publishing ? 'Envoi…' : 'Re-notifier'}
-                    </button>
+            <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+              {/* Header — toggle */}
+              <button
+                onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                className="w-full flex items-center justify-between gap-2 p-3 hover:bg-secondary/30 transition-colors"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
+                    <Shield size={15} className="text-accent" />
                   </div>
-                )}
-                {onNavigateToMatchSheet && (
-                  <button
-                    onClick={() => onNavigateToMatchSheet(event.id)}
-                    className="w-full flex items-center justify-center gap-2 text-sm text-primary bg-primary/10 hover:bg-primary/20 font-semibold py-2 rounded-lg transition-colors mt-2 border border-primary/20"
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-bold text-foreground leading-tight">Convocations publiées</p>
+                    <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">
+                      {convokedEntries.length} joueur{convokedEntries.length > 1 ? 's' : ''} convoqué{convokedEntries.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="inline-flex items-center gap-0.5 h-6 w-6 justify-center rounded-full bg-accent/15 text-accent text-[10px] font-black" title="Présents">{presentCount}</span>
+                  <span className="inline-flex items-center gap-0.5 h-6 w-6 justify-center rounded-full bg-destructive/15 text-destructive text-[10px] font-black" title="Absents">{absentCount}</span>
+                  <span className="inline-flex items-center gap-0.5 h-6 w-6 justify-center rounded-full bg-warning/15 text-warning text-[10px] font-black" title="En attente">{waitingCount}</span>
+                  {isConvocationExpanded ? <ChevronUp size={16} className="text-muted-foreground ml-1" /> : <ChevronDown size={16} className="text-muted-foreground ml-1" />}
+                </div>
+              </button>
+
+              <AnimatePresence initial={false}>
+                {isConvocationExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="overflow-hidden"
                   >
-                    <ExternalLink size={14} /> Voir la feuille de match
-                  </button>
+                    <div className="px-3 pb-3 pt-1 space-y-1">
+                      {convokedEntries.length === 0 ? (
+                        <p className="text-center text-xs text-muted-foreground py-3">Aucun joueur convoqué</p>
+                      ) : (
+                        convokedEntries
+                          .sort(([aId], [bId]) => {
+                            // Order: present > waiting > absent
+                            const order = (s: string | undefined) => s === 'present' ? 0 : s === 'absent' ? 2 : 1;
+                            return order(presencesMap[aId]) - order(presencesMap[bId]);
+                          })
+                          .map(([playerId, conv]) => {
+                            const player = players.find(p => p.id === playerId);
+                            if (!player) return null;
+                            const presenceStatus = presencesMap[playerId];
+                            const isMe = playerId === myPlayerId;
+                            const member = members.find(m => m.playerId === playerId);
+                            const photoURL = member?.photoURL;
+                            const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                            return (
+                              <div
+                                key={playerId}
+                                className={`flex items-center gap-2 p-2 rounded-xl transition-all ${
+                                  isMe ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-secondary/40'
+                                }`}
+                              >
+                                {/* Avatar */}
+                                {photoURL ? (
+                                  <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                                ) : (
+                                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                    <span className="text-primary text-[10px] font-bold">{initials}</span>
+                                  </div>
+                                )}
+                                {/* Name + meta */}
+                                <div className="flex-1 min-w-0 flex items-center gap-1.5">
+                                  <span className="font-semibold text-xs text-foreground truncate">{player.name}</span>
+                                  {isMe && <span className="text-[9px] font-black text-primary bg-primary/15 px-1 rounded shrink-0">TOI</span>}
+                                  {canSeeDetails && conv.number && (
+                                    <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 rounded-md shrink-0">#{conv.number}</span>
+                                  )}
+                                </div>
+                                {/* Status pill — uniform */}
+                                {renderPill(presenceStatus)}
+                              </div>
+                            );
+                          })
+                      )}
+
+                      {/* Action buttons */}
+                      {canManage() && (
+                        <div className="flex gap-2 pt-2">
+                          <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-1.5 h-9 text-xs text-accent bg-accent/10 hover:bg-accent/20 font-bold rounded-xl transition-colors">
+                            <Pencil size={12} /> Modifier
+                          </button>
+                          <button
+                            onClick={() => { void publishConvocations(event.id, event.convocations || {}); }}
+                            disabled={publishing}
+                            className="flex-1 flex items-center justify-center gap-1.5 h-9 text-xs text-primary bg-primary/10 hover:bg-primary/20 font-bold rounded-xl transition-colors disabled:opacity-50"
+                          >
+                            <Bell size={12} /> {publishing ? 'Envoi…' : 'Re-notifier'}
+                          </button>
+                        </div>
+                      )}
+                      {onNavigateToMatchSheet && (
+                        <button
+                          onClick={() => onNavigateToMatchSheet(event.id)}
+                          className="w-full flex items-center justify-center gap-1.5 h-9 text-xs text-primary bg-primary/10 hover:bg-primary/20 font-bold rounded-xl transition-colors mt-1 border border-primary/20"
+                        >
+                          <ExternalLink size={12} /> Voir la feuille de match
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
                 )}
-              </div>
-            )}
-          </div>
-            </>
+              </AnimatePresence>
+            </div>
           );
         })()}
         {/* Convocation button - for match events */}
