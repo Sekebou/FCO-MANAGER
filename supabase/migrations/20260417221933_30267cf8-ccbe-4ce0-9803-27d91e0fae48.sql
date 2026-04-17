@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS convocations_published_by uuid, ADD COLUMN IF NOT EXISTS convocations_published_by_name text, ADD COLUMN IF NOT EXISTS convocations_published_at timestamptz;

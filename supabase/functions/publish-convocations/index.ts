@@ -60,10 +60,24 @@ serve(async (req) => {
     const homeTeam = (vsParts[0] || event.title).trim();
     const awayTeam = vsParts.length > 1 ? vsParts[1].trim() : null;
 
-    // 6. Update event: save convocations + mark published
+    // 6. Resolve publisher name
+    const { data: publisherProfile } = await admin
+      .from('profiles')
+      .select('name')
+      .eq('id', userId)
+      .single();
+    const publisherName = publisherProfile?.name || 'Inconnu';
+
+    // 6b. Update event: save convocations + mark published + publisher info
     const { error: updateErr } = await admin
       .from('events')
-      .update({ convocations, convocations_published: true })
+      .update({
+        convocations,
+        convocations_published: true,
+        convocations_published_by: userId,
+        convocations_published_by_name: publisherName,
+        convocations_published_at: new Date().toISOString(),
+      })
       .eq('id', eventId);
     if (updateErr) {
       console.error('Event update error:', updateErr);
