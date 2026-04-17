@@ -632,6 +632,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                         const canSeeReason = absReason && status === 'absent' && (
                           isManager || currentUser?.playerId === player.id
                         );
+                        // A player who has been called up keeps the right to update their answer even after publication
+                        const isConvokedPlayer = !!(event.convocationsPublished && event.convocations && (event.convocations as Record<string, any>)[player.id]?.status === 'convoque');
+                        const presenceLocked = (event.convocationsPublished && !isConvokedPlayer) || isEventPast(event);
                         return (
                           <div key={player.id} className="space-y-0">
                             <div className="flex items-center justify-between p-2 sm:p-2.5 bg-secondary/40 rounded-xl gap-2">
@@ -659,15 +662,14 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                 <span className="px-2.5 h-8 rounded-lg text-[10px] font-medium flex items-center gap-1 shrink-0 bg-muted/50 text-muted-foreground/50 italic">
                                   Non concerné
                                 </span>
-                              ) : (canManageOwnPresence(player.id) && !event.convocationsPublished) || isManager ? (
+                              ) : (canManageOwnPresence(player.id) && (!event.convocationsPublished || isConvokedPlayer)) || isManager ? (
                                 <div className="flex gap-1 shrink-0">
                                   <div className="relative overflow-visible">
                                     <motion.button
                                       onClick={() => {
-                                        const locked = event.convocationsPublished || isEventPast(event);
-                                        if (!locked || isManager) togglePresence(event.id, player.id, 'present');
+                                        if (!presenceLocked || isManager) togglePresence(event.id, player.id, 'present');
                                       }}
-                                      disabled={(event.convocationsPublished || isEventPast(event)) && !isManager}
+                                      disabled={presenceLocked && !isManager}
                                       whileTap={{ scale: 0.82 }}
                                       animate={status === 'present' ? { scale: [1, 1.25, 0.95, 1.08, 1] } : { scale: 1 }}
                                       transition={{ duration: 0.45, ease: [0.34, 1.56, 0.64, 1] }}
