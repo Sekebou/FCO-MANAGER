@@ -546,6 +546,16 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   isMe ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-secondary/40'
                                 }`}
                               >
+                                {/* Jersey number — fixed width column for alignment */}
+                                <div className="w-7 shrink-0 flex items-center justify-center">
+                                  {canSeeDetails && conv.number ? (
+                                    <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-1.5 rounded-md bg-primary/10 text-primary text-[11px] font-black tabular-nums">
+                                      {conv.number}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground/40 text-[11px] font-bold">—</span>
+                                  )}
+                                </div>
                                 {/* Avatar */}
                                 {photoURL ? (
                                   <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
@@ -554,13 +564,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                     <span className="text-primary text-[10px] font-bold">{initials}</span>
                                   </div>
                                 )}
-                                {/* Name + meta */}
+                                {/* Name */}
                                 <div className="flex-1 min-w-0 flex items-center gap-1.5">
                                   <span className="font-semibold text-xs text-foreground truncate">{player.name}</span>
                                   {isMe && <span className="text-[9px] font-black text-primary bg-primary/15 px-1 rounded shrink-0">TOI</span>}
-                                  {canSeeDetails && conv.number && (
-                                    <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 rounded-md shrink-0">#{conv.number}</span>
-                                  )}
                                 </div>
                                 {/* Status pill — uniform */}
                                 {renderPill(presenceStatus)}
@@ -1116,10 +1123,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                   {/* Personal convocation banner (preview) */}
                   {iAmConvoked && !isPast && (
                     <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gradient-to-r from-primary/15 to-accent/15 border-b border-primary/30">
-                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-primary">
-                        <Shield size={12} /> Tu es convoqué
+                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-primary min-w-0">
+                        <Shield size={12} className="shrink-0" />
+                        <span className="truncate">
+                          Tu es convoqué{event.createdByName ? <> par <span className="font-black">{event.createdByName}</span></> : ''}
+                        </span>
                       </span>
-                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${myPresenceBadge.cls}`}>
+                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm shrink-0 ${myPresenceBadge.cls}`}>
                         <MyPresenceIcon size={10} /> {myPresenceBadge.label}
                       </span>
                     </div>
