@@ -460,58 +460,81 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </button>
         )}
 
-        {event.convocationsPublished && event.convocations && !isConvocationMode && (
-          <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
-            <button
-              onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
-              className="flex items-center gap-2 text-sm font-semibold text-foreground w-full"
-            >
-              <Shield size={16} className="text-accent" />
-              Convocations publiées
-              {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-            {isConvocationExpanded && (
-              <div className="space-y-1.5 mt-3 animate-fade-in">
-                {Object.entries(event.convocations)
-                  .sort((a, b) => {
-                    const order: Record<string, number> = { convoque: 0, non_convoque: 1 };
-                    return (order[a[1].status] ?? 1) - (order[b[1].status] ?? 1);
-                  })
-                  .map(([playerId, conv]) => {
-                    const player = players.find(p => p.id === playerId);
-                    if (!player) return null;
-                    const statusInfo = CONVOCATION_STATUSES.find(s => s.value === conv.status);
-                    const StatusIcon = statusInfo?.icon || UserX;
-                    const isMatchPast = new Date(event.date) < new Date();
-                    const canSeeDetails = isMatchPast || canManage();
-                    const presenceStatus = (event.presences || {})[playerId];
-                    const presenceInfo = presenceStatus === 'present'
-                      ? { label: 'A confirmé', icon: Check, cls: 'bg-accent/15 text-accent border-accent/30' }
-                      : presenceStatus === 'absent'
-                        ? { label: 'A décliné', icon: X, cls: 'bg-destructive/15 text-destructive border-destructive/30' }
-                        : { label: 'En attente', icon: Clock, cls: 'bg-warning/15 text-warning border-warning/30' };
-                    const PresenceIcon = presenceInfo.icon;
-                    return (
-                      <div key={playerId} className="flex items-center justify-between p-2.5 bg-secondary/40 rounded-lg group hover:bg-secondary/70 transition-all gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
-                          <span className="font-medium text-sm text-foreground truncate">{player.name}</span>
-                          {canSeeDetails && conv.position && <span className="text-[11px] text-muted-foreground/80 font-medium shrink-0">{conv.position}</span>}
-                          {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60 shrink-0">#{conv.number}</span>}
-                        </div>
-                        {conv.status === 'convoque' && (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold bg-primary/10 text-primary border-primary/30">
-                              <Shield size={10} /> Convoqué
-                            </span>
-                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold ${presenceInfo.cls}`}>
-                              <PresenceIcon size={10} /> {presenceInfo.label}
-                            </span>
+        {event.convocationsPublished && event.convocations && !isConvocationMode && (() => {
+          const myPlayerId = currentUser?.playerId;
+          const myConv = myPlayerId ? (event.convocations as Record<string, Convocation>)[myPlayerId] : null;
+          const iAmConvoked = myConv?.status === 'convoque';
+          const myPresence = myPlayerId ? (event.presences || {})[myPlayerId] : undefined;
+          return (
+            <>
+              {/* Personal banner: visible only when current player is convoked */}
+              {iAmConvoked && (
+                <div className="bg-gradient-to-r from-primary/15 to-accent/15 border-2 border-primary/40 rounded-2xl p-3.5 shadow-sm animate-fade-in">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                      <Shield size={18} className="text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-foreground">Tu es convoqué pour ce match 🎯</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {myPresence === 'present'
+                          ? 'Tu as confirmé ta présence ✓'
+                          : myPresence === 'absent'
+                            ? "Tu t'es déclaré absent"
+                            : 'Merci de confirmer ta présence ci-dessous'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="bg-card border border-border rounded-2xl p-3 shadow-sm">
+                <button
+                  onClick={() => setExpandedConvocations(prev => ({ ...prev, [event.id]: !prev[event.id] }))}
+                  className="flex items-center gap-2 text-sm font-semibold text-foreground w-full"
+                >
+                  <Shield size={16} className="text-accent" />
+                  Convocations publiées
+                  {isConvocationExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                {isConvocationExpanded && (
+                  <div className="space-y-1.5 mt-3 animate-fade-in">
+                    {Object.entries(event.convocations)
+                      .sort((a, b) => {
+                        const order: Record<string, number> = { convoque: 0, non_convoque: 1 };
+                        return (order[a[1].status] ?? 1) - (order[b[1].status] ?? 1);
+                      })
+                      .map(([playerId, conv]) => {
+                        const player = players.find(p => p.id === playerId);
+                        if (!player) return null;
+                        const statusInfo = CONVOCATION_STATUSES.find(s => s.value === conv.status);
+                        const isMatchPast = new Date(event.date) < new Date();
+                        const canSeeDetails = isMatchPast || canManage();
+                        const presenceStatus = (event.presences || {})[playerId];
+                        const presenceInfo = presenceStatus === 'present'
+                          ? { label: 'Présent', icon: Check, cls: 'bg-accent/15 text-accent border-accent/30' }
+                          : presenceStatus === 'absent'
+                            ? { label: 'Absent', icon: X, cls: 'bg-destructive/15 text-destructive border-destructive/30' }
+                            : { label: 'En attente', icon: Clock, cls: 'bg-warning/15 text-warning border-warning/30' };
+                        const PresenceIcon = presenceInfo.icon;
+                        const isMe = playerId === myPlayerId;
+                        return (
+                          <div key={playerId} className={`flex items-center justify-between p-2.5 rounded-lg transition-all gap-2 ${isMe ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/40 hover:bg-secondary/70'}`}>
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <div className={`w-2 h-2 rounded-full shrink-0 ${statusInfo?.dotClass}`} />
+                              <span className="font-medium text-sm text-foreground truncate">
+                                {player.name}{isMe && <span className="ml-1 text-[10px] font-bold text-primary">(toi)</span>}
+                              </span>
+                              {canSeeDetails && conv.position && <span className="text-[11px] text-muted-foreground/80 font-medium shrink-0">{conv.position}</span>}
+                              {canSeeDetails && conv.number && <span className="text-[11px] font-bold text-foreground/60 shrink-0">#{conv.number}</span>}
+                            </div>
+                            {conv.status === 'convoque' && (
+                              <span className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-bold shrink-0 ${presenceInfo.cls}`}>
+                                <PresenceIcon size={11} /> {presenceInfo.label}
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
                 {canManage() && (
                   <div className="mt-3 flex gap-2">
                     <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-2 text-sm text-accent bg-accent/10 hover:bg-accent/20 font-semibold py-2 rounded-lg transition-colors">
@@ -535,7 +558,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               </div>
             )}
           </div>
-        )}
+            </>
+          );
+        })()}
         {/* Convocation button - for match events */}
         {event.type === 'match' && !isEventPast(event) && !event.convocationsPublished && canManage() && (
             <button onClick={() => startConvocationMode(event.id, event)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 text-sm font-semibold transition-all border border-accent/20">
