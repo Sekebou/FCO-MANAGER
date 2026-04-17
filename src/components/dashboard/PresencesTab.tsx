@@ -1168,13 +1168,16 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                 </button>
 
                 {!isPast && !isArchived && currentUser?.playerId && (() => {
-                  if (event.convocationsPublished) {
-                    const isConvoked = event.convocations && Object.keys(event.convocations).length > 0 && Object.values(event.convocations as Record<string, any>).some((c: any) => c.playerId === currentUser.playerId);
+                  const isConvoked = event.convocationsPublished && event.convocations && Object.values(event.convocations as Record<string, any>).some((c: any) => c.playerId === currentUser.playerId);
+                  const isNonResponding = currentUser.role === 'dirigeant' || currentUser.role === 'photographe';
+
+                  // If convocations published but player NOT convoked, show only the info banner + match sheet link
+                  if (event.convocationsPublished && !isConvoked) {
                     return (
                       <div className="px-3.5 pb-2.5 space-y-1.5">
                         <div className="flex items-center justify-center">
-                          <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 ${isConvoked ? 'bg-accent/15 text-accent' : 'bg-muted text-muted-foreground'}`}>
-                            {isConvoked ? <><Check size={12} /> Convoqué</> : <><ClipboardCheck size={12} /> Convocations publiées</>}
+                          <span className="text-[11px] font-semibold px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5 bg-muted text-muted-foreground">
+                            <ClipboardCheck size={12} /> Convocations publiées
                           </span>
                         </div>
                         {onNavigateToMatchSheet && event.type === 'match' && (
@@ -1188,7 +1191,6 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       </div>
                     );
                   }
-                  const isNonResponding = currentUser.role === 'dirigeant' || currentUser.role === 'photographe';
                   if (isNonResponding) {
                     return (
                       <div className="flex items-center justify-center px-3.5 pb-2.5">
