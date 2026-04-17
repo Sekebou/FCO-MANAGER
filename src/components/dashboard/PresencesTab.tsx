@@ -546,6 +546,16 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   isMe ? 'bg-primary/10 ring-1 ring-primary/30' : 'bg-secondary/40'
                                 }`}
                               >
+                                {/* Jersey number — fixed width column for alignment */}
+                                <div className="w-7 shrink-0 flex items-center justify-center">
+                                  {canSeeDetails && conv.number ? (
+                                    <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-1.5 rounded-md bg-primary/10 text-primary text-[11px] font-black tabular-nums">
+                                      {conv.number}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted-foreground/40 text-[11px] font-bold">—</span>
+                                  )}
+                                </div>
                                 {/* Avatar */}
                                 {photoURL ? (
                                   <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
@@ -554,13 +564,10 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                     <span className="text-primary text-[10px] font-bold">{initials}</span>
                                   </div>
                                 )}
-                                {/* Name + meta */}
+                                {/* Name */}
                                 <div className="flex-1 min-w-0 flex items-center gap-1.5">
                                   <span className="font-semibold text-xs text-foreground truncate">{player.name}</span>
                                   {isMe && <span className="text-[9px] font-black text-primary bg-primary/15 px-1 rounded shrink-0">TOI</span>}
-                                  {canSeeDetails && conv.number && (
-                                    <span className="text-[10px] font-black text-primary bg-primary/10 px-1.5 rounded-md shrink-0">#{conv.number}</span>
-                                  )}
                                 </div>
                                 {/* Status pill — uniform */}
                                 {renderPill(presenceStatus)}
