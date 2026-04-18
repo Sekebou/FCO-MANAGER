@@ -1052,10 +1052,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       {/* Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 bg-white/15 backdrop-blur-md rounded-lg flex items-center justify-center ring-1 ring-white/20">
+                          <div className="w-7 h-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center ring-1 ring-white/30">
                             <Timer size={14} className="text-white" />
                           </div>
-                          <span className="text-[11px] font-bold text-white uppercase tracking-widest">
+                          <span className="text-[11px] font-bold text-white uppercase tracking-widest drop-shadow">
                             Prochain Match — Équipe {selectedTeam}
                           </span>
                         </div>
@@ -1067,13 +1067,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </span>
                           )}
                           {waiting && (
-                            <span className="flex items-center gap-1 bg-amber-400/20 text-amber-200 text-[9px] font-semibold px-2 py-0.5 rounded-full">
+                            <span className="flex items-center gap-1 bg-amber-400/25 text-amber-100 text-[9px] font-semibold px-2 py-0.5 rounded-full">
                               <Clock size={9} />
                               En attente
                             </span>
                           )}
                           {alreadyBet && (
-                            <span className="text-[10px] font-bold text-white bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full ring-1 ring-white/25">✓ Parié</span>
+                            <span className="text-[10px] font-bold text-white bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full ring-1 ring-white/30">✓ Parié</span>
                           )}
                         </div>
                       </div>
