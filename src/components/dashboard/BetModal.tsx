@@ -137,6 +137,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
 
   // Scorer state
   const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
+  const [playerPhotos, setPlayerPhotos] = useState<Record<string, string>>({});
 
   // Exact score state
   const [scoreHome, setScoreHome] = useState(0);
@@ -168,6 +169,20 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
     };
     fetchData();
   }, [isOpen, userId, homeTeam, awayTeam, matchDate]);
+
+  // Load photos for convocated players (via profiles.player_id)
+  useEffect(() => {
+    if (!isOpen || !convocatedPlayers || convocatedPlayers.length === 0) return;
+    const ids = convocatedPlayers.map(p => p.id);
+    supabase.from('profiles').select('player_id, photo_url').in('player_id', ids).then(({ data }) => {
+      if (!data) return;
+      const map: Record<string, string> = {};
+      for (const row of data) {
+        if (row.player_id && row.photo_url) map[row.player_id] = row.photo_url;
+      }
+      setPlayerPhotos(map);
+    });
+  }, [isOpen, convocatedPlayers]);
 
   // Reset sub-selections when switching bet type
   useEffect(() => {
@@ -392,42 +407,73 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
             {/* ═══ SCORER BET ═══ */}
             {betType === 'scorer' && (
               <motion.div key="scorer" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
-                <label className="block text-xs font-bold text-foreground mb-3">Qui va marquer ?</label>
-                <div className="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
+                <div className="flex items-center justify-between mb-2.5">
+                  <label className="text-xs font-bold text-foreground">Qui va marquer ?</label>
+                  <span className="text-[10px] font-semibold text-muted-foreground">{sortedPlayers.length} joueur{sortedPlayers.length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1 -mr-1 pb-1">
                   {sortedPlayers.map(player => {
                     const playerOdd = getScorerOdds(player.position);
                     const selected = selectedScorer?.id === player.id;
+                    const photo = playerPhotos[player.id];
+                    const initials = player.name.split(' ').map(s => s.charAt(0)).slice(0, 2).join('').toUpperCase();
+                    const firstName = player.name.split(' ')[0];
+                    const lastName = player.name.split(' ').slice(1).join(' ');
                     return (
                       <motion.button
                         key={player.id}
-                        whileTap={{ scale: 0.97 }}
+                        whileTap={{ scale: 0.96 }}
                         onClick={() => setSelectedScorer(selected ? null : player)}
                         className={cn(
-                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border-2 transition-all text-left",
+                          "relative flex flex-col items-center gap-1.5 px-2 pt-3 pb-2.5 rounded-2xl border transition-all text-center overflow-hidden",
                           selected
-                            ? "border-accent bg-accent/10"
-                            : "border-border bg-card hover:border-muted-foreground/30"
+                            ? "border-accent bg-accent/10 shadow-md shadow-accent/20"
+                            : "border-border bg-card hover:border-accent/40"
                         )}
                       >
-                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                          <User size={14} className="text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={cn("text-xs font-bold truncate", selected ? "text-accent" : "text-foreground")}>{player.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{player.position}</p>
-                        </div>
+                        {/* Odd badge top-right */}
                         <div className={cn(
-                          "px-2.5 py-1 rounded-lg text-xs font-black",
+                          "absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-black leading-none",
                           selected ? "bg-accent text-accent-foreground" : "bg-secondary text-foreground"
                         )}>
                           x{playerOdd}
                         </div>
+
+                        {/* Avatar rond */}
+                        <div className={cn(
+                          "w-14 h-14 rounded-full overflow-hidden ring-2 transition-all shrink-0 flex items-center justify-center",
+                          selected ? "ring-accent" : "ring-border bg-secondary"
+                        )}>
+                          {photo ? (
+                            <img src={photo} alt={player.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-black text-muted-foreground">{initials}</span>
+                          )}
+                        </div>
+
+                        {/* Nom: prénom bold + nom maj */}
+                        <div className="w-full min-w-0 leading-tight">
+                          <p className={cn("text-[11px] font-black truncate", selected ? "text-accent" : "text-foreground")}>
+                            {firstName}
+                          </p>
+                          {lastName && (
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">
+                              {lastName}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Position pill */}
+                        <span className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded-full">
+                          {player.position}
+                        </span>
                       </motion.button>
                     );
                   })}
                 </div>
               </motion.div>
             )}
+
 
             {/* ═══ EXACT SCORE BET ═══ */}
             {betType === 'exact_score' && (
