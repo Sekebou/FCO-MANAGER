@@ -282,9 +282,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
             <button
               key={a.tab}
               onClick={() => onNavigate(a.tab)}
-              className={`flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-gradient-to-br ${a.bg} border border-border/50 active:scale-95 transition-all hover:shadow-md`}
+              className={`flex flex-col items-center gap-1 py-2.5 rounded-xl bg-gradient-to-br ${a.bg} border border-border/50 active:scale-95 transition-all hover:shadow-md`}
             >
-              <a.icon size={22} className={a.color} strokeWidth={2.5} />
+              <a.icon size={18} className={a.color} strokeWidth={2.5} />
               <span className="text-[10px] font-bold text-foreground">{a.label}</span>
             </button>
           ))}
