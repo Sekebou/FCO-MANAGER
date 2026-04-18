@@ -170,6 +170,20 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
     fetchData();
   }, [isOpen, userId, homeTeam, awayTeam, matchDate]);
 
+  // Load photos for convocated players (via profiles.player_id)
+  useEffect(() => {
+    if (!isOpen || !convocatedPlayers || convocatedPlayers.length === 0) return;
+    const ids = convocatedPlayers.map(p => p.id);
+    supabase.from('profiles').select('player_id, photo_url').in('player_id', ids).then(({ data }) => {
+      if (!data) return;
+      const map: Record<string, string> = {};
+      for (const row of data) {
+        if (row.player_id && row.photo_url) map[row.player_id] = row.photo_url;
+      }
+      setPlayerPhotos(map);
+    });
+  }, [isOpen, convocatedPlayers]);
+
   // Reset sub-selections when switching bet type
   useEffect(() => {
     setPrediction(null);
