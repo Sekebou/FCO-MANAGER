@@ -1082,29 +1082,29 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       <div className="flex items-center justify-center gap-5 mb-4">
                         <div className="flex flex-col items-center gap-2 flex-1">
                           {homeLogo ? (
-                            <img src={homeLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={homeLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/40 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : <div className="w-14 h-14 rounded-full bg-white/10" />}
-                          <span className="text-[11px] font-bold text-center leading-tight text-white">
+                          <span className="text-[11px] font-bold text-center leading-tight text-white drop-shadow">
                             {homeName}
                           </span>
-                          {homeRank && <span className="text-[9px] text-white/60 font-medium">{homeRank}e</span>}
+                          {homeRank && <span className="text-[9px] text-white/75 font-medium">{homeRank}e</span>}
                         </div>
                         <div className="relative">
                           <motion.span
                             animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
                             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                             className="text-2xl font-black text-white"
-                            style={{ textShadow: '0 0 24px hsl(var(--accent) / 0.8)' }}
+                            style={{ textShadow: '0 0 24px hsl(var(--accent) / 0.9)' }}
                           >VS</motion.span>
                         </div>
                         <div className="flex flex-col items-center gap-2 flex-1">
                           {awayLogo ? (
-                            <img src={awayLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={awayLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/40 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : <div className="w-14 h-14 rounded-full bg-white/10" />}
-                          <span className="text-[11px] font-bold text-center leading-tight text-white">
+                          <span className="text-[11px] font-bold text-center leading-tight text-white drop-shadow">
                             {awayName}
                           </span>
-                          {awayRank && <span className="text-[9px] text-white/60 font-medium">{awayRank}e</span>}
+                          {awayRank && <span className="text-[9px] text-white/75 font-medium">{awayRank}e</span>}
                         </div>
                       </div>
 
