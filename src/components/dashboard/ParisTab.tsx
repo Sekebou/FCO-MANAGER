@@ -1215,14 +1215,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
                       {/* Location */}
                       {locationLabel && (
-                        <div className="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-white/15">
-                          <MapPin size={11} className="text-white/70 shrink-0" />
+                        <div className="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-border/30">
+                          <MapPin size={11} className="text-muted-foreground shrink-0" />
                           {locationLink ? (
-                            <a href={locationLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1">
+                            <a href={locationLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1">
                               {locationLabel} <ExternalLink size={9} />
                             </a>
                           ) : (
-                            <span className="text-[10px] text-white/70 truncate">{locationLabel}</span>
+                            <span className="text-[10px] text-muted-foreground truncate">{locationLabel}</span>
                           )}
                         </div>
                       )}
