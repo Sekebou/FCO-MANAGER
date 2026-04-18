@@ -407,70 +407,116 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
             {/* ═══ SCORER BET ═══ */}
             {betType === 'scorer' && (
               <motion.div key="scorer" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
-                <div className="flex items-center justify-between mb-2.5">
-                  <label className="text-xs font-bold text-foreground">Qui va marquer ?</label>
-                  <span className="text-[10px] font-semibold text-muted-foreground">{sortedPlayers.length} joueur{sortedPlayers.length > 1 ? 's' : ''}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1 -mr-1 pb-1">
-                  {sortedPlayers.map(player => {
-                    const playerOdd = getScorerOdds(player.position);
-                    const selected = selectedScorer?.id === player.id;
-                    const photo = playerPhotos[player.id];
-                    const initials = player.name.split(' ').map(s => s.charAt(0)).slice(0, 2).join('').toUpperCase();
-                    const firstName = player.name.split(' ')[0];
-                    const lastName = player.name.split(' ').slice(1).join(' ');
-                    return (
-                      <motion.button
-                        key={player.id}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => setSelectedScorer(selected ? null : player)}
-                        className={cn(
-                          "relative flex flex-col items-center gap-1.5 px-2 pt-3 pb-2.5 rounded-2xl border transition-all text-center overflow-hidden",
-                          selected
-                            ? "border-accent bg-accent/10 shadow-md shadow-accent/20"
-                            : "border-border bg-card hover:border-accent/40"
-                        )}
-                      >
-                        {/* Odd badge top-right */}
-                        <div className={cn(
-                          "absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-black leading-none",
-                          selected ? "bg-accent text-accent-foreground" : "bg-secondary text-foreground"
-                        )}>
-                          x{playerOdd}
-                        </div>
+                <AnimatePresence mode="wait">
+                  {selectedScorer ? (
+                    /* === FOCUSED PLAYER CARD === */
+                    (() => {
+                      const photo = playerPhotos[selectedScorer.id];
+                      const initials = selectedScorer.name.split(' ').map(s => s.charAt(0)).slice(0, 2).join('').toUpperCase();
+                      const firstName = selectedScorer.name.split(' ')[0];
+                      const lastName = selectedScorer.name.split(' ').slice(1).join(' ');
+                      const playerOdd = getScorerOdds(selectedScorer.position);
+                      return (
+                        <motion.div
+                          key="focused"
+                          initial={{ opacity: 0, scale: 0.92 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.92 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                          className="relative flex flex-col items-center text-center px-4 py-5 rounded-2xl border-2 border-accent bg-gradient-to-br from-accent/15 via-accent/5 to-transparent shadow-lg shadow-accent/10"
+                        >
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                            Combien souhaitez-vous parier sur
+                          </span>
 
-                        {/* Avatar rond */}
-                        <div className={cn(
-                          "w-14 h-14 rounded-full overflow-hidden ring-2 transition-all shrink-0 flex items-center justify-center",
-                          selected ? "ring-accent" : "ring-border bg-secondary"
-                        )}>
-                          {photo ? (
-                            <img src={photo} alt={player.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-xs font-black text-muted-foreground">{initials}</span>
-                          )}
-                        </div>
+                          {/* Avatar XL */}
+                          <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-accent/40 shadow-md flex items-center justify-center bg-secondary mb-2">
+                            {photo ? (
+                              <img src={photo} alt={selectedScorer.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-lg font-black text-muted-foreground">{initials}</span>
+                            )}
+                          </div>
 
-                        {/* Nom: prénom bold + nom maj */}
-                        <div className="w-full min-w-0 leading-tight">
-                          <p className={cn("text-[11px] font-black truncate", selected ? "text-accent" : "text-foreground")}>
-                            {firstName}
-                          </p>
+                          {/* Nom */}
+                          <p className="text-base font-black text-foreground leading-tight">{firstName}</p>
                           {lastName && (
-                            <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">
-                              {lastName}
-                            </p>
+                            <p className="text-sm font-bold text-foreground uppercase leading-tight">{lastName}</p>
                           )}
-                        </div>
 
-                        {/* Position pill */}
-                        <span className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded-full">
-                          {player.position}
-                        </span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
+                          {/* Meta row */}
+                          <div className="flex items-center gap-2 mt-2.5">
+                            <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                              {selectedScorer.position}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-accent text-accent-foreground">
+                              x{playerOdd}
+                            </span>
+                          </div>
+
+                          {/* Bouton Changer */}
+                          <button
+                            onClick={() => setSelectedScorer(null)}
+                            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-accent bg-accent/10 hover:bg-accent/20 active:scale-95 transition-all"
+                          >
+                            <ChevronRight size={12} className="rotate-180" />
+                            Changer de joueur
+                          </button>
+                        </motion.div>
+                      );
+                    })()
+                  ) : (
+                    /* === GRID OF PLAYERS === */
+                    <motion.div
+                      key="grid"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <div className="flex items-center justify-between mb-2.5">
+                        <label className="text-xs font-bold text-foreground">Qui va marquer ?</label>
+                        <span className="text-[10px] font-semibold text-muted-foreground">{sortedPlayers.length} joueur{sortedPlayers.length > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1 -mr-1 pb-1">
+                        {sortedPlayers.map(player => {
+                          const playerOdd = getScorerOdds(player.position);
+                          const photo = playerPhotos[player.id];
+                          const initials = player.name.split(' ').map(s => s.charAt(0)).slice(0, 2).join('').toUpperCase();
+                          const firstName = player.name.split(' ')[0];
+                          const lastName = player.name.split(' ').slice(1).join(' ');
+                          return (
+                            <motion.button
+                              key={player.id}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => setSelectedScorer(player)}
+                              className="relative flex flex-col items-center gap-1.5 px-2 pt-3 pb-2.5 rounded-2xl border border-border bg-card hover:border-accent/40 transition-all text-center overflow-hidden"
+                            >
+                              <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-black leading-none bg-secondary text-foreground">
+                                x{playerOdd}
+                              </div>
+                              <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-border bg-secondary shrink-0 flex items-center justify-center">
+                                {photo ? (
+                                  <img src={photo} alt={player.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="text-xs font-black text-muted-foreground">{initials}</span>
+                                )}
+                              </div>
+                              <div className="w-full min-w-0 leading-tight">
+                                <p className="text-[11px] font-black truncate text-foreground">{firstName}</p>
+                                {lastName && (
+                                  <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">{lastName}</p>
+                                )}
+                              </div>
+                              <span className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded-full">
+                                {player.position}
+                              </span>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
 
