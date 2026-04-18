@@ -88,9 +88,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   };
 
   return (
-    <div className="space-y-5 pb-6">
+    <div className="space-y-4 pb-6">
       {/* ── Hero Greeting Card ── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/85 p-5 shadow-lg shadow-primary/20">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/85 p-3.5 shadow-md shadow-primary/15">
         {/* Football pitch background image */}
         <div
           className="absolute inset-0 pointer-events-none bg-cover bg-center"
@@ -101,22 +101,22 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         {/* Top-bottom darken for depth */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/30 pointer-events-none" />
         {/* Decorative accent glow */}
-        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
+        <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
 
-        <div className="relative flex items-center gap-3.5">
-          <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+        <div className="relative flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
             {currentUser?.photoURL ? (
               <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
             ) : (
-              <span className="text-base font-black text-white">{initials}</span>
+              <span className="text-sm font-black text-white">{initials}</span>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">{getGreeting()}</p>
-            <h2 className="text-xl font-black text-white leading-tight truncate">
+            <p className="text-[9px] font-semibold text-white/70 uppercase tracking-[0.16em]">{getGreeting()}</p>
+            <h2 className="text-base font-black text-white leading-tight truncate">
               {currentUser?.name?.split(' ')[0]}
             </h2>
-            <p className="text-[11px] text-white/75 mt-0.5 font-medium">
+            <p className="text-[10px] text-white/75 mt-0.5 font-medium">
               {isCoach ? `${totalPlayers} joueurs · effectif actif` : 'Prêt pour la prochaine ?'}
             </p>
           </div>
@@ -125,16 +125,16 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
 
       {/* ── Personal Stats (any user with a player profile) ── */}
       {myPlayer && (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { icon: Target, value: myPlayer.goals || 0, label: 'Buts', gradient: 'from-primary/15 to-primary/5', iconColor: 'text-primary' },
             { icon: Swords, value: myPlayer.assists || 0, label: 'Passes', gradient: 'from-accent/15 to-accent/5', iconColor: 'text-accent' },
             { icon: Shield, value: myPlayer.matches || 0, label: 'Matchs', gradient: 'from-muted to-background', iconColor: 'text-foreground/70' },
           ].map((s) => (
-            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-2xl p-3 text-center`}>
-              <s.icon size={18} className={`${s.iconColor} mx-auto mb-1`} strokeWidth={2.5} />
-              <div className="text-2xl font-black text-foreground leading-none">{s.value}</div>
-              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-xl p-2.5 text-center`}>
+              <s.icon size={14} className={`${s.iconColor} mx-auto mb-0.5`} strokeWidth={2.5} />
+              <div className="text-lg font-black text-foreground leading-none">{s.value}</div>
+              <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
             </div>
           ))}
         </div>
@@ -142,16 +142,16 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
 
       {/* ── Club Stats (coach/admin view) ── */}
       {isCoach && (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { icon: Users, value: totalPlayers, label: 'Joueurs', gradient: 'from-primary/15 to-primary/5', iconColor: 'text-primary' },
             { icon: Target, value: players.reduce((s, p) => s + (p.goals || 0), 0), label: 'Buts Club', gradient: 'from-accent/15 to-accent/5', iconColor: 'text-accent' },
             { icon: Swords, value: players.reduce((s, p) => s + (p.assists || 0), 0), label: 'Passes Club', gradient: 'from-muted to-background', iconColor: 'text-foreground/70' },
           ].map((s) => (
-            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-2xl p-3 text-center`}>
-              <s.icon size={18} className={`${s.iconColor} mx-auto mb-1`} strokeWidth={2.5} />
-              <div className="text-2xl font-black text-foreground leading-none">{s.value}</div>
-              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-xl p-2.5 text-center`}>
+              <s.icon size={14} className={`${s.iconColor} mx-auto mb-0.5`} strokeWidth={2.5} />
+              <div className="text-lg font-black text-foreground leading-none">{s.value}</div>
+              <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
             </div>
           ))}
         </div>
@@ -181,23 +181,23 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center gap-3 p-3.5">
-                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10">
+                  <div className="flex items-center gap-2.5 p-2.5">
+                    <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10">
                       {match.homeLogo ? (
-                        <img src={match.homeLogo} alt="" className="w-8 h-8 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                        <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain" style={{ mixBlendMode: 'multiply' }} />
                       ) : (
-                        <Trophy size={20} className="text-primary" />
+                        <Trophy size={16} className="text-primary" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-black text-foreground truncate">{match.title}</h3>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
-                          <Calendar size={10} /> {formatDate(match.date)}
+                      <h3 className="text-[13px] font-black text-foreground truncate">{match.title}</h3>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                          <Calendar size={9} /> {formatDate(match.date)}
                         </span>
                         {match.time && (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
-                            <Clock size={10} /> {match.time}
+                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                            <Clock size={9} /> {match.time}
                           </span>
                         )}
                       </div>
@@ -208,11 +208,11 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                       )}
                     </div>
                     {cd && (
-                      <span className="px-2 py-1 rounded-lg bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
+                      <span className="px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
                         {cd}
                       </span>
                     )}
-                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                    <ChevronRight size={12} className="text-muted-foreground/40 shrink-0" />
                   </div>
                 </button>
               );
@@ -232,36 +232,36 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 <button
                   key={training.id}
                   onClick={() => onNavigate('presences', training.id)}
-                  className="group w-full text-left bg-card border border-border/60 rounded-2xl p-3.5 active:scale-[0.98] transition-all hover:border-accent/30 hover:shadow-md"
+                  className="group w-full text-left bg-card border border-border/60 rounded-2xl p-2.5 active:scale-[0.98] transition-all hover:border-accent/30 hover:shadow-md"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center shrink-0 border border-accent/10">
-                      <Dumbbell size={20} className="text-accent" strokeWidth={2.5} />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center shrink-0 border border-accent/10">
+                      <Dumbbell size={16} className="text-accent" strokeWidth={2.5} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-black text-foreground truncate capitalize">{training.title.toLowerCase()}</h3>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
-                          <Calendar size={10} /> {formatDate(training.date)}
+                      <h3 className="text-[13px] font-black text-foreground truncate capitalize">{training.title.toLowerCase()}</h3>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                          <Calendar size={9} /> {formatDate(training.date)}
                         </span>
                         {training.time && (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
-                            <Clock size={10} /> {training.time}
+                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                            <Clock size={9} /> {training.time}
                           </span>
                         )}
                       </div>
                       {training.location && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                          <MapPin size={10} /> <span className="truncate capitalize">{training.location.toLowerCase()}</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                          <MapPin size={9} /> <span className="truncate capitalize">{training.location.toLowerCase()}</span>
                         </span>
                       )}
                     </div>
                     {cd && (
-                      <span className="px-2 py-1 rounded-lg bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
+                      <span className="px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
                         {cd}
                       </span>
                     )}
-                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                    <ChevronRight size={12} className="text-muted-foreground/40 shrink-0" />
                   </div>
                 </button>
               );
@@ -282,9 +282,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
             <button
               key={a.tab}
               onClick={() => onNavigate(a.tab)}
-              className={`flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-gradient-to-br ${a.bg} border border-border/50 active:scale-95 transition-all hover:shadow-md`}
+              className={`flex flex-col items-center gap-1 py-2.5 rounded-xl bg-gradient-to-br ${a.bg} border border-border/50 active:scale-95 transition-all hover:shadow-md`}
             >
-              <a.icon size={22} className={a.color} strokeWidth={2.5} />
+              <a.icon size={18} className={a.color} strokeWidth={2.5} />
               <span className="text-[10px] font-bold text-foreground">{a.label}</span>
             </button>
           ))}
