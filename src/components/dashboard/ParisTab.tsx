@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,8 @@ import {
 } from '@/lib/fffApi';
 import BetModal, { generateOdds, type BetPlacementPayload } from './BetModal';
 import BetLeaderboard from './BetLeaderboard';
+import parisHeroBg from '@/assets/paris-hero-bg.jpg';
+import matchCardBg from '@/assets/match-card-bg.jpg';
 
 interface Bet {
   id: string;
