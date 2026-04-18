@@ -88,9 +88,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   };
 
   return (
-    <div className="space-y-5 pb-6">
+    <div className="space-y-4 pb-6">
       {/* ── Hero Greeting Card ── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/85 p-5 shadow-lg shadow-primary/20">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary/85 p-3.5 shadow-md shadow-primary/15">
         {/* Football pitch background image */}
         <div
           className="absolute inset-0 pointer-events-none bg-cover bg-center"
@@ -101,22 +101,22 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         {/* Top-bottom darken for depth */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/30 pointer-events-none" />
         {/* Decorative accent glow */}
-        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
+        <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
 
-        <div className="relative flex items-center gap-3.5">
-          <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+        <div className="relative flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
             {currentUser?.photoURL ? (
               <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
             ) : (
-              <span className="text-base font-black text-white">{initials}</span>
+              <span className="text-sm font-black text-white">{initials}</span>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">{getGreeting()}</p>
-            <h2 className="text-xl font-black text-white leading-tight truncate">
+            <p className="text-[9px] font-semibold text-white/70 uppercase tracking-[0.16em]">{getGreeting()}</p>
+            <h2 className="text-base font-black text-white leading-tight truncate">
               {currentUser?.name?.split(' ')[0]}
             </h2>
-            <p className="text-[11px] text-white/75 mt-0.5 font-medium">
+            <p className="text-[10px] text-white/75 mt-0.5 font-medium">
               {isCoach ? `${totalPlayers} joueurs · effectif actif` : 'Prêt pour la prochaine ?'}
             </p>
           </div>
@@ -125,16 +125,16 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
 
       {/* ── Personal Stats (any user with a player profile) ── */}
       {myPlayer && (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { icon: Target, value: myPlayer.goals || 0, label: 'Buts', gradient: 'from-primary/15 to-primary/5', iconColor: 'text-primary' },
             { icon: Swords, value: myPlayer.assists || 0, label: 'Passes', gradient: 'from-accent/15 to-accent/5', iconColor: 'text-accent' },
             { icon: Shield, value: myPlayer.matches || 0, label: 'Matchs', gradient: 'from-muted to-background', iconColor: 'text-foreground/70' },
           ].map((s) => (
-            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-2xl p-3 text-center`}>
-              <s.icon size={18} className={`${s.iconColor} mx-auto mb-1`} strokeWidth={2.5} />
-              <div className="text-2xl font-black text-foreground leading-none">{s.value}</div>
-              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-xl p-2.5 text-center`}>
+              <s.icon size={14} className={`${s.iconColor} mx-auto mb-0.5`} strokeWidth={2.5} />
+              <div className="text-lg font-black text-foreground leading-none">{s.value}</div>
+              <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
             </div>
           ))}
         </div>
@@ -142,16 +142,16 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
 
       {/* ── Club Stats (coach/admin view) ── */}
       {isCoach && (
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {[
             { icon: Users, value: totalPlayers, label: 'Joueurs', gradient: 'from-primary/15 to-primary/5', iconColor: 'text-primary' },
             { icon: Target, value: players.reduce((s, p) => s + (p.goals || 0), 0), label: 'Buts Club', gradient: 'from-accent/15 to-accent/5', iconColor: 'text-accent' },
             { icon: Swords, value: players.reduce((s, p) => s + (p.assists || 0), 0), label: 'Passes Club', gradient: 'from-muted to-background', iconColor: 'text-foreground/70' },
           ].map((s) => (
-            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-2xl p-3 text-center`}>
-              <s.icon size={18} className={`${s.iconColor} mx-auto mb-1`} strokeWidth={2.5} />
-              <div className="text-2xl font-black text-foreground leading-none">{s.value}</div>
-              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-xl p-2.5 text-center`}>
+              <s.icon size={14} className={`${s.iconColor} mx-auto mb-0.5`} strokeWidth={2.5} />
+              <div className="text-lg font-black text-foreground leading-none">{s.value}</div>
+              <div className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
             </div>
           ))}
         </div>
