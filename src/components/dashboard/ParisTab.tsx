@@ -1023,20 +1023,29 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
               return (
                 <>
-                  {/* Hero card */}
+                  {/* Hero card — FIFA style with subtle pitch texture */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`relative rounded-2xl overflow-hidden border shadow-sm ${
+                    className={`relative rounded-2xl overflow-hidden border shadow-md ${
                       live ? 'border-red-500/50 ring-1 ring-red-500/30' : waiting ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-border/60'
                     } bg-card`}
                   >
+                    {/* Subtle pitch texture background */}
+                    <div
+                      className="absolute inset-0 bg-cover bg-center opacity-[0.18] pointer-events-none"
+                      style={{ backgroundImage: `url(${matchCardBg})` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-card/80 via-card/60 to-card/90 pointer-events-none" />
+
                     {live && (
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse" />
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse z-10" />
                     )}
                     {waiting && (
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500" />
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 z-10" />
                     )}
+
+                    <div className="relative px-5 py-5">
 
                     <div className="px-5 py-5">
                       {/* Header */}
