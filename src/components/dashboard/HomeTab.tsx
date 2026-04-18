@@ -93,13 +93,15 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/85 p-5 shadow-lg shadow-primary/20">
         {/* Football pitch background image */}
         <div
-          className="absolute inset-0 opacity-40 pointer-events-none bg-cover bg-center mix-blend-luminosity"
+          className="absolute inset-0 pointer-events-none bg-cover bg-center"
           style={{ backgroundImage: `url(${footballHeroBg})` }}
         />
-        {/* Gradient overlay to keep text readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/85 to-primary/40 pointer-events-none" />
-        {/* Decorative glow */}
-        <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
+        {/* Subtle gradient overlay to keep text readable on the left */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/85 via-primary/50 to-primary/10 pointer-events-none" />
+        {/* Top-bottom darken for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/30 pointer-events-none" />
+        {/* Decorative accent glow */}
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
 
         <div className="relative flex items-center gap-3.5">
           <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
