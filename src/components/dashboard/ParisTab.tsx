@@ -1023,11 +1023,11 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
               return (
                 <>
-                  {/* Match card — premium minimal */}
+                  {/* Match card — premium minimal & compact */}
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.97 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`relative overflow-hidden rounded-[28px] border bg-card shadow-lg ${
+                    className={`relative overflow-hidden rounded-2xl border bg-card shadow-sm ${
                       live
                         ? 'border-red-500/40 ring-1 ring-red-500/20'
                         : waiting
@@ -1036,11 +1036,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     }`}
                   >
                     <div
-                      className="absolute inset-x-0 top-0 h-44 bg-cover bg-center opacity-[0.07] pointer-events-none"
+                      className="absolute inset-x-0 top-0 h-28 bg-cover bg-center opacity-[0.06] pointer-events-none"
                       style={{ backgroundImage: `url(${matchCardBg})` }}
                     />
-                    <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent pointer-events-none" />
-                    <div className="absolute top-4 right-4 h-20 w-20 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
 
                     {live && (
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse z-10" />
@@ -1049,137 +1048,127 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 z-10" />
                     )}
 
-                    <div className="relative px-5 py-5">
-                      <div className="mb-5 flex items-center justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/10">
-                            <Timer size={16} />
+                    <div className="relative px-4 py-4">
+                      {/* Header row */}
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <Timer size={12} />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground leading-none">
                               Prochain match
                             </p>
-                            <h3 className="truncate text-lg font-black text-foreground">
+                            <h3 className="truncate text-[13px] font-black text-foreground leading-tight mt-0.5">
                               Équipe {selectedTeam}
                             </h3>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           {live && (
-                            <span className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-red-600 to-red-500 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white animate-pulse">
-                              <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+                            <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-red-600 to-red-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white animate-pulse">
+                              <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
                               LIVE
                             </span>
                           )}
                           {waiting && (
-                            <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-600">
-                              <Clock size={10} />
-                              En attente
+                            <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold text-amber-600">
+                              <Clock size={9} />
+                              Attente
                             </span>
                           )}
                           {alreadyBet && (
-                            <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary ring-1 ring-primary/10">
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                               ✓ Parié
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="relative mb-4 overflow-hidden rounded-[24px] border border-border/60 bg-background/80 px-4 py-5 backdrop-blur-sm">
-                        <div
-                          className="absolute inset-0 bg-cover bg-center opacity-[0.05] pointer-events-none"
-                          style={{ backgroundImage: `url(${matchCardBg})` }}
-                        />
-                        <div className="relative">
-                          <div className="mb-5 flex items-center justify-center gap-4">
-                            <div className="flex flex-1 flex-col items-center gap-2">
-                              {homeLogo ? (
-                                <img src={homeLogo} alt="" className="h-16 w-16 rounded-full object-cover ring-1 ring-border/60 shadow-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                              ) : <div className="h-16 w-16 rounded-full bg-muted" />}
-                              <span className={`text-center text-[13px] font-black leading-tight ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-primary' : 'text-foreground'}`}>
-                                {homeName}
-                              </span>
-                              {homeRank && <span className="text-[10px] font-medium text-muted-foreground">{homeRank}e</span>}
-                            </div>
+                      {/* Match block */}
+                      <div className="mb-3 flex items-center justify-center gap-3">
+                        <div className="flex flex-1 flex-col items-center gap-1.5">
+                          {homeLogo ? (
+                            <img src={homeLogo} alt="" className="h-12 w-12 rounded-full object-cover ring-1 ring-border/60" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          ) : <div className="h-12 w-12 rounded-full bg-muted" />}
+                          <span className={`text-center text-[11px] font-bold leading-tight line-clamp-2 ${nextMatch.home?.club?.cl_no === OISEMONT_CL_NO ? 'text-primary' : 'text-foreground'}`}>
+                            {homeName}
+                          </span>
+                          {homeRank && <span className="text-[9px] font-medium text-muted-foreground">{homeRank}e</span>}
+                        </div>
 
-                            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/10">
-                              <motion.span
-                                animate={{ scale: [1, 1.04, 1] }}
-                                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                                className="text-2xl font-black"
-                              >
-                                VS
-                              </motion.span>
-                            </div>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <span className="text-[13px] font-black">VS</span>
+                        </div>
 
-                            <div className="flex flex-1 flex-col items-center gap-2">
-                              {awayLogo ? (
-                                <img src={awayLogo} alt="" className="h-16 w-16 rounded-full object-cover ring-1 ring-border/60 shadow-sm" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                              ) : <div className="h-16 w-16 rounded-full bg-muted" />}
-                              <span className={`text-center text-[13px] font-black leading-tight ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-primary' : 'text-foreground'}`}>
-                                {awayName}
-                              </span>
-                              {awayRank && <span className="text-[10px] font-medium text-muted-foreground">{awayRank}e</span>}
-                            </div>
-                          </div>
-
-                          {!live && !waiting && (
-                            <div className="mb-4 flex items-center justify-center gap-2">
-                              {[
-                                { val: countdown.days, label: 'J' },
-                                { val: countdown.hours, label: 'H' },
-                                { val: countdown.minutes, label: 'M' },
-                                { val: countdown.seconds, label: 'S' },
-                              ].map((c, i) => (
-                                <React.Fragment key={c.label}>
-                                  {i > 0 && <span className="mx-0.5 text-sm font-black text-primary/25">:</span>}
-                                  <div className="min-w-[42px] rounded-2xl bg-card px-2.5 py-2 text-center ring-1 ring-border/70">
-                                    <div className="text-lg font-black leading-none text-foreground">{String(c.val).padStart(2, '0')}</div>
-                                    <div className="mt-1 text-[8px] font-bold uppercase text-muted-foreground">{c.label}</div>
-                                  </div>
-                                </React.Fragment>
-                              ))}
-                            </div>
-                          )}
-
-                          {waiting && (
-                            <div className="mb-4 flex items-center justify-center gap-2 py-1.5">
-                              <Clock size={14} className="text-amber-500" />
-                              <span className="text-xs font-semibold text-amber-600">En attente</span>
-                            </div>
-                          )}
-
-                          <p className="text-center text-sm font-medium text-muted-foreground">
-                            {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
-                            {nextMatch.time ? ` • ${nextMatch.time}` : ''}
-                          </p>
+                        <div className="flex flex-1 flex-col items-center gap-1.5">
+                          {awayLogo ? (
+                            <img src={awayLogo} alt="" className="h-12 w-12 rounded-full object-cover ring-1 ring-border/60" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          ) : <div className="h-12 w-12 rounded-full bg-muted" />}
+                          <span className={`text-center text-[11px] font-bold leading-tight line-clamp-2 ${nextMatch.away?.club?.cl_no === OISEMONT_CL_NO ? 'text-primary' : 'text-foreground'}`}>
+                            {awayName}
+                          </span>
+                          {awayRank && <span className="text-[9px] font-medium text-muted-foreground">{awayRank}e</span>}
                         </div>
                       </div>
 
+                      {/* Countdown — compact inline */}
+                      {!live && !waiting && (
+                        <div className="mb-3 flex items-center justify-center gap-1">
+                          {[
+                            { val: countdown.days, label: 'J' },
+                            { val: countdown.hours, label: 'H' },
+                            { val: countdown.minutes, label: 'M' },
+                            { val: countdown.seconds, label: 'S' },
+                          ].map((c, i) => (
+                            <React.Fragment key={c.label}>
+                              {i > 0 && <span className="text-[10px] font-black text-primary/30">:</span>}
+                              <div className="flex items-baseline gap-0.5 rounded-lg bg-secondary px-2 py-1">
+                                <span className="text-[13px] font-black leading-none text-foreground tabular-nums">{String(c.val).padStart(2, '0')}</span>
+                                <span className="text-[8px] font-bold uppercase text-muted-foreground">{c.label}</span>
+                              </div>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      )}
+
+                      {waiting && (
+                        <div className="mb-3 flex items-center justify-center gap-1.5 py-1">
+                          <Clock size={12} className="text-amber-500" />
+                          <span className="text-[11px] font-semibold text-amber-600">En attente du résultat</span>
+                        </div>
+                      )}
+
+                      {/* Date */}
+                      <p className="mb-3 text-center text-[11px] font-medium text-muted-foreground">
+                        {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : ''}
+                        {nextMatch.time ? ` • ${nextMatch.time}` : ''}
+                      </p>
+
+                      {/* Bets count */}
                       {matchBets.length > 0 && (
-                        <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
-                          <div className="flex -space-x-2">
-                            {matchBets.slice(0, 5).map(bet => (
+                        <div className="mb-3 flex items-center justify-center gap-2">
+                          <div className="flex -space-x-1.5">
+                            {matchBets.slice(0, 4).map(bet => (
                               profilePhotos[bet.userId] ? (
-                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="h-7 w-7 rounded-full object-cover ring-2 ring-card" />
+                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="h-5 w-5 rounded-full object-cover ring-2 ring-card" />
                               ) : (
-                                <div key={bet.id} className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary text-[8px] font-bold text-muted-foreground ring-2 ring-card">
+                                <div key={bet.id} className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[7px] font-bold text-muted-foreground ring-2 ring-card">
                                   {bet.userName.charAt(0).toUpperCase()}
                                 </div>
                               )
                             ))}
                           </div>
-                          <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-2 text-primary ring-1 ring-primary/10">
-                            <Ticket size={12} />
-                            <span className="text-[11px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours</span>
-                          </div>
+                          <span className="text-[10px] font-semibold text-muted-foreground">
+                            {matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours
+                          </span>
                         </div>
                       )}
 
+                      {/* Bet button — compact */}
                       {currentUser && !live && !waiting && (
                         <motion.button
-                          whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}
                           onClick={async () => {
                             if (!nextMatch.date) return;
@@ -1217,22 +1206,23 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                               team: selectedTeam,
                             });
                           }}
-                          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/15 transition-all hover:brightness-110"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-[12px] font-bold text-primary-foreground shadow-sm transition-all hover:brightness-110"
                         >
-                          <Zap size={16} />
+                          <Zap size={13} />
                           <span>Parier sur ce match</span>
                         </motion.button>
                       )}
 
+                      {/* Location */}
                       {locationLabel && (
-                        <div className="mt-4 flex items-center justify-center gap-1.5 border-t border-border/40 pt-4">
-                          <MapPin size={11} className="shrink-0 text-muted-foreground" />
+                        <div className="mt-2.5 flex items-center justify-center gap-1">
+                          <MapPin size={10} className="shrink-0 text-muted-foreground" />
                           {locationLink ? (
-                            <a href={locationLink} target="_blank" rel="noopener noreferrer" className="flex max-w-[250px] items-center gap-1 truncate text-[11px] font-medium text-primary underline underline-offset-2">
-                              {locationLabel} <ExternalLink size={10} />
+                            <a href={locationLink} target="_blank" rel="noopener noreferrer" className="flex max-w-[250px] items-center gap-1 truncate text-[10px] font-medium text-primary underline underline-offset-2">
+                              {locationLabel} <ExternalLink size={9} />
                             </a>
                           ) : (
-                            <span className="truncate text-[11px] text-muted-foreground">{locationLabel}</span>
+                            <span className="truncate text-[10px] text-muted-foreground">{locationLabel}</span>
                           )}
                         </div>
                       )}
