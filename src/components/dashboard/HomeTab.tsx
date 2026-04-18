@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import {
   ChevronRight, Clock, MapPin, Trophy, Dumbbell,
   Target, Shield, Swords, Users,
-  Calendar, Newspaper, BarChart3, Flame, Sparkles
+  Calendar, Newspaper, BarChart3
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
