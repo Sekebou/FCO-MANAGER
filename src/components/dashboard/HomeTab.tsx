@@ -7,6 +7,7 @@ import {
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
+import footballHeroBg from '@/assets/football-hero-bg.jpg';
 
 interface HomeTabProps {
   currentUser: AppUser | null;
