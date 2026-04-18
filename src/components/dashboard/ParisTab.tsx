@@ -1046,8 +1046,6 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     )}
 
                     <div className="relative px-5 py-5">
-
-                    <div className="px-5 py-5">
                       {/* Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
