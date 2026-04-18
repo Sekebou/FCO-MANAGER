@@ -181,23 +181,23 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2.5 p-2.5">
-                    <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10">
+                  <div className="flex items-center gap-3 p-3.5">
+                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10">
                       {match.homeLogo ? (
-                        <img src={match.homeLogo} alt="" className="w-7 h-7 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                        <img src={match.homeLogo} alt="" className="w-8 h-8 object-contain" style={{ mixBlendMode: 'multiply' }} />
                       ) : (
-                        <Trophy size={16} className="text-primary" />
+                        <Trophy size={20} className="text-primary" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-[13px] font-black text-foreground truncate">{match.title}</h3>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
-                          <Calendar size={9} /> {formatDate(match.date)}
+                      <h3 className="text-sm font-black text-foreground truncate">{match.title}</h3>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                          <Calendar size={10} /> {formatDate(match.date)}
                         </span>
                         {match.time && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
-                            <Clock size={9} /> {match.time}
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                            <Clock size={10} /> {match.time}
                           </span>
                         )}
                       </div>
@@ -208,11 +208,11 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                       )}
                     </div>
                     {cd && (
-                      <span className="px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
+                      <span className="px-2 py-1 rounded-lg bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
                         {cd}
                       </span>
                     )}
-                    <ChevronRight size={12} className="text-muted-foreground/40 shrink-0" />
+                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
                   </div>
                 </button>
               );
