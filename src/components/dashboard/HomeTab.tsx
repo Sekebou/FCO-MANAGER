@@ -232,36 +232,36 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 <button
                   key={training.id}
                   onClick={() => onNavigate('presences', training.id)}
-                  className="group w-full text-left bg-card border border-border/60 rounded-2xl p-3.5 active:scale-[0.98] transition-all hover:border-accent/30 hover:shadow-md"
+                  className="group w-full text-left bg-card border border-border/60 rounded-2xl p-2.5 active:scale-[0.98] transition-all hover:border-accent/30 hover:shadow-md"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center shrink-0 border border-accent/10">
-                      <Dumbbell size={20} className="text-accent" strokeWidth={2.5} />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center shrink-0 border border-accent/10">
+                      <Dumbbell size={16} className="text-accent" strokeWidth={2.5} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-black text-foreground truncate capitalize">{training.title.toLowerCase()}</h3>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
-                          <Calendar size={10} /> {formatDate(training.date)}
+                      <h3 className="text-[13px] font-black text-foreground truncate capitalize">{training.title.toLowerCase()}</h3>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                          <Calendar size={9} /> {formatDate(training.date)}
                         </span>
                         {training.time && (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
-                            <Clock size={10} /> {training.time}
+                          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
+                            <Clock size={9} /> {training.time}
                           </span>
                         )}
                       </div>
                       {training.location && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                          <MapPin size={10} /> <span className="truncate capitalize">{training.location.toLowerCase()}</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                          <MapPin size={9} /> <span className="truncate capitalize">{training.location.toLowerCase()}</span>
                         </span>
                       )}
                     </div>
                     {cd && (
-                      <span className="px-2 py-1 rounded-lg bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
+                      <span className="px-1.5 py-0.5 rounded-md bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
                         {cd}
                       </span>
                     )}
-                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                    <ChevronRight size={12} className="text-muted-foreground/40 shrink-0" />
                   </div>
                 </button>
               );
