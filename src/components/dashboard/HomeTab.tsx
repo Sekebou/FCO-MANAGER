@@ -81,10 +81,6 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   const totalPlayers = useMemo(() => players.filter(p => playerIdsWithAccount.has(p.id)).length, [players, playerIdsWithAccount]);
 
   const initials = currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const heroMatch = nextMatches[0];
-  const heroCountdown = heroMatch ? getCountdown(heroMatch.date, heroMatch.time) : null;
-  const heroIsConvoked = !!(currentUser?.playerId && heroMatch?.convocationsPublished && heroMatch?.convocations && (heroMatch.convocations as any)[currentUser.playerId]);
-  const heroPublisher = heroMatch?.convocationsPublishedByName || heroMatch?.createdByName;
 
   const handleMatchClick = (matchId: string) => {
     onNavigate('presences', matchId);
