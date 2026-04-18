@@ -1027,19 +1027,19 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`relative rounded-2xl overflow-hidden border shadow-md ${
-                      live ? 'border-red-500/50 ring-1 ring-red-500/30' : waiting ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-border/60'
+                    className={`relative rounded-3xl overflow-hidden shadow-xl ${
+                      live ? 'ring-2 ring-red-500/40 shadow-red-500/20' : waiting ? 'ring-2 ring-amber-500/40 shadow-amber-500/20' : 'ring-1 ring-primary/15 shadow-primary/10'
                     } bg-card`}
                   >
-                    {/* Royal blue pitch background — same DA as Home Hero */}
+                    {/* Soft pitch background — only top portion, faded */}
                     <div
-                      className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                      style={{ backgroundImage: `url(${matchCardBg})`, opacity: 0.85 }}
+                      className="absolute inset-x-0 top-0 h-2/3 bg-cover bg-top pointer-events-none"
+                      style={{ backgroundImage: `url(${matchCardBg})`, opacity: 0.35 }}
                     />
-                    {/* Top fade for content legibility */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/40 to-primary/85 pointer-events-none" />
-                    {/* Decorative accent halo */}
-                    <div className="absolute -top-10 right-0 w-40 h-40 bg-accent/20 blur-3xl rounded-full pointer-events-none" />
+                    {/* Smooth fade to card bg */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-card/85 to-card pointer-events-none" />
+                    {/* Subtle accent glow */}
+                    <div className="absolute -top-12 right-4 w-32 h-32 bg-accent/15 blur-3xl rounded-full pointer-events-none" />
 
                     {live && (
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse z-10" />
@@ -1052,10 +1052,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       {/* Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 bg-white/15 backdrop-blur-md rounded-lg flex items-center justify-center ring-1 ring-white/20">
+                          <div className="w-7 h-7 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center ring-1 ring-white/30">
                             <Timer size={14} className="text-white" />
                           </div>
-                          <span className="text-[11px] font-bold text-white uppercase tracking-widest">
+                          <span className="text-[11px] font-bold text-white uppercase tracking-widest drop-shadow">
                             Prochain Match — Équipe {selectedTeam}
                           </span>
                         </div>
@@ -1067,13 +1067,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </span>
                           )}
                           {waiting && (
-                            <span className="flex items-center gap-1 bg-amber-400/20 text-amber-200 text-[9px] font-semibold px-2 py-0.5 rounded-full">
+                            <span className="flex items-center gap-1 bg-amber-400/25 text-amber-100 text-[9px] font-semibold px-2 py-0.5 rounded-full">
                               <Clock size={9} />
                               En attente
                             </span>
                           )}
                           {alreadyBet && (
-                            <span className="text-[10px] font-bold text-white bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full ring-1 ring-white/25">✓ Parié</span>
+                            <span className="text-[10px] font-bold text-white bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full ring-1 ring-white/30">✓ Parié</span>
                           )}
                         </div>
                       </div>
@@ -1082,29 +1082,29 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       <div className="flex items-center justify-center gap-5 mb-4">
                         <div className="flex flex-col items-center gap-2 flex-1">
                           {homeLogo ? (
-                            <img src={homeLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={homeLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/40 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : <div className="w-14 h-14 rounded-full bg-white/10" />}
-                          <span className="text-[11px] font-bold text-center leading-tight text-white">
+                          <span className="text-[11px] font-bold text-center leading-tight text-white drop-shadow">
                             {homeName}
                           </span>
-                          {homeRank && <span className="text-[9px] text-white/60 font-medium">{homeRank}e</span>}
+                          {homeRank && <span className="text-[9px] text-white/75 font-medium">{homeRank}e</span>}
                         </div>
                         <div className="relative">
                           <motion.span
                             animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
                             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                             className="text-2xl font-black text-white"
-                            style={{ textShadow: '0 0 24px hsl(var(--accent) / 0.8)' }}
+                            style={{ textShadow: '0 0 24px hsl(var(--accent) / 0.9)' }}
                           >VS</motion.span>
                         </div>
                         <div className="flex flex-col items-center gap-2 flex-1">
                           {awayLogo ? (
-                            <img src={awayLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/30 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={awayLogo} alt="" className="w-14 h-14 rounded-full object-cover ring-2 ring-white/40 shadow-xl" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           ) : <div className="w-14 h-14 rounded-full bg-white/10" />}
-                          <span className="text-[11px] font-bold text-center leading-tight text-white">
+                          <span className="text-[11px] font-bold text-center leading-tight text-white drop-shadow">
                             {awayName}
                           </span>
-                          {awayRank && <span className="text-[9px] text-white/60 font-medium">{awayRank}e</span>}
+                          {awayRank && <span className="text-[9px] text-white/75 font-medium">{awayRank}e</span>}
                         </div>
                       </div>
 
@@ -1118,10 +1118,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             { val: countdown.seconds, label: 'S' },
                           ].map((c, i) => (
                             <React.Fragment key={c.label}>
-                              {i > 0 && <span className="text-sm font-black text-white/30 mx-0.5">:</span>}
-                              <div className="bg-white/15 backdrop-blur-md rounded-lg px-2 py-1.5 text-center min-w-[36px] ring-1 ring-white/20">
-                                <div className="text-sm font-black text-white leading-none">{String(c.val).padStart(2, '0')}</div>
-                                <div className="text-[7px] font-bold text-white/70 uppercase mt-0.5">{c.label}</div>
+                              {i > 0 && <span className="text-sm font-black text-accent/30 mx-0.5">:</span>}
+                              <div className="bg-secondary rounded-lg px-2 py-1.5 text-center min-w-[36px]">
+                                <div className="text-sm font-black text-foreground leading-none">{String(c.val).padStart(2, '0')}</div>
+                                <div className="text-[7px] font-bold text-muted-foreground uppercase mt-0.5">{c.label}</div>
                               </div>
                             </React.Fragment>
                           ))}
@@ -1131,13 +1131,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       {/* Waiting for result */}
                       {waiting && (
                         <div className="flex items-center justify-center gap-2 mb-3 py-2">
-                          <Clock size={14} className="text-amber-300" />
-                          <span className="text-xs font-semibold text-amber-200">En attente</span>
+                          <Clock size={14} className="text-amber-500" />
+                          <span className="text-xs font-semibold text-amber-500">En attente</span>
                         </div>
                       )}
 
                       {/* Date */}
-                      <p className="text-[11px] text-white/80 text-center mb-3">
+                      <p className="text-[11px] text-muted-foreground text-center mb-3">
                         {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
                         {nextMatch.time ? ` • ${nextMatch.time}` : ''}
                       </p>
@@ -1149,15 +1149,15 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           <div className="flex -space-x-2">
                             {matchBets.slice(0, 5).map(bet => (
                               profilePhotos[bet.userId] ? (
-                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-primary" />
+                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-card" />
                               ) : (
-                                <div key={bet.id} className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold text-white ring-2 ring-primary">
+                                <div key={bet.id} className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[8px] font-bold text-muted-foreground ring-2 ring-card">
                                   {bet.userName.charAt(0).toUpperCase()}
                                 </div>
                               )
                             ))}
                           </div>
-                          <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md text-white rounded-full px-3 py-1 ring-1 ring-white/20">
+                          <div className="flex items-center gap-1 bg-accent/10 text-accent rounded-full px-3 py-1">
                             <Ticket size={12} />
                             <span className="text-[10px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours</span>
                           </div>
@@ -1215,14 +1215,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
                       {/* Location */}
                       {locationLabel && (
-                        <div className="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-white/15">
-                          <MapPin size={11} className="text-white/70 shrink-0" />
+                        <div className="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-border/30">
+                          <MapPin size={11} className="text-muted-foreground shrink-0" />
                           {locationLink ? (
-                            <a href={locationLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1">
+                            <a href={locationLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent underline underline-offset-2 truncate max-w-[250px] flex items-center gap-1">
                               {locationLabel} <ExternalLink size={9} />
                             </a>
                           ) : (
-                            <span className="text-[10px] text-white/70 truncate">{locationLabel}</span>
+                            <span className="text-[10px] text-muted-foreground truncate">{locationLabel}</span>
                           )}
                         </div>
                       )}
