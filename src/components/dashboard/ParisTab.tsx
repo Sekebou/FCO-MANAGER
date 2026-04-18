@@ -14,7 +14,7 @@ import {
 } from '@/lib/fffApi';
 import BetModal, { generateOdds, type BetPlacementPayload } from './BetModal';
 import BetLeaderboard from './BetLeaderboard';
-import parisHeroBg from '@/assets/paris-hero-bg.jpg';
+import parisHeroBg from '@/assets/paris-card-2026.jpg';
 import matchCardBg from '@/assets/match-card-bg.jpg';
 
 interface Bet {
