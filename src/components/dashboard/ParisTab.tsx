@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,8 @@ import {
 } from '@/lib/fffApi';
 import BetModal, { generateOdds, type BetPlacementPayload } from './BetModal';
 import BetLeaderboard from './BetLeaderboard';
+import parisHeroBg from '@/assets/paris-hero-bg.jpg';
+import matchCardBg from '@/assets/match-card-bg.jpg';
 
 interface Bet {
   id: string;
@@ -864,27 +866,75 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-            <Ticket className="text-accent" size={18} />
+      {/* ── Hero Header (stadium night) ── */}
+      <div className="relative overflow-hidden rounded-3xl shadow-lg shadow-primary/20">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${parisHeroBg})` }}
+        />
+        {/* Dark overlays for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/80 to-primary/55" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        {/* Accent glow */}
+        <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-accent/30 blur-3xl pointer-events-none" />
+
+        <div className="relative p-5">
+          {/* Top row : title + refresh */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center">
+                <Trophy className="text-white" size={17} strokeWidth={2.5} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em] leading-none">Pronostics</p>
+                <h2 className="text-lg font-black text-white leading-tight">Mes Paris</h2>
+              </div>
+            </div>
+            <button
+              onClick={handleForceRefresh}
+              disabled={refreshing || currentData.loading}
+              className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-white/25 transition-all disabled:opacity-40"
+              title="Actualiser les matchs"
+            >
+              <RefreshCw size={14} className={cn("text-white", (refreshing || currentData.loading) && "animate-spin")} />
+            </button>
           </div>
-          <h2 className="text-lg sm:text-xl font-bold text-foreground">Paris</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleForceRefresh}
-            disabled={refreshing || currentData.loading}
-            className="w-8 h-8 rounded-xl bg-secondary border border-border/50 flex items-center justify-center hover:bg-secondary/80 transition-all disabled:opacity-40"
-            title="Actualiser les matchs"
-          >
-            <RefreshCw size={14} className={cn("text-muted-foreground", (refreshing || currentData.loading) && "animate-spin")} />
-          </button>
-          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-            <Coins size={16} className="text-amber-500" />
-            <span className="text-sm font-black text-amber-500">{balance}</span>
-            <span className="text-[10px] text-amber-500/70 font-medium">pts</span>
+
+          {/* Balance hero */}
+          <div className="flex items-end justify-between gap-3 mb-4">
+            <div>
+              <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mb-1">Solde</p>
+              <div className="flex items-baseline gap-1.5">
+                <Coins size={22} className="text-amber-300 drop-shadow-md self-center" />
+                <span className="text-3xl font-black text-white drop-shadow-md leading-none">{balance}</span>
+                <span className="text-xs font-bold text-white/70 ml-0.5">pts</span>
+              </div>
+            </div>
+            {myPendingBets.length > 0 && (
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mb-1">En cours</p>
+                <p className="text-sm font-black text-white">
+                  {myPendingBets.length} pari{myPendingBets.length > 1 ? 's' : ''}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Mini stats row */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl px-2 py-2 text-center">
+              <div className="text-base font-black text-white leading-none">{myBets.length}</div>
+              <div className="text-[9px] font-semibold text-white/70 uppercase tracking-wider mt-1">Total</div>
+            </div>
+            <div className="bg-emerald-400/15 backdrop-blur-md border border-emerald-300/25 rounded-xl px-2 py-2 text-center">
+              <div className="text-base font-black text-emerald-300 leading-none">{myWonBets.length}</div>
+              <div className="text-[9px] font-semibold text-emerald-200/90 uppercase tracking-wider mt-1">Gagnés</div>
+            </div>
+            <div className="bg-red-400/15 backdrop-blur-md border border-red-300/25 rounded-xl px-2 py-2 text-center">
+              <div className="text-base font-black text-red-200 leading-none">{myLostBets.length}</div>
+              <div className="text-[9px] font-semibold text-red-200/90 uppercase tracking-wider mt-1">Perdus</div>
+            </div>
           </div>
         </div>
       </div>
@@ -905,22 +955,6 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             {BASE_TEAMS.includes(team) ? `Équipe ${team}` : team}
           </button>
         ))}
-      </div>
-
-      {/* Stats cards */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-card rounded-xl border border-border p-3 text-center">
-          <div className="text-lg font-black text-foreground">{myBets.length}</div>
-          <div className="text-[10px] text-muted-foreground font-medium">Total Paris</div>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-3 text-center">
-          <div className="text-lg font-black text-emerald-500">{myWonBets.length}</div>
-          <div className="text-[10px] text-muted-foreground font-medium">Gagnés</div>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-3 text-center">
-          <div className="text-lg font-black text-destructive">{myLostBets.length}</div>
-          <div className="text-[10px] text-muted-foreground font-medium">Perdus</div>
-        </div>
       </div>
 
       {/* Filter tabs */}
@@ -989,22 +1023,29 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
               return (
                 <>
-                  {/* Hero card */}
+                  {/* Hero card — FIFA style with subtle pitch texture */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`relative rounded-2xl overflow-hidden border shadow-sm ${
+                    className={`relative rounded-2xl overflow-hidden border shadow-md ${
                       live ? 'border-red-500/50 ring-1 ring-red-500/30' : waiting ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-border/60'
                     } bg-card`}
                   >
+                    {/* Subtle pitch texture background */}
+                    <div
+                      className="absolute inset-0 bg-cover bg-center opacity-[0.18] pointer-events-none"
+                      style={{ backgroundImage: `url(${matchCardBg})` }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-card/80 via-card/60 to-card/90 pointer-events-none" />
+
                     {live && (
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse" />
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse z-10" />
                     )}
                     {waiting && (
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500" />
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 z-10" />
                     )}
 
-                    <div className="px-5 py-5">
+                    <div className="relative px-5 py-5">
                       {/* Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
