@@ -1118,10 +1118,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             { val: countdown.seconds, label: 'S' },
                           ].map((c, i) => (
                             <React.Fragment key={c.label}>
-                              {i > 0 && <span className="text-sm font-black text-white/30 mx-0.5">:</span>}
-                              <div className="bg-white/15 backdrop-blur-md rounded-lg px-2 py-1.5 text-center min-w-[36px] ring-1 ring-white/20">
-                                <div className="text-sm font-black text-white leading-none">{String(c.val).padStart(2, '0')}</div>
-                                <div className="text-[7px] font-bold text-white/70 uppercase mt-0.5">{c.label}</div>
+                              {i > 0 && <span className="text-sm font-black text-accent/30 mx-0.5">:</span>}
+                              <div className="bg-secondary rounded-lg px-2 py-1.5 text-center min-w-[36px]">
+                                <div className="text-sm font-black text-foreground leading-none">{String(c.val).padStart(2, '0')}</div>
+                                <div className="text-[7px] font-bold text-muted-foreground uppercase mt-0.5">{c.label}</div>
                               </div>
                             </React.Fragment>
                           ))}
@@ -1131,13 +1131,13 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       {/* Waiting for result */}
                       {waiting && (
                         <div className="flex items-center justify-center gap-2 mb-3 py-2">
-                          <Clock size={14} className="text-amber-300" />
-                          <span className="text-xs font-semibold text-amber-200">En attente</span>
+                          <Clock size={14} className="text-amber-500" />
+                          <span className="text-xs font-semibold text-amber-500">En attente</span>
                         </div>
                       )}
 
                       {/* Date */}
-                      <p className="text-[11px] text-white/80 text-center mb-3">
+                      <p className="text-[11px] text-muted-foreground text-center mb-3">
                         {nextMatch.date ? new Date(nextMatch.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
                         {nextMatch.time ? ` • ${nextMatch.time}` : ''}
                       </p>
@@ -1149,15 +1149,15 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           <div className="flex -space-x-2">
                             {matchBets.slice(0, 5).map(bet => (
                               profilePhotos[bet.userId] ? (
-                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-primary" />
+                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-card" />
                               ) : (
-                                <div key={bet.id} className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold text-white ring-2 ring-primary">
+                                <div key={bet.id} className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[8px] font-bold text-muted-foreground ring-2 ring-card">
                                   {bet.userName.charAt(0).toUpperCase()}
                                 </div>
                               )
                             ))}
                           </div>
-                          <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md text-white rounded-full px-3 py-1 ring-1 ring-white/20">
+                          <div className="flex items-center gap-1 bg-accent/10 text-accent rounded-full px-3 py-1">
                             <Ticket size={12} />
                             <span className="text-[10px] font-bold">{matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours</span>
                           </div>
