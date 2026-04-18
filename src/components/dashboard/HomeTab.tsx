@@ -93,7 +93,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   return (
     <div className="space-y-5 pb-6">
       {/* ── Hero Greeting Card ── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/80 p-5 shadow-lg shadow-primary/20">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/85 p-5 shadow-lg shadow-primary/20">
         {/* Decorative pitch lines */}
         <div className="absolute inset-0 opacity-[0.08] pointer-events-none">
           <div className="absolute top-1/2 left-0 right-0 h-px bg-white" />
@@ -111,46 +111,15 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold text-white/70 uppercase tracking-widest">{getGreeting()}</p>
+            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">{getGreeting()}</p>
             <h2 className="text-xl font-black text-white leading-tight truncate">
-              {currentUser?.name?.split(' ')[0]} 👋
+              {currentUser?.name?.split(' ')[0]}
             </h2>
-            <p className="text-[11px] text-white/80 mt-0.5 font-medium">
-              {isCoach ? `${totalPlayers} joueurs · effectif actif` : 'Prêt à enflammer le terrain ?'}
+            <p className="text-[11px] text-white/75 mt-0.5 font-medium">
+              {isCoach ? `${totalPlayers} joueurs · effectif actif` : 'Prêt pour la prochaine ?'}
             </p>
           </div>
         </div>
-
-        {/* Hero next match teaser */}
-        {heroMatch && (
-          <button
-            onClick={() => handleMatchClick(heroMatch.id)}
-            className="relative mt-4 w-full text-left bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 active:scale-[0.98] transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-accent to-accent/70 shrink-0 shadow-md">
-                <Flame size={14} className="text-white" />
-                <span className="text-[10px] font-black text-white mt-0.5">{heroCountdown || 'LIVE'}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wider">Prochain match</p>
-                <h3 className="text-sm font-black text-white truncate">{heroMatch.title}</h3>
-                <p className="text-[11px] text-white/80 truncate capitalize">
-                  {formatDateLong(heroMatch.date)}{heroMatch.time ? ` · ${heroMatch.time}` : ''}
-                </p>
-              </div>
-              <ChevronRight size={18} className="text-white/60 shrink-0" />
-            </div>
-            {heroIsConvoked && (
-              <div className="mt-2.5 flex items-center gap-1.5 px-2.5 py-1.5 bg-white/15 rounded-lg border border-white/20">
-                <Sparkles size={11} className="text-white shrink-0" />
-                <span className="text-[10px] font-bold text-white truncate">
-                  Tu es convoqué{heroPublisher ? <> par <span className="font-black">{heroPublisher}</span></> : ''}
-                </span>
-              </div>
-            )}
-          </button>
-        )}
       </div>
 
       {/* ── Personal Stats (any user with a player profile) ── */}
