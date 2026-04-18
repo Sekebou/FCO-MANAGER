@@ -7,6 +7,7 @@ import {
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
+import footballHeroBg from '@/assets/football-hero-bg.jpg';
 
 interface HomeTabProps {
   currentUser: AppUser | null;
@@ -90,13 +91,15 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
     <div className="space-y-5 pb-6">
       {/* ── Hero Greeting Card ── */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/85 p-5 shadow-lg shadow-primary/20">
-        {/* Decorative pitch lines */}
-        <div className="absolute inset-0 opacity-[0.08] pointer-events-none">
-          <div className="absolute top-1/2 left-0 right-0 h-px bg-white" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-white" />
-          <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-accent/30 blur-2xl" />
-        </div>
+        {/* Football pitch background image */}
+        <div
+          className="absolute inset-0 opacity-40 pointer-events-none bg-cover bg-center mix-blend-luminosity"
+          style={{ backgroundImage: `url(${footballHeroBg})` }}
+        />
+        {/* Gradient overlay to keep text readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/85 to-primary/40 pointer-events-none" />
+        {/* Decorative glow */}
+        <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
 
         <div className="relative flex items-center gap-3.5">
           <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
