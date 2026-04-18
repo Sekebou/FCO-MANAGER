@@ -1031,15 +1031,15 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                       live ? 'border-red-500/50 ring-1 ring-red-500/30' : waiting ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-border/60'
                     } bg-card`}
                   >
-                    {/* Pitch texture background — FIFA broadcast style */}
+                    {/* Royal blue pitch background — same DA as Home Hero */}
                     <div
                       className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                      style={{ backgroundImage: `url(${matchCardBg})`, opacity: 0.55 }}
+                      style={{ backgroundImage: `url(${matchCardBg})`, opacity: 0.85 }}
                     />
-                    {/* Dark gradient for text legibility */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-card/40 via-card/70 to-card/95 pointer-events-none" />
-                    {/* Accent stadium spotlight glow top */}
-                    <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-32 bg-accent/20 blur-3xl rounded-full pointer-events-none" />
+                    {/* Top fade for content legibility */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/40 to-primary/85 pointer-events-none" />
+                    {/* Decorative accent halo */}
+                    <div className="absolute -top-10 right-0 w-40 h-40 bg-accent/20 blur-3xl rounded-full pointer-events-none" />
 
                     {live && (
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse z-10" />
