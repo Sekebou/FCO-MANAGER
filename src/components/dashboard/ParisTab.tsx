@@ -1183,7 +1183,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                               if (events?.[0]?.convocations) {
                                 const convos = events[0].convocations as Record<string, any>;
                                 const playerIds = Object.entries(convos)
-                                  .filter(([, v]) => v === true || v === 'titulaire' || v === 'remplacant')
+                                  .filter(([, v]: [string, any]) => {
+                                    if (v === true || v === 'titulaire' || v === 'remplacant') return true;
+                                    if (v && typeof v === 'object') {
+                                      const s = v.status;
+                                      return s === 'convoque' || s === 'titulaire' || s === 'remplacant';
+                                    }
+                                    return false;
+                                  })
                                   .map(([id]) => id);
                                 if (playerIds.length > 0) {
                                   const { data: pData } = await supabase
