@@ -1027,19 +1027,19 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={`relative rounded-2xl overflow-hidden border shadow-md ${
-                      live ? 'border-red-500/50 ring-1 ring-red-500/30' : waiting ? 'border-amber-500/50 ring-1 ring-amber-500/20' : 'border-border/60'
+                    className={`relative rounded-3xl overflow-hidden shadow-xl ${
+                      live ? 'ring-2 ring-red-500/40 shadow-red-500/20' : waiting ? 'ring-2 ring-amber-500/40 shadow-amber-500/20' : 'ring-1 ring-primary/15 shadow-primary/10'
                     } bg-card`}
                   >
-                    {/* Royal blue pitch background — same DA as Home Hero */}
+                    {/* Soft pitch background — only top portion, faded */}
                     <div
-                      className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                      style={{ backgroundImage: `url(${matchCardBg})`, opacity: 0.85 }}
+                      className="absolute inset-x-0 top-0 h-2/3 bg-cover bg-top pointer-events-none"
+                      style={{ backgroundImage: `url(${matchCardBg})`, opacity: 0.35 }}
                     />
-                    {/* Top fade for content legibility */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/40 to-primary/85 pointer-events-none" />
-                    {/* Decorative accent halo */}
-                    <div className="absolute -top-10 right-0 w-40 h-40 bg-accent/20 blur-3xl rounded-full pointer-events-none" />
+                    {/* Smooth fade to card bg */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-card/85 to-card pointer-events-none" />
+                    {/* Subtle accent glow */}
+                    <div className="absolute -top-12 right-4 w-32 h-32 bg-accent/15 blur-3xl rounded-full pointer-events-none" />
 
                     {live && (
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse z-10" />
