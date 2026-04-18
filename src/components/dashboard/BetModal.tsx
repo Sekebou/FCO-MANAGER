@@ -137,6 +137,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
 
   // Scorer state
   const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
+  const [playerPhotos, setPlayerPhotos] = useState<Record<string, string>>({});
 
   // Exact score state
   const [scoreHome, setScoreHome] = useState(0);
