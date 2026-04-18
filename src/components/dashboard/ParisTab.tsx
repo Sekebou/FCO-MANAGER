@@ -1035,6 +1035,11 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           : 'border-border/70'
                     }`}
                   >
+                    <div
+                      className="absolute inset-x-0 top-0 h-28 bg-cover bg-center opacity-[0.06] pointer-events-none"
+                      style={{ backgroundImage: `url(${matchCardBg})` }}
+                    />
+                    <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
 
                     {live && (
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500 animate-pulse z-10" />
