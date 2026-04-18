@@ -14,7 +14,7 @@ import {
 } from '@/lib/fffApi';
 import BetModal, { generateOdds, type BetPlacementPayload } from './BetModal';
 import BetLeaderboard from './BetLeaderboard';
-import parisHeroBg from '@/assets/paris-hero-bg.jpg';
+import parisHeroBg from '@/assets/paris-card-2026.jpg';
 import matchCardBg from '@/assets/match-card-bg.jpg';
 
 interface Bet {
@@ -866,72 +866,85 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
   return (
     <div className="space-y-4">
-      {/* ── Hero Header (compact) ── */}
-      <div className="relative overflow-hidden rounded-2xl shadow-md shadow-primary/15">
-        {/* Background image */}
+      {/* ── Hero Header — 2026 native football ── */}
+      <div className="relative overflow-hidden rounded-[28px] shadow-xl shadow-primary/25 ring-1 ring-white/10">
+        {/* Pitch background */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${parisHeroBg})` }}
         />
-        {/* Dark overlays for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/85 to-primary/70" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        {/* Deep navy tint for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a1854]/80 via-[#0a1854]/72 to-[#06103d]/92" />
+        {/* Center pitch line glow (subtle) */}
+        <div className="absolute inset-y-0 left-1/2 -translate-x-px w-px bg-gradient-to-b from-transparent via-white/15 to-transparent pointer-events-none" />
+        {/* Top scanline accent */}
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-accent/70 to-transparent" />
 
-        <div className="relative p-3.5">
-          {/* Top row : title + refresh */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center">
-                <Trophy className="text-white" size={14} strokeWidth={2.5} />
+        <div className="relative p-4">
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-white/8 backdrop-blur-xl border border-white/15 flex items-center justify-center shadow-inner shadow-white/5">
+                <Trophy className="text-white" size={15} strokeWidth={2.5} />
               </div>
-              <div>
-                <p className="text-[9px] font-semibold text-white/60 uppercase tracking-[0.16em] leading-none">Pronostics</p>
-                <h2 className="text-sm font-bold text-white leading-tight mt-0.5">Mes Paris</h2>
+              <div className="leading-tight">
+                <p className="text-[9px] font-bold text-white/55 uppercase tracking-[0.22em]">Pronostics</p>
+                <h2 className="text-[15px] font-black text-white tracking-tight">Mes Paris</h2>
               </div>
             </div>
             <button
               onClick={handleForceRefresh}
               disabled={refreshing || currentData.loading}
-              className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center hover:bg-white/25 transition-all disabled:opacity-40"
+              className="w-9 h-9 rounded-xl bg-white/8 backdrop-blur-xl border border-white/15 flex items-center justify-center active:scale-95 transition-all disabled:opacity-40"
               title="Actualiser les matchs"
             >
-              <RefreshCw size={12} className={cn("text-white", (refreshing || currentData.loading) && "animate-spin")} />
+              <RefreshCw size={13} className={cn("text-white", (refreshing || currentData.loading) && "animate-spin")} />
             </button>
           </div>
 
-          {/* Balance + en cours */}
-          <div className="flex items-end justify-between gap-3 mb-3">
+          {/* Scoreboard row : Solde / En cours */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <p className="text-[9px] font-semibold text-white/60 uppercase tracking-widest mb-1">Solde</p>
-              <div className="flex items-baseline gap-1">
-                <Coins size={16} className="text-amber-300 self-center" />
-                <span className="text-2xl font-black text-white leading-none">{balance}</span>
-                <span className="text-[10px] font-semibold text-white/60 ml-0.5">pts</span>
+              <p className="text-[9px] font-bold text-white/50 uppercase tracking-[0.2em] mb-1.5">Solde</p>
+              <div className="flex items-baseline gap-1.5">
+                <Coins size={18} className="text-amber-300 self-center drop-shadow-[0_0_8px_rgba(252,211,77,0.5)]" />
+                <span className="text-[32px] font-black text-white leading-none tabular-nums tracking-tight">{balance}</span>
+                <span className="text-[10px] font-bold text-white/55 ml-0.5">PTS</span>
               </div>
             </div>
             {myPendingBets.length > 0 && (
-              <div className="text-right">
-                <p className="text-[9px] font-semibold text-white/60 uppercase tracking-widest mb-1">En cours</p>
-                <p className="text-xs font-bold text-white">
-                  {myPendingBets.length} pari{myPendingBets.length > 1 ? 's' : ''}
-                </p>
+              <div className="text-right border-l border-white/10 pl-3">
+                <p className="text-[9px] font-bold text-white/50 uppercase tracking-[0.2em] mb-1.5">En cours</p>
+                <div className="flex items-baseline justify-end gap-1.5">
+                  <span className="text-[32px] font-black text-white leading-none tabular-nums tracking-tight">{myPendingBets.length}</span>
+                  <span className="text-[10px] font-bold text-white/55">{myPendingBets.length > 1 ? 'PARIS' : 'PARI'}</span>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Mini stats row — uniformes blanc/transparent */}
-          <div className="grid grid-cols-3 gap-1.5">
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg px-2 py-1.5 text-center">
-              <div className="text-sm font-black text-white leading-none">{myBets.length}</div>
-              <div className="text-[8px] font-semibold text-white/60 uppercase tracking-wider mt-0.5">Total</div>
+          {/* Divider line */}
+          <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent mb-3" />
+
+          {/* Stats row — football scoreboard style */}
+          <div className="grid grid-cols-3 divide-x divide-white/10">
+            <div className="text-center px-1">
+              <div className="text-[22px] font-black text-white leading-none tabular-nums tracking-tight">{myBets.length}</div>
+              <div className="text-[8.5px] font-bold text-white/50 uppercase tracking-[0.18em] mt-1.5">Total</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg px-2 py-1.5 text-center">
-              <div className="text-sm font-black text-white leading-none">{myWonBets.length}</div>
-              <div className="text-[8px] font-semibold text-white/60 uppercase tracking-wider mt-0.5">Gagnés</div>
+            <div className="text-center px-1">
+              <div className="text-[22px] font-black text-white leading-none tabular-nums tracking-tight">
+                {myWonBets.length}
+                <span className="inline-block w-1 h-1 rounded-full bg-emerald-400 ml-1 align-middle shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+              </div>
+              <div className="text-[8.5px] font-bold text-white/50 uppercase tracking-[0.18em] mt-1.5">Gagnés</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-lg px-2 py-1.5 text-center">
-              <div className="text-sm font-black text-white leading-none">{myLostBets.length}</div>
-              <div className="text-[8px] font-semibold text-white/60 uppercase tracking-wider mt-0.5">Perdus</div>
+            <div className="text-center px-1">
+              <div className="text-[22px] font-black text-white leading-none tabular-nums tracking-tight">
+                {myLostBets.length}
+                <span className="inline-block w-1 h-1 rounded-full bg-rose-400/80 ml-1 align-middle" />
+              </div>
+              <div className="text-[8.5px] font-bold text-white/50 uppercase tracking-[0.18em] mt-1.5">Perdus</div>
             </div>
           </div>
         </div>
