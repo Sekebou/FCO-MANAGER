@@ -469,8 +469,17 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           const absentCount = convokedEntries.filter(([pid]) => presencesMap[pid] === 'absent').length;
           const waitingCount = convokedEntries.length - presentCount - absentCount;
           const isMatchPast = new Date(event.date) < new Date();
-          // Numéros de maillot visibles uniquement par le staff (jamais par les joueurs)
-          const canSeeDetails = canManage();
+          // Numéros visibles par les joueurs 1h après le coup d'envoi (comme la feuille de match)
+          const kickoff = (() => {
+            const d = new Date(event.date);
+            if (event.time) {
+              const [h, m] = event.time.split(':').map(Number);
+              d.setHours(h || 0, m || 0, 0, 0);
+            }
+            return d;
+          })();
+          const oneHourAfterKickoff = new Date(kickoff.getTime() + 60 * 60 * 1000);
+          const canSeeDetails = canManage() || new Date() >= oneHourAfterKickoff;
 
           // Status pill helper — uniform shape for all states
           const renderPill = (status: string | undefined) => {
