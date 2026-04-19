@@ -469,8 +469,17 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           const absentCount = convokedEntries.filter(([pid]) => presencesMap[pid] === 'absent').length;
           const waitingCount = convokedEntries.length - presentCount - absentCount;
           const isMatchPast = new Date(event.date) < new Date();
-          // Numéros de maillot visibles uniquement par le staff (jamais par les joueurs)
-          const canSeeDetails = canManage();
+          // Numéros visibles par les joueurs 1h après le coup d'envoi (comme la feuille de match)
+          const kickoff = (() => {
+            const d = new Date(event.date);
+            if (event.time) {
+              const [h, m] = event.time.split(':').map(Number);
+              d.setHours(h || 0, m || 0, 0, 0);
+            }
+            return d;
+          })();
+          const oneHourAfterKickoff = new Date(kickoff.getTime() + 60 * 60 * 1000);
+          const canSeeDetails = canManage() || new Date() >= oneHourAfterKickoff;
 
           // Status pill helper — uniform shape for all states
           const renderPill = (status: string | undefined) => {
@@ -761,9 +770,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   );
                                 })()}
                                 <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
-                                {presenceFilter === 'convoked' && canManage() && (() => {
+                                {presenceFilter === 'convoked' && (() => {
                                   const convo = event.convocations ? Object.values(event.convocations as Record<string, any>).find((c: any) => c.playerId === player.id) : null;
-                                  return convo?.number ? <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">#{convo.number}</span> : null;
+                                  if (!convo?.number) return null;
+                                  // Numéro visible 1h après le coup d'envoi pour les joueurs (toujours pour le staff)
+                                  const k = new Date(event.date);
+                                  if (event.time) { const [h, m] = event.time.split(':').map(Number); k.setHours(h || 0, m || 0, 0, 0); }
+                                  const canSee = canManage() || new Date() >= new Date(k.getTime() + 60 * 60 * 1000);
+                                  if (!canSee) return null;
+                                  return <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">#{convo.number}</span>;
                                 })()}
                               </div>
                               {isNonRespondingPlayer(player.id) ? (
