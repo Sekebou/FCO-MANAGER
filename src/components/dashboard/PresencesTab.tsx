@@ -770,9 +770,15 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   );
                                 })()}
                                 <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
-                                {presenceFilter === 'convoked' && canManage() && (() => {
+                                {presenceFilter === 'convoked' && (() => {
                                   const convo = event.convocations ? Object.values(event.convocations as Record<string, any>).find((c: any) => c.playerId === player.id) : null;
-                                  return convo?.number ? <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">#{convo.number}</span> : null;
+                                  if (!convo?.number) return null;
+                                  // Numéro visible 1h après le coup d'envoi pour les joueurs (toujours pour le staff)
+                                  const k = new Date(event.date);
+                                  if (event.time) { const [h, m] = event.time.split(':').map(Number); k.setHours(h || 0, m || 0, 0, 0); }
+                                  const canSee = canManage() || new Date() >= new Date(k.getTime() + 60 * 60 * 1000);
+                                  if (!canSee) return null;
+                                  return <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">#{convo.number}</span>;
                                 })()}
                               </div>
                               {isNonRespondingPlayer(player.id) ? (
