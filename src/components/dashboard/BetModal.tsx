@@ -444,12 +444,9 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                             <p className="text-sm font-bold text-foreground uppercase leading-tight">{lastName}</p>
                           )}
 
-                          {/* Meta row */}
+                          {/* Meta row — cote uniquement (poste masqué pour préserver le secret de la compo) */}
                           <div className="flex items-center gap-2 mt-2.5">
-                            <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                              {selectedScorer.position}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-accent text-accent-foreground">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-accent text-accent-foreground">
                               x{playerOdd}
                             </span>
                           </div>
@@ -501,15 +498,12 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                                   <span className="text-xs font-black text-muted-foreground">{initials}</span>
                                 )}
                               </div>
-                              <div className="w-full min-w-0 leading-tight">
+                              <div className="w-full min-w-0 leading-tight pb-1">
                                 <p className="text-[11px] font-black truncate text-foreground">{firstName}</p>
                                 {lastName && (
                                   <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">{lastName}</p>
                                 )}
                               </div>
-                              <span className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded-full">
-                                {player.position}
-                              </span>
                             </motion.button>
                           );
                         })}
