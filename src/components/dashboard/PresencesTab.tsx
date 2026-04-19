@@ -761,7 +761,7 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                   );
                                 })()}
                                 <span className="font-medium text-xs sm:text-sm text-foreground truncate">{player.name}</span>
-                                {presenceFilter === 'convoked' && (() => {
+                                {presenceFilter === 'convoked' && canManage() && (() => {
                                   const convo = event.convocations ? Object.values(event.convocations as Record<string, any>).find((c: any) => c.playerId === player.id) : null;
                                   return convo?.number ? <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md shrink-0">#{convo.number}</span> : null;
                                 })()}
