@@ -469,7 +469,8 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           const absentCount = convokedEntries.filter(([pid]) => presencesMap[pid] === 'absent').length;
           const waitingCount = convokedEntries.length - presentCount - absentCount;
           const isMatchPast = new Date(event.date) < new Date();
-          const canSeeDetails = isMatchPast || canManage();
+          // Numéros de maillot visibles uniquement par le staff (jamais par les joueurs)
+          const canSeeDetails = canManage();
 
           // Status pill helper — uniform shape for all states
           const renderPill = (status: string | undefined) => {
