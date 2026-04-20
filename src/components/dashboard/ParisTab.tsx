@@ -866,16 +866,31 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
   return (
     <div className="space-y-4">
-      {/* ── Hero Header (compact) ── */}
-      <div className="relative overflow-hidden rounded-2xl shadow-md shadow-primary/15">
+      {/* ── Hero Header (compact, betting-style) ── */}
+      <div className="relative overflow-hidden rounded-2xl shadow-md shadow-primary/15 ring-1 ring-amber-300/20">
         {/* Background image */}
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${parisHeroBg})` }}
         />
-        {/* Dark overlays for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/85 to-primary/70" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+        {/* Deep bookmaker gradient (royal blue → emerald hint) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/85 to-emerald-900/70" />
+        {/* Top-down vignette for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        {/* Diagonal odds-line stripes (very subtle) */}
+        <div
+          className="absolute inset-0 opacity-[0.07] pointer-events-none mix-blend-overlay"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(115deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 14px)',
+          }}
+        />
+        {/* Golden jackpot halo — top right */}
+        <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-amber-300/30 blur-3xl pointer-events-none" />
+        {/* Cool emerald halo — bottom left */}
+        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-emerald-400/20 blur-3xl pointer-events-none" />
+        {/* Top sheen highlight */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/60 to-transparent pointer-events-none" />
 
         <div className="relative p-3.5">
           {/* Top row : title + refresh */}
