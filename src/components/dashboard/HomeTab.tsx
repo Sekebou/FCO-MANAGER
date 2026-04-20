@@ -97,9 +97,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
           style={{ backgroundImage: `url(${footballHeroBg})` }}
         />
         {/* Subtle gradient overlay to keep text readable on the left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/85 via-primary/50 to-primary/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/70 via-primary/25 to-transparent pointer-events-none" />
         {/* Top-bottom darken for depth */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/30 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/15 pointer-events-none" />
         {/* Decorative accent glow */}
         <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
 
