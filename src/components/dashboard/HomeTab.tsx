@@ -103,23 +103,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         {/* Decorative accent glow + stadium pulse waves */}
         <div className="absolute -right-6 -top-6 w-28 h-28 pointer-events-none">
           <div className="absolute inset-0 rounded-full bg-accent/25 blur-3xl" />
-          {/* Concentric stadium waves */}
           <span className="absolute inset-0 rounded-full border border-white/30 animate-stadium-wave" />
           <span className="absolute inset-0 rounded-full border border-white/30 animate-stadium-wave [animation-delay:1.2s]" />
           <span className="absolute inset-0 rounded-full border border-white/20 animate-stadium-wave [animation-delay:2.4s]" />
-          {/* Spinning football */}
-          <svg
-            viewBox="0 0 32 32"
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 text-white/90 animate-ball-spin drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <circle cx="16" cy="16" r="14" fill="white" />
-            <path
-              d="M16 4l4.5 3.3-1.7 5.3h-5.6l-1.7-5.3L16 4zm-9.5 9.2l5.4 1.8 1.7 5.3-3.4 4.5-4.4-3.2 0.7-8.4zm19 0l0.7 8.4-4.4 3.2-3.4-4.5 1.7-5.3 5.4-1.8zM12.6 22.5h6.8l1.6 4.9c-1.6 0.7-3.3 1-5 1s-3.4-0.4-5-1l1.6-4.9z"
-              fill="hsl(var(--primary))"
-            />
-          </svg>
         </div>
 
         <div className="relative flex items-center gap-3.5">
