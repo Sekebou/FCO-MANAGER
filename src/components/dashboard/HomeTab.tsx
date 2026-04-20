@@ -100,13 +100,8 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
         <div className="absolute inset-0 bg-gradient-to-r from-primary/85 via-primary/50 to-primary/10 pointer-events-none" />
         {/* Top-bottom darken for depth */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/30 pointer-events-none" />
-        {/* Decorative accent glow + stadium pulse waves */}
-        <div className="absolute -right-6 -top-6 w-28 h-28 pointer-events-none">
-          <div className="absolute inset-0 rounded-full bg-accent/25 blur-3xl" />
-          <span className="absolute inset-0 rounded-full border border-white/30 animate-stadium-wave" />
-          <span className="absolute inset-0 rounded-full border border-white/30 animate-stadium-wave [animation-delay:1.2s]" />
-          <span className="absolute inset-0 rounded-full border border-white/20 animate-stadium-wave [animation-delay:2.4s]" />
-        </div>
+        {/* Decorative accent glow */}
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
 
         <div className="relative flex items-center gap-3.5">
           <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
