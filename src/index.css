@@ -233,3 +233,27 @@
     }
   }
 }
+
+/* ── Stadium wave + ball spin animations (Home hero halo) ── */
+@keyframes stadium-wave {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@keyframes ball-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.animate-stadium-wave {
+  animation: stadium-wave 3.6s ease-out infinite;
+  transform-origin: center;
+}
+.animate-ball-spin {
+  animation: ball-spin 6s linear infinite;
+  transform-origin: center;
+}
