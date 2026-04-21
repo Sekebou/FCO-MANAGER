@@ -1053,13 +1053,13 @@ const ChampionnatTab: React.FC<Props> = ({
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
                             <span className={`text-xs font-bold truncate text-right ${isHome ? 'text-accent' : 'text-foreground'}`}>{homeName}</span>
-                            {homeLogo ? <img src={homeLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
+                            {homeLogo ? <img src={homeLogo} alt="" className="w-12 h-12 rounded-full object-contain bg-white/80 p-0.5 ring-2 ring-border/40 shadow-sm shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-12 h-12 rounded-full bg-secondary shrink-0" />}
                           </div>
                           <div className="px-2.5 py-1 rounded-lg bg-secondary/80 border border-border/50 text-[10px] font-black text-muted-foreground tracking-widest shrink-0">
                             VS
                           </div>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {awayLogo ? <img src={awayLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
+                            {awayLogo ? <img src={awayLogo} alt="" className="w-12 h-12 rounded-full object-contain bg-white/80 p-0.5 ring-2 ring-border/40 shadow-sm shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-12 h-12 rounded-full bg-secondary shrink-0" />}
                             <span className={`text-xs font-bold truncate ${!isHome ? 'text-accent' : 'text-foreground'}`}>{awayName}</span>
                           </div>
                         </div>
@@ -1141,7 +1141,7 @@ const ChampionnatTab: React.FC<Props> = ({
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
                             <span className={`text-xs font-bold truncate text-right ${isHomeWin ? 'text-foreground' : 'text-muted-foreground'}`}>{homeName}</span>
-                            {homeLogo ? <img src={homeLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
+                            {homeLogo ? <img src={homeLogo} alt="" className="w-12 h-12 rounded-full object-contain bg-white/80 p-0.5 ring-2 ring-border/40 shadow-sm shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-12 h-12 rounded-full bg-secondary shrink-0" />}
                           </div>
                           <div className={`px-3 py-1.5 rounded-xl text-sm font-black min-w-[56px] text-center tracking-wider shadow-sm ${
                             isOisemontWin 
@@ -1153,7 +1153,7 @@ const ChampionnatTab: React.FC<Props> = ({
                             {homeScore} - {awayScore}
                           </div>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {awayLogo ? <img src={awayLogo} alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-border/30 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-8 h-8 rounded-full bg-secondary shrink-0" />}
+                            {awayLogo ? <img src={awayLogo} alt="" className="w-12 h-12 rounded-full object-contain bg-white/80 p-0.5 ring-2 ring-border/40 shadow-sm shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <div className="w-12 h-12 rounded-full bg-secondary shrink-0" />}
                             <span className={`text-xs font-bold truncate ${isAwayWin ? 'text-foreground' : 'text-muted-foreground'}`}>{awayName}</span>
                           </div>
                         </div>
