@@ -900,9 +900,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400/90 to-amber-500/90 shadow-md shadow-amber-500/40">
                 <Flame size={11} className="text-primary" strokeWidth={3} />
-                <span className="text-[10px] font-black text-primary uppercase tracking-wider leading-none">Centre des Paris</span>
+                <span className="text-[10px] font-black text-primary uppercase tracking-wider leading-none">Centre des Paris du FCO</span>
               </div>
-              <span className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">FCO</span>
             </div>
             <button
               onClick={handleForceRefresh}
