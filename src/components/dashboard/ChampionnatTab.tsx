@@ -595,52 +595,107 @@ const ChampionnatTab: React.FC<Props> = ({
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* ─── Header ─── */}
+      {/* ─── Hero Header (premium championship card) ─── */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }} 
         animate={{ opacity: 1, y: 0 }} 
-        className="flex items-center justify-between gap-2"
+        className="relative overflow-hidden rounded-3xl shadow-xl shadow-primary/30 ring-1 ring-white/10"
       >
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-accent/20 rounded-xl flex items-center justify-center">
-            <Trophy className="text-accent" size={18} />
+        {/* Background image — trophy stadium */}
+        <div
+          className="absolute inset-0 bg-cover bg-center scale-105"
+          style={{ backgroundImage: `url(${championnatHeroBg})` }}
+        />
+        {/* Left-to-right legibility gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/75 to-primary/15" />
+        {/* Bottom darken */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/45 to-transparent" />
+        {/* Animated golden trophy halo */}
+        <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-amber-300/35 blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
+        {/* Inner glow */}
+        <div className="absolute -left-10 top-1/3 w-40 h-40 rounded-full bg-accent/30 blur-3xl pointer-events-none" />
+        {/* Diagonal stripes */}
+        <div
+          className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-overlay"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(115deg, rgba(255,255,255,0.9) 0 1px, transparent 1px 18px)',
+          }}
+        />
+        {/* Sheen lines */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/80 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+
+        <div className="relative p-4">
+          {/* Top row : badge + add button */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400/90 to-amber-500/90 shadow-md shadow-amber-500/40">
+                <Trophy size={11} className="text-primary" strokeWidth={3} />
+                <span className="text-[10px] font-black text-primary uppercase tracking-wider leading-none">Championnat</span>
+              </div>
+              <span className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">Saison 2025-26</span>
+            </div>
+            {canManage() && (
+              currentUserRole === 'admin+' ? (
+                <motion.button 
+                  whileHover={!teamHasChampionship(selectedTeam) ? { scale: 1.05 } : {}} 
+                  whileTap={!teamHasChampionship(selectedTeam) ? { scale: 0.95 } : {}}
+                  onClick={() => { if (!teamHasChampionship(selectedTeam)) { setChampTeam(selectedTeam); setShowAddChamp(true); } }} 
+                  disabled={teamHasChampionship(selectedTeam)}
+                  className={cn(
+                    "w-8 h-8 rounded-full backdrop-blur-md border flex items-center justify-center transition-all",
+                    teamHasChampionship(selectedTeam)
+                      ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
+                      : "bg-white/15 border-white/20 text-white hover:bg-white/25 active:scale-95"
+                  )}
+                >
+                  <Plus size={14} />
+                </motion.button>
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <motion.button className="w-8 h-8 rounded-full bg-white/5 border border-white/10 backdrop-blur-md flex items-center justify-center text-white/30 cursor-not-allowed">
+                      <Plus size={14} />
+                    </motion.button>
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="end" className="w-56 p-3 text-xs text-muted-foreground text-center">
+                    🚧 Prévu dans l'app version jeune
+                  </PopoverContent>
+                </Popover>
+              )
+            )}
           </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-foreground">Championnats</h2>
-            <p className="text-xs text-muted-foreground">Saison 2025-2026</p>
+
+          {/* Title + équipe */}
+          <div className="mb-4">
+            <h2 className="text-2xl font-black text-white leading-none tracking-tight drop-shadow-md">
+              FCO Oisemont
+            </h2>
+            <p className="text-[11px] font-semibold text-white/70 uppercase tracking-[0.2em] mt-1.5">
+              Équipe {selectedTeam} · Bilan saison
+            </p>
+          </div>
+
+          {/* Bilan trio — V / N / D */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="relative bg-white/10 backdrop-blur-xl border border-amber-200/30 rounded-xl px-2 py-2 text-center overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/60 to-transparent" />
+              <div className="text-lg font-black text-amber-200 leading-none">{bilan.v}</div>
+              <div className="text-[8px] font-bold text-white/70 uppercase tracking-wider mt-1">Victoires</div>
+            </div>
+            <div className="relative bg-white/10 backdrop-blur-xl border border-white/15 rounded-xl px-2 py-2 text-center overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              <div className="text-lg font-black text-white leading-none">{bilan.n}</div>
+              <div className="text-[8px] font-bold text-white/60 uppercase tracking-wider mt-1">Nuls</div>
+            </div>
+            <div className="relative bg-white/10 backdrop-blur-xl border border-white/15 rounded-xl px-2 py-2 text-center overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              <div className="text-lg font-black text-white/80 leading-none">{bilan.d}</div>
+              <div className="text-[8px] font-bold text-white/60 uppercase tracking-wider mt-1">Défaites</div>
+            </div>
           </div>
         </div>
-        {canManage() && (
-          currentUserRole === 'admin+' ? (
-            <motion.button 
-              whileHover={!teamHasChampionship(selectedTeam) ? { scale: 1.05 } : {}} 
-              whileTap={!teamHasChampionship(selectedTeam) ? { scale: 0.95 } : {}}
-              onClick={() => { if (!teamHasChampionship(selectedTeam)) { setChampTeam(selectedTeam); setShowAddChamp(true); } }} 
-              disabled={teamHasChampionship(selectedTeam)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm",
-                teamHasChampionship(selectedTeam)
-                  ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                  : "bg-accent text-accent-foreground hover:bg-accent/90 shadow-sm"
-              )}
-            >
-              <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
-            </motion.button>
-          ) : (
-            <Popover>
-              <PopoverTrigger asChild>
-                <motion.button 
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium transition-all text-xs sm:text-sm bg-muted text-muted-foreground cursor-not-allowed opacity-60"
-                >
-                  <Plus size={16} /> <span className="hidden sm:inline">Nouveau</span>
-                </motion.button>
-              </PopoverTrigger>
-              <PopoverContent side="bottom" align="end" className="w-56 p-3 text-xs text-muted-foreground text-center">
-                🚧 Prévu dans l'app version jeune
-              </PopoverContent>
-            </Popover>
-          )
-        )}
       </motion.div>
 
       {/* ─── Team selector ─── */}
