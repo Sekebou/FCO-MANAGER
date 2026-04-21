@@ -900,9 +900,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400/90 to-amber-500/90 shadow-md shadow-amber-500/40">
                 <Flame size={11} className="text-primary" strokeWidth={3} />
-                <span className="text-[10px] font-black text-primary uppercase tracking-wider leading-none">Paris Live</span>
+                <span className="text-[10px] font-black text-primary uppercase tracking-wider leading-none">Centre des Paris</span>
               </div>
-              <span className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">FCO Bookmaker</span>
+              <span className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">FCO</span>
             </div>
             <button
               onClick={handleForceRefresh}
@@ -934,22 +934,22 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             </div>
           </div>
 
-          {/* Stats trio — premium glass cards */}
+          {/* Stats trio — premium glass cards (uniform) */}
           <div className="grid grid-cols-3 gap-2">
             <div className="relative bg-white/10 backdrop-blur-xl border border-white/15 rounded-xl px-2 py-2 text-center overflow-hidden">
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
               <div className="text-lg font-black text-white leading-none">{myBets.length}</div>
               <div className="text-[8px] font-bold text-white/60 uppercase tracking-wider mt-1">Total</div>
             </div>
-            <div className="relative bg-emerald-400/15 backdrop-blur-xl border border-emerald-300/25 rounded-xl px-2 py-2 text-center overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-200/60 to-transparent" />
-              <div className="text-lg font-black text-emerald-200 leading-none">{myWonBets.length}</div>
-              <div className="text-[8px] font-bold text-emerald-100/80 uppercase tracking-wider mt-1">Gagnés</div>
+            <div className="relative bg-white/10 backdrop-blur-xl border border-amber-200/30 rounded-xl px-2 py-2 text-center overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/60 to-transparent" />
+              <div className="text-lg font-black text-amber-200 leading-none">{myWonBets.length}</div>
+              <div className="text-[8px] font-bold text-white/70 uppercase tracking-wider mt-1">Gagnés</div>
             </div>
-            <div className="relative bg-rose-400/15 backdrop-blur-xl border border-rose-300/25 rounded-xl px-2 py-2 text-center overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-200/60 to-transparent" />
-              <div className="text-lg font-black text-rose-200 leading-none">{myLostBets.length}</div>
-              <div className="text-[8px] font-bold text-rose-100/80 uppercase tracking-wider mt-1">Perdus</div>
+            <div className="relative bg-white/10 backdrop-blur-xl border border-white/15 rounded-xl px-2 py-2 text-center overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              <div className="text-lg font-black text-white/80 leading-none">{myLostBets.length}</div>
+              <div className="text-[8px] font-bold text-white/60 uppercase tracking-wider mt-1">Perdus</div>
             </div>
           </div>
         </div>
