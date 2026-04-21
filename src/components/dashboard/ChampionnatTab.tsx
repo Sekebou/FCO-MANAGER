@@ -670,7 +670,7 @@ const ChampionnatTab: React.FC<Props> = ({
           {/* Title + équipe */}
           <div className="mb-4">
             <h2 className="text-2xl font-black text-white leading-none tracking-tight drop-shadow-md">
-              FCO Oisemont
+              FC Oisemont{selectedTeam === 'B' ? ' 2' : selectedTeam === 'C' ? ' 3' : ''}
             </h2>
             <p className="text-[11px] font-semibold text-white/70 uppercase tracking-[0.2em] mt-1.5">
               Équipe {selectedTeam} · Bilan saison
