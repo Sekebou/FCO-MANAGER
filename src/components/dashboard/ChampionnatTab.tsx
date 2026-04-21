@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import NativeDatePicker from '@/components/ui/native-date-picker';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import championnatHeroBg from '@/assets/championnat-hero-bg.jpg';
 import { 
   getEquipes, getAllCompetitions, getClassement, getResultats, getCalendrier,
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
