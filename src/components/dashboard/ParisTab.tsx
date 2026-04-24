@@ -1740,6 +1740,26 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                   </motion.div>
                 );
               })}
+
+              {/* Empty state */}
+              {settleCards.filter(({ bets: teamBets }) => settleSubTab === 'results'
+                ? teamBets.some(b => b.betType === 'match' || b.betType === 'exact_score')
+                : teamBets.some(b => b.betType === 'scorer')
+              ).length === 0 && (
+                <div className="text-center py-12 px-4 bg-card rounded-2xl border border-border">
+                  {settleSubTab === 'results' ? (
+                    <Gavel size={28} className="mx-auto text-muted-foreground/40 mb-3" />
+                  ) : (
+                    <Target size={28} className="mx-auto text-muted-foreground/40 mb-3" />
+                  )}
+                  <p className="text-sm font-bold text-foreground">
+                    Aucun pari {settleSubTab === 'results' ? 'résultat' : 'buteur'} en attente
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Les paris apparaîtront ici dès qu'un membre en placera un.
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
