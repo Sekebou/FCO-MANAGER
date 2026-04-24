@@ -1636,8 +1636,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             );
                           })()}
 
-                          {/* Scorer bets settlement */}
-                          {(() => {
+                          {/* Scorer bets settlement — uniquement en mode Buteurs */}
+                          {settleSubTab === 'scorers' && (() => {
                             const scorerBets = teamBets.filter(b => b.betType === 'scorer');
                             if (scorerBets.length === 0) return null;
                             const selectedIds = settleScorers[matchKey] || [];
