@@ -1561,7 +1561,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </p>
                           )}
 
-                          {/* Teams with logos + score inputs */}
+                          {/* Teams with logos (+ score inputs en mode Résultats) */}
                           <div className="flex items-center justify-center gap-3">
                             {/* Home */}
                             <div className="flex flex-col items-center gap-1.5 min-w-0 flex-1">
@@ -1575,32 +1575,36 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                               <span className="text-[10px] font-bold text-foreground text-center leading-tight line-clamp-2 max-w-[80px]">{homeName}</span>
                             </div>
 
-                            {/* Score inputs */}
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min="0"
-                                max="99"
-                                value={scores.home}
-                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
-                                className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
-                                placeholder="0"
-                                disabled={isSettling}
-                              />
-                              <span className="text-base font-black text-muted-foreground">-</span>
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min="0"
-                                max="99"
-                                value={scores.away}
-                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
-                                className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
-                                placeholder="0"
-                                disabled={isSettling}
-                              />
-                            </div>
+                            {settleSubTab === 'results' ? (
+                              /* Score inputs */
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min="0"
+                                  max="99"
+                                  value={scores.home}
+                                  onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
+                                  className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
+                                  placeholder="0"
+                                  disabled={isSettling}
+                                />
+                                <span className="text-base font-black text-muted-foreground">-</span>
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min="0"
+                                  max="99"
+                                  value={scores.away}
+                                  onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
+                                  className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
+                                  placeholder="0"
+                                  disabled={isSettling}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-xl font-black text-muted-foreground px-2">VS</span>
+                            )}
 
                             {/* Away */}
                             <div className="flex flex-col items-center gap-1.5 min-w-0 flex-1">
@@ -1615,8 +1619,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </div>
                           </div>
 
-                          {/* Settle button for match + exact_score bets */}
-                          {(() => {
+                          {/* Settle button for match + exact_score bets — uniquement en mode Résultats */}
+                          {settleSubTab === 'results' && (() => {
                             const matchBetsCount = teamBets.filter(b => b.betType === 'match' || b.betType === 'exact_score').length;
                             return (
                               <button
