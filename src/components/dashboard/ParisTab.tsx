@@ -579,6 +579,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [settleScorers, setSettleScorers] = useState<Record<string, string[]>>({}); // matchKey -> player_id[]
   const [settlingScorers, setSettlingScorers] = useState<string | null>(null);
   const [settlePlayersList, setSettlePlayersList] = useState<Record<string, { id: string; name: string; position: string }[]>>({});
+  const settlePlayersRequestedRef = useRef<Set<string>>(new Set());
 
   // Group pending bets by normalized match for settlement
   const pendingMatchGroups = useMemo(() => {
@@ -1577,11 +1578,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             const scorerBets = teamBets.filter(b => b.betType === 'scorer');
                             if (scorerBets.length === 0) return null;
                             const selectedIds = settleScorers[matchKey] || [];
-                            const uniqueScorers = [...new Map(scorerBets.map(b => [b.scorerPlayerId, { id: b.scorerPlayerId!, name: b.scorerPlayerName || '?' }])).values()];
+                            const uniqueScorers = [...new Map(scorerBets.map(b => [b.scorerPlayerId, { id: b.scorerPlayerId!, name: b.scorerPlayerName || '?', position: '' }])).values()];
                             const isScorerSettling = settlingScorers === matchKey;
 
-                            // Load players list for this match if not loaded
-                            if (!settlePlayersList[matchKey] && !isScorerSettling) {
+                            // Trigger one-time load of convocated players (deduped via ref to avoid re-fetch loop)
+                            if (!settlePlayersRequestedRef.current.has(matchKey) && match.date) {
+                              settlePlayersRequestedRef.current.add(matchKey);
                               const matchDateKey = normalizeDateKey(match.date);
                               supabase
                                 .from('events')
@@ -1591,28 +1593,39 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                 .eq('convocations_published', true)
                                 .limit(1)
                                 .then(({ data: events }) => {
-                                  if (events?.[0]?.convocations) {
-                                    const convos = events[0].convocations as Record<string, any>;
-                                    const playerIds = Object.entries(convos)
-                                      .filter(([, v]: [string, any]) => {
-                                        if (v === true || v === 'titulaire' || v === 'remplacant') return true;
-                                        if (v && typeof v === 'object') {
-                                          const s = v.status;
-                                          return s === 'convoque' || s === 'titulaire' || s === 'remplacant';
-                                        }
-                                        return false;
-                                      })
-                                      .map(([id]) => id);
-                                    if (playerIds.length > 0) {
-                                      supabase.from('players').select('id, name, position').in('id', playerIds).then(({ data: pData }) => {
-                                        if (pData) setSettlePlayersList(prev => ({ ...prev, [matchKey]: pData.map(p => ({ id: p.id, name: p.name, position: p.position || '' })) }));
-                                      });
-                                    }
+                                  if (!events?.[0]?.convocations) {
+                                    setSettlePlayersList(prev => ({ ...prev, [matchKey]: [] }));
+                                    return;
                                   }
+                                  const convos = events[0].convocations as Record<string, any>;
+                                  const playerIds = Object.entries(convos)
+                                    .filter(([, v]: [string, any]) => {
+                                      if (v === true || v === 'titulaire' || v === 'remplacant') return true;
+                                      if (v && typeof v === 'object') {
+                                        const s = v.status;
+                                        return s === 'convoque' || s === 'titulaire' || s === 'remplacant';
+                                      }
+                                      return false;
+                                    })
+                                    .map(([id]) => id);
+                                  if (playerIds.length === 0) {
+                                    setSettlePlayersList(prev => ({ ...prev, [matchKey]: [] }));
+                                    return;
+                                  }
+                                  supabase.from('players').select('id, name, position').in('id', playerIds).then(({ data: pData }) => {
+                                    setSettlePlayersList(prev => ({
+                                      ...prev,
+                                      [matchKey]: (pData || []).map(p => ({ id: p.id, name: p.name, position: p.position || '' })),
+                                    }));
+                                  });
                                 });
                             }
 
-                            const allPlayers = settlePlayersList[matchKey] || uniqueScorers.map(s => ({ ...s, position: '' }));
+                            // Always merge convocated players + parié-mais-non-convoqués pour ne jamais bloquer le règlement
+                            const convocatedList = settlePlayersList[matchKey] || [];
+                            const convocatedIds = new Set(convocatedList.map(p => p.id));
+                            const extraScorers = uniqueScorers.filter(s => s.id && !convocatedIds.has(s.id));
+                            const allPlayers = [...convocatedList, ...extraScorers];
 
                             return (
                               <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
