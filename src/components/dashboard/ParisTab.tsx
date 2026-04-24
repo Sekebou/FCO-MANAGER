@@ -574,6 +574,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   ];
 
   // Settlement state for admin+
+  const [settleSubTab, setSettleSubTab] = useState<'results' | 'scorers'>('results');
   const [settleScores, setSettleScores] = useState<Record<string, { home: string; away: string }>>({});
   const [settlingMatch, setSettlingMatch] = useState<string | null>(null);
   const [settleScorers, setSettleScorers] = useState<Record<string, string[]>>({}); // matchKey -> player_id[]
