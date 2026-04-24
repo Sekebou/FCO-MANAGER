@@ -828,12 +828,20 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
   const handleBetPlaced = useCallback((bet: BetPlacementPayload) => {
     setBets(prev => {
-      const alreadyExists = prev.some(existing =>
-        existing.userId === bet.userId &&
-        teamsLikelyMatch(existing.homeTeam, bet.homeTeam) &&
-        teamsLikelyMatch(existing.awayTeam, bet.awayTeam) &&
-        normalizeDateKey(existing.matchDate) === normalizeDateKey(bet.matchDate)
-      );
+      const incomingType = bet.betType || 'match';
+      const alreadyExists = prev.some(existing => {
+        if (existing.userId !== bet.userId) return false;
+        if (!teamsLikelyMatch(existing.homeTeam, bet.homeTeam)) return false;
+        if (!teamsLikelyMatch(existing.awayTeam, bet.awayTeam)) return false;
+        if (normalizeDateKey(existing.matchDate) !== normalizeDateKey(bet.matchDate)) return false;
+        const existingType = existing.betType || 'match';
+        if (existingType !== incomingType) return false;
+        // Pour les buteurs : doublon seulement si même joueur
+        if (incomingType === 'scorer') {
+          return (existing.scorerPlayerId || null) === (bet.scorerPlayerId || null);
+        }
+        return true;
+      });
 
       if (alreadyExists) return prev;
 
