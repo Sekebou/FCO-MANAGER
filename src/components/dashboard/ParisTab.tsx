@@ -574,6 +574,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   ];
 
   // Settlement state for admin+
+  const [settleSubTab, setSettleSubTab] = useState<'results' | 'scorers'>('results');
   const [settleScores, setSettleScores] = useState<Record<string, { home: string; away: string }>>({});
   const [settlingMatch, setSettlingMatch] = useState<string | null>(null);
   const [settleScorers, setSettleScorers] = useState<Record<string, string[]>>({}); // matchKey -> player_id[]
@@ -1449,15 +1450,73 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         {/* ═══ RÉGLER TAB (Admin+ only) ═══ */}
         {activeFilter === 'settle' && isAdminPlus && (
           <motion.div key="settle" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-            <div className="flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-xl p-3">
-              <Shield size={16} className="text-accent shrink-0" />
+            {/* Sub-tabs : Résultats / Buteurs */}
+            {(() => {
+              const resultsCount = allPendingBets.filter(b => b.betType === 'match' || b.betType === 'exact_score').length;
+              const scorersCount = allPendingBets.filter(b => b.betType === 'scorer').length;
+              return (
+                <div className="flex bg-secondary/50 rounded-xl p-1 border border-border/50">
+                  <button
+                    onClick={() => setSettleSubTab('results')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all",
+                      settleSubTab === 'results'
+                        ? "bg-accent text-accent-foreground shadow-sm"
+                        : "text-muted-foreground hover:bg-secondary"
+                    )}
+                  >
+                    <Gavel size={13} />
+                    Résultats
+                    {resultsCount > 0 && (
+                      <span className={cn(
+                        "text-[9px] font-black px-1.5 py-0.5 rounded-full",
+                        settleSubTab === 'results' ? "bg-accent-foreground/20 text-accent-foreground" : "bg-accent/15 text-accent"
+                      )}>{resultsCount}</span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setSettleSubTab('scorers')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all",
+                      settleSubTab === 'scorers'
+                        ? "bg-purple-600 text-white shadow-sm"
+                        : "text-muted-foreground hover:bg-secondary"
+                    )}
+                  >
+                    <Target size={13} />
+                    Buteurs
+                    {scorersCount > 0 && (
+                      <span className={cn(
+                        "text-[9px] font-black px-1.5 py-0.5 rounded-full",
+                        settleSubTab === 'scorers' ? "bg-white/25 text-white" : "bg-purple-500/15 text-purple-600 dark:text-purple-400"
+                      )}>{scorersCount}</span>
+                    )}
+                  </button>
+                </div>
+              );
+            })()}
+
+            <div className={cn(
+              "flex items-center gap-2 border rounded-xl p-3",
+              settleSubTab === 'results' ? "bg-accent/10 border-accent/20" : "bg-purple-500/10 border-purple-500/20"
+            )}>
+              <Shield size={16} className={cn("shrink-0", settleSubTab === 'results' ? "text-accent" : "text-purple-600")} />
               <p className="text-[11px] text-foreground font-medium">
-                Entre le score final de chaque match. Tous les paris associés seront réglés automatiquement.
+                {settleSubTab === 'results'
+                  ? "Entre le score final de chaque match — les paris Résultat & Score exact seront réglés."
+                  : "Coche les buteurs réels du match — les paris Buteur seront réglés indépendamment."}
               </p>
             </div>
 
             <div className="space-y-4">
-              {settleCards.map(({ team, loading: teamLoading, match, bets: teamBets, matchKey }) => {
+              {settleCards
+                .filter(({ bets: teamBets }) => {
+                  if (settleSubTab === 'results') {
+                    return teamBets.some(b => b.betType === 'match' || b.betType === 'exact_score');
+                  }
+                  return teamBets.some(b => b.betType === 'scorer');
+                })
+                .map(({ team, loading: teamLoading, match, bets: teamBets, matchKey }) => {
                 const scores = settleScores[matchKey] || { home: '', away: '' };
                 const isSettling = settlingMatch === matchKey;
                 const homeName = match ? getDisplayTeamName(match.home, team) : '';
@@ -1502,7 +1561,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </p>
                           )}
 
-                          {/* Teams with logos + score inputs */}
+                          {/* Teams with logos (+ score inputs en mode Résultats) */}
                           <div className="flex items-center justify-center gap-3">
                             {/* Home */}
                             <div className="flex flex-col items-center gap-1.5 min-w-0 flex-1">
@@ -1516,32 +1575,36 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                               <span className="text-[10px] font-bold text-foreground text-center leading-tight line-clamp-2 max-w-[80px]">{homeName}</span>
                             </div>
 
-                            {/* Score inputs */}
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min="0"
-                                max="99"
-                                value={scores.home}
-                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
-                                className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
-                                placeholder="0"
-                                disabled={isSettling}
-                              />
-                              <span className="text-base font-black text-muted-foreground">-</span>
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min="0"
-                                max="99"
-                                value={scores.away}
-                                onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
-                                className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
-                                placeholder="0"
-                                disabled={isSettling}
-                              />
-                            </div>
+                            {settleSubTab === 'results' ? (
+                              /* Score inputs */
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min="0"
+                                  max="99"
+                                  value={scores.home}
+                                  onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, home: e.target.value } }))}
+                                  className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
+                                  placeholder="0"
+                                  disabled={isSettling}
+                                />
+                                <span className="text-base font-black text-muted-foreground">-</span>
+                                <input
+                                  type="number"
+                                  inputMode="numeric"
+                                  min="0"
+                                  max="99"
+                                  value={scores.away}
+                                  onChange={e => setSettleScores(prev => ({ ...prev, [matchKey]: { ...scores, away: e.target.value } }))}
+                                  className="w-12 h-12 rounded-xl bg-background border-2 border-border text-center text-lg font-black text-foreground focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
+                                  placeholder="0"
+                                  disabled={isSettling}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-xl font-black text-muted-foreground px-2">VS</span>
+                            )}
 
                             {/* Away */}
                             <div className="flex flex-col items-center gap-1.5 min-w-0 flex-1">
@@ -1556,8 +1619,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             </div>
                           </div>
 
-                          {/* Settle button for match + exact_score bets */}
-                          {(() => {
+                          {/* Settle button for match + exact_score bets — uniquement en mode Résultats */}
+                          {settleSubTab === 'results' && (() => {
                             const matchBetsCount = teamBets.filter(b => b.betType === 'match' || b.betType === 'exact_score').length;
                             return (
                               <button
@@ -1573,8 +1636,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             );
                           })()}
 
-                          {/* Scorer bets settlement */}
-                          {(() => {
+                          {/* Scorer bets settlement — uniquement en mode Buteurs */}
+                          {settleSubTab === 'scorers' && (() => {
                             const scorerBets = teamBets.filter(b => b.betType === 'scorer');
                             if (scorerBets.length === 0) return null;
                             const selectedIds = settleScorers[matchKey] || [];
@@ -1677,6 +1740,26 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                   </motion.div>
                 );
               })}
+
+              {/* Empty state */}
+              {settleCards.filter(({ bets: teamBets }) => settleSubTab === 'results'
+                ? teamBets.some(b => b.betType === 'match' || b.betType === 'exact_score')
+                : teamBets.some(b => b.betType === 'scorer')
+              ).length === 0 && (
+                <div className="text-center py-12 px-4 bg-card rounded-2xl border border-border">
+                  {settleSubTab === 'results' ? (
+                    <Gavel size={28} className="mx-auto text-muted-foreground/40 mb-3" />
+                  ) : (
+                    <Target size={28} className="mx-auto text-muted-foreground/40 mb-3" />
+                  )}
+                  <p className="text-sm font-bold text-foreground">
+                    Aucun pari {settleSubTab === 'results' ? 'résultat' : 'buteur'} en attente
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Les paris apparaîtront ici dès qu'un membre en placera un.
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
