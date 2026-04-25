@@ -1330,25 +1330,41 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                 .limit(1);
                               if (events?.[0]?.convocations) {
                                 const convos = events[0].convocations as Record<string, any>;
-                                const playerIds = Object.entries(convos)
-                                  .filter(([, v]: [string, any]) => {
-                                    if (v === true || v === 'titulaire' || v === 'remplacant') return true;
-                                    if (v && typeof v === 'object') {
-                                      const s = v.status;
-                                      return s === 'convoque' || s === 'titulaire' || s === 'remplacant';
-                                    }
-                                    return false;
-                                  })
-                                  .map(([id]) => id);
-                                if (playerIds.length > 0) {
+                                const convocatedEntries = Object.entries(convos).filter(([, v]: [string, any]) => {
+                                  if (v === true || v === 'titulaire' || v === 'remplacant') return true;
+                                  if (v && typeof v === 'object') {
+                                    const s = v.status;
+                                    return s === 'convoque' || s === 'titulaire' || s === 'remplacant';
+                                  }
+                                  return false;
+                                });
+
+                                // Séparer joueurs virtuels (nom dans convocations) et joueurs réels (UUID → table players)
+                                const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                                const realIds: string[] = [];
+                                const virtualPlayers: { id: string; name: string; position: string }[] = [];
+                                for (const [id, val] of convocatedEntries) {
+                                  if (UUID_RE.test(id)) {
+                                    realIds.push(id);
+                                  } else {
+                                    const v = val as any;
+                                    const name = (v && typeof v === 'object' && v.virtualName) ? String(v.virtualName) : 'Joueur';
+                                    virtualPlayers.push({ id, name, position: 'Non défini' });
+                                  }
+                                }
+
+                                if (realIds.length > 0) {
                                   const { data: pData } = await supabase
                                     .from('players')
                                     .select('id, name, position')
-                                    .in('id', playerIds);
+                                    .in('id', realIds);
                                   if (pData) players = pData.map(p => ({ id: p.id, name: p.name, position: p.position || 'Non défini' }));
                                 }
+                                players = [...players, ...virtualPlayers];
                               }
-                            } catch {}
+                            } catch (err) {
+                              console.error('[ParisTab] Erreur chargement convocations:', err);
+                            }
                             setConvocatedPlayers(players);
                             setBetModal({
                               home: homeName,
