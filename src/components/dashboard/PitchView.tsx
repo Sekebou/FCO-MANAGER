@@ -627,7 +627,9 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         {positioned.map((p, idx) => {
           const isSelected = selectedPlayer === p.id;
           const isGk = (p.conv.position || getDefaultPositionFromNumber(p.conv.number)) === 'Gardien';
-          const lastName = p.name.split(' ').pop() || p.name;
+          const nameParts = p.name.trim().split(/\s+/);
+          const firstName = nameParts.length > 1 ? nameParts[0] : '';
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : p.name;
           // Scale Y coordinates to the field portion only
           const scaledY = substitutePlayers.length > 0 ? p.y * 0.85 : p.y;
 
@@ -659,6 +661,14 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     >
                       {lastName}
                     </span>
+                    {firstName && (
+                      <span
+                        className="w-full truncate text-center text-[7px] font-medium leading-none text-white/75"
+                        style={{ marginTop: '1px', letterSpacing: '0.02em' }}
+                      >
+                        {firstName}
+                      </span>
+                    )}
                   </>
                 )}
               </DraggablePlayer>
@@ -693,6 +703,14 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                 >
                   {lastName}
                 </span>
+                {firstName && (
+                  <span
+                    className="w-full truncate text-center text-[7px] font-medium leading-none text-white/75"
+                    style={{ marginTop: '1px', letterSpacing: '0.02em' }}
+                  >
+                    {firstName}
+                  </span>
+                )}
               </motion.div>
             </div>
           );
@@ -709,7 +727,9 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             <div className="flex flex-wrap justify-center gap-2 px-2">
               {substitutePlayers.map((p, idx) => {
                 const isGk = (p.conv.position || getDefaultPositionFromNumber(p.conv.number)) === 'Gardien';
-                const lastName = p.name.split(' ').pop() || p.name;
+                const subNameParts = p.name.trim().split(/\s+/);
+                const subFirstName = subNameParts.length > 1 ? subNameParts[0] : '';
+                const lastName = subNameParts.length > 1 ? subNameParts.slice(1).join(' ') : p.name;
                 return (
                   <motion.div
                     key={p.id}
@@ -762,6 +782,14 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     >
                       {lastName}
                     </span>
+                    {subFirstName && (
+                      <span
+                        className="w-full truncate text-center text-[6px] font-medium leading-none text-muted-foreground"
+                        style={{ marginTop: '1px', letterSpacing: '0.02em' }}
+                      >
+                        {subFirstName}
+                      </span>
+                    )}
                   </motion.div>
                 );
               })}
