@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Trophy, ChevronRight, Target, Hash, User } from 'lucide-react';
+import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Trophy, ChevronRight, Target, Hash, User, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -135,6 +135,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [loading, setLoading] = useState(false);
   const [activeBetsCount, setActiveBetsCount] = useState(0);
   const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
+  const [scorerLimitOpen, setScorerLimitOpen] = useState(false);
 
   // Scorer state
   const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
@@ -243,7 +244,10 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
 
       if (error) {
         const msg = error.message || 'Erreur lors du pari';
-        if (msg.includes('déjà')) {
+        if (msg.includes('Limite atteinte') || msg.toLowerCase().includes('3 paris buteur')) {
+          setScorerLimitOpen(true);
+        }
+        else if (msg.includes('déjà')) {
           if (betType === 'scorer' && selectedScorer) {
             toast.error(`Tu as déjà parié sur ${selectedScorer.name} comme buteur`);
           } else if (betType === 'exact_score') {
@@ -680,6 +684,48 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                   <button
                     onClick={() => setScorerInfoOpen(false)}
                     className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-bold hover:brightness-110 active:scale-[0.98] transition-all"
+                  >
+                    Compris
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Sub-modal: limite 3 paris buteur atteinte */}
+        <AnimatePresence>
+          {scorerLimitOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+              onClick={() => setScorerLimitOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-xs rounded-2xl border border-amber-500/30 bg-card shadow-2xl overflow-hidden"
+              >
+                <div className="bg-gradient-to-br from-amber-500/15 via-amber-500/10 to-amber-500/15 px-5 pt-5 pb-4 flex flex-col items-center text-center">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30 mb-3">
+                    <AlertTriangle size={22} className="text-white" strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-[15px] font-black text-foreground leading-tight">
+                    Limite atteinte
+                  </h3>
+                  <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                    Il est impossible de parier sur plus de <span className="font-bold text-foreground">3 buteurs</span> par match. Tu as atteint la limite pour cette rencontre.
+                  </p>
+                </div>
+                <div className="p-3">
+                  <button
+                    onClick={() => setScorerLimitOpen(false)}
+                    className="w-full py-2.5 rounded-xl bg-amber-500 text-white text-[13px] font-bold hover:brightness-110 active:scale-[0.98] transition-all"
                   >
                     Compris
                   </button>
