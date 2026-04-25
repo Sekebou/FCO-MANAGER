@@ -705,8 +705,25 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
           </div>
         )}
 
-        {/* Presences list — collapsible (collapsed by default when convocations published) */}
+        {/* Presences list — collapsible. Hidden when convocations published & event not past (cleaner read).
+            Staff can still expand it via a discreet toggle. Re-shown automatically once event is past (archive). */}
         {!isConvocationMode && (() => {
+          const responsesKey = `responses_${event.id}`;
+          const stored = expandedPlayers[responsesKey] as unknown as string | undefined;
+          const hideByDefault = !!event.convocationsPublished && !isEventPast(event);
+          // If hidden by default, only show if user explicitly opened it
+          if (hideByDefault && stored !== 'open') {
+            // Discreet "Voir toutes les réponses" toggle for staff/curious users
+            return (
+              <button
+                onClick={() => setExpandedPlayers(prev => ({ ...prev, [responsesKey]: 'open' as unknown as boolean }))}
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold text-muted-foreground/70 hover:text-foreground transition-colors"
+              >
+                <Users size={12} /> Voir toutes les réponses des joueurs
+              </button>
+            );
+          }
+          return (() => {
           const responsesKey = `responses_${event.id}`;
           const isCollapsibleByDefault = !!event.convocationsPublished;
           const stored = expandedPlayers[responsesKey] as unknown as string | undefined;
