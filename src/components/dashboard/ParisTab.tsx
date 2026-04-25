@@ -66,15 +66,33 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; co
 const BASE_TEAMS = ['A', 'B', 'C'];
 
 function getBetLabel(bet: Bet): string {
-  if (bet.betType === 'scorer') return `⚽ ${bet.scorerPlayerName || '?'}`;
-  if (bet.betType === 'exact_score') return `📊 ${bet.predictedScoreHome ?? 0}-${bet.predictedScoreAway ?? 0}`;
+  if (bet.betType === 'scorer') return bet.scorerPlayerName || '?';
+  if (bet.betType === 'exact_score') return `${bet.predictedScoreHome ?? 0} - ${bet.predictedScoreAway ?? 0}`;
   return bet.prediction === 'home' ? bet.homeTeam : bet.prediction === 'away' ? bet.awayTeam : 'Nul';
 }
 
-function getBetTypeTag(betType: string): { label: string; color: string } {
-  if (betType === 'scorer') return { label: 'Buteur', color: 'text-purple-500 bg-purple-500/10' };
-  if (betType === 'exact_score') return { label: 'Score', color: 'text-blue-500 bg-blue-500/10' };
-  return { label: 'Résultat', color: 'text-accent bg-accent/10' };
+function getBetTypeTag(betType: string): { label: string; icon: React.ElementType; iconColor: string; iconBg: string; tagColor: string } {
+  if (betType === 'scorer') return {
+    label: 'Buteur',
+    icon: Target,
+    iconColor: 'text-purple-500',
+    iconBg: 'bg-purple-500/10',
+    tagColor: 'text-purple-600 dark:text-purple-400 bg-purple-500/10',
+  };
+  if (betType === 'exact_score') return {
+    label: 'Score',
+    icon: BarChart3,
+    iconColor: 'text-blue-500',
+    iconBg: 'bg-blue-500/10',
+    tagColor: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+  };
+  return {
+    label: 'Résultat',
+    icon: Trophy,
+    iconColor: 'text-accent',
+    iconBg: 'bg-accent/10',
+    tagColor: 'text-accent bg-accent/10',
+  };
 }
 
 function buildLocationLink(terrain?: { city?: string; name?: string }) {
