@@ -837,6 +837,99 @@ const ConvocationWizard: React.FC<Props> = ({
         </div>
       </motion.div>
     </motion.div>
+
+    {/* Modal d'avertissement joueur sans compte */}
+    <AnimatePresence>
+      {virtualWarningOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-foreground/70 backdrop-blur-md z-[90] flex items-center justify-center p-4"
+          onClick={() => setVirtualWarningOpen(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="bg-card border-2 border-destructive/50 rounded-3xl shadow-2xl shadow-destructive/30 max-w-sm w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bandeau rouge */}
+            <div className="bg-destructive px-5 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-destructive-foreground/20 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={22} className="text-destructive-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-destructive-foreground text-base font-extrabold leading-tight">
+                  Joueur sans compte
+                </h3>
+                <p className="text-destructive-foreground/80 text-[11px] font-medium">
+                  À lire avant de continuer
+                </p>
+              </div>
+            </div>
+
+            {/* Contenu */}
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-sm text-foreground leading-relaxed">
+                Ce joueur sera ajouté <span className="font-bold">uniquement</span> à :
+              </p>
+              <ul className="space-y-1.5 text-[13px] text-foreground/90">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 font-bold mt-0.5">✓</span>
+                  <span>la <b>feuille de match</b></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-500 font-bold mt-0.5">✓</span>
+                  <span>les <b>paris buteurs</b></span>
+                </li>
+              </ul>
+
+              <div className="h-px bg-border my-2" />
+
+              <p className="text-sm text-foreground leading-relaxed">
+                Il <span className="font-bold">ne comptera pas</span> pour :
+              </p>
+              <ul className="space-y-1.5 text-[13px] text-muted-foreground">
+                <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✗</span><span>les statistiques</span></li>
+                <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✗</span><span>les présences / classement</span></li>
+                <li className="flex items-start gap-2"><span className="text-destructive font-bold mt-0.5">✗</span><span>les notifications push</span></li>
+              </ul>
+
+              <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 flex items-start gap-2">
+                <Bell size={14} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-[12px] text-amber-700 dark:text-amber-300 leading-snug">
+                  <b>Pensez à lui faire créer un compte</b> ensuite — son vrai profil prendra alors le relais pour les stats, paris et compos.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="px-5 pb-5 pt-1 flex gap-2">
+              <button
+                onClick={() => setVirtualWarningOpen(false)}
+                className="flex-1 h-11 rounded-xl bg-muted text-foreground text-sm font-bold hover:bg-muted/70 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  setVirtualWarningOpen(false);
+                  setVirtualFormOpen(true);
+                  setTimeout(() => virtualNameInputRef.current?.focus(), 100);
+                }}
+                className="flex-1 h-11 rounded-xl bg-destructive text-destructive-foreground text-sm font-extrabold hover:bg-destructive/90 transition-colors shadow-lg shadow-destructive/30"
+              >
+                J'ai compris
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 };
 
