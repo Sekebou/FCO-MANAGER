@@ -134,6 +134,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeBetsCount, setActiveBetsCount] = useState(0);
+  const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
 
   // Scorer state
   const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
