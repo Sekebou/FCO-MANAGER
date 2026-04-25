@@ -18,8 +18,8 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
     exp: now + 3600,
   };
 
-  const encodedHeader = base64url(new TextEncoder().encode(JSON.stringify(header)));
-  const encodedPayload = base64url(new TextEncoder().encode(JSON.stringify(payload)));
+  const encodedHeader = base64url(new TextEncoder().encode(JSON.stringify(header)).buffer as ArrayBuffer);
+  const encodedPayload = base64url(new TextEncoder().encode(JSON.stringify(payload)).buffer as ArrayBuffer);
   const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
   const pemContent = serviceAccount.private_key
