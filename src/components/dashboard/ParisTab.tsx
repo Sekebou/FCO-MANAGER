@@ -282,6 +282,44 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     });
   }, [bets]);
 
+  // Load matches with published convocations (= scorer bets open)
+  useEffect(() => {
+    const fetchOpenScorerMatches = async () => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data } = await supabase
+        .from('events')
+        .select('id, team, title, date')
+        .eq('type', 'match')
+        .eq('convocations_published', true)
+        .gte('date', todayStart.toISOString())
+        .order('date', { ascending: true })
+        .limit(10);
+      if (!data) return;
+      // Parse "Home vs Away" or "Home - Away" from title
+      const parsed = data
+        .filter((e: any) => e.team)
+        .map((e: any) => {
+          const m = String(e.title || '').match(/^(.+?)\s+(?:vs|VS|-)\s+(.+)$/);
+          return {
+            id: e.id,
+            team: e.team,
+            homeTeam: m?.[1]?.trim() || e.title,
+            awayTeam: m?.[2]?.trim() || '',
+            date: e.date,
+          };
+        })
+        .filter(e => e.awayTeam);
+      setScorerOpenMatches(parsed);
+    };
+    fetchOpenScorerMatches();
+
+    const channel = supabase.channel('paris-scorer-open')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, fetchOpenScorerMatches)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const loadTeamFFFData = useCallback(async (team: string, forceRefresh = false) => {
