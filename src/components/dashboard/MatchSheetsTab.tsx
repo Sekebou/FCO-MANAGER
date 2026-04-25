@@ -1140,19 +1140,32 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       </div>
                     )}
 
-                    {/* Étape 2 — Nom */}
+                    {/* Étape 2 — Prénom + Nom */}
                     {virtualStep === 'name' && (
                       <div className="px-5 py-4 space-y-3">
-                        <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide">Nom du joueur</label>
-                        <input
-                          value={addCustomName}
-                          onChange={e => setAddCustomName(e.target.value)}
-                          placeholder="Prénom Nom"
-                          className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                          style={{ fontSize: '16px' }}
-                          autoFocus
-                          maxLength={50}
-                        />
+                        <div>
+                          <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Prénom</label>
+                          <input
+                            value={virtualFirstName}
+                            onChange={e => setVirtualFirstName(e.target.value)}
+                            placeholder="Ex: Karim"
+                            className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            style={{ fontSize: '16px' }}
+                            autoFocus
+                            maxLength={30}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Nom</label>
+                          <input
+                            value={virtualLastName}
+                            onChange={e => setVirtualLastName(e.target.value)}
+                            placeholder="Ex: Benzema"
+                            className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            style={{ fontSize: '16px' }}
+                            maxLength={30}
+                          />
+                        </div>
                         <div className="flex gap-2 pt-1">
                           <button
                             onClick={() => setVirtualStep('warning')}
@@ -1162,10 +1175,14 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                           </button>
                           <button
                             onClick={() => {
-                              if (!addCustomName.trim()) { toast.error('Entrez un nom'); return; }
+                              const fn = virtualFirstName.trim();
+                              const ln = virtualLastName.trim();
+                              if (!fn) { toast.error('Entrez un prénom'); return; }
+                              if (!ln) { toast.error('Entrez un nom'); return; }
+                              setAddCustomName(`${fn} ${ln}`);
                               setVirtualStep('number');
                             }}
-                            disabled={!addCustomName.trim()}
+                            disabled={!virtualFirstName.trim() || !virtualLastName.trim()}
                             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all"
                           >
                             Suivant
