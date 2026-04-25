@@ -1,0 +1,1 @@
+ALTER TABLE public.fcm_tokens ADD COLUMN IF NOT EXISTS app_version TEXT;

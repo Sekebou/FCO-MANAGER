@@ -560,6 +560,7 @@ export type Database = {
       }
       fcm_tokens: {
         Row: {
+          app_version: string | null
           id: string
           platform: string | null
           token: string
@@ -567,6 +568,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          app_version?: string | null
           id?: string
           platform?: string | null
           token: string
@@ -574,6 +576,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          app_version?: string | null
           id?: string
           platform?: string | null
           token?: string
