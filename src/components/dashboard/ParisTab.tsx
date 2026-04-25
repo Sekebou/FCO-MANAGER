@@ -1354,14 +1354,46 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
                               {/* Détail des paris pour soi-même */}
                               {isMe && group.bets.length > 0 && (
-                                <div className="mt-2.5 pt-2.5 border-t border-border/60 space-y-1.5">
+                                <div className="mt-3 pt-3 border-t border-border/60 space-y-1.5">
                                   {group.bets.map(bet => {
                                     const tag = getBetTypeTag(bet.betType);
+                                    const TagIcon = tag.icon;
+                                    const potential = Math.round(bet.amount * bet.odds);
                                     return (
-                                      <div key={bet.id} className="flex items-center gap-2 text-[10px]">
-                                        <span className={`shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${tag.color}`}>{tag.label}</span>
-                                        <span className="flex-1 min-w-0 truncate text-foreground font-medium">{getBetLabel(bet)}</span>
-                                        <span className="shrink-0 text-muted-foreground">×{bet.odds} · {bet.amount}pts</span>
+                                      <div
+                                        key={bet.id}
+                                        className="flex items-center gap-2.5 bg-secondary/40 hover:bg-secondary/60 transition-colors rounded-lg px-2.5 py-2"
+                                      >
+                                        {/* Icône type de pari */}
+                                        <div className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${tag.iconBg}`}>
+                                          <TagIcon size={14} className={tag.iconColor} strokeWidth={2.5} />
+                                        </div>
+
+                                        {/* Label + valeur */}
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5">
+                                            <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md ${tag.tagColor}`}>
+                                              {tag.label}
+                                            </span>
+                                          </div>
+                                          <div className="text-[11px] font-semibold text-foreground truncate mt-0.5">
+                                            {getBetLabel(bet)}
+                                          </div>
+                                        </div>
+
+                                        {/* Mise & gain */}
+                                        <div className="shrink-0 flex flex-col items-end leading-tight">
+                                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                            <Coins size={10} className="text-amber-500" />
+                                            <span className="font-semibold text-foreground">{bet.amount}</span>
+                                            <span className="text-muted-foreground">·</span>
+                                            <span>×{bet.odds}</span>
+                                          </div>
+                                          <div className="flex items-center gap-0.5 text-[10px] font-black text-emerald-500 mt-0.5">
+                                            <TrendingUp size={9} strokeWidth={3} />
+                                            {potential}
+                                          </div>
+                                        </div>
                                       </div>
                                     );
                                   })}
