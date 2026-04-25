@@ -1376,6 +1376,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         </motion.button>
                       )}
 
+                      {/* Bets locked indicator (kickoff +5min passed) */}
+                      {currentUser && betsLocked && !alreadyBet && (
+                        <div className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 py-2.5 text-[11px] font-semibold text-muted-foreground">
+                          <Clock size={12} />
+                          <span>Paris fermés — match en cours</span>
+                        </div>
+                      )}
+
                       {/* Location */}
                       {locationLabel && (
                         <div className="mt-2.5 flex items-center justify-center gap-1">
