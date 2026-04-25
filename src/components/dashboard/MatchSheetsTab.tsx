@@ -880,6 +880,132 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
           />
         )}
       </AnimatePresence>
+
+      {/* Add Player Modal — bottom-sheet */}
+      <AnimatePresence>
+        {addModal && (() => {
+          const sheet = localSheets.find(s => s.id === addModal.sheetId);
+          const convokedIds = sheet ? Object.keys(sheet.convocations).filter(id => sheet.convocations[id]?.status === 'convoque') : [];
+          const q = addSearch.toLowerCase().trim();
+          const available = players
+            .filter(p => !convokedIds.includes(p.id))
+            .filter(p => !q || p.name.toLowerCase().includes(q))
+            .sort((a, b) => a.name.localeCompare(b.name));
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+              onClick={() => setAddModal(null)}
+            >
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
+                style={{ maxHeight: '70vh' }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex justify-center pt-2 pb-1">
+                  <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+                </div>
+                <div className="flex items-center justify-between px-5 py-2 border-b border-border">
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Ajouter un joueur</h3>
+                    <p className="text-[10px] text-muted-foreground">Convoque un joueur supplémentaire</p>
+                  </div>
+                  <button onClick={() => setAddModal(null)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                    <X size={16} className="text-muted-foreground" />
+                  </button>
+                </div>
+
+                <div className="flex gap-1.5 px-5 pt-3">
+                  <button
+                    onClick={() => setAddMode('list')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+                  >
+                    Joueur inscrit
+                  </button>
+                  <button
+                    onClick={() => setAddMode('custom')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+                  >
+                    Nom libre
+                  </button>
+                </div>
+
+                {addMode === 'list' ? (
+                  <>
+                    <div className="px-5 pt-3">
+                      <div className="relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          value={addSearch}
+                          onChange={e => setAddSearch(e.target.value)}
+                          placeholder="Rechercher un joueur..."
+                          className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          style={{ fontSize: '16px' }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-3 space-y-0.5">
+                      {available.length === 0 ? (
+                        <p className="text-center text-xs text-muted-foreground py-6">
+                          {q ? 'Aucun joueur trouvé' : 'Aucun joueur disponible'}
+                        </p>
+                      ) : (
+                        available.map(p => (
+                          <button
+                            key={p.id}
+                            onClick={() => handleAddPlayerToSheet(addModal.sheetId, p.id, p.name, false)}
+                            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-colors text-left"
+                          >
+                            <span className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-black text-primary shrink-0">
+                              {p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{(p as any).position || 'Non défini'}</p>
+                            </div>
+                            <UserPlus size={14} className="text-muted-foreground/50 shrink-0" />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="px-5 py-4 space-y-3">
+                    <p className="text-xs text-muted-foreground">Entrez le nom du joueur (même sans compte)</p>
+                    <input
+                      value={addCustomName}
+                      onChange={e => setAddCustomName(e.target.value)}
+                      placeholder="Prénom Nom"
+                      className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      style={{ fontSize: '16px' }}
+                      autoFocus
+                      maxLength={50}
+                    />
+                    <button
+                      onClick={() => {
+                        const name = addCustomName.trim();
+                        if (!name) { toast.error('Entrez un nom'); return; }
+                        const virtualId = `virtual_${Date.now()}`;
+                        handleAddPlayerToSheet(addModal.sheetId, virtualId, name, true);
+                      }}
+                      disabled={!addCustomName.trim()}
+                      className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all"
+                    >
+                      Ajouter à la feuille
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 };
