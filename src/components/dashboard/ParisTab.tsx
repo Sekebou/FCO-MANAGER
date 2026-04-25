@@ -61,6 +61,7 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; co
   pending: { icon: Clock, label: 'En cours', color: 'text-amber-500', bg: 'bg-amber-500/10' },
   won: { icon: CheckCircle2, label: 'Gagné', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   lost: { icon: XCircle, label: 'Perdu', color: 'text-destructive', bg: 'bg-destructive/10' },
+  refunded: { icon: RotateCcw, label: 'Remboursé', color: 'text-sky-500', bg: 'bg-sky-500/10' },
 };
 
 const BASE_TEAMS = ['A', 'B', 'C'];
