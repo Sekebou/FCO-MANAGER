@@ -281,6 +281,23 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   const [virtualNumber, setVirtualNumber] = useState<string>('');
   const [virtualFirstName, setVirtualFirstName] = useState<string>('');
   const [virtualLastName, setVirtualLastName] = useState<string>('');
+  // Suivi du clavier virtuel (mobile) pour empêcher la modale de passer sous le clavier
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const inset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
+      setKeyboardInset(inset);
+    };
+    onResize();
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    return () => {
+      vv.removeEventListener('resize', onResize);
+      vv.removeEventListener('scroll', onResize);
+    };
+  }, []);
   useBodyScrollLock(!!swapModal || !!addModal);
 
   // Helper: keep events.convocations in sync with the match sheet + update publisher info so
@@ -1000,6 +1017,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+              style={{ paddingBottom: keyboardInset ? `${keyboardInset}px` : undefined }}
               onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); setVirtualFirstName(''); setVirtualLastName(''); }}
             >
               <motion.div
@@ -1008,7 +1026,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                 className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
-                style={{ maxHeight: '70vh' }}
+                style={{ maxHeight: keyboardInset ? `calc(100vh - ${keyboardInset}px - 1rem)` : '70vh' }}
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex justify-center pt-2 pb-1">
