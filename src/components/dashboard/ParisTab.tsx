@@ -1189,25 +1189,30 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         {nextMatch.time ? ` • ${nextMatch.time}` : ''}
                       </p>
 
-                      {/* Bets count */}
-                      {matchBets.length > 0 && (
-                        <div className="mb-3 flex items-center justify-center gap-2">
-                          <div className="flex -space-x-1.5">
-                            {matchBets.slice(0, 4).map(bet => (
-                              profilePhotos[bet.userId] ? (
-                                <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="h-5 w-5 rounded-full object-cover ring-2 ring-card" />
-                              ) : (
-                                <div key={bet.id} className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[7px] font-bold text-muted-foreground ring-2 ring-card">
-                                  {bet.userName.charAt(0).toUpperCase()}
-                                </div>
-                              )
-                            ))}
+                      {/* Bets count — un parieur unique compte pour 1, peu importe son nombre de paris */}
+                      {matchBets.length > 0 && (() => {
+                        const uniqueBettors = Array.from(
+                          new Map(matchBets.map(b => [b.userId, b])).values()
+                        );
+                        return (
+                          <div className="mb-3 flex items-center justify-center gap-2">
+                            <div className="flex -space-x-1.5">
+                              {uniqueBettors.slice(0, 4).map(bet => (
+                                profilePhotos[bet.userId] ? (
+                                  <img key={bet.userId} src={profilePhotos[bet.userId]!} alt="" className="h-5 w-5 rounded-full object-cover ring-2 ring-card" />
+                                ) : (
+                                  <div key={bet.userId} className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[7px] font-bold text-muted-foreground ring-2 ring-card">
+                                    {bet.userName.charAt(0).toUpperCase()}
+                                  </div>
+                                )
+                              ))}
+                            </div>
+                            <span className="text-[10px] font-semibold text-muted-foreground">
+                              {uniqueBettors.length} parieur{uniqueBettors.length > 1 ? 's' : ''} en cours
+                            </span>
                           </div>
-                          <span className="text-[10px] font-semibold text-muted-foreground">
-                            {matchBets.length} pari{matchBets.length > 1 ? 's' : ''} en cours
-                          </span>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Bet button — compact */}
                       {currentUser && !live && !waiting && (
