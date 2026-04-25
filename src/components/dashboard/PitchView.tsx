@@ -320,6 +320,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [editMode, setEditMode] = useState(false);
   const [compoMenuOpen, setCompoMenuOpen] = useState(false);
   const [compoAction, setCompoAction] = useState<null | 'swap' | 'remove'>(null);
+  const [renumberOpen, setRenumberOpen] = useState(false);
   const swapPickMode = compoAction === 'swap';
   const removePickMode = compoAction === 'remove';
   useBodyScrollLock(compoMenuOpen || swapPickMode || removePickMode || renumberOpen);
@@ -328,7 +329,6 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const saveTimestampRef = useRef(0);
   const pitchContainerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const [renumberOpen, setRenumberOpen] = useState(false);
 
   // Track container width for accurate popup positioning
   useEffect(() => {
