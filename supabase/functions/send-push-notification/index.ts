@@ -19,8 +19,8 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
     exp: now + 3600,
   };
 
-  const encodedHeader = base64url(new TextEncoder().encode(JSON.stringify(header)));
-  const encodedPayload = base64url(new TextEncoder().encode(JSON.stringify(payload)));
+  const encodedHeader = base64url(new TextEncoder().encode(JSON.stringify(header)).buffer as ArrayBuffer);
+  const encodedPayload = base64url(new TextEncoder().encode(JSON.stringify(payload)).buffer as ArrayBuffer);
   const unsignedToken = `${encodedHeader}.${encodedPayload}`;
 
   // Import the private key
@@ -45,7 +45,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
     new TextEncoder().encode(unsignedToken)
   );
 
-  const encodedSignature = base64url(new Uint8Array(signature));
+  const encodedSignature = base64url(signature as ArrayBuffer);
   const jwt = `${unsignedToken}.${encodedSignature}`;
 
   // Exchange JWT for access token

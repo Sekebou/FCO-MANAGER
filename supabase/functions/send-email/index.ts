@@ -45,7 +45,7 @@ const e = React.createElement;
 
 const Spacer = ({ h = 24 }: { h?: number }) => e("div", { style: { height: `${h}px` } });
 
-const EmailShell = ({ preview, children }: { preview: string; children: React.ReactNode }) =>
+const EmailShell = ({ preview, children }: { preview: string; children?: React.ReactNode }) =>
   e("html", null,
     e("head", null,
       e("meta", { charSet: "utf-8" }),
