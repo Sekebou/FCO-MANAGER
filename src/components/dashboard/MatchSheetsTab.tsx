@@ -772,6 +772,20 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                             <div className="text-center py-8">
                               <Users size={32} className="mx-auto text-muted-foreground/50 mb-2" />
                               <p className="text-sm text-muted-foreground">Aucun joueur convoqué</p>
+                              {isManager && (
+                                <button
+                                  onClick={() => {
+                                    setAddModal({ sheetId: ms.id });
+                                    setAddSearch('');
+                                    setAddCustomName('');
+                                    setAddMode('list');
+                                  }}
+                                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                                >
+                                  <UserPlus size={12} />
+                                  Ajouter un joueur
+                                </button>
+                              )}
                             </div>
                           )}
 
