@@ -244,7 +244,10 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
 
       if (error) {
         const msg = error.message || 'Erreur lors du pari';
-        if (msg.includes('déjà')) {
+        if (msg.includes('Limite atteinte') || msg.toLowerCase().includes('3 paris buteur')) {
+          setScorerLimitOpen(true);
+        }
+        else if (msg.includes('déjà')) {
           if (betType === 'scorer' && selectedScorer) {
             toast.error(`Tu as déjà parié sur ${selectedScorer.name} comme buteur`);
           } else if (betType === 'exact_score') {
