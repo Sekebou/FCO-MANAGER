@@ -755,7 +755,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             // Determine if this is a substitute (no x/y from positioned)
             const onField = positioned.find((p) => p.id === selected.id);
             const POPUP_W = 180; // px, matches w-[180px]
-            const containerW = pitchContainerRef.current?.offsetWidth ?? 360;
+            const containerW = containerWidth || pitchContainerRef.current?.offsetWidth || 360;
             const popupWPct = (POPUP_W / containerW) * 100;
             const halfW = popupWPct / 2;
             const PAD = 2; // % padding from container edges
