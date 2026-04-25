@@ -979,6 +979,21 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     <ChevronRight size={14} className="text-muted-foreground/50" />
                   </button>
                 )}
+                {onUpdateConvocations && (
+                  <button
+                    onClick={() => { setCompoMenuOpen(false); setRenumberOpen(true); }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-secondary active:bg-secondary transition-colors text-left"
+                  >
+                    <span className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                      <Hash size={16} className="text-blue-600" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[13px] font-bold text-foreground">Changer les numéros</span>
+                      <span className="block text-[10px] text-muted-foreground">Modifie les numéros et le placement</span>
+                    </span>
+                    <ChevronRight size={14} className="text-muted-foreground/50" />
+                  </button>
+                )}
               </div>
               <div className="h-[env(safe-area-inset-bottom)] sm:hidden" />
             </motion.div>
