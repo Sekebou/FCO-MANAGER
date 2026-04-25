@@ -509,10 +509,10 @@ const ConvocationWizard: React.FC<Props> = ({
           value={customNotifTitle}
           onChange={e => setCustomNotifTitle(e.target.value)}
           placeholder="Ex: Convocation importante"
-          maxLength={40}
+          maxLength={65}
           className="w-full h-9 bg-secondary/60 border border-border/60 rounded-lg px-3 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all"
         />
-        <p className="text-[9px] text-muted-foreground/50 text-right">{customNotifTitle.length}/40</p>
+        <p className="text-[9px] text-muted-foreground/50 text-right">{customNotifTitle.length}/65</p>
       </div>
 
       {/* Body input */}
