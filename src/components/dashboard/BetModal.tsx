@@ -242,7 +242,17 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
 
       if (error) {
         const msg = error.message || 'Erreur lors du pari';
-        if (msg.includes('déjà')) toast.error('Tu as déjà ce pari sur ce match !');
+        if (msg.includes('déjà')) {
+          if (betType === 'scorer' && selectedScorer) {
+            toast.error(`Tu as déjà parié sur ${selectedScorer.name} comme buteur`);
+          } else if (betType === 'exact_score') {
+            toast.error('Tu as déjà un pari "score exact" sur ce match');
+          } else if (betType === 'match') {
+            toast.error('Tu as déjà un pari "résultat" sur ce match');
+          } else {
+            toast.error('Tu as déjà ce pari sur ce match !');
+          }
+        }
         else if (msg.includes('Solde')) toast.error('Solde insuffisant !');
         else toast.error(msg);
         setLoading(false);
@@ -419,46 +429,40 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                       return (
                         <motion.div
                           key="focused"
-                          initial={{ opacity: 0, scale: 0.92 }}
+                          initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.92 }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                          className="relative flex flex-col items-center text-center px-4 py-5 rounded-2xl border-2 border-accent bg-gradient-to-br from-accent/15 via-accent/5 to-transparent shadow-lg shadow-accent/10"
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                          className="relative flex items-center gap-3 px-3 py-2.5 rounded-2xl border-2 border-accent bg-gradient-to-br from-accent/15 via-accent/5 to-transparent shadow-md shadow-accent/10"
                         >
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                            Combien souhaitez-vous parier sur
-                          </span>
-
-                          {/* Avatar XL */}
-                          <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-accent/40 shadow-md flex items-center justify-center bg-secondary mb-2">
+                          {/* Avatar compact */}
+                          <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-accent/40 shadow-sm flex items-center justify-center bg-secondary shrink-0">
                             {photo ? (
                               <img src={photo} alt={selectedScorer.name} className="w-full h-full object-cover" />
                             ) : (
-                              <span className="text-lg font-black text-muted-foreground">{initials}</span>
+                              <span className="text-xs font-black text-muted-foreground">{initials}</span>
                             )}
                           </div>
 
-                          {/* Nom */}
-                          <p className="text-base font-black text-foreground leading-tight">{firstName}</p>
-                          {lastName && (
-                            <p className="text-sm font-bold text-foreground uppercase leading-tight">{lastName}</p>
-                          )}
-
-                          {/* Meta row — cote uniquement (poste masqué pour préserver le secret de la compo) */}
-                          <div className="flex items-center gap-2 mt-2.5">
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-accent text-accent-foreground">
-                              x{playerOdd}
-                            </span>
+                          {/* Infos */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 leading-none mb-0.5">Buteur sélectionné</p>
+                            <p className="text-sm font-black text-foreground leading-tight truncate">
+                              {firstName} <span className="font-bold uppercase">{lastName}</span>
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-accent text-accent-foreground leading-none">
+                                x{playerOdd}
+                              </span>
+                              <button
+                                onClick={() => setSelectedScorer(null)}
+                                className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold text-accent bg-accent/10 hover:bg-accent/20 active:scale-95 transition-all leading-none"
+                              >
+                                <ChevronRight size={10} className="rotate-180" />
+                                Changer
+                              </button>
+                            </div>
                           </div>
-
-                          {/* Bouton Changer */}
-                          <button
-                            onClick={() => setSelectedScorer(null)}
-                            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold text-accent bg-accent/10 hover:bg-accent/20 active:scale-95 transition-all"
-                          >
-                            <ChevronRight size={12} className="rotate-180" />
-                            Changer de joueur
-                          </button>
                         </motion.div>
                       );
                     })()
@@ -470,11 +474,11 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                     >
-                      <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center justify-between mb-2">
                         <label className="text-xs font-bold text-foreground">Qui va marquer ?</label>
                         <span className="text-[10px] font-semibold text-muted-foreground">{sortedPlayers.length} joueur{sortedPlayers.length > 1 ? 's' : ''}</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1 -mr-1 pb-1">
+                      <div className="grid grid-cols-3 gap-1.5 max-h-[280px] overflow-y-auto pr-1 -mr-1 pb-1">
                         {sortedPlayers.map(player => {
                           const playerOdd = getScorerOdds(player.position);
                           const photo = playerPhotos[player.id];
@@ -484,24 +488,24 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                           return (
                             <motion.button
                               key={player.id}
-                              whileTap={{ scale: 0.96 }}
+                              whileTap={{ scale: 0.94 }}
                               onClick={() => setSelectedScorer(player)}
-                              className="relative flex flex-col items-center gap-1.5 px-2 pt-3 pb-2.5 rounded-2xl border border-border bg-card hover:border-accent/40 transition-all text-center overflow-hidden"
+                              className="relative flex flex-col items-center gap-1 px-1 pt-2 pb-1.5 rounded-xl border border-border bg-card hover:border-accent/40 transition-all text-center overflow-hidden"
                             >
-                              <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-black leading-none bg-secondary text-foreground">
+                              <div className="absolute top-1 right-1 px-1 py-px rounded text-[9px] font-black leading-none bg-secondary text-foreground">
                                 x{playerOdd}
                               </div>
-                              <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-border bg-secondary shrink-0 flex items-center justify-center">
+                              <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-border bg-secondary shrink-0 flex items-center justify-center">
                                 {photo ? (
                                   <img src={photo} alt={player.name} className="w-full h-full object-cover" />
                                 ) : (
-                                  <span className="text-xs font-black text-muted-foreground">{initials}</span>
+                                  <span className="text-[10px] font-black text-muted-foreground">{initials}</span>
                                 )}
                               </div>
-                              <div className="w-full min-w-0 leading-tight pb-1">
-                                <p className="text-[11px] font-black truncate text-foreground">{firstName}</p>
+                              <div className="w-full min-w-0 leading-tight">
+                                <p className="text-[10px] font-black truncate text-foreground leading-tight">{firstName}</p>
                                 {lastName && (
-                                  <p className="text-[10px] font-semibold text-muted-foreground uppercase truncate">{lastName}</p>
+                                  <p className="text-[9px] font-semibold text-muted-foreground uppercase truncate leading-tight">{lastName}</p>
                                 )}
                               </div>
                             </motion.button>
