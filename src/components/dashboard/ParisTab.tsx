@@ -1261,47 +1261,92 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                     </div>
                   </motion.div>
 
-                  {/* Public pending bets on this match */}
+                  {/* Public pending bets on this match — groupés par utilisateur */}
                   {matchBets.length > 0 && (() => {
+                    // Regroupe les paris par utilisateur pour éviter d'avoir
+                    // plusieurs cartes d'affilée pour la même personne.
+                    const groupedMap = new Map<string, { userId: string; userName: string; bets: typeof matchBets }>();
+                    for (const b of matchBets) {
+                      const g = groupedMap.get(b.userId);
+                      if (g) g.bets.push(b);
+                      else groupedMap.set(b.userId, { userId: b.userId, userName: b.userName, bets: [b] });
+                    }
+                    const grouped = Array.from(groupedMap.values());
+
                     const MAX_VISIBLE = 4;
-                    const visibleBets = matchBets.slice(0, MAX_VISIBLE);
-                    const hiddenCount = matchBets.length - MAX_VISIBLE;
+                    const visibleGroups = grouped.slice(0, MAX_VISIBLE);
+                    const hiddenCount = grouped.length - MAX_VISIBLE;
+
                     return (
                       <div className="space-y-2">
                         <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Paris en cours sur ce match</h3>
-                        {visibleBets.map(bet => {
-                          const predLabel = getBetLabel(bet);
-                          const isMe = bet.userId === currentUser?.uid;
+                        {visibleGroups.map(group => {
+                          const isMe = group.userId === currentUser?.uid;
+                          const totalAmount = group.bets.reduce((s, b) => s + b.amount, 0);
+                          const totalPotential = group.bets.reduce((s, b) => s + Math.round(b.amount * b.odds), 0);
+
+                          // Sépare les types de paris
+                          const matchBet = group.bets.find(b => b.betType === 'match');
+                          const exactBet = group.bets.find(b => b.betType === 'exact_score');
+                          const scorerBets = group.bets.filter(b => b.betType === 'scorer');
+
+                          // Construit le résumé "A parié sur ..."
+                          const summaryParts: string[] = [];
+                          if (matchBet) summaryParts.push('résultat');
+                          if (exactBet) summaryParts.push('score exact');
+                          if (scorerBets.length === 1) summaryParts.push('1 buteur');
+                          else if (scorerBets.length > 1) summaryParts.push(`${scorerBets.length} buteurs`);
+
+                          const summaryText = summaryParts.length > 0
+                            ? `A parié sur ${summaryParts.join(' + ')}`
+                            : 'A parié sur ce match';
+
+                          // Pour "moi" : détail complet
                           return (
-                            <div key={bet.id} className={`bg-card rounded-xl border p-3 flex items-center gap-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
-                              {profilePhotos[bet.userId] ? (
-                                <img src={profilePhotos[bet.userId]!} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-border/30" />
-                              ) : (
-                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                                  {bet.userName.charAt(0).toUpperCase()}
+                            <div key={group.userId} className={`bg-card rounded-xl border p-3 ${isMe ? 'border-accent/30 bg-accent/5' : 'border-border'}`}>
+                              <div className="flex items-center gap-3">
+                                {profilePhotos[group.userId] ? (
+                                  <img src={profilePhotos[group.userId]!} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-border/30" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                                    {group.userName.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-xs font-bold text-foreground truncate">{group.userName}</span>
+                                    {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
+                                    {group.bets.length > 1 && (
+                                      <span className="text-[9px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+                                        ×{group.bets.length}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                                    {summaryText} • Mise totale <span className="font-semibold text-foreground">{totalAmount}</span>
+                                  </p>
                                 </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-xs font-bold text-foreground truncate">{bet.userName}</span>
-                                  {isMe && <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">Toi</span>}
-                                  {bet.betType !== 'match' && (() => {
-                                    const tag = getBetTypeTag(bet.betType);
-                                    return <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full ${tag.color}`}>{tag.label}</span>;
-                                  })()}
-                                </div>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {isMe ? (
-                                    <>Prono : <span className="font-semibold text-foreground">{predLabel}</span> • Cote {bet.odds} • Mise {bet.amount}</>
-                                  ) : (
-                                    <>A parié sur ce match • Mise <span className="font-semibold text-foreground">{bet.amount}</span></>
-                                  )}
-                                </p>
+                                {isMe && (
+                                  <div className="text-right shrink-0">
+                                    <div className="text-xs font-black text-foreground">→ {totalPotential}</div>
+                                    <div className="text-[9px] text-muted-foreground">pts max</div>
+                                  </div>
+                                )}
                               </div>
-                              {isMe && (
-                                <div className="text-right shrink-0">
-                                  <div className="text-xs font-black text-foreground">→ {Math.round(bet.amount * bet.odds)}</div>
-                                  <div className="text-[9px] text-muted-foreground">pts</div>
+
+                              {/* Détail des paris pour soi-même */}
+                              {isMe && group.bets.length > 0 && (
+                                <div className="mt-2.5 pt-2.5 border-t border-border/60 space-y-1.5">
+                                  {group.bets.map(bet => {
+                                    const tag = getBetTypeTag(bet.betType);
+                                    return (
+                                      <div key={bet.id} className="flex items-center gap-2 text-[10px]">
+                                        <span className={`shrink-0 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${tag.color}`}>{tag.label}</span>
+                                        <span className="flex-1 min-w-0 truncate text-foreground font-medium">{getBetLabel(bet)}</span>
+                                        <span className="shrink-0 text-muted-foreground">×{bet.odds} · {bet.amount}pts</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -1311,12 +1356,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           <div className="flex items-center justify-center">
                             <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground bg-secondary/50 rounded-full px-4 py-2">
                               <div className="flex -space-x-2">
-                                {matchBets.slice(MAX_VISIBLE, MAX_VISIBLE + 3).map(bet => (
-                                  profilePhotos[bet.userId] ? (
-                                    <img key={bet.id} src={profilePhotos[bet.userId]!} alt="" className="w-7 h-7 rounded-full object-cover ring-2 ring-secondary" />
+                                {grouped.slice(MAX_VISIBLE, MAX_VISIBLE + 3).map(g => (
+                                  profilePhotos[g.userId] ? (
+                                    <img key={g.userId} src={profilePhotos[g.userId]!} alt="" className="w-7 h-7 rounded-full object-cover ring-2 ring-secondary" />
                                   ) : (
-                                    <div key={bet.id} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground ring-2 ring-secondary">
-                                      {bet.userName.charAt(0).toUpperCase()}
+                                    <div key={g.userId} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground ring-2 ring-secondary">
+                                      {g.userName.charAt(0).toUpperCase()}
                                     </div>
                                   )
                                 ))}
