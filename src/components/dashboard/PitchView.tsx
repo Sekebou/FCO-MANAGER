@@ -315,11 +315,14 @@ const DraggablePlayer: React.FC<{
   );
 };
 
-const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, isManager = false, onUpdateConvocations, onSwapPlayer }, ref) => {
+const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, isManager = false, onUpdateConvocations, onSwapPlayer, onRemovePlayer, onAddPlayer }, ref) => {
   const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
-  const [swapPickMode, setSwapPickMode] = useState(false);
-  useBodyScrollLock(swapPickMode);
+  const [compoMenuOpen, setCompoMenuOpen] = useState(false);
+  const [compoAction, setCompoAction] = useState<null | 'swap' | 'remove'>(null);
+  const swapPickMode = compoAction === 'swap';
+  const removePickMode = compoAction === 'remove';
+  useBodyScrollLock(compoMenuOpen || swapPickMode || removePickMode);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimestampRef = useRef(0);
