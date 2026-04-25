@@ -1022,16 +1022,16 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
                 <div className="flex gap-1.5 px-5 pt-3">
                   <button
-                    onClick={() => setAddMode('list')}
+                    onClick={() => { setAddMode('list'); setVirtualStep('warning'); setVirtualNumber(''); }}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                   >
                     Joueur inscrit
                   </button>
                   <button
-                    onClick={() => setAddMode('custom')}
+                    onClick={() => { setAddMode('custom'); setVirtualStep('warning'); setAddCustomName(''); setVirtualNumber(''); }}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                   >
-                    Nom libre
+                    Joueur non inscrit
                   </button>
                 </div>
 
