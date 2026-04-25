@@ -442,13 +442,13 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                 <Move size={12} />
                 Modifier la disposition
               </button>
-              {onSwapPlayer && (
+              {(onSwapPlayer || onRemovePlayer || onAddPlayer) && (
                 <button
-                  onClick={() => setSwapPickMode(true)}
+                  onClick={() => setCompoMenuOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-colors"
                 >
-                  <UserRoundX size={12} />
-                  Remplacer
+                  <Settings2 size={12} />
+                  Modifier compo
                 </button>
               )}
             </div>
