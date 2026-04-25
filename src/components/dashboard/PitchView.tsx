@@ -736,76 +736,160 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           </div>
         )}
 
-        {/* Player detail popup with position selector */}
+        {/* Player detail popup with position + number editor */}
         <AnimatePresence>
-          {selected && !editMode && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              className="absolute z-30 rounded-2xl shadow-2xl p-3.5 w-[180px]"
-              style={{
-                left: '50%',
-                top: '40%',
-                transform: 'translate(-50%, -50%)',
-                background: 'rgba(15,15,25,0.92)',
-                backdropFilter: 'blur(16px) saturate(1.5)',
-                border: '1px solid rgba(255,255,255,0.15)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <p className="font-bold text-sm text-white">{selected.name}</p>
-              {selected.conv.number && (
-                <span className="text-[10px] font-bold text-white/60 mt-0.5 block">
-                  N°{selected.conv.number}
-                </span>
-              )}
-              {isManager && onUpdateConvocations ? (
-                <div className="mt-2">
-                  <select
-                    value={localConvocations[selected.id]?.position || getDefaultPositionFromNumber(selected.conv.number) || ''}
-                    onChange={(e) => {
-                      const newPos = e.target.value;
-                      setLocalConvocations((prev) => {
-                        const updated = { ...prev };
-                        updated[selected.id] = { ...updated[selected.id], position: newPos };
-                        return updated;
-                      });
-                      // Save immediately
-                      const updatedConvs = { ...localConvocations };
-                      updatedConvs[selected.id] = { ...updatedConvs[selected.id], position: newPos };
-                      onUpdateConvocations(updatedConvs);
-                      saveTimestampRef.current = Date.now();
-                    }}
-                    className="w-full text-[11px] font-semibold rounded-lg px-2 py-1.5 bg-white/10 text-white border border-white/20 outline-none appearance-none cursor-pointer"
-                    style={{ fontSize: 16 }}
-                  >
-                    <option value="" className="bg-gray-900 text-white">— Poste —</option>
-                    {POSITIONS.map(pos => (
-                      <option key={pos} value={pos} className="bg-gray-900 text-white">{pos}</option>
-                    ))}
-                  </select>
+          {selected && !editMode && (() => {
+            // Determine if this is a substitute (no x/y from positioned)
+            const onField = positioned.find((p) => p.id === selected.id);
+            const POPUP_W_PCT = 52; // popup width as % of pitch container width
+            const POPUP_H_PCT = isManager && onUpdateConvocations ? 32 : 18;
+
+            let leftPct = 50;
+            let topPct = 50;
+            let translateY = '-50%';
+            let translateX = '-50%';
+
+            if (onField) {
+              const fieldHeightRatio = substitutePlayers.length > 0 ? 0.85 : 1;
+              const playerScaledY = onField.y * fieldHeightRatio;
+              // Place above if player is in lower half, below if in upper half
+              const placeBelow = playerScaledY < 35;
+              topPct = placeBelow ? playerScaledY + 10 : playerScaledY - 10;
+              translateY = placeBelow ? '0%' : '-100%';
+              leftPct = onField.x;
+              // Clamp horizontally so popup stays inside container
+              const halfW = POPUP_W_PCT / 2;
+              if (leftPct - halfW < 2) {
+                leftPct = 2;
+                translateX = '0%';
+              } else if (leftPct + halfW > 98) {
+                leftPct = 98;
+                translateX = '-100%';
+              }
+            } else {
+              // Substitute — anchor above the bench
+              leftPct = 50;
+              topPct = 82;
+              translateY = '-100%';
+            }
+
+            const currentNumber = localConvocations[selected.id]?.number ?? selected.conv.number;
+            const currentPosition = localConvocations[selected.id]?.position ?? selected.conv.position ?? getDefaultPositionFromNumber(selected.conv.number) ?? '';
+
+            // Compute used numbers (excluding current player) for duplicate detection
+            const usedNumbers = new Set<number>();
+            Object.entries(localConvocations).forEach(([pid, c]) => {
+              if (pid !== selected.id && c.status === 'convoque' && typeof c.number === 'number') {
+                usedNumbers.add(c.number);
+              }
+            });
+
+            const updateConv = (patch: Partial<Convocation>) => {
+              const updatedConvs = { ...localConvocations };
+              updatedConvs[selected.id] = { ...updatedConvs[selected.id], ...patch };
+              setLocalConvocations(updatedConvs);
+              onUpdateConvocations?.(updatedConvs);
+              saveTimestampRef.current = Date.now();
+            };
+
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className="absolute z-30 rounded-2xl shadow-2xl p-3 w-[180px]"
+                style={{
+                  left: `${leftPct}%`,
+                  top: `${topPct}%`,
+                  transform: `translate(${translateX}, ${translateY})`,
+                  background: 'rgba(15,15,25,0.95)',
+                  backdropFilter: 'blur(16px) saturate(1.5)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-[13px] text-white truncate">{selected.name}</p>
+                    {currentNumber != null && (
+                      <span className="text-[10px] font-bold text-white/60 mt-0.5 block">
+                        N°{currentNumber}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setSelectedPlayer(null)}
+                    className="text-white/50 hover:text-white text-base leading-none px-1"
+                    aria-label="Fermer"
+                  >×</button>
                 </div>
-              ) : (
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                    style={{
-                      background: (selected.conv.position || getDefaultPositionFromNumber(selected.conv.number)) === 'Gardien'
-                        ? 'rgba(132,204,22,0.2)'
-                        : 'rgba(59,130,246,0.2)',
-                      color: (selected.conv.position || getDefaultPositionFromNumber(selected.conv.number)) === 'Gardien'
-                        ? 'hsl(85 70% 60%)'
-                        : 'hsl(215 90% 70%)',
-                    }}
-                  >
-                    {selected.conv.position || getDefaultPositionFromNumber(selected.conv.number) || 'Non défini'}
-                  </span>
-                </div>
-              )}
-            </motion.div>
-          )}
+
+                {isManager && onUpdateConvocations ? (
+                  <div className="mt-2.5 space-y-2">
+                    {/* Number editor */}
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-white/50 mb-1">Numéro</label>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={currentNumber ?? ''}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            const n = v === '' ? undefined : Math.max(1, Math.min(99, parseInt(v, 10) || 0));
+                            updateConv({ number: n });
+                          }}
+                          className={`w-full text-[13px] font-bold text-center rounded-lg px-2 py-1.5 bg-white/10 text-white border outline-none ${
+                            currentNumber != null && usedNumbers.has(currentNumber)
+                              ? 'border-amber-400/70 ring-1 ring-amber-400/40'
+                              : 'border-white/20 focus:border-primary/60'
+                          }`}
+                          style={{ fontSize: 16 }}
+                          placeholder="—"
+                        />
+                      </div>
+                      {currentNumber != null && usedNumbers.has(currentNumber) && (
+                        <p className="text-[9px] text-amber-300 mt-1 leading-tight">⚠ Numéro déjà utilisé</p>
+                      )}
+                    </div>
+                    {/* Position editor */}
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-white/50 mb-1">Poste</label>
+                      <select
+                        value={currentPosition}
+                        onChange={(e) => updateConv({ position: e.target.value })}
+                        className="w-full text-[11px] font-semibold rounded-lg px-2 py-1.5 bg-white/10 text-white border border-white/20 outline-none appearance-none cursor-pointer"
+                        style={{ fontSize: 16 }}
+                      >
+                        <option value="" className="bg-gray-900 text-white">— Poste —</option>
+                        {POSITIONS.map(pos => (
+                          <option key={pos} value={pos} className="bg-gray-900 text-white">{pos}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: currentPosition === 'Gardien'
+                          ? 'rgba(132,204,22,0.2)'
+                          : 'rgba(59,130,246,0.2)',
+                        color: currentPosition === 'Gardien'
+                          ? 'hsl(85 70% 60%)'
+                          : 'hsl(215 90% 70%)',
+                      }}
+                    >
+                      {currentPosition || 'Non défini'}
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
       </div>
 
