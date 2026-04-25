@@ -234,11 +234,37 @@ serve(async (req) => {
 
     if (isRealMatch) {
       try {
-        // Get all FCM tokens (everyone)
+        // Get FCM tokens with platform + app_version to filter by minimum required version.
+        // Only users running the new app build (which knows about the betting feature
+        // update for this notification) should receive it.
+        const MIN_IOS = '3.6';
+        const MIN_ANDROID = '4.4';
         const { data: allTokens } = await admin
           .from('fcm_tokens')
-          .select('token');
-        const bettingTokens = allTokens?.map((r: any) => r.token).filter(Boolean) || [];
+          .select('token, platform, app_version');
+
+        const cmpVersion = (a: string, b: string): number => {
+          const pa = a.split('.').map((n) => parseInt(n, 10) || 0);
+          const pb = b.split('.').map((n) => parseInt(n, 10) || 0);
+          const len = Math.max(pa.length, pb.length);
+          for (let i = 0; i < len; i++) {
+            const da = pa[i] ?? 0;
+            const db = pb[i] ?? 0;
+            if (da !== db) return da - db;
+          }
+          return 0;
+        };
+
+        const eligible = (allTokens || []).filter((r: any) => {
+          if (!r.token || !r.app_version) return false;
+          const min = r.platform === 'ios' ? MIN_IOS : r.platform === 'android' ? MIN_ANDROID : null;
+          if (!min) return false;
+          return cmpVersion(r.app_version, min) >= 0;
+        });
+
+        const bettingTokens = eligible.map((r: any) => r.token);
+        const skippedCount = (allTokens?.length || 0) - bettingTokens.length;
+        console.log(`[publish-convocations] betting eligibility: ${bettingTokens.length} eligible, ${skippedCount} skipped (no version or below MIN_IOS=${MIN_IOS}/MIN_ANDROID=${MIN_ANDROID})`);
 
         if (bettingTokens.length > 0) {
           const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
