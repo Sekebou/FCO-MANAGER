@@ -1017,6 +1017,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+              style={{ paddingBottom: keyboardInset ? `${keyboardInset}px` : undefined }}
               onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); setVirtualFirstName(''); setVirtualLastName(''); }}
             >
               <motion.div
@@ -1025,7 +1026,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                 className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
-                style={{ maxHeight: '70vh' }}
+                style={{ maxHeight: keyboardInset ? `calc(100vh - ${keyboardInset}px - 1rem)` : '70vh' }}
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex justify-center pt-2 pb-1">
