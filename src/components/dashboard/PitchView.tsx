@@ -1112,7 +1112,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:px-6"
-            onClick={() => setRenumberOpen(false)}
+            onClick={() => closeRenumberModal()}
           >
             <motion.div
               initial={{ y: 40, opacity: 0 }}
