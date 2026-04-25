@@ -660,10 +660,17 @@ const Dashboard = () => {
         setChampMatches(freshMatches);
         setAlbums(freshAlbums);
         setMatchSheets(freshMatchSheets);
-        // Write to cache for next visit
-        writeCache('players', freshPlayers);
-        writeCache('events', freshEvents);
-        writeCache('news', freshNews);
+        // Write to cache for next visit.
+        // For core tables, skip writing if the fetch returned empty + we already had cached non-empty data
+        // (prevents an interrupted/partial fetch from poisoning the cache with []).
+        const safeWrite = (key: string, fresh: any[], hadCached: boolean, cachedLen: number) => {
+          if (fresh.length === 0 && hadCached && cachedLen > 0) return;
+          writeCache(key, fresh);
+        };
+        safeWrite('players', freshPlayers, !!cachedPlayers, cachedPlayers?.length ?? 0);
+        safeWrite('events', freshEvents, !!cachedEvents, cachedEvents?.length ?? 0);
+        safeWrite('news', freshNews, !!cachedNews, cachedNews?.length ?? 0);
+        safeWrite('matchSheets', freshMatchSheets, !!cachedMatchSheets, cachedMatchSheets?.length ?? 0);
         writeCache('members', freshMembers);
         writeCache('cards', freshCards);
         writeCache('attendance', freshAttendance);
@@ -671,7 +678,6 @@ const Dashboard = () => {
         writeCache('champs', freshChamps);
         writeCache('matches', freshMatches);
         writeCache('albums', freshAlbums);
-        writeCache('matchSheets', freshMatchSheets);
 
         setLoading(false);
       } catch (err: any) {
