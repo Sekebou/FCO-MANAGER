@@ -184,6 +184,31 @@ const ConvocationWizard: React.FC<Props> = ({
     }
   };
 
+  // Virtual player: locally-added participant without an account
+  // ID schema = "virtual_<timestamp>" → not a UUID, so it never collides with
+  // real players, never receives push notifications, and never blocks future
+  // account creation (register_user looks up players by name, not by id).
+  const addVirtualPlayer = () => {
+    const trimmed = virtualName.trim();
+    if (!trimmed) return;
+    // Avoid creating two virtuals with the exact same name in this draft
+    const exists = Object.entries(draftConvocations).some(
+      ([id, c]: [string, any]) =>
+        id.startsWith('virtual_') &&
+        c?.status === 'convoque' &&
+        (c?.virtualName || '').trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (exists) {
+      setVirtualName('');
+      setVirtualFormOpen(false);
+      return;
+    }
+    const newId = `virtual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    updateDraft(newId, { status: 'convoque', virtualName: trimmed } as any);
+    setVirtualName('');
+    setVirtualFormOpen(false);
+  };
+
   const allHaveNumbers = selectedPlayers.every(p => draftConvocations[p.id]?.number);
   const canGoNext = step === 1 ? selectedIds.length > 0 : step === 2 ? allHaveNumbers : true;
   const canPublish = !!(customNotifTitle.trim() && customNotifBody.trim());
