@@ -34,8 +34,10 @@ interface Props {
   isManager?: boolean;
   championships?: Championship[];
   teamLogoMap?: Record<string, string>;
+  currentUser?: { uid?: string; name?: string } | null;
   onMatchSheetUpdated?: (sheet: MatchSheet) => void;
   onDeleteMatchSheet?: (sheetId: string) => void;
+  onEventConvocationsUpdated?: (eventId: string, convocations: Record<string, Convocation>, publisherName?: string) => void;
 }
 
 const teamColors: Record<string, string> = {
@@ -254,7 +256,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
   );
 };
 
-const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, onMatchSheetUpdated, onDeleteMatchSheet }) => {
+const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, currentUser, onMatchSheetUpdated, onDeleteMatchSheet, onEventConvocationsUpdated }) => {
 
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -332,18 +334,29 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [onMatchSheetUpdated]);
 
-  // Helper: keep events.convocations in sync with the match sheet (best effort, non-blocking)
+  // Helper: keep events.convocations in sync with the match sheet + update publisher info so
+  // the "Tu es convoqué par X" banner reflects whoever last edited the sheet.
   const syncEventConvocations = useCallback(async (eventId: string | undefined, updatedConvocations: Record<string, Convocation>) => {
     if (!eventId) return;
+    const publisherName = currentUser?.name || undefined;
     try {
+      const updates: Record<string, any> = {
+        convocations: updatedConvocations as any,
+        convocations_published: true,
+        convocations_published_at: new Date().toISOString(),
+      };
+      if (currentUser?.uid) updates.convocations_published_by = currentUser.uid;
+      if (publisherName) updates.convocations_published_by_name = publisherName;
       await supabase
         .from('events')
-        .update({ convocations: updatedConvocations as any })
+        .update(updates)
         .eq('id', eventId);
+      // Notify Dashboard so events state refreshes immediately (instant UI sync)
+      onEventConvocationsUpdated?.(eventId, updatedConvocations, publisherName);
     } catch (e) {
       console.error('[MatchSheetsTab] Failed to sync event convocations:', e);
     }
-  }, []);
+  }, [currentUser, onEventConvocationsUpdated]);
 
   const handleSwapPlayer = useCallback(async (replacementId: string, replacementName: string, isVirtual: boolean) => {
     if (!swapModal) return;
@@ -352,8 +365,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       const sheet = localSheets.find(s => s.id === sheetId);
       if (!sheet) return;
       const updatedConvocations = { ...sheet.convocations };
-      // Remove old player
-      delete updatedConvocations[playerId];
+      // Old player goes back to "non convoqué" (pas supprimé) → réapparaît dans les présences
+      updatedConvocations[playerId] = { status: 'non_convoque' };
       // Add replacement with same number/position/coords
       const newConv: Convocation = {
         status: 'convoque',
@@ -371,7 +384,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .eq('id', sheetId);
       if (error) throw error;
 
-      // Sync linked event so les convocations restent cohérentes
       await syncEventConvocations(sheet.eventId, updatedConvocations);
 
       setLocalSheets((prev) => {
@@ -396,7 +408,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       const sheet = localSheets.find(s => s.id === sheetId);
       if (!sheet) return;
       const updatedConvocations = { ...sheet.convocations };
-      delete updatedConvocations[playerId];
+      // Repasse à "non convoqué" plutôt que de supprimer
+      updatedConvocations[playerId] = { status: 'non_convoque' };
 
       const { error } = await supabase
         .from('match_sheets')
@@ -404,7 +417,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .eq('id', sheetId);
       if (error) throw error;
 
-      // Sync linked event
       await syncEventConvocations(sheet.eventId, updatedConvocations);
 
       setLocalSheets((prev) => {
@@ -424,20 +436,23 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       const sheet = localSheets.find(s => s.id === sheetId);
       if (!sheet) return;
       const existing = (sheet.convocations || {}) as Record<string, Convocation>;
-      if (existing[playerId]) {
+      if (existing[playerId] && existing[playerId].status === 'convoque') {
         toast.error('Ce joueur est déjà dans la feuille');
         return;
       }
-      // Find next available number
+      // Joueur ajouté via la feuille → directement au banc (numéro ≥ 12)
       const usedNumbers = new Set(
-        Object.values(existing).map((c: any) => c?.number).filter((n: any) => typeof n === 'number')
+        Object.values(existing)
+          .filter((c: any) => c?.status === 'convoque')
+          .map((c: any) => c?.number)
+          .filter((n: any) => typeof n === 'number')
       );
-      let nextNumber = 1;
-      while (usedNumbers.has(nextNumber) && nextNumber < 100) nextNumber++;
+      let benchNumber = 12;
+      while (usedNumbers.has(benchNumber) && benchNumber < 100) benchNumber++;
 
       const newConv: Convocation = {
         status: 'convoque',
-        number: nextNumber,
+        number: benchNumber,
         position: '',
         ...(isVirtual ? { virtualName: playerName } : {}),
       };
@@ -449,7 +464,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .eq('id', sheetId);
       if (error) throw error;
 
-      // Sync linked event
       await syncEventConvocations(sheet.eventId, updatedConvocations);
 
       setLocalSheets((prev) => {
@@ -458,7 +472,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
         return next;
       });
-      toast.success(`${playerName} ajouté à la feuille`);
+      toast.success(`${playerName} ajouté au banc (n°${benchNumber})`);
       setAddModal(null);
       setAddSearch('');
       setAddCustomName('');
