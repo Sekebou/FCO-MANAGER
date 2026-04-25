@@ -279,6 +279,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   // Wizard pour joueur non inscrit : 'warning' (avertissement) → 'name' → 'number'
   const [virtualStep, setVirtualStep] = useState<'warning' | 'name' | 'number'>('warning');
   const [virtualNumber, setVirtualNumber] = useState<string>('');
+  const [virtualFirstName, setVirtualFirstName] = useState<string>('');
+  const [virtualLastName, setVirtualLastName] = useState<string>('');
   useBodyScrollLock(!!swapModal || !!addModal);
 
   // Helper: keep events.convocations in sync with the match sheet + update publisher info so
@@ -530,6 +532,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       setAddMode('list');
       setVirtualStep('warning');
       setVirtualNumber('');
+      setVirtualFirstName('');
+      setVirtualLastName('');
     } catch {
       toast.error('Erreur lors de l\'ajout');
     }
@@ -996,7 +1000,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
-              onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); }}
+              onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); setVirtualFirstName(''); setVirtualLastName(''); }}
             >
               <motion.div
                 initial={{ y: '100%' }}
@@ -1015,20 +1019,20 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     <h3 className="text-sm font-bold text-foreground">Ajouter un joueur</h3>
                     <p className="text-[10px] text-muted-foreground">Convoque un joueur supplémentaire</p>
                   </div>
-                  <button onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); }} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                  <button onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); setVirtualFirstName(''); setVirtualLastName(''); }} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                     <X size={16} className="text-muted-foreground" />
                   </button>
                 </div>
 
                 <div className="flex gap-1.5 px-5 pt-3">
                   <button
-                    onClick={() => { setAddMode('list'); setVirtualStep('warning'); setVirtualNumber(''); }}
+                    onClick={() => { setAddMode('list'); setVirtualStep('warning'); setVirtualNumber(''); setVirtualFirstName(''); setVirtualLastName(''); }}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                   >
                     Joueur inscrit
                   </button>
                   <button
-                    onClick={() => { setAddMode('custom'); setVirtualStep('warning'); setAddCustomName(''); setVirtualNumber(''); }}
+                    onClick={() => { setAddMode('custom'); setVirtualStep('warning'); setAddCustomName(''); setVirtualNumber(''); setVirtualFirstName(''); setVirtualLastName(''); }}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                   >
                     Joueur non inscrit
@@ -1136,19 +1140,32 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                       </div>
                     )}
 
-                    {/* Étape 2 — Nom */}
+                    {/* Étape 2 — Prénom + Nom */}
                     {virtualStep === 'name' && (
                       <div className="px-5 py-4 space-y-3">
-                        <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide">Nom du joueur</label>
-                        <input
-                          value={addCustomName}
-                          onChange={e => setAddCustomName(e.target.value)}
-                          placeholder="Prénom Nom"
-                          className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                          style={{ fontSize: '16px' }}
-                          autoFocus
-                          maxLength={50}
-                        />
+                        <div>
+                          <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Prénom</label>
+                          <input
+                            value={virtualFirstName}
+                            onChange={e => setVirtualFirstName(e.target.value)}
+                            placeholder="Ex: Karim"
+                            className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            style={{ fontSize: '16px' }}
+                            autoFocus
+                            maxLength={30}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Nom</label>
+                          <input
+                            value={virtualLastName}
+                            onChange={e => setVirtualLastName(e.target.value)}
+                            placeholder="Ex: Benzema"
+                            className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            style={{ fontSize: '16px' }}
+                            maxLength={30}
+                          />
+                        </div>
                         <div className="flex gap-2 pt-1">
                           <button
                             onClick={() => setVirtualStep('warning')}
@@ -1158,10 +1175,14 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                           </button>
                           <button
                             onClick={() => {
-                              if (!addCustomName.trim()) { toast.error('Entrez un nom'); return; }
+                              const fn = virtualFirstName.trim();
+                              const ln = virtualLastName.trim();
+                              if (!fn) { toast.error('Entrez un prénom'); return; }
+                              if (!ln) { toast.error('Entrez un nom'); return; }
+                              setAddCustomName(`${fn} ${ln}`);
                               setVirtualStep('number');
                             }}
-                            disabled={!addCustomName.trim()}
+                            disabled={!virtualFirstName.trim() || !virtualLastName.trim()}
                             className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all"
                           >
                             Suivant
@@ -1222,8 +1243,10 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                           </button>
                           <button
                             onClick={() => {
-                              const name = addCustomName.trim();
-                              if (!name) { toast.error('Nom manquant'); return; }
+                              const fn = virtualFirstName.trim();
+                              const ln = virtualLastName.trim();
+                              const name = `${fn} ${ln}`.trim();
+                              if (!fn || !ln) { toast.error('Prénom et nom requis'); return; }
                               if (numberInvalid) { toast.error('Numéro invalide (1-99)'); return; }
                               if (numberDuplicate) { toast.error(`Le numéro ${parsedNumber} est déjà attribué`); return; }
                               const virtualId = `virtual_${Date.now()}`;
