@@ -762,6 +762,48 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Sub-modal: pari déjà placé (résultat / score exact / buteur) */}
+        <AnimatePresence>
+          {duplicateBetOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+              onClick={() => setDuplicateBetOpen(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-xs rounded-2xl border border-primary/30 bg-card shadow-2xl overflow-hidden"
+              >
+                <div className="bg-gradient-to-br from-primary/15 via-primary/10 to-primary/15 px-5 pt-5 pb-4 flex flex-col items-center text-center">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 mb-3">
+                    <AlertTriangle size={22} className="text-primary-foreground" strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-[15px] font-black text-foreground leading-tight">
+                    {duplicateBetOpen.title}
+                  </h3>
+                  <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                    {duplicateBetOpen.message}
+                  </p>
+                </div>
+                <div className="p-3">
+                  <button
+                    onClick={() => setDuplicateBetOpen(null)}
+                    className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-bold hover:brightness-110 active:scale-[0.98] transition-all"
+                  >
+                    Compris
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
