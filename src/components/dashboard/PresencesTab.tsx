@@ -463,7 +463,13 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
         {event.convocationsPublished && event.convocations && !isConvocationMode && (() => {
           const myPlayerId = currentUser?.playerId;
           const convocationsMap = event.convocations as Record<string, Convocation>;
-          const convokedEntries = Object.entries(convocationsMap).filter(([, c]) => c.status === 'convoque');
+          const convokedEntries = Object.entries(convocationsMap)
+            .filter(([, c]) => c.status === 'convoque')
+            .sort(([, a], [, b]) => {
+              const na = typeof a.number === 'number' ? a.number : 999;
+              const nb = typeof b.number === 'number' ? b.number : 999;
+              return na - nb;
+            });
           const presencesMap = event.presences || {};
           const presentCount = convokedEntries.filter(([pid]) => presencesMap[pid] === 'present').length;
           const absentCount = convokedEntries.filter(([pid]) => presencesMap[pid] === 'absent').length;
