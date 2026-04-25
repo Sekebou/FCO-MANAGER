@@ -1136,11 +1136,21 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
 
                 const setNumber = (pid: string, raw: string) => {
                   const n = raw === '' ? undefined : Math.max(1, Math.min(99, parseInt(raw, 10) || 0));
-                  const updatedConvs = { ...localConvocations };
-                  updatedConvs[pid] = { ...updatedConvs[pid], number: n };
-                  setLocalConvocations(updatedConvs);
-                  onUpdateConvocations(updatedConvs);
-                  saveTimestampRef.current = Date.now();
+                  // Update local state immediately for responsive UI
+                  setLocalConvocations(prev => {
+                    const updated = { ...prev };
+                    updated[pid] = { ...updated[pid], number: n };
+                    return updated;
+                  });
+                  // Debounced save: only persist after typing settles
+                  if (renumberDebounceRef.current) clearTimeout(renumberDebounceRef.current);
+                  renumberDebounceRef.current = setTimeout(() => {
+                    setLocalConvocations(current => {
+                      onUpdateConvocations(current);
+                      saveTimestampRef.current = Date.now();
+                      return current;
+                    });
+                  }, 400);
                 };
 
                 return (
