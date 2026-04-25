@@ -280,19 +280,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     if (!authUserId || !betsLoaded) return;
     const myRefunded = bets
       .filter(b => b.userId === authUserId && b.status === 'refunded' && !!b.settledAt);
-    if (myRefunded.length === 0) {
-      refundInitialLoadRef.current = false;
-      return;
-    }
-    // On first load, just sync the cursor — don't show modal for old refunds
-    if (refundInitialLoadRef.current) {
-      refundInitialLoadRef.current = false;
-      return;
-    }
+    if (myRefunded.length === 0) return;
     const lastSeen = new Date(lastRefundSeenAtRef.current).getTime();
     const newRefunds = myRefunded.filter(b => new Date(b.settledAt!).getTime() > lastSeen);
     if (newRefunds.length === 0) return;
-    setRefundModalBets(newRefunds);
+    // Avoid re-opening if already showing
+    setRefundModalBets(prev => (prev && prev.length > 0 ? prev : newRefunds));
   }, [bets, authUserId, betsLoaded]);
 
   const dismissRefundModal = useCallback(async () => {
