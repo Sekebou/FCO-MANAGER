@@ -226,13 +226,16 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
       const [{ data: betsData }, { data: pointsData }] = await Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
-        supabase.from('user_points').select('balance').eq('user_id', sessionUserId).maybeSingle(),
+        supabase.from('user_points').select('balance, last_refund_seen_at').eq('user_id', sessionUserId).maybeSingle(),
       ]);
 
       if (!mounted) return;
       if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
-      if (pointsData) setBalance(pointsData.balance);
-      else setBalance(100);
+      if (pointsData) {
+        setBalance(pointsData.balance);
+        const seen = (pointsData as any).last_refund_seen_at;
+        if (seen) lastRefundSeenAtRef.current = seen;
+      } else setBalance(100);
       setLoading(false);
     };
 
