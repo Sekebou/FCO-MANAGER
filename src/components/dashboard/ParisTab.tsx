@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -191,6 +191,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [convocatedPlayers, setConvocatedPlayers] = useState<{ id: string; name: string; position: string }[]>([]);
+  const [scorerOpenMatches, setScorerOpenMatches] = useState<Array<{ id: string; team: string; homeTeam: string; awayTeam: string; date: string }>>([]);
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
