@@ -760,6 +760,13 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                                 setSwapCustomName('');
                                 setSwapMode('list');
                               } : undefined}
+                              onRemovePlayer={isManager ? (playerId, playerName) => handleRemovePlayer(ms.id, playerId, playerName) : undefined}
+                              onAddPlayer={isManager ? () => {
+                                setAddModal({ sheetId: ms.id });
+                                setAddSearch('');
+                                setAddCustomName('');
+                                setAddMode('list');
+                              } : undefined}
                             />
                           ) : (
                             <div className="text-center py-8">
