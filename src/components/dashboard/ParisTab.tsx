@@ -1141,6 +1141,19 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               const matchStatus = nextMatch.date ? getMatchStatus(nextMatch.date, nextMatch.time) : false;
               const live = matchStatus === 'live';
               const waiting = matchStatus === 'waiting';
+              // Anti-cheat: bets locked 5min after kickoff (server-enforced too)
+              const kickoffTs = (() => {
+                if (!nextMatch.date) return 0;
+                const d = new Date(nextMatch.date);
+                if (nextMatch.time) {
+                  const [h, m] = String(nextMatch.time).replace('H', ':').split(':').map(Number);
+                  if (!Number.isNaN(h)) d.setHours(h, m || 0, 0, 0);
+                } else {
+                  d.setHours(5, 0, 0, 0);
+                }
+                return d.getTime();
+              })();
+              const betsLocked = kickoffTs > 0 && Date.now() > kickoffTs + 5 * 60 * 1000;
               const homeName = getDisplayTeamName(nextMatch.home, selectedTeam);
               const awayName = getDisplayTeamName(nextMatch.away, selectedTeam);
               const homeLogo = nextMatch.home?.club?.logo;
