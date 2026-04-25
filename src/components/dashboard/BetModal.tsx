@@ -131,6 +131,13 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [betType, setBetType] = useState<BetType>('match');
   const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
   const [amount, setAmount] = useState(10);
+
+  // Clamp amount to balance whenever balance changes (prevents grey "Valider" if balance < default 10)
+  useEffect(() => {
+    if (balance > 0 && amount > balance) {
+      setAmount(Math.max(1, balance));
+    }
+  }, [balance]); // eslint-disable-line react-hooks/exhaustive-deps
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeBetsCount, setActiveBetsCount] = useState(0);
