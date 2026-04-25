@@ -687,6 +687,7 @@ const ConvocationWizard: React.FC<Props> = ({
   );
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
