@@ -207,14 +207,16 @@ const readCache = <T,>(key: string, ignoreExpiry = false): T | null => {
   } catch { return null; }
 };
 
-/** Returns true if ALL core caches are younger than CACHE_FRESH */
+/** Returns true if ALL core caches are younger than CACHE_FRESH AND non-empty */
 const isCacheFresh = (): boolean => {
   try {
     const keys = ['players', 'events', 'news'];
     return keys.every(k => {
       const raw = localStorage.getItem(CACHE_PREFIX + k);
       if (!raw) return false;
-      const { ts } = JSON.parse(raw);
+      const { ts, data } = JSON.parse(raw);
+      // If the cached data is empty (likely a failed/partial fetch), treat as not fresh
+      if (!Array.isArray(data) || data.length === 0) return false;
       return Date.now() - ts < CACHE_FRESH;
     });
   } catch { return false; }
@@ -658,10 +660,17 @@ const Dashboard = () => {
         setChampMatches(freshMatches);
         setAlbums(freshAlbums);
         setMatchSheets(freshMatchSheets);
-        // Write to cache for next visit
-        writeCache('players', freshPlayers);
-        writeCache('events', freshEvents);
-        writeCache('news', freshNews);
+        // Write to cache for next visit.
+        // For core tables, skip writing if the fetch returned empty + we already had cached non-empty data
+        // (prevents an interrupted/partial fetch from poisoning the cache with []).
+        const safeWrite = (key: string, fresh: any[], hadCached: boolean, cachedLen: number) => {
+          if (fresh.length === 0 && hadCached && cachedLen > 0) return;
+          writeCache(key, fresh);
+        };
+        safeWrite('players', freshPlayers, !!cachedPlayers, cachedPlayers?.length ?? 0);
+        safeWrite('events', freshEvents, !!cachedEvents, cachedEvents?.length ?? 0);
+        safeWrite('news', freshNews, !!cachedNews, cachedNews?.length ?? 0);
+        safeWrite('matchSheets', freshMatchSheets, !!cachedMatchSheets, cachedMatchSheets?.length ?? 0);
         writeCache('members', freshMembers);
         writeCache('cards', freshCards);
         writeCache('attendance', freshAttendance);
@@ -669,7 +678,6 @@ const Dashboard = () => {
         writeCache('champs', freshChamps);
         writeCache('matches', freshMatches);
         writeCache('albums', freshAlbums);
-        writeCache('matchSheets', freshMatchSheets);
 
         setLoading(false);
       } catch (err: any) {
