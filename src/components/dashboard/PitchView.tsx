@@ -322,7 +322,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [compoAction, setCompoAction] = useState<null | 'swap' | 'remove'>(null);
   const swapPickMode = compoAction === 'swap';
   const removePickMode = compoAction === 'remove';
-  useBodyScrollLock(compoMenuOpen || swapPickMode || removePickMode);
+  useBodyScrollLock(compoMenuOpen || swapPickMode || removePickMode || renumberOpen);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimestampRef = useRef(0);
