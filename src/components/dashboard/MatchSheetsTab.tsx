@@ -996,7 +996,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
-              onClick={() => setAddModal(null)}
+              onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); }}
             >
               <motion.div
                 initial={{ y: '100%' }}
