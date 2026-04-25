@@ -975,6 +975,16 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         {addModal && (() => {
           const sheet = localSheets.find(s => s.id === addModal.sheetId);
           const convokedIds = sheet ? Object.keys(sheet.convocations).filter(id => sheet.convocations[id]?.status === 'convoque') : [];
+          const usedNumbers = sheet
+            ? Object.values(sheet.convocations)
+                .filter((c: any) => c?.status === 'convoque')
+                .map((c: any) => c?.number)
+                .filter((n: any) => typeof n === 'number') as number[]
+            : [];
+          const usedNumbersSet = new Set(usedNumbers);
+          const parsedNumber = virtualNumber.trim() === '' ? NaN : Number(virtualNumber);
+          const numberInvalid = !Number.isFinite(parsedNumber) || parsedNumber < 1 || parsedNumber > 99 || !Number.isInteger(parsedNumber);
+          const numberDuplicate = !numberInvalid && usedNumbersSet.has(parsedNumber);
           const q = addSearch.toLowerCase().trim();
           const available = players
             .filter(p => !convokedIds.includes(p.id))
