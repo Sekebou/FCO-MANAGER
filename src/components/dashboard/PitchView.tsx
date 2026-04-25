@@ -826,11 +826,6 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-[13px] text-white truncate">{selected.name}</p>
-                    {currentNumber != null && (
-                      <span className="text-[10px] font-bold text-white/60 mt-0.5 block">
-                        N°{currentNumber}
-                      </span>
-                    )}
                   </div>
                   <button
                     onClick={() => setSelectedPlayer(null)}
@@ -840,34 +835,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                 </div>
 
                 {isManager && onUpdateConvocations ? (
-                  <div className="mt-2.5 space-y-2">
-                    {/* Number editor */}
-                    <div>
-                      <label className="block text-[9px] font-bold uppercase tracking-wider text-white/50 mb-1">Numéro</label>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          min={1}
-                          max={99}
-                          value={currentNumber ?? ''}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            const n = v === '' ? undefined : Math.max(1, Math.min(99, parseInt(v, 10) || 0));
-                            updateConv({ number: n });
-                          }}
-                          className={`w-full text-[13px] font-bold text-center rounded-lg px-2 py-1.5 bg-white/10 text-white border outline-none ${
-                            currentNumber != null && usedNumbers.has(currentNumber)
-                              ? 'border-amber-400/70 ring-1 ring-amber-400/40'
-                              : 'border-white/20 focus:border-primary/60'
-                          }`}
-                          style={{ fontSize: 16 }}
-                          placeholder="—"
-                        />
-                      </div>
-                      {currentNumber != null && usedNumbers.has(currentNumber) && (
-                        <p className="text-[9px] text-amber-300 mt-1 leading-tight">⚠ Numéro déjà utilisé</p>
-                      )}
-                    </div>
+                  <div className="mt-2.5">
                     {/* Position editor */}
                     <div>
                       <label className="block text-[9px] font-bold uppercase tracking-wider text-white/50 mb-1">Poste</label>
