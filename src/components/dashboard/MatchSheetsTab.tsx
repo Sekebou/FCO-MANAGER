@@ -406,6 +406,31 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [swapModal, localSheets, onMatchSheetUpdated, syncEventConvocations]);
 
+  const refundScorerBetsForPlayer = useCallback(async (sheet: MatchSheet, playerId: string, reason: string) => {
+    // Only refund for real player IDs (not virtuals) and only when match has team metadata
+    if (playerId.startsWith('virtual_')) return;
+    if (!sheet.homeTeam || !sheet.awayTeam || !sheet.date) return;
+    try {
+      const { data, error } = await supabase.rpc('refund_scorer_bets_for_player', {
+        p_home_team: sheet.homeTeam,
+        p_away_team: sheet.awayTeam,
+        p_match_date: sheet.date,
+        p_scorer_player_id: playerId,
+        p_reason: reason,
+      });
+      if (error) {
+        console.warn('[refund_scorer_bets_for_player]', error);
+        return;
+      }
+      const refunded = (data as any)?.refunded ?? 0;
+      if (refunded > 0) {
+        toast.info(`${refunded} pari${refunded > 1 ? 's' : ''} buteur remboursé${refunded > 1 ? 's' : ''}`);
+      }
+    } catch (e) {
+      console.warn('[refund_scorer_bets_for_player] exception', e);
+    }
+  }, []);
+
   const handleRemovePlayer = useCallback(async (sheetId: string, playerId: string, playerName: string) => {
     if (!window.confirm(`Retirer ${playerName} de la feuille de match ?`)) return;
     try {
@@ -423,6 +448,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
       await syncEventConvocations(sheet.eventId, updatedConvocations);
 
+      // Rembourse les paris buteur en cours sur ce joueur pour ce match
+      await refundScorerBetsForPlayer(sheet, playerId, 'Joueur retiré de la feuille de match');
+
       setLocalSheets((prev) => {
         const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
         const updatedSheet = next.find(s => s.id === sheetId);
@@ -433,7 +461,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     } catch {
       toast.error('Erreur lors de la suppression');
     }
-  }, [localSheets, onMatchSheetUpdated, syncEventConvocations]);
+  }, [localSheets, onMatchSheetUpdated, syncEventConvocations, refundScorerBetsForPlayer]);
 
   const handleAddPlayerToSheet = useCallback(async (sheetId: string, playerId: string, playerName: string, isVirtual: boolean) => {
     try {
