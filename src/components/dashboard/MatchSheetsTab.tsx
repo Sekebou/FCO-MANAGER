@@ -300,8 +300,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
   const listScrollRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewportOffsetTop, setViewportOffsetTop] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [keyboardInset, setKeyboardInset] = useState(0);
   const [safeAreaTop, setSafeAreaTop] = useState(0);
 
   useEffect(() => {
@@ -324,8 +324,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
     if (!vv) return;
     const onResize = () => {
       setViewportHeight(vv.height);
+      setViewportOffsetTop(vv.offsetTop || 0);
       const inset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
-      setKeyboardInset(inset);
       const isKb = inset > 80 || vv.height < window.innerHeight * 0.82;
       setKeyboardOpen(isKb);
     };
@@ -377,8 +377,11 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
-      style={{ paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
+      className="fixed left-0 right-0 top-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+      style={{
+        height: viewportHeight ? `${viewportHeight}px` : '100dvh',
+        transform: viewportOffsetTop ? `translateY(${viewportOffsetTop}px)` : undefined,
+      }}
       onClick={onClose}
     >
       <motion.div
