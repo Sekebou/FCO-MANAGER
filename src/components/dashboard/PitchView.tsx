@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback, forwardRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Move, Check, RotateCcw, ArrowLeftRight, ChevronDown, UserRoundX, UserPlus, Trash2, Settings2, ChevronRight } from 'lucide-react';
+import { Move, Check, RotateCcw, ArrowLeftRight, ChevronDown, UserRoundX, UserPlus, Trash2, Settings2, ChevronRight, Hash, AlertTriangle } from 'lucide-react';
 import type { Convocation } from '@/pages/Dashboard';
 import { POSITIONS } from '@/pages/Dashboard';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
@@ -320,13 +320,26 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [editMode, setEditMode] = useState(false);
   const [compoMenuOpen, setCompoMenuOpen] = useState(false);
   const [compoAction, setCompoAction] = useState<null | 'swap' | 'remove'>(null);
+  const [renumberOpen, setRenumberOpen] = useState(false);
   const swapPickMode = compoAction === 'swap';
   const removePickMode = compoAction === 'remove';
-  useBodyScrollLock(compoMenuOpen || swapPickMode || removePickMode);
+  useBodyScrollLock(compoMenuOpen || swapPickMode || removePickMode || renumberOpen);
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimestampRef = useRef(0);
   const pitchContainerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Track container width for accurate popup positioning
+  useEffect(() => {
+    const el = pitchContainerRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.offsetWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Sync local convocations when prop changes (and not in edit mode)
   // After a save, ignore prop updates for 3s to avoid overwriting with stale data
@@ -741,34 +754,35 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           {selected && !editMode && (() => {
             // Determine if this is a substitute (no x/y from positioned)
             const onField = positioned.find((p) => p.id === selected.id);
-            const POPUP_W_PCT = 52; // popup width as % of pitch container width
-            const POPUP_H_PCT = isManager && onUpdateConvocations ? 32 : 18;
+            const POPUP_W = 180; // px, matches w-[180px]
+            const containerW = containerWidth || pitchContainerRef.current?.offsetWidth || 360;
+            const popupWPct = (POPUP_W / containerW) * 100;
+            const halfW = popupWPct / 2;
+            const PAD = 2; // % padding from container edges
 
             let leftPct = 50;
             let topPct = 50;
             let translateY = '-50%';
-            let translateX = '-50%';
+            // We'll compute exact left so popup fits, no horizontal translate needed
+            let translateX = '0%';
 
             if (onField) {
               const fieldHeightRatio = substitutePlayers.length > 0 ? 0.85 : 1;
               const playerScaledY = onField.y * fieldHeightRatio;
-              // Place above if player is in lower half, below if in upper half
+              // Place above if player is in upper half, below if in upper area
               const placeBelow = playerScaledY < 35;
               topPct = placeBelow ? playerScaledY + 10 : playerScaledY - 10;
               translateY = placeBelow ? '0%' : '-100%';
-              leftPct = onField.x;
-              // Clamp horizontally so popup stays inside container
-              const halfW = POPUP_W_PCT / 2;
-              if (leftPct - halfW < 2) {
-                leftPct = 2;
-                translateX = '0%';
-              } else if (leftPct + halfW > 98) {
-                leftPct = 98;
-                translateX = '-100%';
-              }
+              // Center horizontally on player, then clamp so popup stays inside container
+              let desiredLeft = onField.x - halfW; // top-left of popup, in %
+              const minLeft = PAD;
+              const maxLeft = 100 - popupWPct - PAD;
+              if (desiredLeft < minLeft) desiredLeft = minLeft;
+              if (desiredLeft > maxLeft) desiredLeft = maxLeft;
+              leftPct = desiredLeft;
             } else {
-              // Substitute — anchor above the bench
-              leftPct = 50;
+              // Substitute — center, anchor above the bench
+              leftPct = Math.max(PAD, 50 - halfW);
               topPct = 82;
               translateY = '-100%';
             }
@@ -965,6 +979,21 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     <ChevronRight size={14} className="text-muted-foreground/50" />
                   </button>
                 )}
+                {onUpdateConvocations && (
+                  <button
+                    onClick={() => { setCompoMenuOpen(false); setRenumberOpen(true); }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-secondary active:bg-secondary transition-colors text-left"
+                  >
+                    <span className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                      <Hash size={16} className="text-blue-600" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[13px] font-bold text-foreground">Changer les numéros</span>
+                      <span className="block text-[10px] text-muted-foreground">Modifie les numéros et le placement</span>
+                    </span>
+                    <ChevronRight size={14} className="text-muted-foreground/50" />
+                  </button>
+                )}
               </div>
               <div className="h-[env(safe-area-inset-bottom)] sm:hidden" />
             </motion.div>
@@ -1081,6 +1110,134 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     );
                   })}
               </div>
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {/* Renumber modal — change all jersey numbers at once */}
+      {renumberOpen && onUpdateConvocations && createPortal(
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:px-6"
+            onClick={() => setRenumberOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="bg-card border border-border rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[400px] max-h-[85vh] flex flex-col shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <Hash size={14} className="text-blue-600" />
+                    Changer les numéros
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">1-11 = titulaires · 12+ = banc</p>
+                </div>
+                <button onClick={() => setRenumberOpen(false)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0">
+                  <span className="text-muted-foreground text-lg leading-none">×</span>
+                </button>
+              </div>
+
+              {(() => {
+                const convoked = Object.entries(localConvocations)
+                  .filter(([, c]) => c.status === 'convoque')
+                  .map(([pid, c]) => {
+                    const pl = players.find(p => p.id === pid);
+                    const name = c.virtualName || pl?.name || 'Joueur supprimé';
+                    return { id: pid, name, conv: c };
+                  })
+                  .sort((a, b) => (a.conv.number ?? 99) - (b.conv.number ?? 99));
+
+                // Detect duplicates
+                const counts = new Map<number, number>();
+                convoked.forEach(p => {
+                  if (typeof p.conv.number === 'number') {
+                    counts.set(p.conv.number, (counts.get(p.conv.number) ?? 0) + 1);
+                  }
+                });
+                const duplicates = new Set<number>();
+                counts.forEach((v, k) => { if (v > 1) duplicates.add(k); });
+
+                const setNumber = (pid: string, raw: string) => {
+                  const n = raw === '' ? undefined : Math.max(1, Math.min(99, parseInt(raw, 10) || 0));
+                  const updatedConvs = { ...localConvocations };
+                  updatedConvs[pid] = { ...updatedConvs[pid], number: n };
+                  setLocalConvocations(updatedConvs);
+                  onUpdateConvocations(updatedConvs);
+                  saveTimestampRef.current = Date.now();
+                };
+
+                return (
+                  <>
+                    {duplicates.size > 0 && (
+                      <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
+                        <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-amber-700 dark:text-amber-300 leading-tight">
+                          Numéros en doublon : <span className="font-bold">{Array.from(duplicates).sort((a, b) => a - b).join(', ')}</span>
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                      {convoked.map(p => {
+                        const isDup = typeof p.conv.number === 'number' && duplicates.has(p.conv.number);
+                        const isStarter = p.conv.number != null && p.conv.number <= 11;
+                        return (
+                          <div
+                            key={p.id}
+                            className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-secondary/50 transition-colors"
+                          >
+                            <span
+                              className={`w-1.5 h-8 rounded-full shrink-0 ${
+                                isStarter ? 'bg-primary' : 'bg-muted-foreground/30'
+                              }`}
+                            />
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-[12px] font-semibold text-foreground truncate">{p.name}</span>
+                              <span className="block text-[9px] text-muted-foreground">
+                                {p.conv.position || getDefaultPositionFromNumber(p.conv.number) || '—'}
+                              </span>
+                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={99}
+                              value={p.conv.number ?? ''}
+                              onChange={(e) => setNumber(p.id, e.target.value)}
+                              className={`w-14 text-center text-sm font-bold rounded-lg px-1.5 py-1.5 bg-background border outline-none transition-colors ${
+                                isDup
+                                  ? 'border-amber-500 ring-1 ring-amber-500/40 text-amber-600'
+                                  : 'border-border focus:border-primary'
+                              }`}
+                              style={{ fontSize: 16 }}
+                              placeholder="—"
+                            />
+                          </div>
+                        );
+                      })}
+                      {convoked.length === 0 && (
+                        <p className="text-center text-xs text-muted-foreground py-6">Aucun joueur convoqué</p>
+                      )}
+                    </div>
+                    <div className="px-3 py-2.5 border-t border-border shrink-0 flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setRenumberOpen(false)}
+                        className="px-3 py-1.5 text-[12px] font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Terminé
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
+              <div className="h-[env(safe-area-inset-bottom)] sm:hidden" />
             </motion.div>
           </motion.div>
         </AnimatePresence>,
