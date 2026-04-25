@@ -283,23 +283,35 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   }, [bets]);
 
   // Load matches with published convocations (= scorer bets open)
+  // Banner stays visible until ~2h after kickoff (match end), so it covers pre-match AND live
   useEffect(() => {
     const fetchOpenScorerMatches = async () => {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
+      // Look back up to 24h to catch matches still in progress
+      const lookback = new Date();
+      lookback.setHours(lookback.getHours() - 24);
       const { data } = await supabase
         .from('events')
-        .select('id, team, title, date')
+        .select('id, team, title, date, time')
         .eq('type', 'match')
         .eq('convocations_published', true)
-        .gte('date', todayStart.toISOString())
+        .gte('date', lookback.toISOString())
         .order('date', { ascending: true })
-        .limit(10);
+        .limit(20);
       if (!data) return;
-      // Parse "Home vs Away" or "Home - Away" from title
+
+      const now = Date.now();
+      const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h after kickoff = match over
+
       const parsed = data
         .filter((e: any) => e.team)
         .map((e: any) => {
+          // Compute kickoff timestamp
+          const kickoff = new Date(e.date);
+          if (e.time) {
+            const [h, m] = String(e.time).replace('H', ':').split(':').map(Number);
+            if (!Number.isNaN(h)) kickoff.setHours(h, m || 0, 0, 0);
+          }
+          const matchOverAt = kickoff.getTime() + MATCH_DURATION_MS;
           const m = String(e.title || '').match(/^(.+?)\s+(?:vs|VS|-)\s+(.+)$/);
           return {
             id: e.id,
@@ -307,17 +319,23 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             homeTeam: m?.[1]?.trim() || e.title,
             awayTeam: m?.[2]?.trim() || '',
             date: e.date,
+            matchOverAt,
           };
         })
-        .filter(e => e.awayTeam);
+        .filter(e => e.awayTeam && e.matchOverAt > now);
       setScorerOpenMatches(parsed);
     };
     fetchOpenScorerMatches();
 
+    // Re-evaluate every minute to drop matches that just ended
+    const interval = setInterval(fetchOpenScorerMatches, 60_000);
     const channel = supabase.channel('paris-scorer-open')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, fetchOpenScorerMatches)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const [refreshing, setRefreshing] = useState(false);
