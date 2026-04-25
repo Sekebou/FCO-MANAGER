@@ -128,10 +128,28 @@ const ConvocationWizard: React.FC<Props> = ({
     [draftConvocations]
   );
 
-  const selectedPlayers = useMemo(
-    () => players.filter(p => selectedIds.includes(p.id)),
-    [players, selectedIds]
-  );
+  // Build a "virtual player" view for IDs that are not in the players list
+  // (used so step 2/3 + final composition show them like real players)
+  const selectedPlayers = useMemo(() => {
+    const list: Player[] = [];
+    for (const id of selectedIds) {
+      const real = players.find(p => p.id === id);
+      if (real) {
+        list.push(real);
+      } else if (id.startsWith('virtual_')) {
+        const conv = draftConvocations[id] as any;
+        list.push({
+          id,
+          name: (conv?.virtualName as string) || 'Joueur invité',
+          position: 'Non défini',
+          matches: 0,
+          goals: 0,
+          assists: 0,
+        } as Player);
+      }
+    }
+    return list;
+  }, [players, selectedIds, draftConvocations]);
 
   const nonSelectedPlayers = useMemo(
     () => players.filter(p => !selectedIds.includes(p.id)),
