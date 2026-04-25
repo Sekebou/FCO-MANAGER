@@ -517,17 +517,17 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           }}
           preserveAspectRatio="none"
         >
-          <rect x="4" y="2" width="60" height="94" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.45" rx="0.3" />
-          <line x1="4" y1="2.5" x2="64" y2="2.5" stroke="rgba(255,255,255,0.5)" strokeWidth="0.4" />
-          <path d="M 25 2.5 A 9 9 0 0 1 43 2.5" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.45" />
-          <circle cx="34" cy="2.5" r="0.6" fill="rgba(255,255,255,0.7)" />
-          <rect x="14" y="70" width="40" height="26" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.45" />
-          <rect x="22" y="84" width="24" height="12" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.45" />
-          <circle cx="34" cy="76" r="0.55" fill="rgba(255,255,255,0.6)" />
-          <path d="M 25.5 70 A 9 9 0 0 0 42.5 70" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.45" />
-          <rect x="26" y="96" width="16" height="2" rx="0.5" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" strokeWidth="0.35" />
-          <path d="M 4 4 A 2 2 0 0 1 6 2" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.35" />
-          <path d="M 62 2 A 2 2 0 0 1 64 4" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.35" />
+          <rect x="4" y="2" width="60" height="94" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="0.3" rx="0.3" />
+          <line x1="4" y1="2.5" x2="64" y2="2.5" stroke="rgba(255,255,255,0.25)" strokeWidth="0.28" />
+          <path d="M 25 2.5 A 9 9 0 0 1 43 2.5" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.3" />
+          <circle cx="34" cy="2.5" r="0.45" fill="rgba(255,255,255,0.4)" />
+          <rect x="14" y="70" width="40" height="26" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.3" />
+          <rect x="22" y="84" width="24" height="12" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.3" />
+          <circle cx="34" cy="76" r="0.4" fill="rgba(255,255,255,0.35)" />
+          <path d="M 25.5 70 A 9 9 0 0 0 42.5 70" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.3" />
+          <rect x="26" y="96" width="16" height="2" rx="0.5" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)" strokeWidth="0.25" />
+          <path d="M 4 4 A 2 2 0 0 1 6 2" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.25" />
+          <path d="M 62 2 A 2 2 0 0 1 64 4" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.25" />
         </svg>
 
         {/* Corner flags — in field area */}
