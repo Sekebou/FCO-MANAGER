@@ -34,8 +34,10 @@ interface Props {
   isManager?: boolean;
   championships?: Championship[];
   teamLogoMap?: Record<string, string>;
+  currentUser?: { uid?: string; name?: string } | null;
   onMatchSheetUpdated?: (sheet: MatchSheet) => void;
   onDeleteMatchSheet?: (sheetId: string) => void;
+  onEventConvocationsUpdated?: (eventId: string, convocations: Record<string, Convocation>, publisherName?: string) => void;
 }
 
 const teamColors: Record<string, string> = {
