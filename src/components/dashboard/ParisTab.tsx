@@ -2052,6 +2052,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       <AnimatePresence>
         {refundModalBets && refundModalBets.length > 0 && (
           <motion.div
+            key="refund-modal"
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
