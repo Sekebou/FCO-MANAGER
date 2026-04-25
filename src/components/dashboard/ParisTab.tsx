@@ -30,6 +30,7 @@ interface Bet {
   payout: number;
   status: string;
   createdAt: string;
+  settledAt: string | null;
   team: string | null;
   betType: string;
   scorerPlayerId: string | null;
@@ -47,7 +48,8 @@ const mapBet = (r: any): Bet => ({
   id: r.id, userId: r.user_id, userName: r.user_name,
   homeTeam: r.home_team, awayTeam: r.away_team, matchDate: r.match_date,
   prediction: r.prediction, odds: r.odds, amount: r.amount, payout: r.payout,
-  status: r.status, createdAt: r.created_at, team: r.team || null,
+  status: r.status, createdAt: r.created_at, settledAt: r.settled_at || null,
+  team: r.team || null,
   betType: r.bet_type || 'match',
   scorerPlayerId: r.scorer_player_id || null,
   scorerPlayerName: r.scorer_player_name || null,
