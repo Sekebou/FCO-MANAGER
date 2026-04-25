@@ -611,7 +611,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                   <input
                     value={virtualFirstName}
                     onChange={e => onVirtualFirstNameChange(e.target.value)}
-                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    onFocus={undefined}
                     placeholder="Ex: Karim"
                     className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     style={{ fontSize: '16px' }}
@@ -624,7 +624,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                   <input
                     value={virtualLastName}
                     onChange={e => onVirtualLastNameChange(e.target.value)}
-                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    onFocus={undefined}
                     placeholder="Ex: Benzema"
                     className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     style={{ fontSize: '16px' }}
@@ -668,7 +668,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                       max={99}
                       value={virtualNumber}
                       onChange={e => onVirtualNumberChange(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                      onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                      onFocus={e => e.currentTarget.select()}
                       placeholder="Ex: 14"
                       className={`flex-1 px-3 py-2.5 bg-secondary/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                         virtualNumDuplicate ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'
