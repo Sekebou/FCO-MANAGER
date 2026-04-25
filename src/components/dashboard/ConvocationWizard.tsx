@@ -946,7 +946,7 @@ const ConvocationWizard: React.FC<Props> = ({
                 onClick={() => {
                   setVirtualWarningOpen(false);
                   setVirtualFormOpen(true);
-                  setTimeout(() => virtualNameInputRef.current?.focus(), 100);
+                  setTimeout(() => virtualFirstNameInputRef.current?.focus(), 100);
                 }}
                 className="flex-1 h-11 rounded-xl bg-destructive text-destructive-foreground text-sm font-extrabold hover:bg-destructive/90 transition-colors shadow-lg shadow-destructive/30"
               >
