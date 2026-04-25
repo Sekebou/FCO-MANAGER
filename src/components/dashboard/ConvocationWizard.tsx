@@ -5,7 +5,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { getOisemontDisplayName } from '@/lib/fffApi';
 import {
   Shield, X, Search, Check, UserCheck, UserX, ChevronRight, ChevronLeft,
-  Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash, MessageSquare, Sparkles
+  Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash, MessageSquare, Sparkles, UserPlus, BellOff
 } from 'lucide-react';
 
 interface Props {
@@ -58,6 +58,9 @@ const ConvocationWizard: React.FC<Props> = ({
   const [keyboardInset, setKeyboardInset] = useState(0);
   const [safeAreaTop, setSafeAreaTop] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [virtualFormOpen, setVirtualFormOpen] = useState(false);
+  const [virtualName, setVirtualName] = useState('');
+  const virtualNameInputRef = useRef<HTMLInputElement>(null);
 
   // Read safe-area-inset-top once on mount
   useEffect(() => {
@@ -125,10 +128,28 @@ const ConvocationWizard: React.FC<Props> = ({
     [draftConvocations]
   );
 
-  const selectedPlayers = useMemo(
-    () => players.filter(p => selectedIds.includes(p.id)),
-    [players, selectedIds]
-  );
+  // Build a "virtual player" view for IDs that are not in the players list
+  // (used so step 2/3 + final composition show them like real players)
+  const selectedPlayers = useMemo(() => {
+    const list: Player[] = [];
+    for (const id of selectedIds) {
+      const real = players.find(p => p.id === id);
+      if (real) {
+        list.push(real);
+      } else if (id.startsWith('virtual_')) {
+        const conv = draftConvocations[id] as any;
+        list.push({
+          id,
+          name: (conv?.virtualName as string) || 'Joueur invité',
+          position: 'Non défini',
+          matches: 0,
+          goals: 0,
+          assists: 0,
+        } as Player);
+      }
+    }
+    return list;
+  }, [players, selectedIds, draftConvocations]);
 
   const nonSelectedPlayers = useMemo(
     () => players.filter(p => !selectedIds.includes(p.id)),
@@ -163,6 +184,31 @@ const ConvocationWizard: React.FC<Props> = ({
     }
   };
 
+  // Virtual player: locally-added participant without an account
+  // ID schema = "virtual_<timestamp>" → not a UUID, so it never collides with
+  // real players, never receives push notifications, and never blocks future
+  // account creation (register_user looks up players by name, not by id).
+  const addVirtualPlayer = () => {
+    const trimmed = virtualName.trim();
+    if (!trimmed) return;
+    // Avoid creating two virtuals with the exact same name in this draft
+    const exists = Object.entries(draftConvocations).some(
+      ([id, c]: [string, any]) =>
+        id.startsWith('virtual_') &&
+        c?.status === 'convoque' &&
+        (c?.virtualName || '').trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (exists) {
+      setVirtualName('');
+      setVirtualFormOpen(false);
+      return;
+    }
+    const newId = `virtual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    updateDraft(newId, { status: 'convoque', virtualName: trimmed } as any);
+    setVirtualName('');
+    setVirtualFormOpen(false);
+  };
+
   const allHaveNumbers = selectedPlayers.every(p => draftConvocations[p.id]?.number);
   const canGoNext = step === 1 ? selectedIds.length > 0 : step === 2 ? allHaveNumbers : true;
   const canPublish = !!(customNotifTitle.trim() && customNotifBody.trim());
@@ -194,6 +240,93 @@ const ConvocationWizard: React.FC<Props> = ({
             </button>
           )}
         </div>
+
+        {/* Add virtual player (no account) */}
+        <div className="mt-2">
+          {!virtualFormOpen ? (
+            <button
+              onClick={() => {
+                setVirtualFormOpen(true);
+                setTimeout(() => virtualNameInputRef.current?.focus(), 50);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 h-10 rounded-xl border border-dashed border-accent/40 bg-accent/5 text-accent text-xs font-bold hover:bg-accent/10 transition-colors"
+            >
+              <UserPlus size={14} />
+              <span>Ajouter un joueur sans compte</span>
+            </button>
+          ) : (
+            <div className="rounded-xl border border-accent/40 bg-accent/5 p-2 space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground px-1">
+                <BellOff size={10} />
+                <span>Aucune notif envoyée — utilisable pour la compo et les paris</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={virtualNameInputRef}
+                  type="text"
+                  placeholder="Prénom Nom du joueur"
+                  value={virtualName}
+                  onChange={e => setVirtualName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addVirtualPlayer();
+                    }
+                  }}
+                  className="flex-1 h-10 bg-card border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-accent"
+                  style={{ fontSize: 16 }}
+                  maxLength={40}
+                />
+                <button
+                  onClick={addVirtualPlayer}
+                  disabled={!virtualName.trim()}
+                  className="h-10 px-3 rounded-xl bg-accent text-accent-foreground text-xs font-bold disabled:opacity-40"
+                >
+                  Ajouter
+                </button>
+                <button
+                  onClick={() => { setVirtualFormOpen(false); setVirtualName(''); }}
+                  className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center"
+                >
+                  <X size={14} className="text-muted-foreground" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Virtual players already added — quick chips */}
+        {(() => {
+          const virtuals = Object.entries(draftConvocations).filter(
+            ([id, c]: [string, any]) => id.startsWith('virtual_') && c?.status === 'convoque'
+          );
+          if (virtuals.length === 0) return null;
+          return (
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 mb-1.5 px-1">
+                Joueurs sans compte ({virtuals.length})
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {virtuals.map(([id, c]: [string, any]) => (
+                  <div
+                    key={id}
+                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full bg-accent/10 border border-accent/30 text-xs text-foreground"
+                  >
+                    <UserPlus size={10} className="text-accent" />
+                    <span className="font-semibold">{c.virtualName || 'Joueur'}</span>
+                    <button
+                      onClick={() => togglePlayer(id)}
+                      className="w-5 h-5 rounded-full bg-muted flex items-center justify-center"
+                      aria-label="Retirer"
+                    >
+                      <X size={10} className="text-muted-foreground" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Player grid */}
