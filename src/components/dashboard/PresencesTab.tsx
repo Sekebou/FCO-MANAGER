@@ -542,13 +542,17 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                             return order(presencesMap[aId]) - order(presencesMap[bId]);
                           })
                           .map(([playerId, conv]) => {
+                            const isVirtual = playerId.startsWith('virtual_');
                             const player = players.find(p => p.id === playerId);
-                            if (!player) return null;
+                            if (!isVirtual && !player) return null;
+                            const displayName = isVirtual
+                              ? ((conv as any).virtualName || 'Joueur invité')
+                              : player!.name;
                             const presenceStatus = presencesMap[playerId];
-                            const isMe = playerId === myPlayerId;
-                            const member = members.find(m => m.playerId === playerId);
+                            const isMe = !isVirtual && playerId === myPlayerId;
+                            const member = !isVirtual ? members.find(m => m.playerId === playerId) : undefined;
                             const photoURL = member?.photoURL;
-                            const initials = player.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                            const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                             return (
                               <div
                                 key={playerId}
@@ -568,19 +572,24 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                                 </div>
                                 {/* Avatar */}
                                 {photoURL ? (
-                                  <img src={photoURL} alt={player.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                                  <img src={photoURL} alt={displayName} className="w-7 h-7 rounded-full object-cover shrink-0" />
                                 ) : (
-                                  <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                                    <span className="text-primary text-[10px] font-bold">{initials}</span>
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${isVirtual ? 'bg-muted' : 'bg-primary/20'}`}>
+                                    <span className={`text-[10px] font-bold ${isVirtual ? 'text-muted-foreground' : 'text-primary'}`}>{initials}</span>
                                   </div>
                                 )}
                                 {/* Name */}
-                                <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                                  <span className="font-semibold text-xs text-foreground truncate">{player.name}</span>
+                                <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold text-xs text-foreground truncate">{displayName}</span>
                                   {isMe && <span className="text-[9px] font-black text-primary bg-primary/15 px-1 rounded shrink-0">TOI</span>}
+                                  {isVirtual && (
+                                    <span className="text-[9px] font-black text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0 border border-border">
+                                      SANS COMPTE
+                                    </span>
+                                  )}
                                 </div>
-                                {/* Status pill — uniform */}
-                                {renderPill(presenceStatus)}
+                                {/* Status pill — uniform (hidden for virtuals: no app to confirm) */}
+                                {!isVirtual && renderPill(presenceStatus)}
                               </div>
                             );
                           })
