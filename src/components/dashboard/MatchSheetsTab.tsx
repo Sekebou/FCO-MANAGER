@@ -149,12 +149,12 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
         onClick={e => e.stopPropagation()}
       >
         {/* Drag indicator */}
-        <div className="flex justify-center pt-2 pb-1">
+        <div className="flex justify-center pt-2 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-2 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-2 border-b border-border shrink-0">
           <div>
             <h3 className="text-sm font-bold text-foreground">Remplacer {swapModal.playerName}</h3>
             <p className="text-[10px] text-muted-foreground">N°{swapModal.conv.number || '?'} — {swapModal.conv.position || 'Poste non défini'}</p>
@@ -165,7 +165,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
         </div>
 
         {/* Toggle: list / custom */}
-        <div className="flex gap-1.5 px-5 pt-3">
+        <div className="flex gap-1.5 px-5 pt-3 shrink-0">
           <button
             onClick={() => onSwapModeChange('list')}
             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${swapMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
@@ -183,7 +183,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
         {swapMode === 'list' ? (
           <>
             {/* Search */}
-            <div className="px-5 pt-3">
+            <div className="px-5 pt-3 shrink-0">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -388,10 +388,10 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
         style={{ maxHeight: maxH }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex justify-center pt-2 pb-1">
+        <div className="flex justify-center pt-2 pb-1 shrink-0">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
-        <div className="flex items-center justify-between px-5 py-2 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-2 border-b border-border shrink-0">
           <div>
             <h3 className="text-sm font-bold text-foreground">Ajouter un joueur</h3>
             <p className="text-[10px] text-muted-foreground">Convoque un joueur supplémentaire</p>
@@ -401,7 +401,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
           </button>
         </div>
 
-        <div className="flex gap-1.5 px-5 pt-3">
+        <div className="flex gap-1.5 px-5 pt-3 shrink-0">
           <button
             onClick={() => { onAddModeChange('list'); onListSelectPlayer(null); onListNumberChange(''); }}
             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
@@ -498,7 +498,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
             </div>
           ) : (
             <>
-              <div className="px-5 pt-3">
+              <div className="px-5 pt-3 shrink-0">
                 <div className="relative">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
