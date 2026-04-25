@@ -1019,7 +1019,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     <h3 className="text-sm font-bold text-foreground">Ajouter un joueur</h3>
                     <p className="text-[10px] text-muted-foreground">Convoque un joueur supplémentaire</p>
                   </div>
-                  <button onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); }} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                  <button onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); setVirtualFirstName(''); setVirtualLastName(''); }} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                     <X size={16} className="text-muted-foreground" />
                   </button>
                 </div>
