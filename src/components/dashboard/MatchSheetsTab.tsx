@@ -176,7 +176,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
             onClick={() => onSwapModeChange('custom')}
             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${swapMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
           >
-            Nom libre
+            Joueur non inscrit
           </button>
         </div>
 
