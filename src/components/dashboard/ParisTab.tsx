@@ -1057,17 +1057,12 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         ))}
       </div>
 
-      {/* Banner: Paris buteur ouverts (convocations publiées) */}
+      {/* Banner: Paris buteur ouverts (convocations publiées) — purely informational */}
       {scorerOpenMatches.length > 0 && (
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          onClick={() => {
-            const first = scorerOpenMatches[0];
-            if (first?.team && first.team !== selectedTeam) setSelectedTeam(first.team);
-            setActiveFilter('upcoming');
-          }}
-          className="w-full text-left relative overflow-hidden rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.06] to-purple-500/[0.08] backdrop-blur-sm shadow-sm hover:border-purple-500/50 transition-all"
+          className="relative overflow-hidden rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.06] to-purple-500/[0.08] backdrop-blur-sm shadow-sm"
         >
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
           <div className="pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full bg-fuchsia-500/20 blur-3xl" />
@@ -1086,7 +1081,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               </div>
             </div>
           </div>
-        </motion.button>
+        </motion.div>
       )}
 
 
