@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -191,6 +191,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [selectedTeam, setSelectedTeam] = useState<string>('A');
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [convocatedPlayers, setConvocatedPlayers] = useState<{ id: string; name: string; position: string }[]>([]);
+  const [scorerOpenMatches, setScorerOpenMatches] = useState<Array<{ id: string; team: string; homeTeam: string; awayTeam: string; date: string }>>([]);
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
@@ -280,6 +281,44 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       }
     });
   }, [bets]);
+
+  // Load matches with published convocations (= scorer bets open)
+  useEffect(() => {
+    const fetchOpenScorerMatches = async () => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data } = await supabase
+        .from('events')
+        .select('id, team, title, date')
+        .eq('type', 'match')
+        .eq('convocations_published', true)
+        .gte('date', todayStart.toISOString())
+        .order('date', { ascending: true })
+        .limit(10);
+      if (!data) return;
+      // Parse "Home vs Away" or "Home - Away" from title
+      const parsed = data
+        .filter((e: any) => e.team)
+        .map((e: any) => {
+          const m = String(e.title || '').match(/^(.+?)\s+(?:vs|VS|-)\s+(.+)$/);
+          return {
+            id: e.id,
+            team: e.team,
+            homeTeam: m?.[1]?.trim() || e.title,
+            awayTeam: m?.[2]?.trim() || '',
+            date: e.date,
+          };
+        })
+        .filter(e => e.awayTeam);
+      setScorerOpenMatches(parsed);
+    };
+    fetchOpenScorerMatches();
+
+    const channel = supabase.channel('paris-scorer-open')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, fetchOpenScorerMatches)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -999,6 +1038,44 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           </button>
         ))}
       </div>
+
+      {/* Banner: Paris buteur ouverts (convocations publiées) */}
+      {scorerOpenMatches.length > 0 && (
+        <motion.button
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => {
+            // Switch to the team of the first open match if user is on another team
+            const first = scorerOpenMatches[0];
+            if (first?.team && first.team !== selectedTeam) setSelectedTeam(first.team);
+            setActiveFilter('upcoming');
+          }}
+          className="w-full text-left relative overflow-hidden rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-fuchsia-500/10 to-purple-500/10 px-3 py-2.5 hover:border-purple-500/50 transition-all"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="shrink-0 w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+              <Megaphone size={16} className="text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide leading-tight">
+                ⚽ Paris buteur ouverts
+              </div>
+              <div className="text-[11px] text-foreground/80 leading-snug truncate mt-0.5">
+                {scorerOpenMatches.slice(0, 3).map((m, i) => (
+                  <span key={m.id}>
+                    {i > 0 && <span className="text-muted-foreground"> · </span>}
+                    <span className="font-semibold">Éq. {m.team}</span>{' '}
+                    <span className="text-muted-foreground">{m.homeTeam} vs {m.awayTeam}</span>
+                  </span>
+                ))}
+                {scorerOpenMatches.length > 3 && (
+                  <span className="text-muted-foreground"> +{scorerOpenMatches.length - 3}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.button>
+      )}
 
       {/* Filter tabs */}
       <div className="flex bg-secondary/50 rounded-xl p-1 border border-border/50">
