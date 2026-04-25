@@ -137,6 +137,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [userScorerCount, setUserScorerCount] = useState(0);
   const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
   const [scorerLimitOpen, setScorerLimitOpen] = useState(false);
+  const [duplicateBetOpen, setDuplicateBetOpen] = useState<null | { title: string; message: string }>(null);
 
   // Clamp amount to balance whenever balance changes (prevents grey "Valider" if balance < default 10)
   useEffect(() => {
@@ -260,13 +261,25 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         }
         else if (msg.includes('déjà')) {
           if (betType === 'scorer' && selectedScorer) {
-            toast.error(`Tu as déjà parié sur ${selectedScorer.name} comme buteur`);
+            setDuplicateBetOpen({
+              title: 'Pari buteur déjà placé',
+              message: `Tu as déjà parié sur ${selectedScorer.name} comme buteur sur ce match. Choisis un autre joueur.`,
+            });
           } else if (betType === 'exact_score') {
-            toast.error('Tu as déjà un pari "score exact" sur ce match');
+            setDuplicateBetOpen({
+              title: 'Pari déjà placé',
+              message: 'Tu as déjà un pari "Score exact" sur ce match. Tu ne peux en placer qu\'un seul par match.',
+            });
           } else if (betType === 'match') {
-            toast.error('Tu as déjà un pari "résultat" sur ce match');
+            setDuplicateBetOpen({
+              title: 'Pari déjà placé',
+              message: 'Tu as déjà un pari "Résultat" sur ce match. Tu ne peux en placer qu\'un seul par match.',
+            });
           } else {
-            toast.error('Tu as déjà ce pari sur ce match !');
+            setDuplicateBetOpen({
+              title: 'Pari déjà placé',
+              message: 'Tu as déjà ce pari sur ce match.',
+            });
           }
         }
         else if (msg.includes('Solde')) toast.error('Solde insuffisant !');
@@ -741,6 +754,48 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                   <button
                     onClick={() => setScorerLimitOpen(false)}
                     className="w-full py-2.5 rounded-xl bg-amber-500 text-white text-[13px] font-bold hover:brightness-110 active:scale-[0.98] transition-all"
+                  >
+                    Compris
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Sub-modal: pari déjà placé (résultat / score exact / buteur) */}
+        <AnimatePresence>
+          {duplicateBetOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+              onClick={() => setDuplicateBetOpen(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-xs rounded-2xl border border-primary/30 bg-card shadow-2xl overflow-hidden"
+              >
+                <div className="bg-gradient-to-br from-primary/15 via-primary/10 to-primary/15 px-5 pt-5 pb-4 flex flex-col items-center text-center">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 mb-3">
+                    <AlertTriangle size={22} className="text-primary-foreground" strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-[15px] font-black text-foreground leading-tight">
+                    {duplicateBetOpen.title}
+                  </h3>
+                  <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                    {duplicateBetOpen.message}
+                  </p>
+                </div>
+                <div className="p-3">
+                  <button
+                    onClick={() => setDuplicateBetOpen(null)}
+                    className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-bold hover:brightness-110 active:scale-[0.98] transition-all"
                   >
                     Compris
                   </button>
