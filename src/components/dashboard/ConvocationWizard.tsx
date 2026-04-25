@@ -525,9 +525,9 @@ const ConvocationWizard: React.FC<Props> = ({
           onChange={e => setCustomNotifBody(e.target.value)}
           placeholder="Ex: RDV au stade à 13h30, protège-tibias obligatoires !"
           className="w-full min-h-[70px] bg-secondary/60 border border-border/60 rounded-lg p-2.5 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 resize-none transition-all"
-          maxLength={120}
+          maxLength={240}
         />
-        <p className="text-[9px] text-muted-foreground/50 text-right">{customNotifBody.length}/120</p>
+        <p className="text-[9px] text-muted-foreground/50 text-right">{customNotifBody.length}/240</p>
       </div>
 
 
