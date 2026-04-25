@@ -5,7 +5,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { getOisemontDisplayName } from '@/lib/fffApi';
 import {
   Shield, X, Search, Check, UserCheck, UserX, ChevronRight, ChevronLeft,
-  Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash, MessageSquare, Sparkles
+  Send, Users, Trophy, MapPin, Clock, Bell, ClipboardList, Hash, MessageSquare, Sparkles, UserPlus, BellOff
 } from 'lucide-react';
 
 interface Props {
