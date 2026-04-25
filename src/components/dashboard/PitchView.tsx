@@ -727,7 +727,9 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             <div className="flex flex-wrap justify-center gap-2 px-2">
               {substitutePlayers.map((p, idx) => {
                 const isGk = (p.conv.position || getDefaultPositionFromNumber(p.conv.number)) === 'Gardien';
-                const lastName = p.name.split(' ').pop() || p.name;
+                const subNameParts = p.name.trim().split(/\s+/);
+                const subFirstName = subNameParts.length > 1 ? subNameParts[0] : '';
+                const lastName = subNameParts.length > 1 ? subNameParts.slice(1).join(' ') : p.name;
                 return (
                   <motion.div
                     key={p.id}
