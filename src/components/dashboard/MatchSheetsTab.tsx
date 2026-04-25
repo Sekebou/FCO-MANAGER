@@ -117,7 +117,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
     listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [swapSearch]);
 
-  const maxH = viewportHeight
+  const sheetHeight = viewportHeight
     ? `${Math.max(320, viewportHeight - safeAreaTop - 8)}px`
     : '70vh';
 
@@ -147,8 +147,8 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
-        style={{ maxHeight: maxH }}
+        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col overflow-hidden"
+        style={{ height: sheetHeight, maxHeight: sheetHeight }}
         onClick={e => e.stopPropagation()}
       >
         {/* Drag indicator */}
@@ -193,7 +193,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
                   ref={searchInputRef}
                   value={swapSearch}
                   onChange={e => onSwapSearchChange(e.target.value)}
-                  onFocus={() => setTimeout(() => searchInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                  onFocus={() => listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
                   placeholder="Rechercher un joueur..."
                   className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   style={{ fontSize: '16px' }}
@@ -342,7 +342,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
     listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [addSearch]);
 
-  const maxH = viewportHeight
+  const sheetHeight = viewportHeight
     ? `${Math.max(320, viewportHeight - safeAreaTop - 8)}px`
     : '70vh';
 
@@ -390,8 +390,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
-        style={{ maxHeight: maxH }}
+        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col overflow-hidden"
+        style={{ height: sheetHeight, maxHeight: sheetHeight }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-center pt-2 pb-1 shrink-0">
@@ -452,7 +452,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                     max={99}
                     value={listNumber}
                     onChange={e => onListNumberChange(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    onFocus={e => e.currentTarget.select()}
                     placeholder="Ex: 14"
                     className={`flex-1 px-3 py-2.5 bg-secondary/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                       listNumDuplicate ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'
@@ -511,7 +511,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                     ref={searchInputRef}
                     value={addSearch}
                     onChange={e => onAddSearchChange(e.target.value)}
-                    onFocus={() => setTimeout(() => searchInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    onFocus={() => listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
                     placeholder="Rechercher un joueur..."
                     className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     style={{ fontSize: '16px' }}
@@ -611,7 +611,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                   <input
                     value={virtualFirstName}
                     onChange={e => onVirtualFirstNameChange(e.target.value)}
-                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    onFocus={undefined}
                     placeholder="Ex: Karim"
                     className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     style={{ fontSize: '16px' }}
@@ -624,7 +624,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                   <input
                     value={virtualLastName}
                     onChange={e => onVirtualLastNameChange(e.target.value)}
-                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    onFocus={undefined}
                     placeholder="Ex: Benzema"
                     className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     style={{ fontSize: '16px' }}
@@ -668,7 +668,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
                       max={99}
                       value={virtualNumber}
                       onChange={e => onVirtualNumberChange(e.target.value.replace(/\D/g, '').slice(0, 2))}
-                      onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                      onFocus={e => e.currentTarget.select()}
                       placeholder="Ex: 14"
                       className={`flex-1 px-3 py-2.5 bg-secondary/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
                         virtualNumDuplicate ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'
