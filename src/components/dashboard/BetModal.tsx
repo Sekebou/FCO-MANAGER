@@ -137,6 +137,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [userScorerCount, setUserScorerCount] = useState(0);
   const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
   const [scorerLimitOpen, setScorerLimitOpen] = useState(false);
+  const [duplicateBetOpen, setDuplicateBetOpen] = useState<null | { title: string; message: string }>(null);
 
   // Clamp amount to balance whenever balance changes (prevents grey "Valider" if balance < default 10)
   useEffect(() => {
