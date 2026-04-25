@@ -589,9 +589,6 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
                       {/* Action buttons */}
                       {canManage() && (
                         <div className="flex gap-2 pt-2">
-                          <button onClick={() => startConvocationMode(event.id, event)} className="flex-1 flex items-center justify-center gap-1.5 h-9 text-xs text-accent bg-accent/10 hover:bg-accent/20 font-bold rounded-xl transition-colors">
-                            <Pencil size={12} /> Modifier
-                          </button>
                           <button
                             onClick={() => { void publishConvocations(event.id, event.convocations || {}); }}
                             disabled={publishing}
