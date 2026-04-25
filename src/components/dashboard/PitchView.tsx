@@ -661,6 +661,14 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     >
                       {lastName}
                     </span>
+                    {firstName && (
+                      <span
+                        className="w-full truncate text-center text-[7px] font-medium leading-none text-white/75"
+                        style={{ marginTop: '1px', letterSpacing: '0.02em' }}
+                      >
+                        {firstName}
+                      </span>
+                    )}
                   </>
                 )}
               </DraggablePlayer>
