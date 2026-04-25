@@ -553,9 +553,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     <div className="flex items-center justify-between px-4 py-3">
                       {/* Home */}
                       <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-                        <div className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden">
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden ${homeLogo ? 'bg-white keep-white border border-border/50 p-1' : ''}`}>
                           {homeLogo ? (
-                            <img src={homeLogo} alt={resolvedHome || ''} className="w-12 h-12 object-contain drop-shadow-md" style={{ mixBlendMode: 'multiply' }} />
+                            <img src={homeLogo} alt={resolvedHome || ''} className="w-12 h-12 object-contain" />
                           ) : (
                             <div className="w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center">
                               <span className="text-[10px] font-black text-muted-foreground/60 text-center leading-none">{(resolvedHome || '?').slice(0, 3).toUpperCase()}</span>
