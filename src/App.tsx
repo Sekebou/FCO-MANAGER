@@ -38,6 +38,7 @@ const App = () => {
 
   return (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
     <TooltipProvider>
       <Sonner />
       <BrowserRouter>
