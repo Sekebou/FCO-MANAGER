@@ -470,7 +470,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [localSheets, onMatchSheetUpdated, syncEventConvocations, refundScorerBetsForPlayer]);
 
-  const handleAddPlayerToSheet = useCallback(async (sheetId: string, playerId: string, playerName: string, isVirtual: boolean) => {
+  const handleAddPlayerToSheet = useCallback(async (sheetId: string, playerId: string, playerName: string, isVirtual: boolean, customNumber?: number) => {
     try {
       const sheet = localSheets.find(s => s.id === sheetId);
       if (!sheet) return;
@@ -479,19 +479,31 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         toast.error('Ce joueur est déjà dans la feuille');
         return;
       }
-      // Joueur ajouté via la feuille → directement au banc (numéro ≥ 12)
+      // Numéros déjà attribués (pour vérifier doublon ou choisir un n° de banc)
       const usedNumbers = new Set(
         Object.values(existing)
           .filter((c: any) => c?.status === 'convoque')
           .map((c: any) => c?.number)
           .filter((n: any) => typeof n === 'number')
       );
-      let benchNumber = 12;
-      while (usedNumbers.has(benchNumber) && benchNumber < 100) benchNumber++;
+
+      let finalNumber: number;
+      if (typeof customNumber === 'number' && customNumber > 0) {
+        if (usedNumbers.has(customNumber)) {
+          toast.error(`Le numéro ${customNumber} est déjà attribué`);
+          return;
+        }
+        finalNumber = customNumber;
+      } else {
+        // Joueur ajouté sans numéro spécifié → directement au banc (numéro ≥ 12)
+        let benchNumber = 12;
+        while (usedNumbers.has(benchNumber) && benchNumber < 100) benchNumber++;
+        finalNumber = benchNumber;
+      }
 
       const newConv: Convocation = {
         status: 'convoque',
-        number: benchNumber,
+        number: finalNumber,
         position: '',
         ...(isVirtual ? { virtualName: playerName } : {}),
       };
@@ -511,11 +523,13 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
         return next;
       });
-      toast.success(`${playerName} ajouté au banc (n°${benchNumber})`);
+      toast.success(`${playerName} ajouté (n°${finalNumber})`);
       setAddModal(null);
       setAddSearch('');
       setAddCustomName('');
       setAddMode('list');
+      setVirtualStep('warning');
+      setVirtualNumber('');
     } catch {
       toast.error('Erreur lors de l\'ajout');
     }
