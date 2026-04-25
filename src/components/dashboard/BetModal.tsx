@@ -158,9 +158,11 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   useEffect(() => {
     if (!isOpen || !userId) return;
     const fetchData = async () => {
-      const [{ data: pointsData }, { data: betsData }] = await Promise.all([
+      const normalizedDate = (matchDate || '').slice(0, 10);
+      const [{ data: pointsData }, { data: betsData }, { data: userScorerBets }] = await Promise.all([
         supabase.from('user_points').select('balance').eq('user_id', userId).maybeSingle(),
         supabase.from('bets').select('id').eq('home_team', homeTeam).eq('away_team', awayTeam).eq('match_date', matchDate).eq('status', 'pending'),
+        supabase.from('bets').select('id').eq('user_id', userId).eq('home_team', homeTeam).eq('away_team', awayTeam).eq('bet_type', 'scorer').eq('status', 'pending'),
       ]);
       if (pointsData) {
         setBalance(pointsData.balance);
@@ -169,6 +171,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         setBalance(100);
       }
       setActiveBetsCount(betsData?.length || 0);
+      setUserScorerCount(userScorerBets?.length || 0);
     };
     fetchData();
   }, [isOpen, userId, homeTeam, awayTeam, matchDate]);
