@@ -278,6 +278,30 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   const [addCustomName, setAddCustomName] = useState('');
   useBodyScrollLock(!!swapModal || !!addModal);
 
+  // Helper: keep events.convocations in sync with the match sheet + update publisher info so
+  // the "Tu es convoqué par X" banner reflects whoever last edited the sheet.
+  const syncEventConvocations = useCallback(async (eventId: string | undefined, updatedConvocations: Record<string, Convocation>) => {
+    if (!eventId) return;
+    const publisherName = currentUser?.name || undefined;
+    try {
+      const updates: Record<string, any> = {
+        convocations: updatedConvocations as any,
+        convocations_published: true,
+        convocations_published_at: new Date().toISOString(),
+      };
+      if (currentUser?.uid) updates.convocations_published_by = currentUser.uid;
+      if (publisherName) updates.convocations_published_by_name = publisherName;
+      await supabase
+        .from('events')
+        .update(updates)
+        .eq('id', eventId);
+      // Notify Dashboard so events state refreshes immediately (instant UI sync)
+      onEventConvocationsUpdated?.(eventId, updatedConvocations, publisherName);
+    } catch (e) {
+      console.error('[MatchSheetsTab] Failed to sync event convocations:', e);
+    }
+  }, [currentUser, onEventConvocationsUpdated]);
+
   const handleUpdateConvocations = useCallback(async (sheetId: string, updated: Record<string, any>) => {
     try {
       const { error } = await supabase
@@ -298,7 +322,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       if (updatedSheetRef?.eventId) {
         await syncEventConvocations(updatedSheetRef.eventId, updated as Record<string, Convocation>);
       }
-      toast.success('Disposition sauvegardée');
     } catch {
       toast.error('Erreur lors de la sauvegarde');
     }
@@ -338,30 +361,6 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       setRefreshingId(null);
     }
   }, [onMatchSheetUpdated]);
-
-  // Helper: keep events.convocations in sync with the match sheet + update publisher info so
-  // the "Tu es convoqué par X" banner reflects whoever last edited the sheet.
-  const syncEventConvocations = useCallback(async (eventId: string | undefined, updatedConvocations: Record<string, Convocation>) => {
-    if (!eventId) return;
-    const publisherName = currentUser?.name || undefined;
-    try {
-      const updates: Record<string, any> = {
-        convocations: updatedConvocations as any,
-        convocations_published: true,
-        convocations_published_at: new Date().toISOString(),
-      };
-      if (currentUser?.uid) updates.convocations_published_by = currentUser.uid;
-      if (publisherName) updates.convocations_published_by_name = publisherName;
-      await supabase
-        .from('events')
-        .update(updates)
-        .eq('id', eventId);
-      // Notify Dashboard so events state refreshes immediately (instant UI sync)
-      onEventConvocationsUpdated?.(eventId, updatedConvocations, publisherName);
-    } catch (e) {
-      console.error('[MatchSheetsTab] Failed to sync event convocations:', e);
-    }
-  }, [currentUser, onEventConvocationsUpdated]);
 
   const handleSwapPlayer = useCallback(async (replacementId: string, replacementName: string, isVirtual: boolean) => {
     if (!swapModal) return;
