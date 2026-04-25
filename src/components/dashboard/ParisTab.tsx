@@ -193,6 +193,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [convocatedPlayers, setConvocatedPlayers] = useState<{ id: string; name: string; position: string }[]>([]);
   const [scorerOpenMatches, setScorerOpenMatches] = useState<Array<{ id: string; team: string; homeTeam: string; awayTeam: string; date: string }>>([]);
+  const [refundModalBets, setRefundModalBets] = useState<Bet[] | null>(null);
+  const lastRefundSeenAtRef = useRef<string>('1970-01-01T00:00:00Z');
+  const refundInitialLoadRef = useRef(true);
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
