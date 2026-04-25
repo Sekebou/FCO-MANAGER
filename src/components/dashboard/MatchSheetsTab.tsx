@@ -532,6 +532,8 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
       setAddMode('list');
       setVirtualStep('warning');
       setVirtualNumber('');
+      setVirtualFirstName('');
+      setVirtualLastName('');
     } catch {
       toast.error('Erreur lors de l\'ajout');
     }
