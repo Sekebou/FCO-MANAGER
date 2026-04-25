@@ -183,7 +183,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
         {swapMode === 'list' ? (
           <>
             {/* Search */}
-            <div className="px-5 pt-3">
+            <div className="px-5 pt-3 shrink-0">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
