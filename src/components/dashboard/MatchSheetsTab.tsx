@@ -256,6 +256,475 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
   );
 };
 
+/* ── Add Player Bottom-Sheet Modal (mêmes règles clavier que Convocations/Swap) ── */
+interface AddPlayerModalProps {
+  sheetId: string;
+  addMode: 'list' | 'custom';
+  addSearch: string;
+  addCustomName: string;
+  virtualStep: 'warning' | 'name' | 'number';
+  virtualNumber: string;
+  virtualFirstName: string;
+  virtualLastName: string;
+  listSelectedPlayer: { id: string; name: string } | null;
+  listNumber: string;
+  localSheets: MatchSheet[];
+  players: Player[];
+  onClose: () => void;
+  onAddModeChange: (m: 'list' | 'custom') => void;
+  onAddSearchChange: (v: string) => void;
+  onVirtualStepChange: (s: 'warning' | 'name' | 'number') => void;
+  onVirtualNumberChange: (v: string) => void;
+  onVirtualFirstNameChange: (v: string) => void;
+  onVirtualLastNameChange: (v: string) => void;
+  onListSelectPlayer: (p: { id: string; name: string } | null) => void;
+  onListNumberChange: (v: string) => void;
+  onAddPlayer: (sheetId: string, playerId: string, name: string, isVirtual: boolean, customNumber?: number) => void;
+}
+
+const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
+  sheetId, addMode, addSearch, addCustomName,
+  virtualStep, virtualNumber, virtualFirstName, virtualLastName,
+  listSelectedPlayer, listNumber,
+  localSheets, players,
+  onClose, onAddModeChange, onAddSearchChange,
+  onVirtualStepChange, onVirtualNumberChange, onVirtualFirstNameChange, onVirtualLastNameChange,
+  onListSelectPlayer, onListNumberChange,
+  onAddPlayer,
+}) => {
+  useBodyScrollLock();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const [safeAreaTop, setSafeAreaTop] = useState(0);
+
+  useEffect(() => {
+    const el = document.documentElement;
+    const raw = getComputedStyle(el).getPropertyValue('--sat').trim();
+    if (raw) {
+      setSafeAreaTop(parseFloat(raw) || 50);
+    } else {
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;top:0;left:0;height:env(safe-area-inset-top,50px);pointer-events:none;visibility:hidden;';
+      document.body.appendChild(probe);
+      const h = probe.getBoundingClientRect().height;
+      document.body.removeChild(probe);
+      setSafeAreaTop(h > 0 ? h : 50);
+    }
+  }, []);
+
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      setViewportHeight(vv.height);
+      const inset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
+      setKeyboardInset(inset);
+      const isKb = inset > 80 || vv.height < window.innerHeight * 0.82;
+      setKeyboardOpen(isKb);
+    };
+    onResize();
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    return () => {
+      vv.removeEventListener('resize', onResize);
+      vv.removeEventListener('scroll', onResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [addSearch]);
+
+  const maxH = viewportHeight
+    ? `${Math.max(320, viewportHeight - safeAreaTop - 8)}px`
+    : '70vh';
+
+  const sheet = localSheets.find(s => s.id === sheetId);
+  const convokedIds = sheet ? Object.keys(sheet.convocations).filter(id => sheet.convocations[id]?.status === 'convoque') : [];
+  const usedNumbers = sheet
+    ? (Object.values(sheet.convocations)
+        .filter((c: any) => c?.status === 'convoque')
+        .map((c: any) => c?.number)
+        .filter((n: any) => typeof n === 'number') as number[])
+    : [];
+  const usedNumbersSet = new Set(usedNumbers);
+
+  // Validation numéro pour joueur non inscrit (étape number)
+  const parsedVirtualNumber = virtualNumber.trim() === '' ? NaN : Number(virtualNumber);
+  const virtualNumInvalid = !Number.isFinite(parsedVirtualNumber) || parsedVirtualNumber < 1 || parsedVirtualNumber > 99 || !Number.isInteger(parsedVirtualNumber);
+  const virtualNumDuplicate = !virtualNumInvalid && usedNumbersSet.has(parsedVirtualNumber);
+
+  // Validation numéro pour joueur inscrit (après sélection)
+  const parsedListNumber = listNumber.trim() === '' ? NaN : Number(listNumber);
+  const listNumInvalid = !Number.isFinite(parsedListNumber) || parsedListNumber < 1 || parsedListNumber > 99 || !Number.isInteger(parsedListNumber);
+  const listNumDuplicate = !listNumInvalid && usedNumbersSet.has(parsedListNumber);
+
+  const q = addSearch.toLowerCase().trim();
+  const available = players
+    .filter(p => !convokedIds.includes(p.id))
+    .filter(p => !q || p.name.toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
+      style={{ paddingBottom: keyboardInset > 0 ? `${keyboardInset}px` : undefined }}
+      onClick={onClose}
+    >
+      <motion.div
+        ref={containerRef}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
+        style={{ maxHeight: maxH }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        </div>
+        <div className="flex items-center justify-between px-5 py-2 border-b border-border">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Ajouter un joueur</h3>
+            <p className="text-[10px] text-muted-foreground">Convoque un joueur supplémentaire</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+            <X size={16} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="flex gap-1.5 px-5 pt-3">
+          <button
+            onClick={() => { onAddModeChange('list'); onListSelectPlayer(null); onListNumberChange(''); }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+          >
+            Joueur inscrit
+          </button>
+          <button
+            onClick={() => { onAddModeChange('custom'); onVirtualStepChange('warning'); onVirtualNumberChange(''); onVirtualFirstNameChange(''); onVirtualLastNameChange(''); }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
+          >
+            Joueur non inscrit
+          </button>
+        </div>
+
+        {addMode === 'list' ? (
+          listSelectedPlayer ? (
+            /* Étape numéro pour joueur inscrit */
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 space-y-3" style={{ paddingBottom: keyboardOpen ? '120px' : undefined }}>
+              <div className="rounded-xl bg-secondary/50 border border-border px-3 py-2.5 flex items-center gap-3">
+                <span className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-black text-primary shrink-0">
+                  {listSelectedPlayer.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{listSelectedPlayer.name}</p>
+                  <p className="text-[10px] text-muted-foreground">Joueur sélectionné</p>
+                </div>
+                <button
+                  onClick={() => { onListSelectPlayer(null); onListNumberChange(''); }}
+                  className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+                >
+                  <X size={14} className="text-muted-foreground" />
+                </button>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Numéro de maillot</label>
+                <div className="flex items-center gap-2">
+                  <Hash size={16} className="text-muted-foreground" />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={99}
+                    value={listNumber}
+                    onChange={e => onListNumberChange(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    placeholder="Ex: 14"
+                    className={`flex-1 px-3 py-2.5 bg-secondary/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                      listNumDuplicate ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'
+                    }`}
+                    style={{ fontSize: '16px' }}
+                    autoFocus
+                  />
+                </div>
+                {listNumDuplicate && (
+                  <p className="mt-2 text-[11px] text-destructive font-semibold flex items-center gap-1.5">
+                    <AlertTriangle size={11} /> Le numéro {parsedListNumber} est déjà attribué
+                  </p>
+                )}
+                {!listNumInvalid && !listNumDuplicate && (
+                  <p className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                    <Check size={11} /> Numéro disponible
+                  </p>
+                )}
+                {usedNumbers.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">Déjà attribués</p>
+                    <div className="flex flex-wrap gap-1">
+                      {[...usedNumbers].sort((a, b) => a - b).map(n => (
+                        <span key={n} className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-bold text-muted-foreground">{n}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => { onListSelectPlayer(null); onListNumberChange(''); }}
+                  className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 transition-colors"
+                >
+                  Retour
+                </button>
+                <button
+                  onClick={() => {
+                    if (listNumInvalid) { toast.error('Numéro invalide (1-99)'); return; }
+                    if (listNumDuplicate) { toast.error(`Le numéro ${parsedListNumber} est déjà attribué`); return; }
+                    onAddPlayer(sheetId, listSelectedPlayer.id, listSelectedPlayer.name, false, parsedListNumber);
+                  }}
+                  disabled={listNumInvalid || listNumDuplicate}
+                  className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <UserPlus size={14} /> Ajouter
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="px-5 pt-3">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    ref={searchInputRef}
+                    value={addSearch}
+                    onChange={e => onAddSearchChange(e.target.value)}
+                    onFocus={() => setTimeout(() => searchInputRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    placeholder="Rechercher un joueur..."
+                    className="w-full pl-9 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    style={{ fontSize: '16px' }}
+                  />
+                </div>
+              </div>
+              <div ref={listScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-3 space-y-0.5" style={{ paddingBottom: keyboardOpen ? '120px' : undefined }}>
+                {available.length === 0 ? (
+                  <p className="text-center text-xs text-muted-foreground py-6">
+                    {q ? 'Aucun joueur trouvé' : 'Aucun joueur disponible'}
+                  </p>
+                ) : (
+                  available.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { onListSelectPlayer({ id: p.id, name: p.name }); onListNumberChange(''); }}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-colors text-left"
+                    >
+                      <span className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-black text-primary shrink-0">
+                        {p.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{(p as any).position || 'Non défini'}</p>
+                      </div>
+                      <UserPlus size={14} className="text-muted-foreground/50 shrink-0" />
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )
+        ) : (
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ paddingBottom: keyboardOpen ? '120px' : undefined }}>
+            <div className="flex items-center justify-center gap-2 px-5 pt-3 pb-1">
+              {(['warning', 'name', 'number'] as const).map((step, idx) => {
+                const currentIdx = ['warning', 'name', 'number'].indexOf(virtualStep);
+                const reached = idx <= currentIdx;
+                const past = idx < currentIdx;
+                return (
+                  <React.Fragment key={step}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${reached ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
+                      {past ? <Check size={11} /> : idx + 1}
+                    </div>
+                    {idx < 2 && <div className={`w-6 h-0.5 ${past ? 'bg-primary' : 'bg-secondary'}`} />}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            {virtualStep === 'warning' && (
+              <div className="px-5 py-4 space-y-3">
+                <div className="rounded-2xl border-2 border-destructive/40 overflow-hidden">
+                  <div className="bg-destructive/10 px-4 py-3 flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-destructive flex items-center justify-center shrink-0">
+                      <AlertTriangle size={18} className="text-destructive-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-[13px] font-extrabold text-foreground leading-tight">Joueur non inscrit</h4>
+                      <p className="text-[10px] text-muted-foreground">À lire avant de continuer</p>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 space-y-2">
+                    <p className="text-[12px] text-foreground">Ce joueur sera ajouté <b>uniquement</b> à :</p>
+                    <ul className="space-y-1 text-[12px]">
+                      <li className="flex items-start gap-1.5"><span className="text-emerald-500 font-bold">✓</span><span>la <b>feuille de match</b></span></li>
+                      <li className="flex items-start gap-1.5"><span className="text-emerald-500 font-bold">✓</span><span>les <b>paris buteurs</b></span></li>
+                    </ul>
+                    <div className="h-px bg-border my-1" />
+                    <p className="text-[12px] text-foreground">Il <b>ne comptera pas</b> pour :</p>
+                    <ul className="space-y-1 text-[12px] text-muted-foreground">
+                      <li className="flex items-start gap-1.5"><span className="text-destructive font-bold">✗</span><span>les statistiques</span></li>
+                      <li className="flex items-start gap-1.5"><span className="text-destructive font-bold">✗</span><span>les présences / classement</span></li>
+                      <li className="flex items-start gap-1.5"><span className="text-destructive font-bold">✗</span><span>les notifications push</span></li>
+                    </ul>
+                    <div className="mt-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-2 flex items-start gap-2">
+                      <Bell size={12} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-snug">
+                        <b>Pensez à lui faire créer un compte</b> ensuite — son vrai profil prendra alors le relais.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => onVirtualStepChange('name')}
+                  className="w-full py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-extrabold hover:brightness-110 active:scale-[0.98] transition-all"
+                >
+                  J'ai compris
+                </button>
+              </div>
+            )}
+
+            {virtualStep === 'name' && (
+              <div className="px-5 py-4 space-y-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Prénom</label>
+                  <input
+                    value={virtualFirstName}
+                    onChange={e => onVirtualFirstNameChange(e.target.value)}
+                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    placeholder="Ex: Karim"
+                    className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    style={{ fontSize: '16px' }}
+                    autoFocus
+                    maxLength={30}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Nom</label>
+                  <input
+                    value={virtualLastName}
+                    onChange={e => onVirtualLastNameChange(e.target.value)}
+                    onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                    placeholder="Ex: Benzema"
+                    className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    style={{ fontSize: '16px' }}
+                    maxLength={30}
+                  />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => onVirtualStepChange('warning')}
+                    className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 transition-colors"
+                  >
+                    Retour
+                  </button>
+                  <button
+                    onClick={() => {
+                      const fn = virtualFirstName.trim();
+                      const ln = virtualLastName.trim();
+                      if (!fn) { toast.error('Entrez un prénom'); return; }
+                      if (!ln) { toast.error('Entrez un nom'); return; }
+                      onVirtualStepChange('number');
+                    }}
+                    disabled={!virtualFirstName.trim() || !virtualLastName.trim()}
+                    className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all"
+                  >
+                    Suivant
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {virtualStep === 'number' && (
+              <div className="px-5 py-4 space-y-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Numéro de maillot</label>
+                  <div className="flex items-center gap-2">
+                    <Hash size={16} className="text-muted-foreground" />
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={99}
+                      value={virtualNumber}
+                      onChange={e => onVirtualNumberChange(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                      onFocus={() => setTimeout(() => (document.activeElement as HTMLElement)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300)}
+                      placeholder="Ex: 14"
+                      className={`flex-1 px-3 py-2.5 bg-secondary/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                        virtualNumDuplicate ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'
+                      }`}
+                      style={{ fontSize: '16px' }}
+                      autoFocus
+                    />
+                  </div>
+                  {virtualNumDuplicate && (
+                    <p className="mt-2 text-[11px] text-destructive font-semibold flex items-center gap-1.5">
+                      <AlertTriangle size={11} /> Le numéro {parsedVirtualNumber} est déjà attribué
+                    </p>
+                  )}
+                  {!virtualNumInvalid && !virtualNumDuplicate && (
+                    <p className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                      <Check size={11} /> Numéro disponible
+                    </p>
+                  )}
+                  {usedNumbers.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">Déjà attribués</p>
+                      <div className="flex flex-wrap gap-1">
+                        {[...usedNumbers].sort((a, b) => a - b).map(n => (
+                          <span key={n} className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-bold text-muted-foreground">{n}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => onVirtualStepChange('name')}
+                    className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 transition-colors"
+                  >
+                    Retour
+                  </button>
+                  <button
+                    onClick={() => {
+                      const fn = virtualFirstName.trim();
+                      const ln = virtualLastName.trim();
+                      const name = `${fn} ${ln}`.trim();
+                      if (!fn || !ln) { toast.error('Prénom et nom requis'); return; }
+                      if (virtualNumInvalid) { toast.error('Numéro invalide (1-99)'); return; }
+                      if (virtualNumDuplicate) { toast.error(`Le numéro ${parsedVirtualNumber} est déjà attribué`); return; }
+                      const virtualId = `virtual_${Date.now()}`;
+                      onAddPlayer(sheetId, virtualId, name, true, parsedVirtualNumber);
+                    }}
+                    disabled={virtualNumInvalid || virtualNumDuplicate}
+                    className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <UserPlus size={14} /> Ajouter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = false, championships = [], teamLogoMap = {}, currentUser, onMatchSheetUpdated, onDeleteMatchSheet, onEventConvocationsUpdated }) => {
 
   const [search, setSearch] = useState('');
