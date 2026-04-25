@@ -782,6 +782,14 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     >
                       {lastName}
                     </span>
+                    {subFirstName && (
+                      <span
+                        className="w-full truncate text-center text-[6px] font-medium leading-none text-muted-foreground"
+                        style={{ marginTop: '1px', letterSpacing: '0.02em' }}
+                      >
+                        {subFirstName}
+                      </span>
+                    )}
                   </motion.div>
                 );
               })}
