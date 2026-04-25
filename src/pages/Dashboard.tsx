@@ -1017,6 +1017,53 @@ const Dashboard = () => {
     }
   };
 
+  // Helper: remove a player from all events.convocations and match_sheets.convocations (JSONB cleanup)
+  const cleanupPlayerConvocations = async (playerId: string) => {
+    if (!playerId) return;
+    try {
+      // 1. Clean events.convocations
+      const eventsWithConv = events.filter(e => e.convocations && (e.convocations as any)[playerId]);
+      for (const evt of eventsWithConv) {
+        const updated = { ...(evt.convocations as any) };
+        delete updated[playerId];
+        await supabase.from('events').update({ convocations: updated }).eq('id', evt.id);
+      }
+      // 2. Clean match_sheets.convocations
+      const { data: sheets } = await supabase
+        .from('match_sheets')
+        .select('id, convocations');
+      if (sheets) {
+        for (const s of sheets) {
+          const conv = (s.convocations as any) || {};
+          if (conv[playerId]) {
+            const updated = { ...conv };
+            delete updated[playerId];
+            await supabase.from('match_sheets').update({ convocations: updated }).eq('id', s.id);
+          }
+        }
+      }
+      // 3. Update local state
+      setEvents(prev => prev.map(e => {
+        if (e.convocations && (e.convocations as any)[playerId]) {
+          const cleaned = { ...(e.convocations as any) };
+          delete cleaned[playerId];
+          return { ...e, convocations: cleaned };
+        }
+        return e;
+      }));
+      setMatchSheets(prev => prev.map(s => {
+        if (s.convocations && (s.convocations as any)[playerId]) {
+          const cleaned = { ...(s.convocations as any) };
+          delete cleaned[playerId];
+          return { ...s, convocations: cleaned };
+        }
+        return s;
+      }));
+    } catch (e) {
+      console.error('[cleanupPlayerConvocations] error:', e);
+    }
+  };
+
   const deletePlayer = async (playerId: string) => {
     if (!canManage()) return;
     const targetPlayer = players.find(p => p.id === playerId);
@@ -1030,6 +1077,17 @@ const Dashboard = () => {
           if (linked && linked.length > 0) {
             await supabase.from('profiles').delete().eq('id', linked[0].id);
           }
+          // Cleanup convocations + presences before deleting player
+          await cleanupPlayerConvocations(playerId);
+          // Cleanup presences in events
+          const eventsWithPresence = events.filter(e => e.presences && (e.presences as any)[playerId]);
+          for (const evt of eventsWithPresence) {
+            const updatedPresences = { ...(evt.presences as any) };
+            delete updatedPresences[playerId];
+            await supabase.from('events').update({ presences: updatedPresences }).eq('id', evt.id);
+          }
+          await supabase.from('cards').delete().eq('player_id', playerId);
+          await supabase.from('attendance_records').delete().eq('player_id', playerId);
           await supabase.from('players').delete().eq('id', playerId);
           // Audit log
           await supabase.from('audit_logs').insert({
@@ -1069,6 +1127,9 @@ const Dashboard = () => {
               delete updatedPresences[playerId];
               await supabase.from('events').update({ presences: updatedPresences }).eq('id', evt.id);
             }
+
+            // Cleanup convocations dans events + match_sheets pour rester cohérent
+            await cleanupPlayerConvocations(playerId);
           }
           // Delete user role
           await supabase.from('user_roles').delete().eq('user_id', memberId);
