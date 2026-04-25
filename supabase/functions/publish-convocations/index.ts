@@ -366,7 +366,7 @@ async function getFirebaseAccessToken(serviceAccount: any): Promise<string> {
     new TextEncoder().encode(unsignedToken)
   );
 
-  const encodedSignature = base64url(new Uint8Array(signature));
+  const encodedSignature = base64url(signature as ArrayBuffer);
   const jwt = `${unsignedToken}.${encodedSignature}`;
 
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
