@@ -247,8 +247,29 @@ const ConvocationWizard: React.FC<Props> = ({
           {!virtualFormOpen ? (
             <button
               onClick={() => {
-                setVirtualFormOpen(true);
-                setTimeout(() => virtualNameInputRef.current?.focus(), 50);
+                toast.warning('Joueur sans compte', {
+                  description:
+                    "⚠️ Ce joueur ne comptera QUE pour la feuille de match et les paris. Aucune stat, aucune compo perso, aucune notif. Pensez à lui faire créer un compte ensuite — ses comptes réels seront alors utilisés pour stats / paris / compo.",
+                  duration: 8000,
+                  action: {
+                    label: 'Compris',
+                    onClick: () => {
+                      setVirtualFormOpen(true);
+                      setTimeout(() => virtualNameInputRef.current?.focus(), 50);
+                    },
+                  },
+                  cancel: {
+                    label: 'Annuler',
+                    onClick: () => {},
+                  },
+                  classNames: {
+                    toast: '!bg-destructive !border-destructive !text-destructive-foreground',
+                    title: '!text-destructive-foreground !font-bold',
+                    description: '!text-destructive-foreground/90',
+                    actionButton: '!bg-white !text-destructive !font-bold',
+                    cancelButton: '!bg-destructive-foreground/20 !text-destructive-foreground',
+                  },
+                });
               }}
               className="w-full flex items-center justify-center gap-1.5 h-10 rounded-xl border border-dashed border-accent/40 bg-accent/5 text-accent text-xs font-bold hover:bg-accent/10 transition-colors"
             >
@@ -259,7 +280,7 @@ const ConvocationWizard: React.FC<Props> = ({
             <div className="rounded-xl border border-accent/40 bg-accent/5 p-2 space-y-2">
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground px-1">
                 <BellOff size={10} />
-                <span>Aucune notif envoyée — utilisable pour la compo et les paris</span>
+                <span>Pour feuille de match & paris uniquement — pensez à lui créer un compte</span>
               </div>
               <div className="flex items-center gap-2">
                 <input
