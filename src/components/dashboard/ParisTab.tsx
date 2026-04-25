@@ -273,6 +273,39 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     return () => window.removeEventListener('online', handleOnline);
   }, [betsLoaded, authUserId]);
 
+  // Detect freshly refunded bets for the current user → open notification modal
+  useEffect(() => {
+    if (!authUserId || !betsLoaded) return;
+    const myRefunded = bets
+      .filter(b => b.userId === authUserId && b.status === 'refunded' && !!b.settledAt);
+    if (myRefunded.length === 0) {
+      refundInitialLoadRef.current = false;
+      return;
+    }
+    // On first load, just sync the cursor — don't show modal for old refunds
+    if (refundInitialLoadRef.current) {
+      refundInitialLoadRef.current = false;
+      return;
+    }
+    const lastSeen = new Date(lastRefundSeenAtRef.current).getTime();
+    const newRefunds = myRefunded.filter(b => new Date(b.settledAt!).getTime() > lastSeen);
+    if (newRefunds.length === 0) return;
+    setRefundModalBets(newRefunds);
+  }, [bets, authUserId, betsLoaded]);
+
+  const dismissRefundModal = useCallback(async () => {
+    setRefundModalBets(null);
+    if (!authUserId) return;
+    const now = new Date().toISOString();
+    lastRefundSeenAtRef.current = now;
+    try {
+      await supabase.from('user_points').update({ last_refund_seen_at: now }).eq('user_id', authUserId);
+    } catch (e) {
+      console.warn('[dismissRefundModal] update failed', e);
+    }
+  }, [authUserId]);
+
+
   // Load profile photos for bettors
   useEffect(() => {
     if (!bets.length) return;
