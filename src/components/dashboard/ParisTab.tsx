@@ -693,6 +693,16 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [settlePlayersList, setSettlePlayersList] = useState<Record<string, { id: string; name: string; position: string }[]>>({});
   const settlePlayersRequestedRef = useRef<Set<string>>(new Set());
 
+  // Auto-refresh : à chaque ouverture de l'onglet "Régler → Buteurs",
+  // on vide le cache pour forcer le re-fetch des convoqués (les joueurs
+  // retirés de la feuille de match disparaissent ainsi instantanément).
+  useEffect(() => {
+    if (activeFilter === 'settle' && settleSubTab === 'scorers') {
+      settlePlayersRequestedRef.current.clear();
+      setSettlePlayersList({});
+    }
+  }, [activeFilter, settleSubTab]);
+
   // Group pending bets by normalized match for settlement
   const pendingMatchGroups = useMemo(() => {
     const normalizeDate = (dateStr: string) => {
