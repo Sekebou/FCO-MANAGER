@@ -2047,6 +2047,97 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           convocatedPlayers={convocatedPlayers}
         />
       )}
+
+      {/* Refund notification modal — joueur retiré de la feuille de match */}
+      <AnimatePresence>
+        {refundModalBets && refundModalBets.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={dismissRefundModal}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+              className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-br from-sky-500/15 via-sky-500/10 to-transparent p-5 border-b border-border">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-500/20 flex items-center justify-center shrink-0 ring-2 ring-sky-500/30">
+                    <RotateCcw size={22} className="text-sky-500" strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-black text-foreground leading-tight">
+                      Pari{refundModalBets.length > 1 ? 's' : ''} remboursé{refundModalBets.length > 1 ? 's' : ''}
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                      {refundModalBets.length} pari{refundModalBets.length > 1 ? 's' : ''} buteur annulé{refundModalBets.length > 1 ? 's' : ''} et recrédité{refundModalBets.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 space-y-3">
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                  <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-foreground leading-relaxed">
+                    Un entraîneur a <strong>retiré le joueur de la feuille de match</strong>. Ton (tes) pari(s) buteur sur ce joueur ont donc été <strong>annulés</strong> et la mise <strong>recréditée sur ton solde</strong>.
+                  </p>
+                </div>
+
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {refundModalBets.map(bet => (
+                    <div key={bet.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border">
+                      <div className="w-9 h-9 rounded-full bg-sky-500/15 flex items-center justify-center shrink-0">
+                        <Target size={15} className="text-sky-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-foreground truncate">
+                          {bet.scorerPlayerName || 'Joueur'}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {bet.homeTeam} vs {bet.awayTeam}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg bg-sky-500/15 text-sky-500">
+                        <Coins size={12} />
+                        <span className="text-xs font-black tabular-nums">+{bet.amount}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                  <span className="text-xs font-bold text-foreground">Total recrédité</span>
+                  <div className="flex items-center gap-1 text-emerald-500">
+                    <Coins size={14} />
+                    <span className="text-base font-black tabular-nums">
+                      +{refundModalBets.reduce((sum, b) => sum + b.amount, 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 pt-0">
+                <button
+                  onClick={dismissRefundModal}
+                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-extrabold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                >
+                  J'ai compris
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
