@@ -283,12 +283,11 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   }, [bets]);
 
   // Load matches with published convocations (= scorer bets open)
-  // Banner stays visible until ~2h after kickoff (match end), so it covers pre-match AND live
+  // Banner stays visible until kickoff + 5min (mirrors server-side anti-cheat lockout)
   useEffect(() => {
     const fetchOpenScorerMatches = async () => {
-      // Look back up to 24h to catch matches still in progress
       const lookback = new Date();
-      lookback.setHours(lookback.getHours() - 24);
+      lookback.setHours(lookback.getHours() - 6);
       const { data } = await supabase
         .from('events')
         .select('id, team, title, date, time')
@@ -300,18 +299,20 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       if (!data) return;
 
       const now = Date.now();
-      const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h after kickoff = match over
+      const LOCK_BUFFER_MS = 5 * 60 * 1000; // 5 min after kickoff = bets locked
 
       const parsed = data
         .filter((e: any) => e.team)
         .map((e: any) => {
-          // Compute kickoff timestamp
           const kickoff = new Date(e.date);
           if (e.time) {
             const [h, m] = String(e.time).replace('H', ':').split(':').map(Number);
             if (!Number.isNaN(h)) kickoff.setHours(h, m || 0, 0, 0);
+          } else {
+            // No time → safe default lock at 05:00 match day
+            kickoff.setHours(5, 0, 0, 0);
           }
-          const matchOverAt = kickoff.getTime() + MATCH_DURATION_MS;
+          const lockAt = kickoff.getTime() + LOCK_BUFFER_MS;
           const m = String(e.title || '').match(/^(.+?)\s+(?:vs|VS|-)\s+(.+)$/);
           return {
             id: e.id,
@@ -319,16 +320,15 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
             homeTeam: m?.[1]?.trim() || e.title,
             awayTeam: m?.[2]?.trim() || '',
             date: e.date,
-            matchOverAt,
+            lockAt,
           };
         })
-        .filter(e => e.awayTeam && e.matchOverAt > now);
+        .filter(e => e.awayTeam && e.lockAt > now);
       setScorerOpenMatches(parsed);
     };
     fetchOpenScorerMatches();
 
-    // Re-evaluate every minute to drop matches that just ended
-    const interval = setInterval(fetchOpenScorerMatches, 60_000);
+    const interval = setInterval(fetchOpenScorerMatches, 30_000);
     const channel = supabase.channel('paris-scorer-open')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, fetchOpenScorerMatches)
       .subscribe();
@@ -1141,6 +1141,19 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
               const matchStatus = nextMatch.date ? getMatchStatus(nextMatch.date, nextMatch.time) : false;
               const live = matchStatus === 'live';
               const waiting = matchStatus === 'waiting';
+              // Anti-cheat: bets locked 5min after kickoff (server-enforced too)
+              const kickoffTs = (() => {
+                if (!nextMatch.date) return 0;
+                const d = new Date(nextMatch.date);
+                if (nextMatch.time) {
+                  const [h, m] = String(nextMatch.time).replace('H', ':').split(':').map(Number);
+                  if (!Number.isNaN(h)) d.setHours(h, m || 0, 0, 0);
+                } else {
+                  d.setHours(5, 0, 0, 0);
+                }
+                return d.getTime();
+              })();
+              const betsLocked = kickoffTs > 0 && Date.now() > kickoffTs + 5 * 60 * 1000;
               const homeName = getDisplayTeamName(nextMatch.home, selectedTeam);
               const awayName = getDisplayTeamName(nextMatch.away, selectedTeam);
               const homeLogo = nextMatch.home?.club?.logo;
@@ -1309,8 +1322,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         );
                       })()}
 
-                      {/* Bet button — compact */}
-                      {currentUser && !live && !waiting && (
+                      {/* Bet button — compact (locked 5min after kickoff for fairness) */}
+                      {currentUser && !live && !waiting && !betsLocked && (
                         <motion.button
                           whileTap={{ scale: 0.97 }}
                           onClick={async () => {
@@ -1361,6 +1374,14 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                           <Zap size={13} />
                           <span>Parier sur ce match</span>
                         </motion.button>
+                      )}
+
+                      {/* Bets locked indicator (kickoff +5min passed) */}
+                      {currentUser && betsLocked && !alreadyBet && (
+                        <div className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 py-2.5 text-[11px] font-semibold text-muted-foreground">
+                          <Clock size={12} />
+                          <span>Paris fermés — match en cours</span>
+                        </div>
                       )}
 
                       {/* Location */}
