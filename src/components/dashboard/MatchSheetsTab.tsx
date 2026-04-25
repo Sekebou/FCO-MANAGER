@@ -285,19 +285,24 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .update({ convocations: updated as any })
         .eq('id', sheetId);
       if (error) throw error;
+      let updatedSheetRef: MatchSheet | undefined;
       setLocalSheets((prev) => {
         const next = prev.map((ms) => ms.id === sheetId ? { ...ms, convocations: updated } : ms);
-        const updatedSheet = next.find((ms) => ms.id === sheetId);
-        if (updatedSheet && onMatchSheetUpdated) {
-          onMatchSheetUpdated(updatedSheet);
+        updatedSheetRef = next.find((ms) => ms.id === sheetId);
+        if (updatedSheetRef && onMatchSheetUpdated) {
+          onMatchSheetUpdated(updatedSheetRef);
         }
         return next;
       });
+      // Propagate to event so the Présences tab + "Tu es convoqué par X" banner stay in sync
+      if (updatedSheetRef?.eventId) {
+        await syncEventConvocations(updatedSheetRef.eventId, updated as Record<string, Convocation>);
+      }
       toast.success('Disposition sauvegardée');
     } catch {
       toast.error('Erreur lors de la sauvegarde');
     }
-  }, [onMatchSheetUpdated]);
+  }, [onMatchSheetUpdated, syncEventConvocations]);
 
   const handleRefreshScore = useCallback(async (ms: MatchSheet) => {
     if (ms.homeScore != null && ms.awayScore != null) return;
