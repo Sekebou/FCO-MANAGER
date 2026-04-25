@@ -327,6 +327,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimestampRef = useRef(0);
+  const renumberDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pitchContainerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -339,6 +340,25 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
+  }, []);
+
+  // Flush pending renumber save when modal closes
+  const closeRenumberModal = useCallback(() => {
+    if (renumberDebounceRef.current) {
+      clearTimeout(renumberDebounceRef.current);
+      renumberDebounceRef.current = null;
+      // Persist the latest local state immediately
+      if (onUpdateConvocations) {
+        onUpdateConvocations(localConvocations);
+        saveTimestampRef.current = Date.now();
+      }
+    }
+    setRenumberOpen(false);
+  }, [localConvocations, onUpdateConvocations]);
+
+  // Cleanup pending timer on unmount
+  useEffect(() => () => {
+    if (renumberDebounceRef.current) clearTimeout(renumberDebounceRef.current);
   }, []);
 
   // Sync local convocations when prop changes (and not in edit mode)
@@ -1092,7 +1112,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:px-6"
-            onClick={() => setRenumberOpen(false)}
+            onClick={() => closeRenumberModal()}
           >
             <motion.div
               initial={{ y: 40, opacity: 0 }}
@@ -1109,7 +1129,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                   </h3>
                   <p className="text-[10px] text-muted-foreground mt-0.5">1-11 = titulaires · 12+ = banc</p>
                 </div>
-                <button onClick={() => setRenumberOpen(false)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0">
+                <button onClick={() => closeRenumberModal()} className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0">
                   <span className="text-muted-foreground text-lg leading-none">×</span>
                 </button>
               </div>
@@ -1136,11 +1156,21 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
 
                 const setNumber = (pid: string, raw: string) => {
                   const n = raw === '' ? undefined : Math.max(1, Math.min(99, parseInt(raw, 10) || 0));
-                  const updatedConvs = { ...localConvocations };
-                  updatedConvs[pid] = { ...updatedConvs[pid], number: n };
-                  setLocalConvocations(updatedConvs);
-                  onUpdateConvocations(updatedConvs);
-                  saveTimestampRef.current = Date.now();
+                  // Update local state immediately for responsive UI
+                  setLocalConvocations(prev => {
+                    const updated = { ...prev };
+                    updated[pid] = { ...updated[pid], number: n };
+                    return updated;
+                  });
+                  // Debounced save: only persist after typing settles
+                  if (renumberDebounceRef.current) clearTimeout(renumberDebounceRef.current);
+                  renumberDebounceRef.current = setTimeout(() => {
+                    setLocalConvocations(current => {
+                      onUpdateConvocations(current);
+                      saveTimestampRef.current = Date.now();
+                      return current;
+                    });
+                  }, 400);
                 };
 
                 return (
@@ -1196,7 +1226,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     </div>
                     <div className="px-3 py-2.5 border-t border-border shrink-0 flex items-center justify-end gap-2">
                       <button
-                        onClick={() => setRenumberOpen(false)}
+                        onClick={() => closeRenumberModal()}
                         className="px-3 py-1.5 text-[12px] font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
                         Terminé
