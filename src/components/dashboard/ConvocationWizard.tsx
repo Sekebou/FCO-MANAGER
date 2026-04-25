@@ -193,23 +193,27 @@ const ConvocationWizard: React.FC<Props> = ({
   // real players, never receives push notifications, and never blocks future
   // account creation (register_user looks up players by name, not by id).
   const addVirtualPlayer = () => {
-    const trimmed = virtualName.trim();
-    if (!trimmed) return;
+    const firstName = virtualFirstName.trim();
+    const lastName = virtualLastName.trim();
+    if (!firstName || !lastName) return;
+    const fullName = `${firstName} ${lastName}`;
     // Avoid creating two virtuals with the exact same name in this draft
     const exists = Object.entries(draftConvocations).some(
       ([id, c]: [string, any]) =>
         id.startsWith('virtual_') &&
         c?.status === 'convoque' &&
-        (c?.virtualName || '').trim().toLowerCase() === trimmed.toLowerCase()
+        (c?.virtualName || '').trim().toLowerCase() === fullName.toLowerCase()
     );
     if (exists) {
-      setVirtualName('');
+      setVirtualFirstName('');
+      setVirtualLastName('');
       setVirtualFormOpen(false);
       return;
     }
     const newId = `virtual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    updateDraft(newId, { status: 'convoque', virtualName: trimmed } as any);
-    setVirtualName('');
+    updateDraft(newId, { status: 'convoque', virtualName: fullName } as any);
+    setVirtualFirstName('');
+    setVirtualLastName('');
     setVirtualFormOpen(false);
   };
 
