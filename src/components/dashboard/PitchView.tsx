@@ -342,6 +342,25 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
     return () => ro.disconnect();
   }, []);
 
+  // Flush pending renumber save when modal closes
+  const closeRenumberModal = useCallback(() => {
+    if (renumberDebounceRef.current) {
+      clearTimeout(renumberDebounceRef.current);
+      renumberDebounceRef.current = null;
+      // Persist the latest local state immediately
+      if (onUpdateConvocations) {
+        onUpdateConvocations(localConvocations);
+        saveTimestampRef.current = Date.now();
+      }
+    }
+    setRenumberOpen(false);
+  }, [localConvocations, onUpdateConvocations]);
+
+  // Cleanup pending timer on unmount
+  useEffect(() => () => {
+    if (renumberDebounceRef.current) clearTimeout(renumberDebounceRef.current);
+  }, []);
+
   // Sync local convocations when prop changes (and not in edit mode)
   // After a save, ignore prop updates for 3s to avoid overwriting with stale data
   useEffect(() => {
