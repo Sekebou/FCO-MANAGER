@@ -138,6 +138,13 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
   const [scorerLimitOpen, setScorerLimitOpen] = useState(false);
 
+  // Clamp amount to balance whenever balance changes (prevents grey "Valider" if balance < default 10)
+  useEffect(() => {
+    if (balance > 0 && amount > balance) {
+      setAmount(Math.max(1, balance));
+    }
+  }, [balance]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Scorer state
   const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
   const [playerPhotos, setPlayerPhotos] = useState<Record<string, string>>({});
