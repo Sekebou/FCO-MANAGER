@@ -1062,15 +1062,15 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.08] via-primary/[0.06] to-primary/[0.08] backdrop-blur-sm shadow-sm"
+          className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/[0.08] via-orange-500/[0.06] to-primary/[0.08] backdrop-blur-sm shadow-sm"
         >
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-          <div className="pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full bg-primary/20 blur-3xl" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-400/60 to-transparent" />
+          <div className="pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full bg-orange-500/20 blur-3xl" />
 
           <div className="flex items-center gap-2.5 px-3.5 py-3 relative">
-            <div className="relative shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md shadow-primary/30">
-              <Megaphone size={15} className="text-primary-foreground" strokeWidth={2.5} />
-              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary ring-2 ring-card animate-pulse" />
+            <div className="relative shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shadow-md shadow-primary/30">
+              <Megaphone size={15} className="text-white" strokeWidth={2.5} />
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-400 ring-2 ring-card animate-pulse" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-[12px] font-black text-primary uppercase tracking-wider leading-none">
