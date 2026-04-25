@@ -207,14 +207,16 @@ const readCache = <T,>(key: string, ignoreExpiry = false): T | null => {
   } catch { return null; }
 };
 
-/** Returns true if ALL core caches are younger than CACHE_FRESH */
+/** Returns true if ALL core caches are younger than CACHE_FRESH AND non-empty */
 const isCacheFresh = (): boolean => {
   try {
     const keys = ['players', 'events', 'news'];
     return keys.every(k => {
       const raw = localStorage.getItem(CACHE_PREFIX + k);
       if (!raw) return false;
-      const { ts } = JSON.parse(raw);
+      const { ts, data } = JSON.parse(raw);
+      // If the cached data is empty (likely a failed/partial fetch), treat as not fresh
+      if (!Array.isArray(data) || data.length === 0) return false;
       return Date.now() - ts < CACHE_FRESH;
     });
   } catch { return false; }
