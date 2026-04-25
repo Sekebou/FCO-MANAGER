@@ -17,6 +17,8 @@ interface Props {
   isManager?: boolean;
   onUpdateConvocations?: (updated: Record<string, Convocation>) => void;
   onSwapPlayer?: (playerId: string, playerName: string, conv: Convocation) => void;
+  onRemovePlayer?: (playerId: string, playerName: string) => void;
+  onAddPlayer?: () => void;
 }
 
 // Single unified coordinate system — all positions are percentages within the pitch container
