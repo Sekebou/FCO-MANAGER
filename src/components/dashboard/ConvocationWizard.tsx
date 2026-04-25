@@ -62,6 +62,7 @@ const ConvocationWizard: React.FC<Props> = ({
   const [virtualFormOpen, setVirtualFormOpen] = useState(false);
   const [virtualName, setVirtualName] = useState('');
   const virtualNameInputRef = useRef<HTMLInputElement>(null);
+  const [virtualWarningOpen, setVirtualWarningOpen] = useState(false);
 
   // Read safe-area-inset-top once on mount
   useEffect(() => {
