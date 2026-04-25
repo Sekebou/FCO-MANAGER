@@ -654,21 +654,37 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             );
           }
           return (
-            <motion.button
+            <motion.div
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => togglePresence(event.id, myPlayerId, 'present')}
-              className="w-full flex items-center gap-2.5 px-3.5 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all text-left"
+              className="rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/30 p-3"
             >
-              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                <Check size={18} strokeWidth={3} />
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <Shield size={15} className="text-primary" strokeWidth={3} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-foreground leading-tight">Tu es convoqué !</p>
+                  <p className="text-[11px] font-medium leading-tight mt-0.5 text-muted-foreground">Confirme à ton coach si tu seras présent</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-black leading-tight">Je confirme ma présence</p>
-                <p className="text-[11px] font-medium leading-tight mt-0.5 opacity-90">Tu es convoqué — confirme à ton coach que tu seras là</p>
+              <div className="grid grid-cols-2 gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => togglePresence(event.id, myPlayerId, 'present')}
+                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-accent text-accent-foreground font-black text-sm shadow-md shadow-accent/30 hover:shadow-accent/40 transition-all"
+                >
+                  <Check size={16} strokeWidth={3} /> Présent
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setAbsenceModal({ eventId: event.id, playerId: myPlayerId })}
+                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-black text-sm shadow-md shadow-destructive/30 hover:shadow-destructive/40 transition-all"
+                >
+                  <X size={16} strokeWidth={3} /> Absent
+                </motion.button>
               </div>
-            </motion.button>
+            </motion.div>
           );
         })()}
 
