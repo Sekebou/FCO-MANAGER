@@ -276,6 +276,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   const [addSearch, setAddSearch] = useState('');
   const [addMode, setAddMode] = useState<'list' | 'custom'>('list');
   const [addCustomName, setAddCustomName] = useState('');
+  // Wizard pour joueur non inscrit : 'warning' (avertissement) → 'name' → 'number'
+  const [virtualStep, setVirtualStep] = useState<'warning' | 'name' | 'number'>('warning');
+  const [virtualNumber, setVirtualNumber] = useState<string>('');
   useBodyScrollLock(!!swapModal || !!addModal);
 
   // Helper: keep events.convocations in sync with the match sheet + update publisher info so
