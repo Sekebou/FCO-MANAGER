@@ -374,6 +374,78 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [swapModal, localSheets, onMatchSheetUpdated]);
 
+  const handleRemovePlayer = useCallback(async (sheetId: string, playerId: string, playerName: string) => {
+    if (!window.confirm(`Retirer ${playerName} de la feuille de match ?`)) return;
+    try {
+      const sheet = localSheets.find(s => s.id === sheetId);
+      if (!sheet) return;
+      const updatedConvocations = { ...sheet.convocations };
+      delete updatedConvocations[playerId];
+
+      const { error } = await supabase
+        .from('match_sheets')
+        .update({ convocations: updatedConvocations as any })
+        .eq('id', sheetId);
+      if (error) throw error;
+
+      setLocalSheets((prev) => {
+        const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
+        const updatedSheet = next.find(s => s.id === sheetId);
+        if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
+        return next;
+      });
+      toast.success(`${playerName} retiré de la feuille`);
+    } catch {
+      toast.error('Erreur lors de la suppression');
+    }
+  }, [localSheets, onMatchSheetUpdated]);
+
+  const handleAddPlayerToSheet = useCallback(async (sheetId: string, playerId: string, playerName: string, isVirtual: boolean) => {
+    try {
+      const sheet = localSheets.find(s => s.id === sheetId);
+      if (!sheet) return;
+      const existing = (sheet.convocations || {}) as Record<string, Convocation>;
+      if (existing[playerId]) {
+        toast.error('Ce joueur est déjà dans la feuille');
+        return;
+      }
+      // Find next available number
+      const usedNumbers = new Set(
+        Object.values(existing).map((c: any) => c?.number).filter((n: any) => typeof n === 'number')
+      );
+      let nextNumber = 1;
+      while (usedNumbers.has(nextNumber) && nextNumber < 100) nextNumber++;
+
+      const newConv: Convocation = {
+        status: 'convoque',
+        number: nextNumber,
+        position: '',
+        ...(isVirtual ? { virtualName: playerName } : {}),
+      };
+      const updatedConvocations = { ...existing, [playerId]: newConv };
+
+      const { error } = await supabase
+        .from('match_sheets')
+        .update({ convocations: updatedConvocations as any })
+        .eq('id', sheetId);
+      if (error) throw error;
+
+      setLocalSheets((prev) => {
+        const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
+        const updatedSheet = next.find(s => s.id === sheetId);
+        if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
+        return next;
+      });
+      toast.success(`${playerName} ajouté à la feuille`);
+      setAddModal(null);
+      setAddSearch('');
+      setAddCustomName('');
+      setAddMode('list');
+    } catch {
+      toast.error('Erreur lors de l\'ajout');
+    }
+  }, [localSheets, onMatchSheetUpdated]);
+
   const now = new Date();
 
   // Build a logo lookup from championships teamLogos + event-based teamLogoMap
