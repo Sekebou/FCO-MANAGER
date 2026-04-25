@@ -354,15 +354,20 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
               return (
                 <button
                   key={bt.id}
-                  onClick={() => !bt.disabled && setBetType(bt.id)}
-                  disabled={bt.disabled}
+                  onClick={() => {
+                    if (bt.disabled) {
+                      if (bt.id === 'scorer') setScorerInfoOpen(true);
+                      return;
+                    }
+                    setBetType(bt.id);
+                  }}
                   title={bt.disabled ? bt.disabledReason : undefined}
                   className={cn(
                     "flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-[10px] font-semibold transition-all",
                     betType === bt.id
                       ? "bg-accent text-accent-foreground shadow-sm"
                       : bt.disabled
-                        ? "text-muted-foreground/30 cursor-not-allowed"
+                        ? "text-muted-foreground/40 cursor-pointer"
                         : "text-muted-foreground hover:bg-secondary"
                   )}
                 >
