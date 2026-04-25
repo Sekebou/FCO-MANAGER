@@ -964,6 +964,7 @@ export type Database = {
           balance: number
           created_at: string
           id: string
+          last_refund_seen_at: string
           last_win_seen_at: string | null
           total_bet: number
           total_won: number
@@ -974,6 +975,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          last_refund_seen_at?: string
           last_win_seen_at?: string | null
           total_bet?: number
           total_won?: number
@@ -984,6 +986,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          last_refund_seen_at?: string
           last_win_seen_at?: string | null
           total_bet?: number
           total_won?: number
@@ -1067,6 +1070,16 @@ export type Database = {
         Returns: Json
       }
       refresh_match_sheet_score: { Args: { p_sheet_id: string }; Returns: Json }
+      refund_scorer_bets_for_player: {
+        Args: {
+          p_away_team: string
+          p_home_team: string
+          p_match_date: string
+          p_reason?: string
+          p_scorer_player_id: string
+        }
+        Returns: Json
+      }
       register_user: {
         Args: {
           p_email: string

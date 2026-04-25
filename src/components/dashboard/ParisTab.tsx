@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone, RotateCcw, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,7 @@ interface Bet {
   payout: number;
   status: string;
   createdAt: string;
+  settledAt: string | null;
   team: string | null;
   betType: string;
   scorerPlayerId: string | null;
@@ -47,7 +48,8 @@ const mapBet = (r: any): Bet => ({
   id: r.id, userId: r.user_id, userName: r.user_name,
   homeTeam: r.home_team, awayTeam: r.away_team, matchDate: r.match_date,
   prediction: r.prediction, odds: r.odds, amount: r.amount, payout: r.payout,
-  status: r.status, createdAt: r.created_at, team: r.team || null,
+  status: r.status, createdAt: r.created_at, settledAt: r.settled_at || null,
+  team: r.team || null,
   betType: r.bet_type || 'match',
   scorerPlayerId: r.scorer_player_id || null,
   scorerPlayerName: r.scorer_player_name || null,
@@ -61,6 +63,7 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; co
   pending: { icon: Clock, label: 'En cours', color: 'text-amber-500', bg: 'bg-amber-500/10' },
   won: { icon: CheckCircle2, label: 'Gagné', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   lost: { icon: XCircle, label: 'Perdu', color: 'text-destructive', bg: 'bg-destructive/10' },
+  refunded: { icon: RotateCcw, label: 'Remboursé', color: 'text-sky-500', bg: 'bg-sky-500/10' },
 };
 
 const BASE_TEAMS = ['A', 'B', 'C'];
@@ -192,6 +195,9 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [convocatedPlayers, setConvocatedPlayers] = useState<{ id: string; name: string; position: string }[]>([]);
   const [scorerOpenMatches, setScorerOpenMatches] = useState<Array<{ id: string; team: string; homeTeam: string; awayTeam: string; date: string }>>([]);
+  const [refundModalBets, setRefundModalBets] = useState<Bet[] | null>(null);
+  const lastRefundSeenAtRef = useRef<string>('1970-01-01T00:00:00Z');
+  const refundInitialLoadRef = useRef(true);
 
   // Per-team FFF data
   const [teamData, setTeamData] = useState<Record<string, { upcoming: FFFMonthGroup[]; classement: ScrapedStanding[]; loading: boolean }>>({});
@@ -222,13 +228,16 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
       const [{ data: betsData }, { data: pointsData }] = await Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
-        supabase.from('user_points').select('balance').eq('user_id', sessionUserId).maybeSingle(),
+        supabase.from('user_points').select('balance, last_refund_seen_at').eq('user_id', sessionUserId).maybeSingle(),
       ]);
 
       if (!mounted) return;
       if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
-      if (pointsData) setBalance(pointsData.balance);
-      else setBalance(100);
+      if (pointsData) {
+        setBalance(pointsData.balance);
+        const seen = (pointsData as any).last_refund_seen_at;
+        if (seen) lastRefundSeenAtRef.current = seen;
+      } else setBalance(100);
       setLoading(false);
     };
 
@@ -265,6 +274,39 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, [betsLoaded, authUserId]);
+
+  // Detect freshly refunded bets for the current user → open notification modal
+  useEffect(() => {
+    if (!authUserId || !betsLoaded) return;
+    const myRefunded = bets
+      .filter(b => b.userId === authUserId && b.status === 'refunded' && !!b.settledAt);
+    if (myRefunded.length === 0) {
+      refundInitialLoadRef.current = false;
+      return;
+    }
+    // On first load, just sync the cursor — don't show modal for old refunds
+    if (refundInitialLoadRef.current) {
+      refundInitialLoadRef.current = false;
+      return;
+    }
+    const lastSeen = new Date(lastRefundSeenAtRef.current).getTime();
+    const newRefunds = myRefunded.filter(b => new Date(b.settledAt!).getTime() > lastSeen);
+    if (newRefunds.length === 0) return;
+    setRefundModalBets(newRefunds);
+  }, [bets, authUserId, betsLoaded]);
+
+  const dismissRefundModal = useCallback(async () => {
+    setRefundModalBets(null);
+    if (!authUserId) return;
+    const now = new Date().toISOString();
+    lastRefundSeenAtRef.current = now;
+    try {
+      await supabase.from('user_points').update({ last_refund_seen_at: now }).eq('user_id', authUserId);
+    } catch (e) {
+      console.warn('[dismissRefundModal] update failed', e);
+    }
+  }, [authUserId]);
+
 
   // Load profile photos for bettors
   useEffect(() => {
@@ -935,6 +977,7 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         payout: 0,
         status: 'pending',
         createdAt: new Date().toISOString(),
+        settledAt: null,
         team: bet.team || null,
         betType: bet.betType || 'match',
         scorerPlayerId: bet.scorerPlayerId || null,
@@ -2004,6 +2047,97 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
           convocatedPlayers={convocatedPlayers}
         />
       )}
+
+      {/* Refund notification modal — joueur retiré de la feuille de match */}
+      <AnimatePresence>
+        {refundModalBets && refundModalBets.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={dismissRefundModal}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 12 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+              className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-br from-sky-500/15 via-sky-500/10 to-transparent p-5 border-b border-border">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-sky-500/20 flex items-center justify-center shrink-0 ring-2 ring-sky-500/30">
+                    <RotateCcw size={22} className="text-sky-500" strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg font-black text-foreground leading-tight">
+                      Pari{refundModalBets.length > 1 ? 's' : ''} remboursé{refundModalBets.length > 1 ? 's' : ''}
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                      {refundModalBets.length} pari{refundModalBets.length > 1 ? 's' : ''} buteur annulé{refundModalBets.length > 1 ? 's' : ''} et recrédité{refundModalBets.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-5 space-y-3">
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                  <AlertTriangle size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-foreground leading-relaxed">
+                    Un entraîneur a <strong>retiré le joueur de la feuille de match</strong>. Ton (tes) pari(s) buteur sur ce joueur ont donc été <strong>annulés</strong> et la mise <strong>recréditée sur ton solde</strong>.
+                  </p>
+                </div>
+
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {refundModalBets.map(bet => (
+                    <div key={bet.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border">
+                      <div className="w-9 h-9 rounded-full bg-sky-500/15 flex items-center justify-center shrink-0">
+                        <Target size={15} className="text-sky-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-foreground truncate">
+                          {bet.scorerPlayerName || 'Joueur'}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {bet.homeTeam} vs {bet.awayTeam}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 px-2 py-1 rounded-lg bg-sky-500/15 text-sky-500">
+                        <Coins size={12} />
+                        <span className="text-xs font-black tabular-nums">+{bet.amount}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                  <span className="text-xs font-bold text-foreground">Total recrédité</span>
+                  <div className="flex items-center gap-1 text-emerald-500">
+                    <Coins size={14} />
+                    <span className="text-base font-black tabular-nums">
+                      +{refundModalBets.reduce((sum, b) => sum + b.amount, 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 pt-0">
+                <button
+                  onClick={dismissRefundModal}
+                  className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-extrabold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                >
+                  J'ai compris
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
