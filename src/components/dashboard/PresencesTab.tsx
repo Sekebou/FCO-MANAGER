@@ -616,6 +616,62 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
             </div>
           );
         })()}
+
+        {/* CTA: Joueur convoqué doit confirmer sa présence */}
+        {event.convocationsPublished && event.convocations && !isEventPast(event) && currentUser?.playerId && (() => {
+          const myPlayerId = currentUser.playerId!;
+          const convocationsMap = event.convocations as Record<string, Convocation>;
+          const myConv = convocationsMap[myPlayerId];
+          if (!myConv || myConv.status !== 'convoque') return null;
+          const myStatus = (event.presences || {})[myPlayerId];
+          if (myStatus === 'present') {
+            return (
+              <div className="flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-accent/10 border border-accent/30 text-accent">
+                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
+                  <Check size={16} strokeWidth={3} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black leading-tight">Présence confirmée ✓</p>
+                  <p className="text-[11px] font-medium leading-tight mt-0.5 text-accent/80">Tu as déjà répondu présent pour cette convocation</p>
+                </div>
+              </div>
+            );
+          }
+          if (myStatus === 'absent') {
+            return (
+              <button
+                onClick={() => togglePresence(event.id, myPlayerId, 'present')}
+                className="w-full flex items-center gap-2 px-3.5 py-3 rounded-2xl bg-warning/10 border border-warning/30 text-warning hover:bg-warning/20 transition-all text-left"
+              >
+                <div className="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center shrink-0">
+                  <X size={16} strokeWidth={3} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black leading-tight">Tu es noté absent</p>
+                  <p className="text-[11px] font-medium leading-tight mt-0.5 text-warning/80">Touche ici si finalement tu seras présent</p>
+                </div>
+              </button>
+            );
+          }
+          return (
+            <motion.button
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => togglePresence(event.id, myPlayerId, 'present')}
+              className="w-full flex items-center gap-2.5 px-3.5 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all text-left"
+            >
+              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <Check size={18} strokeWidth={3} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black leading-tight">Je confirme ma présence</p>
+                <p className="text-[11px] font-medium leading-tight mt-0.5 opacity-90">Tu es convoqué — confirme à ton coach que tu seras là</p>
+              </div>
+            </motion.button>
+          );
+        })()}
+
         {/* Convocation button - for match events */}
         {event.type === 'match' && !isEventPast(event) && !event.convocationsPublished && canManage() && (
             <button onClick={() => startConvocationMode(event.id, event)} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 text-sm font-semibold transition-all border border-accent/20">
