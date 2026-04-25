@@ -1129,7 +1129,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                   </h3>
                   <p className="text-[10px] text-muted-foreground mt-0.5">1-11 = titulaires · 12+ = banc</p>
                 </div>
-                <button onClick={() => setRenumberOpen(false)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0">
+                <button onClick={() => closeRenumberModal()} className="p-1.5 rounded-lg hover:bg-secondary transition-colors shrink-0">
                   <span className="text-muted-foreground text-lg leading-none">×</span>
                 </button>
               </div>
