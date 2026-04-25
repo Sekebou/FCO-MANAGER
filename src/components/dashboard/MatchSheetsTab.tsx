@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw, X, UserPlus } from 'lucide-react';
+import { Search, Trophy, Calendar, Clock, MapPin, ChevronDown, ChevronUp, Users, Shield, Lock, Trash2, RefreshCw, X, UserPlus, AlertTriangle, Bell, Hash, Check } from 'lucide-react';
 import PitchView from './PitchView';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
@@ -176,7 +176,7 @@ const SwapPlayerModal: React.FC<SwapPlayerModalProps> = ({
             onClick={() => onSwapModeChange('custom')}
             className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${swapMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
           >
-            Nom libre
+            Joueur non inscrit
           </button>
         </div>
 
@@ -276,6 +276,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   const [addSearch, setAddSearch] = useState('');
   const [addMode, setAddMode] = useState<'list' | 'custom'>('list');
   const [addCustomName, setAddCustomName] = useState('');
+  // Wizard pour joueur non inscrit : 'warning' (avertissement) → 'name' → 'number'
+  const [virtualStep, setVirtualStep] = useState<'warning' | 'name' | 'number'>('warning');
+  const [virtualNumber, setVirtualNumber] = useState<string>('');
   useBodyScrollLock(!!swapModal || !!addModal);
 
   // Helper: keep events.convocations in sync with the match sheet + update publisher info so
@@ -467,7 +470,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [localSheets, onMatchSheetUpdated, syncEventConvocations, refundScorerBetsForPlayer]);
 
-  const handleAddPlayerToSheet = useCallback(async (sheetId: string, playerId: string, playerName: string, isVirtual: boolean) => {
+  const handleAddPlayerToSheet = useCallback(async (sheetId: string, playerId: string, playerName: string, isVirtual: boolean, customNumber?: number) => {
     try {
       const sheet = localSheets.find(s => s.id === sheetId);
       if (!sheet) return;
@@ -476,19 +479,31 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         toast.error('Ce joueur est déjà dans la feuille');
         return;
       }
-      // Joueur ajouté via la feuille → directement au banc (numéro ≥ 12)
+      // Numéros déjà attribués (pour vérifier doublon ou choisir un n° de banc)
       const usedNumbers = new Set(
         Object.values(existing)
           .filter((c: any) => c?.status === 'convoque')
           .map((c: any) => c?.number)
           .filter((n: any) => typeof n === 'number')
       );
-      let benchNumber = 12;
-      while (usedNumbers.has(benchNumber) && benchNumber < 100) benchNumber++;
+
+      let finalNumber: number;
+      if (typeof customNumber === 'number' && customNumber > 0) {
+        if (usedNumbers.has(customNumber)) {
+          toast.error(`Le numéro ${customNumber} est déjà attribué`);
+          return;
+        }
+        finalNumber = customNumber;
+      } else {
+        // Joueur ajouté sans numéro spécifié → directement au banc (numéro ≥ 12)
+        let benchNumber = 12;
+        while (usedNumbers.has(benchNumber) && benchNumber < 100) benchNumber++;
+        finalNumber = benchNumber;
+      }
 
       const newConv: Convocation = {
         status: 'convoque',
-        number: benchNumber,
+        number: finalNumber,
         position: '',
         ...(isVirtual ? { virtualName: playerName } : {}),
       };
@@ -508,11 +523,13 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         if (updatedSheet && onMatchSheetUpdated) onMatchSheetUpdated(updatedSheet);
         return next;
       });
-      toast.success(`${playerName} ajouté au banc (n°${benchNumber})`);
+      toast.success(`${playerName} ajouté (n°${finalNumber})`);
       setAddModal(null);
       setAddSearch('');
       setAddCustomName('');
       setAddMode('list');
+      setVirtualStep('warning');
+      setVirtualNumber('');
     } catch {
       toast.error('Erreur lors de l\'ajout');
     }
@@ -958,6 +975,16 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         {addModal && (() => {
           const sheet = localSheets.find(s => s.id === addModal.sheetId);
           const convokedIds = sheet ? Object.keys(sheet.convocations).filter(id => sheet.convocations[id]?.status === 'convoque') : [];
+          const usedNumbers = sheet
+            ? Object.values(sheet.convocations)
+                .filter((c: any) => c?.status === 'convoque')
+                .map((c: any) => c?.number)
+                .filter((n: any) => typeof n === 'number') as number[]
+            : [];
+          const usedNumbersSet = new Set(usedNumbers);
+          const parsedNumber = virtualNumber.trim() === '' ? NaN : Number(virtualNumber);
+          const numberInvalid = !Number.isFinite(parsedNumber) || parsedNumber < 1 || parsedNumber > 99 || !Number.isInteger(parsedNumber);
+          const numberDuplicate = !numberInvalid && usedNumbersSet.has(parsedNumber);
           const q = addSearch.toLowerCase().trim();
           const available = players
             .filter(p => !convokedIds.includes(p.id))
@@ -969,7 +996,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/60 backdrop-blur-md"
-              onClick={() => setAddModal(null)}
+              onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); }}
             >
               <motion.div
                 initial={{ y: '100%' }}
@@ -988,23 +1015,23 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     <h3 className="text-sm font-bold text-foreground">Ajouter un joueur</h3>
                     <p className="text-[10px] text-muted-foreground">Convoque un joueur supplémentaire</p>
                   </div>
-                  <button onClick={() => setAddModal(null)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                  <button onClick={() => { setAddModal(null); setAddMode('list'); setAddCustomName(''); setAddSearch(''); setVirtualStep('warning'); setVirtualNumber(''); }} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
                     <X size={16} className="text-muted-foreground" />
                   </button>
                 </div>
 
                 <div className="flex gap-1.5 px-5 pt-3">
                   <button
-                    onClick={() => setAddMode('list')}
+                    onClick={() => { setAddMode('list'); setVirtualStep('warning'); setVirtualNumber(''); }}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                   >
                     Joueur inscrit
                   </button>
                   <button
-                    onClick={() => setAddMode('custom')}
+                    onClick={() => { setAddMode('custom'); setVirtualStep('warning'); setAddCustomName(''); setVirtualNumber(''); }}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-colors ${addMode === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}
                   >
-                    Nom libre
+                    Joueur non inscrit
                   </button>
                 </div>
 
@@ -1048,29 +1075,168 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                     </div>
                   </>
                 ) : (
-                  <div className="px-5 py-4 space-y-3">
-                    <p className="text-xs text-muted-foreground">Entrez le nom du joueur (même sans compte)</p>
-                    <input
-                      value={addCustomName}
-                      onChange={e => setAddCustomName(e.target.value)}
-                      placeholder="Prénom Nom"
-                      className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      style={{ fontSize: '16px' }}
-                      autoFocus
-                      maxLength={50}
-                    />
-                    <button
-                      onClick={() => {
-                        const name = addCustomName.trim();
-                        if (!name) { toast.error('Entrez un nom'); return; }
-                        const virtualId = `virtual_${Date.now()}`;
-                        handleAddPlayerToSheet(addModal.sheetId, virtualId, name, true);
-                      }}
-                      disabled={!addCustomName.trim()}
-                      className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all"
-                    >
-                      Ajouter à la feuille
-                    </button>
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+                    {/* Stepper */}
+                    <div className="flex items-center justify-center gap-2 px-5 pt-3 pb-1">
+                      {(['warning', 'name', 'number'] as const).map((step, idx) => {
+                        const currentIdx = ['warning', 'name', 'number'].indexOf(virtualStep);
+                        const reached = idx <= currentIdx;
+                        const past = idx < currentIdx;
+                        return (
+                          <React.Fragment key={step}>
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${reached ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
+                              {past ? <Check size={11} /> : idx + 1}
+                            </div>
+                            {idx < 2 && <div className={`w-6 h-0.5 ${past ? 'bg-primary' : 'bg-secondary'}`} />}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+
+                    {/* Étape 1 — Avertissement */}
+                    {virtualStep === 'warning' && (
+                      <div className="px-5 py-4 space-y-3">
+                        <div className="rounded-2xl border-2 border-destructive/40 overflow-hidden">
+                          <div className="bg-destructive/10 px-4 py-3 flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-full bg-destructive flex items-center justify-center shrink-0">
+                              <AlertTriangle size={18} className="text-destructive-foreground" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-[13px] font-extrabold text-foreground leading-tight">Joueur non inscrit</h4>
+                              <p className="text-[10px] text-muted-foreground">À lire avant de continuer</p>
+                            </div>
+                          </div>
+                          <div className="px-4 py-3 space-y-2">
+                            <p className="text-[12px] text-foreground">Ce joueur sera ajouté <b>uniquement</b> à :</p>
+                            <ul className="space-y-1 text-[12px]">
+                              <li className="flex items-start gap-1.5"><span className="text-emerald-500 font-bold">✓</span><span>la <b>feuille de match</b></span></li>
+                              <li className="flex items-start gap-1.5"><span className="text-emerald-500 font-bold">✓</span><span>les <b>paris buteurs</b></span></li>
+                            </ul>
+                            <div className="h-px bg-border my-1" />
+                            <p className="text-[12px] text-foreground">Il <b>ne comptera pas</b> pour :</p>
+                            <ul className="space-y-1 text-[12px] text-muted-foreground">
+                              <li className="flex items-start gap-1.5"><span className="text-destructive font-bold">✗</span><span>les statistiques</span></li>
+                              <li className="flex items-start gap-1.5"><span className="text-destructive font-bold">✗</span><span>les présences / classement</span></li>
+                              <li className="flex items-start gap-1.5"><span className="text-destructive font-bold">✗</span><span>les notifications push</span></li>
+                            </ul>
+                            <div className="mt-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-2 flex items-start gap-2">
+                              <Bell size={12} className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                              <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-snug">
+                                <b>Pensez à lui faire créer un compte</b> ensuite — son vrai profil prendra alors le relais.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setVirtualStep('name')}
+                          className="w-full py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-extrabold hover:brightness-110 active:scale-[0.98] transition-all"
+                        >
+                          J'ai compris
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Étape 2 — Nom */}
+                    {virtualStep === 'name' && (
+                      <div className="px-5 py-4 space-y-3">
+                        <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide">Nom du joueur</label>
+                        <input
+                          value={addCustomName}
+                          onChange={e => setAddCustomName(e.target.value)}
+                          placeholder="Prénom Nom"
+                          className="w-full px-3 py-2.5 bg-secondary/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          style={{ fontSize: '16px' }}
+                          autoFocus
+                          maxLength={50}
+                        />
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => setVirtualStep('warning')}
+                            className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 transition-colors"
+                          >
+                            Retour
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!addCustomName.trim()) { toast.error('Entrez un nom'); return; }
+                              setVirtualStep('number');
+                            }}
+                            disabled={!addCustomName.trim()}
+                            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all"
+                          >
+                            Suivant
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Étape 3 — Numéro */}
+                    {virtualStep === 'number' && (
+                      <div className="px-5 py-4 space-y-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">Numéro de maillot</label>
+                          <div className="flex items-center gap-2">
+                            <Hash size={16} className="text-muted-foreground" />
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              max={99}
+                              value={virtualNumber}
+                              onChange={e => setVirtualNumber(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                              placeholder="Ex: 14"
+                              className={`flex-1 px-3 py-2.5 bg-secondary/50 border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                                numberDuplicate ? 'border-destructive ring-destructive/30' : 'border-border focus:ring-primary/30'
+                              }`}
+                              style={{ fontSize: '16px' }}
+                              autoFocus
+                            />
+                          </div>
+                          {numberDuplicate && (
+                            <p className="mt-2 text-[11px] text-destructive font-semibold flex items-center gap-1.5">
+                              <AlertTriangle size={11} /> Le numéro {parsedNumber} est déjà attribué
+                            </p>
+                          )}
+                          {!numberInvalid && !numberDuplicate && (
+                            <p className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
+                              <Check size={11} /> Numéro disponible
+                            </p>
+                          )}
+                          {usedNumbers.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1.5">Déjà attribués</p>
+                              <div className="flex flex-wrap gap-1">
+                                {[...usedNumbers].sort((a, b) => a - b).map(n => (
+                                  <span key={n} className="px-1.5 py-0.5 rounded bg-muted text-[10px] font-bold text-muted-foreground">{n}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => setVirtualStep('name')}
+                            className="flex-1 py-3 rounded-xl bg-secondary text-foreground text-sm font-bold hover:bg-secondary/70 transition-colors"
+                          >
+                            Retour
+                          </button>
+                          <button
+                            onClick={() => {
+                              const name = addCustomName.trim();
+                              if (!name) { toast.error('Nom manquant'); return; }
+                              if (numberInvalid) { toast.error('Numéro invalide (1-99)'); return; }
+                              if (numberDuplicate) { toast.error(`Le numéro ${parsedNumber} est déjà attribué`); return; }
+                              const virtualId = `virtual_${Date.now()}`;
+                              handleAddPlayerToSheet(addModal.sheetId, virtualId, name, true, parsedNumber);
+                            }}
+                            disabled={numberInvalid || numberDuplicate}
+                            className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
+                          >
+                            <UserPlus size={14} /> Ajouter
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>
