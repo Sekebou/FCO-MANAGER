@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // Only Auth is loaded eagerly (first screen users see)
 const AuthProvider = lazy(() => import("@/contexts/AuthContext").then(m => ({ default: m.AuthProvider })));
+import { ThemeProvider } from "@/contexts/ThemeContext";
 const MobileOnlyGuard = lazy(() => import("@/components/MobileOnlyGuard"));
 const ForceUpdateGuard = lazy(() => import("@/components/ForceUpdateGuard"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
