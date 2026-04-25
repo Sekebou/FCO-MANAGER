@@ -45,7 +45,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
     new TextEncoder().encode(unsignedToken)
   );
 
-  const encodedSignature = base64url(new Uint8Array(signature));
+  const encodedSignature = base64url(signature as ArrayBuffer);
   const jwt = `${unsignedToken}.${encodedSignature}`;
 
   // Exchange JWT for access token
