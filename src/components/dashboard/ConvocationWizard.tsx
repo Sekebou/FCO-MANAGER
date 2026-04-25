@@ -58,6 +58,9 @@ const ConvocationWizard: React.FC<Props> = ({
   const [keyboardInset, setKeyboardInset] = useState(0);
   const [safeAreaTop, setSafeAreaTop] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [virtualFormOpen, setVirtualFormOpen] = useState(false);
+  const [virtualName, setVirtualName] = useState('');
+  const virtualNameInputRef = useRef<HTMLInputElement>(null);
 
   // Read safe-area-inset-top once on mount
   useEffect(() => {
