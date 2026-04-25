@@ -134,6 +134,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [activeBetsCount, setActiveBetsCount] = useState(0);
+  const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
 
   // Scorer state
   const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
@@ -298,7 +299,7 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm border border-border shadow-2xl max-h-[90vh] flex flex-col"
+        className="relative bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-sm border border-border shadow-2xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -353,15 +354,20 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
               return (
                 <button
                   key={bt.id}
-                  onClick={() => !bt.disabled && setBetType(bt.id)}
-                  disabled={bt.disabled}
+                  onClick={() => {
+                    if (bt.disabled) {
+                      if (bt.id === 'scorer') setScorerInfoOpen(true);
+                      return;
+                    }
+                    setBetType(bt.id);
+                  }}
                   title={bt.disabled ? bt.disabledReason : undefined}
                   className={cn(
                     "flex-1 flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg text-[10px] font-semibold transition-all",
                     betType === bt.id
                       ? "bg-accent text-accent-foreground shadow-sm"
                       : bt.disabled
-                        ? "text-muted-foreground/30 cursor-not-allowed"
+                        ? "text-muted-foreground/40 cursor-pointer"
                         : "text-muted-foreground hover:bg-secondary"
                   )}
                 >
@@ -640,6 +646,48 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
             </motion.button>
           </div>
         </div>
+
+        {/* Sub-modal: info paris buteur indisponible */}
+        <AnimatePresence>
+          {scorerInfoOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+              onClick={() => setScorerInfoOpen(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-xs rounded-2xl border border-primary/30 bg-card shadow-2xl overflow-hidden"
+              >
+                <div className="bg-gradient-to-br from-primary/15 via-primary/10 to-primary/15 px-5 pt-5 pb-4 flex flex-col items-center text-center">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 mb-3">
+                    <Target size={22} className="text-primary-foreground" strokeWidth={2.5} />
+                  </div>
+                  <h3 className="text-[15px] font-black text-foreground leading-tight">
+                    Paris buteur pas encore dispo
+                  </h3>
+                  <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                    Les paris sur le buteur du match seront ouverts dès que la convocation officielle sera publiée par le staff.
+                  </p>
+                </div>
+                <div className="p-3">
+                  <button
+                    onClick={() => setScorerInfoOpen(false)}
+                    className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-bold hover:brightness-110 active:scale-[0.98] transition-all"
+                  >
+                    Compris
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
