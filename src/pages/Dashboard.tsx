@@ -8,8 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket, Smartphone
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket, Smartphone, Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 import clubLogo from '@/assets/logo.png';
 import { toast } from 'sonner';
 import PresencesTab from '@/components/dashboard/PresencesTab';
@@ -319,6 +320,7 @@ const HeaderPoints: React.FC<{ userId?: string }> = ({ userId }) => {
 
 const Dashboard = () => {
   const { currentUser, logout, setCurrentUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   
   usePushNotifications(currentUser?.uid);
@@ -1711,6 +1713,31 @@ const Dashboard = () => {
                 </div>
               )}
               {/* Standard buttons for all users */}
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/60 hover:text-primary-foreground transition-all shrink-0"
+                title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                aria-label="Basculer le thème"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={theme}
+                    initial={{ rotate: -90, opacity: 0, scale: 0.7 }}
+                    animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                    exit={{ rotate: 90, opacity: 0, scale: 0.7 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center justify-center"
+                  >
+                    {theme === 'dark'
+                      ? <Sun size={15} className="sm:hidden" />
+                      : <Moon size={15} className="sm:hidden" />}
+                    {theme === 'dark'
+                      ? <Sun size={17} className="hidden sm:block" />
+                      : <Moon size={17} className="hidden sm:block" />}
+                  </motion.span>
+                </AnimatePresence>
+              </button>
               <button onClick={() => setShowChangePassword(true)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-primary-foreground/50 hover:text-primary-foreground transition-all shrink-0" title="Changer mot de passe">
                 <Lock size={14} className="sm:hidden" /><Lock size={16} className="hidden sm:block" />
               </button>
