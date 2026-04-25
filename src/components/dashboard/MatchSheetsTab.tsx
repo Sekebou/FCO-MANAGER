@@ -342,7 +342,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
     listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [addSearch]);
 
-  const maxH = viewportHeight
+  const sheetHeight = viewportHeight
     ? `${Math.max(320, viewportHeight - safeAreaTop - 8)}px`
     : '70vh';
 
@@ -390,8 +390,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col"
-        style={{ maxHeight: maxH }}
+        className="bg-card w-full rounded-t-2xl border-t border-border shadow-2xl flex flex-col overflow-hidden"
+        style={{ height: sheetHeight, maxHeight: sheetHeight }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex justify-center pt-2 pb-1 shrink-0">
