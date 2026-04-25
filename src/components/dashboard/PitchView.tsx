@@ -465,21 +465,31 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
         {/* Horizontal grass stripes — field area */}
         <div className="absolute inset-0 rounded-2xl overflow-hidden">
           {/* Grass area takes top portion */}
-          <div className="absolute top-0 left-0 right-0" style={{ height: substitutePlayers.length > 0 ? '85%' : '100%' }}>
+          <div className="absolute top-0 left-0 right-0 overflow-hidden" style={{ height: substitutePlayers.length > 0 ? '85%' : '100%' }}>
             {[...Array(18)].map((_, i) => (
               <div
                 key={i}
                 className="w-full"
                 style={{
                   height: `${100 / 18}%`,
-                  backgroundColor: i % 2 === 0 ? 'hsl(130 38% 40%)' : 'hsl(130 38% 35%)',
+                  background: i % 2 === 0
+                    ? 'linear-gradient(180deg, hsl(135 42% 44%) 0%, hsl(132 40% 40%) 100%)'
+                    : 'linear-gradient(180deg, hsl(135 42% 38%) 0%, hsl(132 40% 34%) 100%)',
                 }}
               />
             ))}
+            {/* Subtle vignette + sun highlight */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 pointer-events-none"
               style={{
-                background: 'radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,0.2) 100%)',
+                background: 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.08) 0%, transparent 55%), radial-gradient(ellipse at 50% 60%, transparent 45%, rgba(0,0,0,0.28) 100%)',
+              }}
+            />
+            {/* Texture noise overlay */}
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.06] mix-blend-overlay"
+              style={{
+                backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'><filter id=\'n\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'2\' stitchTiles=\'stitch\'/></filter><rect width=\'120\' height=\'120\' filter=\'url(%23n)\'/></svg>")',
               }}
             />
           </div>
