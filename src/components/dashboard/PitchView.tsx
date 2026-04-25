@@ -1226,7 +1226,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
                     </div>
                     <div className="px-3 py-2.5 border-t border-border shrink-0 flex items-center justify-end gap-2">
                       <button
-                        onClick={() => setRenumberOpen(false)}
+                        onClick={() => closeRenumberModal()}
                         className="px-3 py-1.5 text-[12px] font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
                         Terminé
