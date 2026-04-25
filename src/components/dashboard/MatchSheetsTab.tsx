@@ -281,6 +281,23 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
   const [virtualNumber, setVirtualNumber] = useState<string>('');
   const [virtualFirstName, setVirtualFirstName] = useState<string>('');
   const [virtualLastName, setVirtualLastName] = useState<string>('');
+  // Suivi du clavier virtuel (mobile) pour empêcher la modale de passer sous le clavier
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const inset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
+      setKeyboardInset(inset);
+    };
+    onResize();
+    vv.addEventListener('resize', onResize);
+    vv.addEventListener('scroll', onResize);
+    return () => {
+      vv.removeEventListener('resize', onResize);
+      vv.removeEventListener('scroll', onResize);
+    };
+  }, []);
   useBodyScrollLock(!!swapModal || !!addModal);
 
   // Helper: keep events.convocations in sync with the match sheet + update publisher info so
