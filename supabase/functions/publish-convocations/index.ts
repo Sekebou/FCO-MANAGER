@@ -249,7 +249,7 @@ serve(async (req) => {
             const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
             const bettingTitle = '⚽ Paris buteur ouverts !';
-            const bettingBody = `Équipe ${event.team} — ${homeTeam} vs ${awayTeam} : pariez sur le buteur du match !`;
+            const bettingBody = `Équipe ${event.team} — ${homeTeam} vs ${awayTeam} : rendez-vous dans l'onglet Paris pour parier sur le buteur du match !`;
 
             for (const fcmToken of bettingTokens) {
               try {
