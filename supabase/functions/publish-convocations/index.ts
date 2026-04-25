@@ -228,18 +228,80 @@ serve(async (req) => {
 
     console.log(`[publish-convocations] user=${userId} event=${eventId} convoked=${convokedPlayerIds.length} notified=${notifiedCount} matchSheet=${matchSheetCreated}`);
 
-    // 9. Log notification in audit_logs
-    const { data: publisherProfile } = await admin
-      .from('profiles')
-      .select('name')
-      .eq('id', userId)
-      .single();
+    // 8b. Send "Paris buteur ouverts" push to ALL users (only for real matches with a team category)
+    let bettingNotifiedCount = 0;
+    const isRealMatch = event.type === 'match' && !isGhostEvent && event.team && awayTeam;
 
+    if (isRealMatch) {
+      try {
+        // Get all FCM tokens (everyone)
+        const { data: allTokens } = await admin
+          .from('fcm_tokens')
+          .select('token');
+        const bettingTokens = allTokens?.map((r: any) => r.token).filter(Boolean) || [];
+
+        if (bettingTokens.length > 0) {
+          const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
+          if (serviceAccountJson) {
+            const serviceAccount = JSON.parse(serviceAccountJson);
+            const accessToken = await getFirebaseAccessToken(serviceAccount);
+            const projectId = serviceAccount.project_id;
+            const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+            const bettingTitle = '⚽ Paris buteur ouverts !';
+            const bettingBody = `Équipe ${event.team} — ${homeTeam} vs ${awayTeam} : pariez sur le buteur du match !`;
+
+            for (const fcmToken of bettingTokens) {
+              try {
+                const res = await fetch(fcmUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                  },
+                  body: JSON.stringify({
+                    message: {
+                      token: fcmToken,
+                      notification: { title: bettingTitle, body: bettingBody },
+                      data: { type: 'betting_open', eventId, team: event.team },
+                      apns: {
+                        payload: {
+                          aps: {
+                            alert: { title: bettingTitle, body: bettingBody },
+                            sound: 'default',
+                            'mutable-content': 1,
+                          },
+                        },
+                      },
+                      android: {
+                        notification: {
+                          sound: 'default',
+                          channel_id: 'paris',
+                        },
+                      },
+                    },
+                  }),
+                });
+                if (res.ok) bettingNotifiedCount++;
+              } catch (e) {
+                console.error('FCM betting send error:', e);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Betting notification error:', e);
+      }
+    }
+
+    console.log(`[publish-convocations] betting notif sent to ${bettingNotifiedCount} devices (isRealMatch=${isRealMatch})`);
+
+    // 9. Log notification in audit_logs
     await admin.from('audit_logs').insert({
       action: 'publish_convocation',
       target_name: event.title,
       performed_by: userId,
-      performed_by_name: publisherProfile?.name || 'Inconnu',
+      performed_by_name: publisherName,
       details: {
         event_id: eventId,
         event_date: event.date,
@@ -248,6 +310,7 @@ serve(async (req) => {
         convoked_count: convokedPlayerIds.length,
         notified_count: notifiedCount,
         match_sheet_created: matchSheetCreated,
+        betting_notified_count: bettingNotifiedCount,
       },
     });
 
