@@ -60,8 +60,10 @@ const ConvocationWizard: React.FC<Props> = ({
   const [safeAreaTop, setSafeAreaTop] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [virtualFormOpen, setVirtualFormOpen] = useState(false);
-  const [virtualName, setVirtualName] = useState('');
-  const virtualNameInputRef = useRef<HTMLInputElement>(null);
+  const [virtualFirstName, setVirtualFirstName] = useState('');
+  const [virtualLastName, setVirtualLastName] = useState('');
+  const virtualFirstNameInputRef = useRef<HTMLInputElement>(null);
+  const virtualLastNameInputRef = useRef<HTMLInputElement>(null);
   const [virtualWarningOpen, setVirtualWarningOpen] = useState(false);
 
   // Read safe-area-inset-top once on mount
@@ -191,23 +193,27 @@ const ConvocationWizard: React.FC<Props> = ({
   // real players, never receives push notifications, and never blocks future
   // account creation (register_user looks up players by name, not by id).
   const addVirtualPlayer = () => {
-    const trimmed = virtualName.trim();
-    if (!trimmed) return;
+    const firstName = virtualFirstName.trim();
+    const lastName = virtualLastName.trim();
+    if (!firstName || !lastName) return;
+    const fullName = `${firstName} ${lastName}`;
     // Avoid creating two virtuals with the exact same name in this draft
     const exists = Object.entries(draftConvocations).some(
       ([id, c]: [string, any]) =>
         id.startsWith('virtual_') &&
         c?.status === 'convoque' &&
-        (c?.virtualName || '').trim().toLowerCase() === trimmed.toLowerCase()
+        (c?.virtualName || '').trim().toLowerCase() === fullName.toLowerCase()
     );
     if (exists) {
-      setVirtualName('');
+      setVirtualFirstName('');
+      setVirtualLastName('');
       setVirtualFormOpen(false);
       return;
     }
     const newId = `virtual_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    updateDraft(newId, { status: 'convoque', virtualName: trimmed } as any);
-    setVirtualName('');
+    updateDraft(newId, { status: 'convoque', virtualName: fullName } as any);
+    setVirtualFirstName('');
+    setVirtualLastName('');
     setVirtualFormOpen(false);
   };
 
@@ -259,36 +265,58 @@ const ConvocationWizard: React.FC<Props> = ({
                 <BellOff size={10} />
                 <span>Pour feuille de match & paris uniquement — pensez à lui créer un compte</span>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={virtualNameInputRef}
-                  type="text"
-                  placeholder="Prénom Nom du joueur"
-                  value={virtualName}
-                  onChange={e => setVirtualName(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addVirtualPlayer();
-                    }
-                  }}
-                  className="flex-1 h-10 bg-card border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-accent"
-                  style={{ fontSize: 16 }}
-                  maxLength={40}
-                />
-                <button
-                  onClick={addVirtualPlayer}
-                  disabled={!virtualName.trim()}
-                  className="h-10 px-3 rounded-xl bg-accent text-accent-foreground text-xs font-bold disabled:opacity-40"
-                >
-                  Ajouter
-                </button>
-                <button
-                  onClick={() => { setVirtualFormOpen(false); setVirtualName(''); }}
-                  className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center"
-                >
-                  <X size={14} className="text-muted-foreground" />
-                </button>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    ref={virtualFirstNameInputRef}
+                    type="text"
+                    placeholder="Prénom"
+                    value={virtualFirstName}
+                    onChange={e => setVirtualFirstName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        virtualLastNameInputRef.current?.focus();
+                      }
+                    }}
+                    className="h-10 bg-card border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-accent"
+                    style={{ fontSize: 16 }}
+                    maxLength={20}
+                    autoCapitalize="words"
+                  />
+                  <input
+                    ref={virtualLastNameInputRef}
+                    type="text"
+                    placeholder="Nom"
+                    value={virtualLastName}
+                    onChange={e => setVirtualLastName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addVirtualPlayer();
+                      }
+                    }}
+                    className="h-10 bg-card border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-accent"
+                    style={{ fontSize: 16 }}
+                    maxLength={20}
+                    autoCapitalize="words"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={addVirtualPlayer}
+                    disabled={!virtualFirstName.trim() || !virtualLastName.trim()}
+                    className="flex-1 h-10 px-3 rounded-xl bg-accent text-accent-foreground text-xs font-bold disabled:opacity-40"
+                  >
+                    Ajouter
+                  </button>
+                  <button
+                    onClick={() => { setVirtualFormOpen(false); setVirtualFirstName(''); setVirtualLastName(''); }}
+                    className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center"
+                  >
+                    <X size={14} className="text-muted-foreground" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -918,7 +946,7 @@ const ConvocationWizard: React.FC<Props> = ({
                 onClick={() => {
                   setVirtualWarningOpen(false);
                   setVirtualFormOpen(true);
-                  setTimeout(() => virtualNameInputRef.current?.focus(), 100);
+                  setTimeout(() => virtualFirstNameInputRef.current?.focus(), 100);
                 }}
                 className="flex-1 h-11 rounded-xl bg-destructive text-destructive-foreground text-sm font-extrabold hover:bg-destructive/90 transition-colors shadow-lg shadow-destructive/30"
               >
