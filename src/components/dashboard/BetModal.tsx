@@ -367,6 +367,10 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
                       if (bt.id === 'scorer') setScorerInfoOpen(true);
                       return;
                     }
+                    if (bt.id === 'scorer' && userScorerCount >= 3) {
+                      setScorerLimitOpen(true);
+                      return;
+                    }
                     setBetType(bt.id);
                   }}
                   title={bt.disabled ? bt.disabledReason : undefined}
