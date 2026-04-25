@@ -60,8 +60,10 @@ const ConvocationWizard: React.FC<Props> = ({
   const [safeAreaTop, setSafeAreaTop] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [virtualFormOpen, setVirtualFormOpen] = useState(false);
-  const [virtualName, setVirtualName] = useState('');
-  const virtualNameInputRef = useRef<HTMLInputElement>(null);
+  const [virtualFirstName, setVirtualFirstName] = useState('');
+  const [virtualLastName, setVirtualLastName] = useState('');
+  const virtualFirstNameInputRef = useRef<HTMLInputElement>(null);
+  const virtualLastNameInputRef = useRef<HTMLInputElement>(null);
   const [virtualWarningOpen, setVirtualWarningOpen] = useState(false);
 
   // Read safe-area-inset-top once on mount
