@@ -131,6 +131,12 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
   const [betType, setBetType] = useState<BetType>('match');
   const [prediction, setPrediction] = useState<'home' | 'draw' | 'away' | null>(null);
   const [amount, setAmount] = useState(10);
+  const [balance, setBalance] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [activeBetsCount, setActiveBetsCount] = useState(0);
+  const [userScorerCount, setUserScorerCount] = useState(0);
+  const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
+  const [scorerLimitOpen, setScorerLimitOpen] = useState(false);
 
   // Clamp amount to balance whenever balance changes (prevents grey "Valider" if balance < default 10)
   useEffect(() => {
@@ -138,12 +144,6 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
       setAmount(Math.max(1, balance));
     }
   }, [balance]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [balance, setBalance] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [activeBetsCount, setActiveBetsCount] = useState(0);
-  const [userScorerCount, setUserScorerCount] = useState(0);
-  const [scorerInfoOpen, setScorerInfoOpen] = useState(false);
-  const [scorerLimitOpen, setScorerLimitOpen] = useState(false);
 
   // Scorer state
   const [selectedScorer, setSelectedScorer] = useState<ConvocatedPlayer | null>(null);
