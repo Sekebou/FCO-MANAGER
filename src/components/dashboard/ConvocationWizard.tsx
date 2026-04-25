@@ -247,31 +247,7 @@ const ConvocationWizard: React.FC<Props> = ({
         <div className="mt-2">
           {!virtualFormOpen ? (
             <button
-              onClick={() => {
-                toast.warning('Joueur sans compte', {
-                  description:
-                    "⚠️ Ce joueur ne comptera QUE pour la feuille de match et les paris. Aucune stat, aucune compo perso, aucune notif. Pensez à lui faire créer un compte ensuite — ses comptes réels seront alors utilisés pour stats / paris / compo.",
-                  duration: 8000,
-                  action: {
-                    label: 'Compris',
-                    onClick: () => {
-                      setVirtualFormOpen(true);
-                      setTimeout(() => virtualNameInputRef.current?.focus(), 50);
-                    },
-                  },
-                  cancel: {
-                    label: 'Annuler',
-                    onClick: () => {},
-                  },
-                  classNames: {
-                    toast: '!bg-destructive !border-destructive !text-destructive-foreground',
-                    title: '!text-destructive-foreground !font-bold',
-                    description: '!text-destructive-foreground/90',
-                    actionButton: '!bg-white !text-destructive !font-bold',
-                    cancelButton: '!bg-destructive-foreground/20 !text-destructive-foreground',
-                  },
-                });
-              }}
+              onClick={() => setVirtualWarningOpen(true)}
               className="w-full flex items-center justify-center gap-1.5 h-10 rounded-xl border border-dashed border-accent/40 bg-accent/5 text-accent text-xs font-bold hover:bg-accent/10 transition-colors"
             >
               <UserPlus size={14} />
