@@ -723,13 +723,9 @@ const PresencesTab = ({ events, players, members, championships, currentUser, ca
               </button>
             );
           }
-          return (() => {
-          const responsesKey = `responses_${event.id}`;
-          const isCollapsibleByDefault = !!event.convocationsPublished;
-          const stored = expandedPlayers[responsesKey] as unknown as string | undefined;
-          // open = expanded, closed = collapsed. If never toggled: collapsed when convocations published, open otherwise.
-          const isOpen = stored === 'open' ? true : stored === 'closed' ? false : !isCollapsibleByDefault;
-          const toggleOpen = () => setExpandedPlayers(prev => ({ ...prev, [responsesKey]: (isOpen ? 'closed' : 'open') as any }));
+          // Otherwise: render the full collapsible block (open by default, or as user toggled)
+          const isOpen = stored === 'closed' ? false : true;
+          const toggleOpen = () => setExpandedPlayers(prev => ({ ...prev, [responsesKey]: (isOpen ? 'closed' : 'open') as unknown as boolean }));
 
           // Compute counts for the header summary
           const presentCountAll = eventPlayers.filter(p => presences[p.id] === 'present' && !isNonRespondingPlayer(p.id)).length;
