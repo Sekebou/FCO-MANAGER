@@ -327,6 +327,19 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimestampRef = useRef(0);
   const pitchContainerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [renumberOpen, setRenumberOpen] = useState(false);
+
+  // Track container width for accurate popup positioning
+  useEffect(() => {
+    const el = pitchContainerRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.offsetWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Sync local convocations when prop changes (and not in edit mode)
   // After a save, ignore prop updates for 3s to avoid overwriting with stale data
