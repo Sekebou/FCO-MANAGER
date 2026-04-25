@@ -390,6 +390,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
 
       await syncEventConvocations(sheet.eventId, updatedConvocations);
 
+      // Rembourse les paris buteur en cours sur l'ancien joueur (qui sort de la feuille)
+      await refundScorerBetsForPlayer(sheet, playerId, 'Joueur remplacé sur la feuille de match');
+
       setLocalSheets((prev) => {
         const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
         const updatedSheet = next.find(s => s.id === sheetId);
@@ -404,7 +407,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     } catch {
       toast.error('Erreur lors du remplacement');
     }
-  }, [swapModal, localSheets, onMatchSheetUpdated, syncEventConvocations]);
+  }, [swapModal, localSheets, onMatchSheetUpdated, syncEventConvocations, refundScorerBetsForPlayer]);
 
   const refundScorerBetsForPlayer = useCallback(async (sheet: MatchSheet, playerId: string, reason: string) => {
     // Only refund for real player IDs (not virtuals) and only when match has team metadata
