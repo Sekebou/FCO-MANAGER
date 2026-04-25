@@ -741,34 +741,35 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
           {selected && !editMode && (() => {
             // Determine if this is a substitute (no x/y from positioned)
             const onField = positioned.find((p) => p.id === selected.id);
-            const POPUP_W_PCT = 52; // popup width as % of pitch container width
-            const POPUP_H_PCT = isManager && onUpdateConvocations ? 32 : 18;
+            const POPUP_W = 180; // px, matches w-[180px]
+            const containerW = pitchContainerRef.current?.offsetWidth ?? 360;
+            const popupWPct = (POPUP_W / containerW) * 100;
+            const halfW = popupWPct / 2;
+            const PAD = 2; // % padding from container edges
 
             let leftPct = 50;
             let topPct = 50;
             let translateY = '-50%';
-            let translateX = '-50%';
+            // We'll compute exact left so popup fits, no horizontal translate needed
+            let translateX = '0%';
 
             if (onField) {
               const fieldHeightRatio = substitutePlayers.length > 0 ? 0.85 : 1;
               const playerScaledY = onField.y * fieldHeightRatio;
-              // Place above if player is in lower half, below if in upper half
+              // Place above if player is in upper half, below if in upper area
               const placeBelow = playerScaledY < 35;
               topPct = placeBelow ? playerScaledY + 10 : playerScaledY - 10;
               translateY = placeBelow ? '0%' : '-100%';
-              leftPct = onField.x;
-              // Clamp horizontally so popup stays inside container
-              const halfW = POPUP_W_PCT / 2;
-              if (leftPct - halfW < 2) {
-                leftPct = 2;
-                translateX = '0%';
-              } else if (leftPct + halfW > 98) {
-                leftPct = 98;
-                translateX = '-100%';
-              }
+              // Center horizontally on player, then clamp so popup stays inside container
+              let desiredLeft = onField.x - halfW; // top-left of popup, in %
+              const minLeft = PAD;
+              const maxLeft = 100 - popupWPct - PAD;
+              if (desiredLeft < minLeft) desiredLeft = minLeft;
+              if (desiredLeft > maxLeft) desiredLeft = maxLeft;
+              leftPct = desiredLeft;
             } else {
-              // Substitute — anchor above the bench
-              leftPct = 50;
+              // Substitute — center, anchor above the bench
+              leftPct = Math.max(PAD, 50 - halfW);
               topPct = 82;
               translateY = '-100%';
             }
