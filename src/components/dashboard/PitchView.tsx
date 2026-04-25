@@ -327,6 +327,7 @@ const PitchView = forwardRef<HTMLDivElement, Props>(({ convocations, players, is
   const [localConvocations, setLocalConvocations] = useState(convocations);
   const [hasChanges, setHasChanges] = useState(false);
   const saveTimestampRef = useRef(0);
+  const renumberDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pitchContainerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
