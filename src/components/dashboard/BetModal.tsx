@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Trophy, ChevronRight, Target, Hash, User } from 'lucide-react';
+import { X, TrendingUp, Coins, Zap, Gift, MessageCircle, Heart, CalendarCheck, Trophy, ChevronRight, Target, Hash, User, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
