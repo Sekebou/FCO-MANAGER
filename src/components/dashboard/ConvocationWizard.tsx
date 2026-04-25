@@ -265,36 +265,58 @@ const ConvocationWizard: React.FC<Props> = ({
                 <BellOff size={10} />
                 <span>Pour feuille de match & paris uniquement — pensez à lui créer un compte</span>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={virtualNameInputRef}
-                  type="text"
-                  placeholder="Prénom Nom du joueur"
-                  value={virtualName}
-                  onChange={e => setVirtualName(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addVirtualPlayer();
-                    }
-                  }}
-                  className="flex-1 h-10 bg-card border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-accent"
-                  style={{ fontSize: 16 }}
-                  maxLength={40}
-                />
-                <button
-                  onClick={addVirtualPlayer}
-                  disabled={!virtualName.trim()}
-                  className="h-10 px-3 rounded-xl bg-accent text-accent-foreground text-xs font-bold disabled:opacity-40"
-                >
-                  Ajouter
-                </button>
-                <button
-                  onClick={() => { setVirtualFormOpen(false); setVirtualName(''); }}
-                  className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center"
-                >
-                  <X size={14} className="text-muted-foreground" />
-                </button>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    ref={virtualFirstNameInputRef}
+                    type="text"
+                    placeholder="Prénom"
+                    value={virtualFirstName}
+                    onChange={e => setVirtualFirstName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        virtualLastNameInputRef.current?.focus();
+                      }
+                    }}
+                    className="h-10 bg-card border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-accent"
+                    style={{ fontSize: 16 }}
+                    maxLength={20}
+                    autoCapitalize="words"
+                  />
+                  <input
+                    ref={virtualLastNameInputRef}
+                    type="text"
+                    placeholder="Nom"
+                    value={virtualLastName}
+                    onChange={e => setVirtualLastName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addVirtualPlayer();
+                      }
+                    }}
+                    className="h-10 bg-card border border-border rounded-xl px-3 text-sm focus:outline-none focus:border-accent"
+                    style={{ fontSize: 16 }}
+                    maxLength={20}
+                    autoCapitalize="words"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={addVirtualPlayer}
+                    disabled={!virtualFirstName.trim() || !virtualLastName.trim()}
+                    className="flex-1 h-10 px-3 rounded-xl bg-accent text-accent-foreground text-xs font-bold disabled:opacity-40"
+                  >
+                    Ajouter
+                  </button>
+                  <button
+                    onClick={() => { setVirtualFormOpen(false); setVirtualFirstName(''); setVirtualLastName(''); }}
+                    className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center"
+                  >
+                    <X size={14} className="text-muted-foreground" />
+                  </button>
+                </div>
               </div>
             </div>
           )}
