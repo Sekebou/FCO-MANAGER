@@ -182,9 +182,9 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                     </div>
                   )}
                   <div className="flex items-center gap-3 p-3.5">
-                    <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shrink-0 border border-primary/10">
+                    <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${match.homeLogo ? 'bg-white keep-white border-border/50' : 'bg-gradient-to-br from-primary/15 to-primary/5 border-primary/10'}`}>
                       {match.homeLogo ? (
-                        <img src={match.homeLogo} alt="" className="w-8 h-8 object-contain" style={{ mixBlendMode: 'multiply' }} />
+                        <img src={match.homeLogo} alt="" className="w-9 h-9 object-contain" />
                       ) : (
                         <Trophy size={20} className="text-primary" />
                       )}
