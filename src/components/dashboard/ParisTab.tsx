@@ -1059,41 +1059,96 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
       {/* Banner: Paris buteur ouverts (convocations publiées) */}
       {scorerOpenMatches.length > 0 && (
-        <motion.button
-          initial={{ opacity: 0, y: -4 }}
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          onClick={() => {
-            // Switch to the team of the first open match if user is on another team
-            const first = scorerOpenMatches[0];
-            if (first?.team && first.team !== selectedTeam) setSelectedTeam(first.team);
-            setActiveFilter('upcoming');
-          }}
-          className="w-full text-left relative overflow-hidden rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-fuchsia-500/10 to-purple-500/10 px-3 py-2.5 hover:border-purple-500/50 transition-all"
+          className="relative overflow-hidden rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.06] to-purple-500/[0.08] backdrop-blur-sm shadow-sm"
         >
-          <div className="flex items-center gap-2.5">
-            <div className="shrink-0 w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-              <Megaphone size={16} className="text-purple-600 dark:text-purple-400" />
+          {/* Decorative top glow */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
+          <div className="pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full bg-fuchsia-500/20 blur-3xl" />
+
+          {/* Header */}
+          <div className="flex items-center gap-2 px-3.5 pt-3 pb-2 relative">
+            <div className="relative shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center shadow-md shadow-purple-500/30">
+              <Megaphone size={14} className="text-white" strokeWidth={2.5} />
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-fuchsia-400 ring-2 ring-card animate-pulse" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide leading-tight">
-                ⚽ Paris buteur ouverts
+              <div className="text-[11px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-wider leading-none">
+                Paris buteur ouverts
               </div>
-              <div className="text-[11px] text-foreground/80 leading-snug truncate mt-0.5">
-                {scorerOpenMatches.slice(0, 3).map((m, i) => (
-                  <span key={m.id}>
-                    {i > 0 && <span className="text-muted-foreground"> · </span>}
-                    <span className="font-semibold">Éq. {m.team}</span>{' '}
-                    <span className="text-muted-foreground">{m.homeTeam} vs {m.awayTeam}</span>
-                  </span>
-                ))}
-                {scorerOpenMatches.length > 3 && (
-                  <span className="text-muted-foreground"> +{scorerOpenMatches.length - 3}</span>
-                )}
+              <div className="text-[10px] text-muted-foreground mt-0.5 leading-none">
+                {scorerOpenMatches.length} match{scorerOpenMatches.length > 1 ? 's' : ''} · ferme au coup d'envoi
               </div>
             </div>
+            <div className="shrink-0 px-1.5 py-0.5 rounded-md bg-purple-500/15 border border-purple-500/20">
+              <span className="text-[9px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-wider">⚽ LIVE</span>
+            </div>
           </div>
-        </motion.button>
+
+          {/* Match list */}
+          <div className="px-2 pb-2 space-y-1 relative">
+            {scorerOpenMatches.slice(0, 4).map((m) => {
+              const isCurrent = m.team === selectedTeam;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    if (m.team !== selectedTeam) setSelectedTeam(m.team);
+                    setActiveFilter('upcoming');
+                  }}
+                  className={cn(
+                    "w-full text-left rounded-xl px-2.5 py-2 transition-all flex items-center gap-2 group",
+                    isCurrent
+                      ? "bg-purple-500/15 border border-purple-500/30"
+                      : "bg-card/60 hover:bg-card border border-border/50 hover:border-purple-500/30"
+                  )}
+                >
+                  {/* Team badge */}
+                  <div className={cn(
+                    "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black shadow-sm",
+                    isCurrent
+                      ? "bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white"
+                      : "bg-secondary text-foreground"
+                  )}>
+                    {m.team}
+                  </div>
+
+                  {/* Match teams */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 text-[12px] font-bold text-foreground leading-tight">
+                      <span className="truncate">{m.homeTeam}</span>
+                      <span className="shrink-0 text-[9px] font-bold text-muted-foreground px-1">VS</span>
+                      <span className="truncate">{m.awayTeam}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                      <Target size={9} className="text-purple-500" />
+                      <span>Pariez sur le buteur</span>
+                    </div>
+                  </div>
+
+                  {/* CTA chevron */}
+                  <div className={cn(
+                    "shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-all",
+                    isCurrent
+                      ? "bg-purple-500 text-white"
+                      : "bg-secondary text-muted-foreground group-hover:bg-purple-500 group-hover:text-white"
+                  )}>
+                    <Zap size={11} strokeWidth={2.5} />
+                  </div>
+                </button>
+              );
+            })}
+            {scorerOpenMatches.length > 4 && (
+              <div className="text-center text-[10px] font-semibold text-muted-foreground pt-1">
+                +{scorerOpenMatches.length - 4} autre{scorerOpenMatches.length - 4 > 1 ? 's' : ''} match{scorerOpenMatches.length - 4 > 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+        </motion.div>
       )}
+
 
       {/* Filter tabs */}
       <div className="flex bg-secondary/50 rounded-xl p-1 border border-border/50">
