@@ -261,13 +261,25 @@ const BetModal: React.FC<BetModalProps> = ({ isOpen, onClose, onBetPlaced, homeT
         }
         else if (msg.includes('déjà')) {
           if (betType === 'scorer' && selectedScorer) {
-            toast.error(`Tu as déjà parié sur ${selectedScorer.name} comme buteur`);
+            setDuplicateBetOpen({
+              title: 'Pari buteur déjà placé',
+              message: `Tu as déjà parié sur ${selectedScorer.name} comme buteur sur ce match. Choisis un autre joueur.`,
+            });
           } else if (betType === 'exact_score') {
-            toast.error('Tu as déjà un pari "score exact" sur ce match');
+            setDuplicateBetOpen({
+              title: 'Pari déjà placé',
+              message: 'Tu as déjà un pari "Score exact" sur ce match. Tu ne peux en placer qu\'un seul par match.',
+            });
           } else if (betType === 'match') {
-            toast.error('Tu as déjà un pari "résultat" sur ce match');
+            setDuplicateBetOpen({
+              title: 'Pari déjà placé',
+              message: 'Tu as déjà un pari "Résultat" sur ce match. Tu ne peux en placer qu\'un seul par match.',
+            });
           } else {
-            toast.error('Tu as déjà ce pari sur ce match !');
+            setDuplicateBetOpen({
+              title: 'Pari déjà placé',
+              message: 'Tu as déjà ce pari sur ce match.',
+            });
           }
         }
         else if (msg.includes('Solde')) toast.error('Solde insuffisant !');
