@@ -68,11 +68,21 @@ export function usePushNotifications(userId: string | undefined) {
         // Dynamic import to prevent crash if plugin not available
         const { PushNotifications } = await import('@capacitor/push-notifications');
 
+        // Read current app version (used to target version-aware notifs server-side)
+        let appVersion: string | null = null;
+        try {
+          const { App } = await import('@capacitor/app');
+          const info = await App.getInfo();
+          appVersion = info?.version || null;
+        } catch (e) {
+          console.warn('Could not read app version:', e);
+        }
+
         // Set up listeners first
         await PushNotifications.addListener('registration', async (token) => {
           try {
             const finalToken = tryDecodeHexToString(token.value);
-            console.log('FCM Token:', finalToken);
+            console.log('FCM Token:', finalToken, 'version:', appVersion);
             const currentPlatform = getCapacitorPlatform();
             const { error } = await supabase
               .from('fcm_tokens')
@@ -80,6 +90,7 @@ export function usePushNotifications(userId: string | undefined) {
                 user_id: userId,
                 token: finalToken,
                 platform: currentPlatform,
+                app_version: appVersion,
                 updated_at: new Date().toISOString(),
               }, { onConflict: 'user_id,platform' });
             
