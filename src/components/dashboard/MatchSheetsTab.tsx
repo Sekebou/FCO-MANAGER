@@ -332,6 +332,19 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     }
   }, [onMatchSheetUpdated]);
 
+  // Helper: keep events.convocations in sync with the match sheet (best effort, non-blocking)
+  const syncEventConvocations = useCallback(async (eventId: string | undefined, updatedConvocations: Record<string, Convocation>) => {
+    if (!eventId) return;
+    try {
+      await supabase
+        .from('events')
+        .update({ convocations: updatedConvocations as any })
+        .eq('id', eventId);
+    } catch (e) {
+      console.error('[MatchSheetsTab] Failed to sync event convocations:', e);
+    }
+  }, []);
+
   const handleSwapPlayer = useCallback(async (replacementId: string, replacementName: string, isVirtual: boolean) => {
     if (!swapModal) return;
     const { sheetId, playerId, conv } = swapModal;
@@ -358,6 +371,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .eq('id', sheetId);
       if (error) throw error;
 
+      // Sync linked event so les convocations restent cohérentes
+      await syncEventConvocations(sheet.eventId, updatedConvocations);
+
       setLocalSheets((prev) => {
         const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
         const updatedSheet = next.find(s => s.id === sheetId);
@@ -372,7 +388,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     } catch {
       toast.error('Erreur lors du remplacement');
     }
-  }, [swapModal, localSheets, onMatchSheetUpdated]);
+  }, [swapModal, localSheets, onMatchSheetUpdated, syncEventConvocations]);
 
   const handleRemovePlayer = useCallback(async (sheetId: string, playerId: string, playerName: string) => {
     if (!window.confirm(`Retirer ${playerName} de la feuille de match ?`)) return;
@@ -388,6 +404,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .eq('id', sheetId);
       if (error) throw error;
 
+      // Sync linked event
+      await syncEventConvocations(sheet.eventId, updatedConvocations);
+
       setLocalSheets((prev) => {
         const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
         const updatedSheet = next.find(s => s.id === sheetId);
@@ -398,7 +417,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     } catch {
       toast.error('Erreur lors de la suppression');
     }
-  }, [localSheets, onMatchSheetUpdated]);
+  }, [localSheets, onMatchSheetUpdated, syncEventConvocations]);
 
   const handleAddPlayerToSheet = useCallback(async (sheetId: string, playerId: string, playerName: string, isVirtual: boolean) => {
     try {
@@ -430,6 +449,9 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
         .eq('id', sheetId);
       if (error) throw error;
 
+      // Sync linked event
+      await syncEventConvocations(sheet.eventId, updatedConvocations);
+
       setLocalSheets((prev) => {
         const next = prev.map(s => s.id === sheetId ? { ...s, convocations: updatedConvocations } : s);
         const updatedSheet = next.find(s => s.id === sheetId);
@@ -444,7 +466,7 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
     } catch {
       toast.error('Erreur lors de l\'ajout');
     }
-  }, [localSheets, onMatchSheetUpdated]);
+  }, [localSheets, onMatchSheetUpdated, syncEventConvocations]);
 
   const now = new Date();
 
