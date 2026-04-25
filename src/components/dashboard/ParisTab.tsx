@@ -1322,8 +1322,8 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                         );
                       })()}
 
-                      {/* Bet button — compact */}
-                      {currentUser && !live && !waiting && (
+                      {/* Bet button — compact (locked 5min after kickoff for fairness) */}
+                      {currentUser && !live && !waiting && !betsLocked && (
                         <motion.button
                           whileTap={{ scale: 0.97 }}
                           onClick={async () => {
