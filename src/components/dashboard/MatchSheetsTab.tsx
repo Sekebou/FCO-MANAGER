@@ -1243,8 +1243,10 @@ const MatchSheetsTab: React.FC<Props> = ({ matchSheets, players, isManager = fal
                           </button>
                           <button
                             onClick={() => {
-                              const name = addCustomName.trim();
-                              if (!name) { toast.error('Nom manquant'); return; }
+                              const fn = virtualFirstName.trim();
+                              const ln = virtualLastName.trim();
+                              const name = `${fn} ${ln}`.trim();
+                              if (!fn || !ln) { toast.error('Prénom et nom requis'); return; }
                               if (numberInvalid) { toast.error('Numéro invalide (1-99)'); return; }
                               if (numberDuplicate) { toast.error(`Le numéro ${parsedNumber} est déjà attribué`); return; }
                               const virtualId = `virtual_${Date.now()}`;
