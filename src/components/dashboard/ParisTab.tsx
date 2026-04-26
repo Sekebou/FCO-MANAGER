@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone, RotateCcw, AlertTriangle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -911,10 +911,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     }
   }, [settleScores]);
 
-  const handleSettleScorers = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[]) => {
-    const scorerIds = settleScorers[matchKey] || [];
-    if (scorerIds.length === 0) {
-      toast.error('Sélectionne au moins un buteur');
+  const handleSettleScorers = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[], opts?: { noScorer?: boolean }) => {
+    const scorerIds = opts?.noScorer ? [] : (settleScorers[matchKey] || []);
+    if (!opts?.noScorer && scorerIds.length === 0) {
+      toast.error('Sélectionne au moins un buteur ou choisis "Aucun buteur"');
       return;
     }
     const scorerBets = betsForMatch.filter(b => b.betType === 'scorer');
@@ -940,7 +940,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         if (error) throw error;
         totalSettled += (data as any)?.settled || 0;
       }
-      toast.success(`${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''}`);
+      const successMsg = opts?.noScorer
+        ? `${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''} (aucun buteur)`
+        : `${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''}`;
+      toast.success(successMsg);
       setSettleScorers(prev => { const next = { ...prev }; delete next[matchKey]; return next; });
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors du règlement');
@@ -2012,14 +2015,32 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                     );
                                   })}
                                 </div>
-                                <button
-                                  onClick={() => handleSettleScorers(matchKey, homeName, awayName, teamBets)}
-                                  disabled={isScorerSettling || selectedIds.length === 0}
-                                  className="w-full py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
-                                >
-                                  {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
-                                  Régler paris buteur
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      if (selectedIds.length > 0) {
+                                        toast.error('Désélectionne d\'abord les joueurs');
+                                        return;
+                                      }
+                                      if (confirm('Confirmer : aucun joueur n\'a marqué ? Tous les paris buteur seront perdus.')) {
+                                        handleSettleScorers(matchKey, homeName, awayName, teamBets, { noScorer: true });
+                                      }
+                                    }}
+                                    disabled={isScorerSettling}
+                                    className="flex-1 py-2.5 bg-secondary text-foreground border border-border rounded-xl text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary/80 active:scale-[0.98] transition-all"
+                                  >
+                                    {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
+                                    Aucun buteur
+                                  </button>
+                                  <button
+                                    onClick={() => handleSettleScorers(matchKey, homeName, awayName, teamBets)}
+                                    disabled={isScorerSettling || selectedIds.length === 0}
+                                    className="flex-1 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
+                                  >
+                                    {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
+                                    Régler
+                                  </button>
+                                </div>
                               </div>
                             );
                           })()}
