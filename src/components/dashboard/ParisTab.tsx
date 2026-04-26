@@ -1940,24 +1940,34 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                     return;
                                   }
                                   const convos = events[0].convocations as Record<string, any>;
-                                  const playerIds = Object.entries(convos)
-                                    .filter(([, v]: [string, any]) => {
-                                      if (v === true || v === 'titulaire' || v === 'remplacant') return true;
-                                      if (v && typeof v === 'object') {
-                                        const s = v.status;
-                                        return s === 'convoque' || s === 'titulaire' || s === 'remplacant';
-                                      }
-                                      return false;
-                                    })
-                                    .map(([id]) => id);
-                                  if (playerIds.length === 0) {
-                                    setSettlePlayersList(prev => ({ ...prev, [matchKey]: [] }));
+                                  const convocatedEntries = Object.entries(convos).filter(([, v]: [string, any]) => {
+                                    if (v === true || v === 'titulaire' || v === 'remplacant') return true;
+                                    if (v && typeof v === 'object') {
+                                      const s = v.status;
+                                      return s === 'convoque' || s === 'titulaire' || s === 'remplacant';
+                                    }
+                                    return false;
+                                  });
+                                  // UUID v4-ish regex — keep real DB ids out of the virtual_* bucket
+                                  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                                  const realPlayerIds = convocatedEntries.map(([id]) => id).filter(id => uuidRe.test(id));
+                                  // Virtual players are stored inline in the convocation payload with a virtualName
+                                  const virtualPlayers = convocatedEntries
+                                    .filter(([id]) => !uuidRe.test(id))
+                                    .map(([id, v]: [string, any]) => ({
+                                      id,
+                                      name: (v && typeof v === 'object' && v.virtualName) ? String(v.virtualName) : 'Joueur',
+                                      position: '',
+                                    }));
+                                  if (realPlayerIds.length === 0) {
+                                    setSettlePlayersList(prev => ({ ...prev, [matchKey]: virtualPlayers }));
                                     return;
                                   }
-                                  supabase.from('players').select('id, name, position').in('id', playerIds).then(({ data: pData }) => {
+                                  supabase.from('players').select('id, name, position').in('id', realPlayerIds).then(({ data: pData }) => {
+                                    const dbPlayers = (pData || []).map(p => ({ id: p.id, name: p.name, position: p.position || '' }));
                                     setSettlePlayersList(prev => ({
                                       ...prev,
-                                      [matchKey]: (pData || []).map(p => ({ id: p.id, name: p.name, position: p.position || '' })),
+                                      [matchKey]: [...dbPlayers, ...virtualPlayers],
                                     }));
                                   });
                                 });
