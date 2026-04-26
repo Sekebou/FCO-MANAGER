@@ -911,10 +911,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
     }
   }, [settleScores]);
 
-  const handleSettleScorers = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[]) => {
-    const scorerIds = settleScorers[matchKey] || [];
-    if (scorerIds.length === 0) {
-      toast.error('Sélectionne au moins un buteur');
+  const handleSettleScorers = useCallback(async (matchKey: string, homeTeam: string, awayTeam: string, betsForMatch: Bet[], opts?: { noScorer?: boolean }) => {
+    const scorerIds = opts?.noScorer ? [] : (settleScorers[matchKey] || []);
+    if (!opts?.noScorer && scorerIds.length === 0) {
+      toast.error('Sélectionne au moins un buteur ou choisis "Aucun buteur"');
       return;
     }
     const scorerBets = betsForMatch.filter(b => b.betType === 'scorer');
