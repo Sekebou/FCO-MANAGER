@@ -940,7 +940,10 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         if (error) throw error;
         totalSettled += (data as any)?.settled || 0;
       }
-      toast.success(`${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''}`);
+      const successMsg = opts?.noScorer
+        ? `${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''} (aucun buteur)`
+        : `${totalSettled} pari${totalSettled > 1 ? 's' : ''} buteur réglé${totalSettled > 1 ? 's' : ''}`;
+      toast.success(successMsg);
       setSettleScorers(prev => { const next = { ...prev }; delete next[matchKey]; return next; });
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors du règlement');
