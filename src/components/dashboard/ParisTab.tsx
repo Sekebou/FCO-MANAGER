@@ -2015,14 +2015,32 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                                     );
                                   })}
                                 </div>
-                                <button
-                                  onClick={() => handleSettleScorers(matchKey, homeName, awayName, teamBets)}
-                                  disabled={isScorerSettling || selectedIds.length === 0}
-                                  className="w-full py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
-                                >
-                                  {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
-                                  Régler paris buteur
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      if (selectedIds.length > 0) {
+                                        toast.error('Désélectionne d\'abord les joueurs');
+                                        return;
+                                      }
+                                      if (confirm('Confirmer : aucun joueur n\'a marqué ? Tous les paris buteur seront perdus.')) {
+                                        handleSettleScorers(matchKey, homeName, awayName, teamBets, { noScorer: true });
+                                      }
+                                    }}
+                                    disabled={isScorerSettling}
+                                    className="flex-1 py-2.5 bg-secondary text-foreground border border-border rounded-xl text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary/80 active:scale-[0.98] transition-all"
+                                  >
+                                    {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />}
+                                    Aucun buteur
+                                  </button>
+                                  <button
+                                    onClick={() => handleSettleScorers(matchKey, homeName, awayName, teamBets)}
+                                    disabled={isScorerSettling || selectedIds.length === 0}
+                                    className="flex-1 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] transition-all"
+                                  >
+                                    {isScorerSettling ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
+                                    Régler
+                                  </button>
+                                </div>
                               </div>
                             );
                           })()}
