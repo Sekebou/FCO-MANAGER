@@ -17,6 +17,7 @@ const Download = lazy(() => import("./pages/Download"));
 const Support = lazy(() => import("./pages/Support"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Tv = lazy(() => import("./pages/Tv"));
 
 
 const queryClient = new QueryClient();
@@ -49,6 +50,8 @@ const App = () => {
             <Route path="/support" element={<Support />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/tv" element={<Tv />} />
+            
             
             <Route path="/auth" element={
               <AuthProvider>
