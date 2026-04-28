@@ -9,6 +9,7 @@ import { Tv as TvIcon, Lock, LogOut, Plus, Pencil, Trash2, Star, Search, X, Play
 import { toast } from "sonner";
 import clubLogo from "@/assets/logo.png";
 import Hls from "hls.js";
+// @ts-ignore - plyr ships without default-export types but exports default at runtime
 import Plyr from "plyr";
 import "plyr/dist/plyr.css";
 
