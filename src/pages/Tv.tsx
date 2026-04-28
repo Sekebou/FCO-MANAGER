@@ -47,8 +47,75 @@ const Tv = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playerRef = useRef<Plyr | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const [castAvailable, setCastAvailable] = useState(false);
+  const [castConnected, setCastConnected] = useState(false);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "admin+";
+
+  // Load Google Cast SDK once
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ((window as any).__castLoaded) return;
+    (window as any).__castLoaded = true;
+
+    (window as any).__onGCastApiAvailable = (isAvailable: boolean) => {
+      if (!isAvailable) return;
+      const ctx = (window as any).cast.framework.CastContext.getInstance();
+      ctx.setOptions({
+        receiverApplicationId: (window as any).chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: (window as any).chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+      });
+      setCastAvailable(true);
+      ctx.addEventListener(
+        (window as any).cast.framework.CastContextEventType.CAST_STATE_CHANGED,
+        (e: any) => {
+          const CONNECTED = (window as any).cast.framework.CastState.CONNECTED;
+          setCastConnected(e.castState === CONNECTED);
+        }
+      );
+    };
+
+    const s = document.createElement("script");
+    s.src = "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
+    s.async = true;
+    document.head.appendChild(s);
+  }, []);
+
+  const startCasting = async () => {
+    if (!activeChannel) return;
+    if (activeChannel.source_type !== "m3u8") {
+      toast.error("Le casting n'est pas disponible pour les flux iframe");
+      return;
+    }
+    try {
+      const w = window as any;
+      const ctx = w.cast.framework.CastContext.getInstance();
+      await ctx.requestSession();
+      const session = ctx.getCurrentSession();
+      if (!session) return;
+
+      const mediaInfo = new w.chrome.cast.media.MediaInfo(activeChannel.url, "application/x-mpegURL");
+      mediaInfo.metadata = new w.chrome.cast.media.GenericMediaMetadata();
+      mediaInfo.metadata.title = activeChannel.name;
+      mediaInfo.metadata.subtitle = activeChannel.category;
+      if (activeChannel.logo_url) {
+        mediaInfo.metadata.images = [new w.chrome.cast.Image(activeChannel.logo_url)];
+      }
+      const request = new w.chrome.cast.media.LoadRequest(mediaInfo);
+      await session.loadMedia(request);
+      toast.success("📺 Diffusion sur la TV");
+    } catch (e: any) {
+      if (e !== "cancel") toast.error("Impossible de lancer le cast");
+    }
+  };
+
+  const stopCasting = () => {
+    try {
+      const w = window as any;
+      w.cast.framework.CastContext.getInstance().endCurrentSession(true);
+      toast.success("Diffusion arrêtée");
+    } catch {}
+  };
 
   // Auth bootstrap
   useEffect(() => {
