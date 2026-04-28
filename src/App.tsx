@@ -17,6 +17,7 @@ const Download = lazy(() => import("./pages/Download"));
 const Support = lazy(() => import("./pages/Support"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const Tv = lazy(() => import("./pages/Tv"));
 
 
 const queryClient = new QueryClient();
