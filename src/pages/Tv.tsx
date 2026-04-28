@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tv as TvIcon, Lock, LogOut, Plus, Pencil, Trash2, Star, Search, X, Play, Maximize2 } from "lucide-react";
+import { Tv as TvIcon, Lock, LogOut, Plus, Pencil, Trash2, Star, Search, X, Play, Cast } from "lucide-react";
 import { toast } from "sonner";
 import clubLogo from "@/assets/logo.png";
 import Hls from "hls.js";
