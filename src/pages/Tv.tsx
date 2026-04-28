@@ -421,57 +421,59 @@ const Tv = () => {
             {isAdmin && <p className="text-sm mt-1">Clique sur « Ajouter » pour en créer une.</p>}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
             {filtered.map((ch) => {
               const isFav = favorites.has(ch.id);
               const isPlaying = activeChannel?.id === ch.id;
               return (
                 <div
                   key={ch.id}
-                  className={`group relative bg-card rounded-2xl overflow-hidden border transition shadow-sm hover:shadow-xl hover:-translate-y-0.5 ${isPlaying ? "border-primary ring-2 ring-primary/40" : "border-border"} ${!ch.is_active ? "opacity-60" : ""}`}
+                  className={`group relative flex items-center gap-3 px-3 py-2.5 transition hover:bg-accent/40 ${isPlaying ? "bg-primary/10" : ""} ${!ch.is_active ? "opacity-60" : ""}`}
                 >
-                  <button onClick={() => setActiveChannel(ch)} className="w-full text-left">
-                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/40 flex items-center justify-center relative">
+                  <button onClick={() => setActiveChannel(ch)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                    {/* Round thumbnail */}
+                    <div className="relative shrink-0">
                       {ch.logo_url ? (
-                        <img src={ch.logo_url} alt="" className="w-full h-full object-cover" />
+                        <img src={ch.logo_url} alt="" className="w-11 h-11 rounded-full object-cover bg-accent border border-border" />
                       ) : (
-                        <TvIcon className="w-10 h-10 text-primary/60" />
-                      )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-2xl">
-                          <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-accent/40 flex items-center justify-center border border-border">
+                          <TvIcon className="w-5 h-5 text-primary/70" />
                         </div>
-                      </div>
-                      {!ch.is_active && (
-                        <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full bg-background/80 backdrop-blur">Inactif</span>
+                      )}
+                      {isPlaying && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary border-2 border-card flex items-center justify-center">
+                          <Play className="w-2 h-2 text-primary-foreground" fill="currentColor" />
+                        </span>
                       )}
                     </div>
-                    <div className="p-3">
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm truncate">{ch.name}</p>
-                      <p className="text-xs text-muted-foreground">{ch.category}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {ch.category}{!ch.is_active && " · Inactif"}
+                      </p>
                     </div>
                   </button>
 
-                  {/* Action overlay */}
-                  <div className="absolute top-2 right-2 flex gap-1">
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(ch.id); }}
-                      className={`w-8 h-8 rounded-full backdrop-blur flex items-center justify-center transition ${isFav ? "bg-yellow-400 text-yellow-900" : "bg-background/80 text-muted-foreground hover:text-foreground"}`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition ${isFav ? "text-yellow-500" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                      aria-label="Favori"
                     >
                       <Star className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />
                     </button>
+                    {isAdmin && (
+                      <>
+                        <button onClick={(e) => { e.stopPropagation(); openEditor(ch); }} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteChannel(ch.id); }} className="w-8 h-8 rounded-full flex items-center justify-center text-destructive hover:bg-destructive/10">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
                   </div>
-
-                  {isAdmin && (
-                    <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                      <button onClick={(e) => { e.stopPropagation(); openEditor(ch); }} className="w-7 h-7 rounded-full bg-background/90 backdrop-blur flex items-center justify-center hover:bg-accent">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); deleteChannel(ch.id); }} className="w-7 h-7 rounded-full bg-destructive/90 text-destructive-foreground backdrop-blur flex items-center justify-center hover:bg-destructive">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
                 </div>
               );
             })}
