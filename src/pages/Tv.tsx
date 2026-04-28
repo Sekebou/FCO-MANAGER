@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Tv as TvIcon, Lock, LogOut, Plus, Pencil, Trash2, Star, Search, X, Play, Maximize2 } from "lucide-react";
+import { Tv as TvIcon, Lock, LogOut, Plus, Pencil, Trash2, Star, Search, X, Play, Cast } from "lucide-react";
 import { toast } from "sonner";
 import clubLogo from "@/assets/logo.png";
 import Hls from "hls.js";
@@ -47,8 +47,75 @@ const Tv = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playerRef = useRef<Plyr | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const [castAvailable, setCastAvailable] = useState(false);
+  const [castConnected, setCastConnected] = useState(false);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "admin+";
+
+  // Load Google Cast SDK once
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ((window as any).__castLoaded) return;
+    (window as any).__castLoaded = true;
+
+    (window as any).__onGCastApiAvailable = (isAvailable: boolean) => {
+      if (!isAvailable) return;
+      const ctx = (window as any).cast.framework.CastContext.getInstance();
+      ctx.setOptions({
+        receiverApplicationId: (window as any).chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: (window as any).chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+      });
+      setCastAvailable(true);
+      ctx.addEventListener(
+        (window as any).cast.framework.CastContextEventType.CAST_STATE_CHANGED,
+        (e: any) => {
+          const CONNECTED = (window as any).cast.framework.CastState.CONNECTED;
+          setCastConnected(e.castState === CONNECTED);
+        }
+      );
+    };
+
+    const s = document.createElement("script");
+    s.src = "https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1";
+    s.async = true;
+    document.head.appendChild(s);
+  }, []);
+
+  const startCasting = async () => {
+    if (!activeChannel) return;
+    if (activeChannel.source_type !== "m3u8") {
+      toast.error("Le casting n'est pas disponible pour les flux iframe");
+      return;
+    }
+    try {
+      const w = window as any;
+      const ctx = w.cast.framework.CastContext.getInstance();
+      await ctx.requestSession();
+      const session = ctx.getCurrentSession();
+      if (!session) return;
+
+      const mediaInfo = new w.chrome.cast.media.MediaInfo(activeChannel.url, "application/x-mpegURL");
+      mediaInfo.metadata = new w.chrome.cast.media.GenericMediaMetadata();
+      mediaInfo.metadata.title = activeChannel.name;
+      mediaInfo.metadata.subtitle = activeChannel.category;
+      if (activeChannel.logo_url) {
+        mediaInfo.metadata.images = [new w.chrome.cast.Image(activeChannel.logo_url)];
+      }
+      const request = new w.chrome.cast.media.LoadRequest(mediaInfo);
+      await session.loadMedia(request);
+      toast.success("📺 Diffusion sur la TV");
+    } catch (e: any) {
+      if (e !== "cancel") toast.error("Impossible de lancer le cast");
+    }
+  };
+
+  const stopCasting = () => {
+    try {
+      const w = window as any;
+      w.cast.framework.CastContext.getInstance().endCurrentSession(true);
+      toast.success("Diffusion arrêtée");
+    } catch {}
+  };
 
   // Auth bootstrap
   useEffect(() => {
@@ -282,15 +349,35 @@ const Tv = () => {
         {/* Active player */}
         {activeChannel && (
           <div className="bg-card rounded-3xl overflow-hidden shadow-2xl border border-border">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="flex items-center gap-3 min-w-0">
-                {activeChannel.logo_url && <img src={activeChannel.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover" />}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                {activeChannel.logo_url ? (
+                  <img src={activeChannel.logo_url} alt="" className="w-9 h-9 rounded-full object-cover bg-accent" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
+                    <TvIcon className="w-4 h-4 text-primary" />
+                  </div>
+                )}
                 <div className="min-w-0">
                   <h2 className="font-semibold truncate">{activeChannel.name}</h2>
                   <p className="text-xs text-muted-foreground">{activeChannel.category}</p>
                 </div>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => setActiveChannel(null)}><X className="w-4 h-4" /></Button>
+              <div className="flex items-center gap-1 shrink-0">
+                {castAvailable && activeChannel.source_type === "m3u8" && (
+                  <Button
+                    size="sm"
+                    variant={castConnected ? "default" : "ghost"}
+                    onClick={castConnected ? stopCasting : startCasting}
+                    className="gap-1.5"
+                    title={castConnected ? "Arrêter la diffusion" : "Caster sur une TV"}
+                  >
+                    <Cast className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs">{castConnected ? "Arrêter" : "Caster"}</span>
+                  </Button>
+                )}
+                <Button size="icon" variant="ghost" onClick={() => setActiveChannel(null)}><X className="w-4 h-4" /></Button>
+              </div>
             </div>
             <div className="aspect-video bg-black">
               {activeChannel.source_type === "m3u8" ? (
@@ -299,6 +386,11 @@ const Tv = () => {
                 <iframe src={activeChannel.url} className="w-full h-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
               )}
             </div>
+            {castAvailable && activeChannel.source_type === "iframe" && (
+              <p className="text-[11px] text-muted-foreground px-4 py-2 border-t border-border">
+                ℹ️ Le casting n'est compatible qu'avec les flux HLS (.m3u8). Pour les iframes, utilise le miroir d'écran de ton téléphone.
+              </p>
+            )}
           </div>
         )}
 
@@ -329,57 +421,59 @@ const Tv = () => {
             {isAdmin && <p className="text-sm mt-1">Clique sur « Ajouter » pour en créer une.</p>}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
             {filtered.map((ch) => {
               const isFav = favorites.has(ch.id);
               const isPlaying = activeChannel?.id === ch.id;
               return (
                 <div
                   key={ch.id}
-                  className={`group relative bg-card rounded-2xl overflow-hidden border transition shadow-sm hover:shadow-xl hover:-translate-y-0.5 ${isPlaying ? "border-primary ring-2 ring-primary/40" : "border-border"} ${!ch.is_active ? "opacity-60" : ""}`}
+                  className={`group relative flex items-center gap-3 px-3 py-2.5 transition hover:bg-accent/40 ${isPlaying ? "bg-primary/10" : ""} ${!ch.is_active ? "opacity-60" : ""}`}
                 >
-                  <button onClick={() => setActiveChannel(ch)} className="w-full text-left">
-                    <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/40 flex items-center justify-center relative">
+                  <button onClick={() => setActiveChannel(ch)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                    {/* Round thumbnail */}
+                    <div className="relative shrink-0">
                       {ch.logo_url ? (
-                        <img src={ch.logo_url} alt="" className="w-full h-full object-cover" />
+                        <img src={ch.logo_url} alt="" className="w-11 h-11 rounded-full object-cover bg-accent border border-border" />
                       ) : (
-                        <TvIcon className="w-10 h-10 text-primary/60" />
-                      )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-2xl">
-                          <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-accent/40 flex items-center justify-center border border-border">
+                          <TvIcon className="w-5 h-5 text-primary/70" />
                         </div>
-                      </div>
-                      {!ch.is_active && (
-                        <span className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full bg-background/80 backdrop-blur">Inactif</span>
+                      )}
+                      {isPlaying && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-primary border-2 border-card flex items-center justify-center">
+                          <Play className="w-2 h-2 text-primary-foreground" fill="currentColor" />
+                        </span>
                       )}
                     </div>
-                    <div className="p-3">
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm truncate">{ch.name}</p>
-                      <p className="text-xs text-muted-foreground">{ch.category}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {ch.category}{!ch.is_active && " · Inactif"}
+                      </p>
                     </div>
                   </button>
 
-                  {/* Action overlay */}
-                  <div className="absolute top-2 right-2 flex gap-1">
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleFavorite(ch.id); }}
-                      className={`w-8 h-8 rounded-full backdrop-blur flex items-center justify-center transition ${isFav ? "bg-yellow-400 text-yellow-900" : "bg-background/80 text-muted-foreground hover:text-foreground"}`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition ${isFav ? "text-yellow-500" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                      aria-label="Favori"
                     >
                       <Star className="w-4 h-4" fill={isFav ? "currentColor" : "none"} />
                     </button>
+                    {isAdmin && (
+                      <>
+                        <button onClick={(e) => { e.stopPropagation(); openEditor(ch); }} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); deleteChannel(ch.id); }} className="w-8 h-8 rounded-full flex items-center justify-center text-destructive hover:bg-destructive/10">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
                   </div>
-
-                  {isAdmin && (
-                    <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                      <button onClick={(e) => { e.stopPropagation(); openEditor(ch); }} className="w-7 h-7 rounded-full bg-background/90 backdrop-blur flex items-center justify-center hover:bg-accent">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); deleteChannel(ch.id); }} className="w-7 h-7 rounded-full bg-destructive/90 text-destructive-foreground backdrop-blur flex items-center justify-center hover:bg-destructive">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
                 </div>
               );
             })}
