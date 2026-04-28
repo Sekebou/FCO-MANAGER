@@ -349,15 +349,35 @@ const Tv = () => {
         {/* Active player */}
         {activeChannel && (
           <div className="bg-card rounded-3xl overflow-hidden shadow-2xl border border-border">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <div className="flex items-center gap-3 min-w-0">
-                {activeChannel.logo_url && <img src={activeChannel.logo_url} alt="" className="w-8 h-8 rounded-lg object-cover" />}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                {activeChannel.logo_url ? (
+                  <img src={activeChannel.logo_url} alt="" className="w-9 h-9 rounded-full object-cover bg-accent" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
+                    <TvIcon className="w-4 h-4 text-primary" />
+                  </div>
+                )}
                 <div className="min-w-0">
                   <h2 className="font-semibold truncate">{activeChannel.name}</h2>
                   <p className="text-xs text-muted-foreground">{activeChannel.category}</p>
                 </div>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => setActiveChannel(null)}><X className="w-4 h-4" /></Button>
+              <div className="flex items-center gap-1 shrink-0">
+                {castAvailable && activeChannel.source_type === "m3u8" && (
+                  <Button
+                    size="sm"
+                    variant={castConnected ? "default" : "ghost"}
+                    onClick={castConnected ? stopCasting : startCasting}
+                    className="gap-1.5"
+                    title={castConnected ? "Arrêter la diffusion" : "Caster sur une TV"}
+                  >
+                    <Cast className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs">{castConnected ? "Arrêter" : "Caster"}</span>
+                  </Button>
+                )}
+                <Button size="icon" variant="ghost" onClick={() => setActiveChannel(null)}><X className="w-4 h-4" /></Button>
+              </div>
             </div>
             <div className="aspect-video bg-black">
               {activeChannel.source_type === "m3u8" ? (
@@ -366,6 +386,11 @@ const Tv = () => {
                 <iframe src={activeChannel.url} className="w-full h-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
               )}
             </div>
+            {castAvailable && activeChannel.source_type === "iframe" && (
+              <p className="text-[11px] text-muted-foreground px-4 py-2 border-t border-border">
+                ℹ️ Le casting n'est compatible qu'avec les flux HLS (.m3u8). Pour les iframes, utilise le miroir d'écran de ton téléphone.
+              </p>
+            )}
           </div>
         )}
 
