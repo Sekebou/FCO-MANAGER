@@ -25,7 +25,16 @@ type Channel = {
   sort_order: number;
 };
 
-const CATEGORIES = ["Ligue 1", "Ligue 2", "Champions League", "Europa League", "Premier League", "Liga", "Autres sports", "Autre"];
+const CATEGORIES = [
+  "Ligue 1",
+  "Ligue 2",
+  "Champions League",
+  "Europa League",
+  "Premier League",
+  "Liga",
+  "Autres sports",
+  "Autre",
+];
 
 const Tv = () => {
   const [session, setSession] = useState<any>(null);
@@ -66,13 +75,10 @@ const Tv = () => {
         autoJoinPolicy: (window as any).chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
       });
       setCastAvailable(true);
-      ctx.addEventListener(
-        (window as any).cast.framework.CastContextEventType.CAST_STATE_CHANGED,
-        (e: any) => {
-          const CONNECTED = (window as any).cast.framework.CastState.CONNECTED;
-          setCastConnected(e.castState === CONNECTED);
-        }
-      );
+      ctx.addEventListener((window as any).cast.framework.CastContextEventType.CAST_STATE_CHANGED, (e: any) => {
+        const CONNECTED = (window as any).cast.framework.CastState.CONNECTED;
+        setCastConnected(e.castState === CONNECTED);
+      });
     };
 
     const s = document.createElement("script");
@@ -150,7 +156,10 @@ const Tv = () => {
       .select("*")
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true });
-    if (error) { toast.error("Impossible de charger les chaînes"); return; }
+    if (error) {
+      toast.error("Impossible de charger les chaînes");
+      return;
+    }
     setChannels((data || []) as Channel[]);
   };
 
@@ -163,7 +172,11 @@ const Tv = () => {
     if (!session?.user) return;
     if (favorites.has(channelId)) {
       await supabase.from("tv_favorites").delete().eq("user_id", session.user.id).eq("channel_id", channelId);
-      setFavorites((s) => { const n = new Set(s); n.delete(channelId); return n; });
+      setFavorites((s) => {
+        const n = new Set(s);
+        n.delete(channelId);
+        return n;
+      });
     } else {
       await supabase.from("tv_favorites").insert({ user_id: session.user.id, channel_id: channelId });
       setFavorites((s) => new Set(s).add(channelId));
@@ -176,8 +189,14 @@ const Tv = () => {
     if (!videoRef.current) return;
 
     // Cleanup previous
-    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
-    if (playerRef.current) { playerRef.current.destroy(); playerRef.current = null; }
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+    if (playerRef.current) {
+      playerRef.current.destroy();
+      playerRef.current = null;
+    }
 
     const video = videoRef.current;
     const url = activeChannel.url;
@@ -192,14 +211,31 @@ const Tv = () => {
     }
 
     playerRef.current = new Plyr(video, {
-      controls: ["play-large", "play", "progress", "current-time", "mute", "volume", "settings", "pip", "airplay", "fullscreen"],
+      controls: [
+        "play-large",
+        "play",
+        "progress",
+        "current-time",
+        "mute",
+        "volume",
+        "settings",
+        "pip",
+        "airplay",
+        "fullscreen",
+      ],
       settings: ["quality", "speed"],
       autoplay: true,
     });
 
     return () => {
-      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
-      if (playerRef.current) { playerRef.current.destroy(); playerRef.current = null; }
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
     };
   }, [activeChannel?.id, activeChannel?.url, activeChannel?.source_type]);
 
@@ -209,7 +245,11 @@ const Tv = () => {
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setAuthLoading(false);
     if (error) toast.error("Identifiants incorrects");
-    else { setEmail(""); setPassword(""); toast.success("Connecté"); }
+    else {
+      setEmail("");
+      setPassword("");
+      toast.success("Connecté");
+    }
   };
 
   const handleLogout = async () => {
@@ -220,12 +260,28 @@ const Tv = () => {
   };
 
   const openEditor = (ch?: Channel) => {
-    setEditing(ch ? { ...ch } : { name: "", category: "Ligue 1", source_type: "m3u8", url: "", logo_url: "", description: "", is_active: true, sort_order: 0 });
+    setEditing(
+      ch
+        ? { ...ch }
+        : {
+            name: "",
+            category: "Ligue 1",
+            source_type: "m3u8",
+            url: "",
+            logo_url: "",
+            description: "",
+            is_active: true,
+            sort_order: 0,
+          },
+    );
     setEditorOpen(true);
   };
 
   const saveChannel = async () => {
-    if (!editing?.name?.trim() || !editing?.url?.trim()) { toast.error("Nom et URL obligatoires"); return; }
+    if (!editing?.name?.trim() || !editing?.url?.trim()) {
+      toast.error("Nom et URL obligatoires");
+      return;
+    }
     const payload = {
       name: editing.name.trim(),
       category: editing.category || "Autre",
@@ -238,11 +294,17 @@ const Tv = () => {
     };
     if (editing.id) {
       const { error } = await supabase.from("tv_channels").update(payload).eq("id", editing.id);
-      if (error) { toast.error("Erreur: " + error.message); return; }
+      if (error) {
+        toast.error("Erreur: " + error.message);
+        return;
+      }
       toast.success("Chaîne mise à jour");
     } else {
       const { error } = await supabase.from("tv_channels").insert({ ...payload, created_by: session.user.id });
-      if (error) { toast.error("Erreur: " + error.message); return; }
+      if (error) {
+        toast.error("Erreur: " + error.message);
+        return;
+      }
       toast.success("Chaîne ajoutée");
     }
     setEditorOpen(false);
@@ -253,7 +315,10 @@ const Tv = () => {
   const deleteChannel = async (id: string) => {
     if (!confirm("Supprimer cette chaîne ?")) return;
     const { error } = await supabase.from("tv_channels").delete().eq("id", id);
-    if (error) { toast.error("Erreur"); return; }
+    if (error) {
+      toast.error("Erreur");
+      return;
+    }
     toast.success("Chaîne supprimée");
     if (activeChannel?.id === id) setActiveChannel(null);
     loadChannels();
@@ -272,13 +337,19 @@ const Tv = () => {
 
   const visibleCategories = useMemo(() => {
     const set = new Set<string>();
-    channels.forEach((c) => { if (c.is_active || isAdmin) set.add(c.category); });
+    channels.forEach((c) => {
+      if (c.is_active || isAdmin) set.add(c.category);
+    });
     return ["Toutes", "Favoris", ...Array.from(set).sort()];
   }, [channels, isAdmin]);
 
   // ============ LOADING ============
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Chargement…</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Chargement…
+      </div>
+    );
   }
 
   // ============ LOGIN GATE ============
@@ -294,25 +365,39 @@ const Tv = () => {
             <p className="text-white/70 text-sm mt-2">Connexion requise pour accéder aux chaînes</p>
           </div>
 
-          <form onSubmit={handleLogin} className="bg-card/95 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/10 space-y-4">
+          <form
+            onSubmit={handleLogin}
+            className="bg-card/95 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/10 space-y-4"
+          >
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Lock className="w-4 h-4" />
               <span>Utilise ton compte FCO-Manager</span>
             </div>
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ fontSize: 16 }} />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={{ fontSize: 16 }}
+              />
             </div>
             <div>
               <Label htmlFor="password">Mot de passe</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ fontSize: 16 }} />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={{ fontSize: 16 }}
+              />
             </div>
             <Button type="submit" disabled={authLoading} className="w-full h-12 text-base font-semibold">
               {authLoading ? "Connexion…" : "Se connecter"}
             </Button>
-            <p className="text-xs text-center text-muted-foreground pt-2">
-              Pas encore de compte ? Télécharge l'app FCO-Manager.
-            </p>
           </form>
         </div>
       </div>
@@ -328,7 +413,9 @@ const Tv = () => {
           <div className="flex items-center gap-3">
             <img src={clubLogo} alt="" className="w-9 h-9 rounded-xl" />
             <div>
-              <h1 className="text-lg font-bold flex items-center gap-2"><TvIcon className="w-5 h-5 text-primary" /> FCO TV</h1>
+              <h1 className="text-lg font-bold flex items-center gap-2">
+                <TvIcon className="w-5 h-5 text-primary" /> FCO TV
+              </h1>
               <p className="text-xs text-muted-foreground">Bonjour {profile?.name?.split(" ")[0] || ""}</p>
             </div>
           </div>
@@ -376,19 +463,28 @@ const Tv = () => {
                     <span className="hidden sm:inline text-xs">{castConnected ? "Arrêter" : "Caster"}</span>
                   </Button>
                 )}
-                <Button size="icon" variant="ghost" onClick={() => setActiveChannel(null)}><X className="w-4 h-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setActiveChannel(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             </div>
             <div className="aspect-video bg-black">
               {activeChannel.source_type === "m3u8" ? (
                 <video ref={videoRef} controls playsInline className="w-full h-full" />
               ) : (
-                <iframe src={activeChannel.url} className="w-full h-full" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+                <iframe
+                  src={activeChannel.url}
+                  className="w-full h-full"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                />
               )}
             </div>
             {castAvailable && activeChannel.source_type === "iframe" && (
               <p className="text-[11px] text-muted-foreground px-4 py-2 border-t border-border">
-                ℹ️ Le casting n'est compatible qu'avec les flux HLS (.m3u8). Pour les iframes, utilise le miroir d'écran de ton téléphone.
+                ℹ️ Le casting n'est compatible qu'avec les flux HLS (.m3u8). Pour les iframes, utilise le miroir d'écran
+                de ton téléphone.
               </p>
             )}
           </div>
@@ -398,7 +494,13 @@ const Tv = () => {
         <div className="space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Rechercher une chaîne…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" style={{ fontSize: 16 }} />
+            <Input
+              placeholder="Rechercher une chaîne…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+              style={{ fontSize: 16 }}
+            />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
             {visibleCategories.map((cat) => (
@@ -430,11 +532,18 @@ const Tv = () => {
                   key={ch.id}
                   className={`group relative flex items-center gap-3 px-3 py-2.5 transition hover:bg-accent/40 ${isPlaying ? "bg-primary/10" : ""} ${!ch.is_active ? "opacity-60" : ""}`}
                 >
-                  <button onClick={() => setActiveChannel(ch)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                  <button
+                    onClick={() => setActiveChannel(ch)}
+                    className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                  >
                     {/* Round thumbnail */}
                     <div className="relative shrink-0">
                       {ch.logo_url ? (
-                        <img src={ch.logo_url} alt="" className="w-11 h-11 rounded-full object-cover bg-accent border border-border" />
+                        <img
+                          src={ch.logo_url}
+                          alt=""
+                          className="w-11 h-11 rounded-full object-cover bg-accent border border-border"
+                        />
                       ) : (
                         <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary/20 to-accent/40 flex items-center justify-center border border-border">
                           <TvIcon className="w-5 h-5 text-primary/70" />
@@ -449,7 +558,8 @@ const Tv = () => {
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm truncate">{ch.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {ch.category}{!ch.is_active && " · Inactif"}
+                        {ch.category}
+                        {!ch.is_active && " · Inactif"}
                       </p>
                     </div>
                   </button>
@@ -457,7 +567,10 @@ const Tv = () => {
                   {/* Actions */}
                   <div className="flex items-center gap-1 shrink-0">
                     <button
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(ch.id); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(ch.id);
+                      }}
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition ${isFav ? "text-yellow-500" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
                       aria-label="Favori"
                     >
@@ -465,10 +578,22 @@ const Tv = () => {
                     </button>
                     {isAdmin && (
                       <>
-                        <button onClick={(e) => { e.stopPropagation(); openEditor(ch); }} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditor(ch);
+                          }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent"
+                        >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={(e) => { e.stopPropagation(); deleteChannel(ch.id); }} className="w-8 h-8 rounded-full flex items-center justify-center text-destructive hover:bg-destructive/10">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteChannel(ch.id);
+                          }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-destructive hover:bg-destructive/10"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </>
@@ -491,7 +616,11 @@ const Tv = () => {
             <div className="space-y-4 py-2">
               <div>
                 <Label>Nom</Label>
-                <Input value={editing.name || ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} style={{ fontSize: 16 }} />
+                <Input
+                  value={editing.name || ""}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                  style={{ fontSize: 16 }}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -502,7 +631,11 @@ const Tv = () => {
                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
                     style={{ fontSize: 16 }}
                   >
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -520,30 +653,56 @@ const Tv = () => {
               </div>
               <div>
                 <Label>URL</Label>
-                <Input value={editing.url || ""} onChange={(e) => setEditing({ ...editing, url: e.target.value })} placeholder="https://…" style={{ fontSize: 16 }} />
+                <Input
+                  value={editing.url || ""}
+                  onChange={(e) => setEditing({ ...editing, url: e.target.value })}
+                  placeholder="https://…"
+                  style={{ fontSize: 16 }}
+                />
               </div>
               <div>
                 <Label>Logo URL (optionnel)</Label>
-                <Input value={editing.logo_url || ""} onChange={(e) => setEditing({ ...editing, logo_url: e.target.value })} placeholder="https://…" style={{ fontSize: 16 }} />
+                <Input
+                  value={editing.logo_url || ""}
+                  onChange={(e) => setEditing({ ...editing, logo_url: e.target.value })}
+                  placeholder="https://…"
+                  style={{ fontSize: 16 }}
+                />
               </div>
               <div>
                 <Label>Description (optionnel)</Label>
-                <Textarea value={editing.description || ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} rows={2} style={{ fontSize: 16 }} />
+                <Textarea
+                  value={editing.description || ""}
+                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                  rows={2}
+                  style={{ fontSize: 16 }}
+                />
               </div>
               <div className="flex items-center justify-between pt-2">
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />
+                  <input
+                    type="checkbox"
+                    checked={editing.is_active ?? true}
+                    onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })}
+                  />
                   Visible par les membres
                 </label>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-muted-foreground">Ordre</span>
-                  <Input type="number" value={editing.sort_order ?? 0} onChange={(e) => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })} className="w-20 h-8" />
+                  <Input
+                    type="number"
+                    value={editing.sort_order ?? 0}
+                    onChange={(e) => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })}
+                    className="w-20 h-8"
+                  />
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditorOpen(false)}>Annuler</Button>
+            <Button variant="ghost" onClick={() => setEditorOpen(false)}>
+              Annuler
+            </Button>
             <Button onClick={saveChannel}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
