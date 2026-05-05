@@ -122,18 +122,21 @@ const Tv = () => {
     void loadAll();
   }, [session?.user?.id]);
 
-  // Poll channel is_active every 20s so viewers see open/close changes live
+  // Poll latest channel every 20s so viewers see open/close (creation/deletion) live
   useEffect(() => {
-    if (!channel?.id) return;
+    if (!session?.user) return;
     const t = setInterval(async () => {
-      const { data } = await supabase.from("tv_channels")
-        .select("is_active").eq("id", channel.id).maybeSingle();
-      if (data && data.is_active !== channel.is_active) {
-        setChannel((c) => c ? { ...c, is_active: data.is_active } : c);
-      }
+      const { data } = await supabase.from("tv_channels").select("*")
+        .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1);
+      const next = ((data as any) || [])[0] || null;
+      setChannel((c) => {
+        if (!c && !next) return c;
+        if (c && next && c.id === next.id) return c;
+        return next;
+      });
     }, 20000);
     return () => clearInterval(t);
-  }, [channel?.id, channel?.is_active]);
+  }, [session?.user?.id]);
 
   // Fetch signed token once per channel; no periodic refresh to avoid iframe reload (freeze)
   useEffect(() => {
@@ -246,16 +249,15 @@ const Tv = () => {
     setLoading(false);
   };
 
-  const toggleChannelActive = async () => {
+  const closeTv = async () => {
     if (!channel || !isAdmin) return;
+    if (!confirm(`Fermer la FCO TV ?\n\nLe stream « ${channel.name} » sera supprimé. Tu pourras en créer un nouveau quand tu veux.`)) return;
     setTogglingActive(true);
-    const next = !channel.is_active;
-    const { error } = await supabase.from("tv_channels")
-      .update({ is_active: next }).eq("id", channel.id);
+    const { error } = await supabase.from("tv_channels").delete().eq("id", channel.id);
     setTogglingActive(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(next ? "TV ouverte" : "TV fermée");
-    setChannel({ ...channel, is_active: next });
+    toast.success("FCO TV fermée — stream supprimé");
+    setChannel(null);
   };
 
   // Realtime presence + chat broadcast
