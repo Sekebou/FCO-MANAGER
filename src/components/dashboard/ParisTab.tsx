@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone, RotateCcw, AlertTriangle, X } from 'lucide-react';
+import { Coins, Clock, CheckCircle2, XCircle, Ticket, BarChart3, Flame, Loader2, Zap, MapPin, ExternalLink, Timer, TrendingUp, User, Shield, Gavel, RefreshCw, Target, Trophy, Megaphone, RotateCcw, AlertTriangle, X, Tv } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -1743,10 +1743,18 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             <span className="text-[10px] text-muted-foreground font-medium">
                               {new Date(bet.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                             </span>
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
-                              <StatusIcon size={10} />
-                              {config.label}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {bet.team === 'TV' && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">
+                                  <Tv size={10} />
+                                  FCO TV
+                                </span>
+                              )}
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                                <StatusIcon size={10} />
+                                {config.label}
+                              </span>
+                            </div>
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="min-w-0">
