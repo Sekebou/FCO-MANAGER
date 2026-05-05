@@ -420,6 +420,8 @@ const TvTab = ({ currentUser }: TvTabProps) => {
             )}
           </div>
 
+          <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
+
           <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={userId} />
 
           {/* Mobile chat toggle */}
