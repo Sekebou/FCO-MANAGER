@@ -102,17 +102,21 @@ const TvTab = ({ currentUser }: TvTabProps) => {
     void loadAll();
   }, [userId]);
 
+  // Poll latest channel every 20s so viewers see open/close (creation/deletion) live
   useEffect(() => {
-    if (!channel?.id) return;
+    if (!userId) return;
     const t = setInterval(async () => {
-      const { data } = await supabase.from("tv_channels")
-        .select("is_active").eq("id", channel.id).maybeSingle();
-      if (data && data.is_active !== channel.is_active) {
-        setChannel((c) => c ? { ...c, is_active: data.is_active } : c);
-      }
+      const { data } = await supabase.from("tv_channels").select("*")
+        .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1);
+      const next = ((data as any) || [])[0] || null;
+      setChannel((c) => {
+        if (!c && !next) return c;
+        if (c && next && c.id === next.id) return c;
+        return next;
+      });
     }, 20000);
     return () => clearInterval(t);
-  }, [channel?.id, channel?.is_active]);
+  }, [userId]);
 
   useEffect(() => {
     if (!channel) {
@@ -197,15 +201,15 @@ const TvTab = ({ currentUser }: TvTabProps) => {
     setLoading(false);
   };
 
-  const toggleChannelActive = async () => {
+  const closeTv = async () => {
     if (!channel || !isAdmin) return;
+    if (!confirm(`Fermer la FCO TV ?\n\nLe stream « ${channel.name} » sera supprimé. Tu pourras en créer un nouveau quand tu veux.`)) return;
     setTogglingActive(true);
-    const next = !channel.is_active;
-    const { error } = await supabase.from("tv_channels").update({ is_active: next }).eq("id", channel.id);
+    const { error } = await supabase.from("tv_channels").delete().eq("id", channel.id);
     setTogglingActive(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(next ? "TV ouverte" : "TV fermée");
-    setChannel({ ...channel, is_active: next });
+    toast.success("FCO TV fermée — stream supprimé");
+    setChannel(null);
   };
 
   useEffect(() => {
@@ -274,20 +278,28 @@ const TvTab = ({ currentUser }: TvTabProps) => {
     return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
   }
 
+  // No channel = TV closed. Admin sees an "Open" CTA, others see a friendly closed screen.
   if (!channel) {
     return (
-      <div className="text-center py-20">
-        <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-secondary flex items-center justify-center">
-          <TvIcon className="w-9 h-9 text-muted-foreground" />
+      <div className="flex items-center justify-center py-12">
+        <div className="relative max-w-md w-full text-center bg-card/70 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-lg overflow-hidden">
+          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-red-500/10 flex items-center justify-center">
+              <PowerOff className="w-9 h-9 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold tracking-tight">La FCO TV est actuellement fermée</h2>
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+              Aucun direct n'est diffusé pour le moment.<br />Reviens un peu plus tard pour ne rien manquer 📺
+            </p>
+            {isAdmin && (
+              <button onClick={() => setShowForm(true)}
+                className="mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-95 transition shadow-lg">
+                <Power className="w-4 h-4" /> Ouvrir la FCO TV
+              </button>
+            )}
+          </div>
         </div>
-        <p className="text-lg font-semibold">Aucun stream en direct</p>
-        <p className="text-sm text-muted-foreground mt-1">Reviens un peu plus tard.</p>
-        {isAdmin && (
-          <button onClick={() => setShowForm(true)}
-            className="mt-5 inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 active:scale-95 transition">
-            <Plus className="w-4 h-4" /> Ajouter un stream
-          </button>
-        )}
         {showForm && isAdmin && (
           <ChannelForm channel={null} onClose={() => setShowForm(false)}
             onSaved={() => { setShowForm(false); void loadAll(); }}
@@ -297,40 +309,19 @@ const TvTab = ({ currentUser }: TvTabProps) => {
     );
   }
 
-  if (!channel.is_active && !isAdmin) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="relative max-w-md w-full text-center bg-card/70 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-lg overflow-hidden">
-          <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
-          <div className="relative">
-            <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-red-500/10 flex items-center justify-center">
-              <PowerOff className="w-9 h-9 text-red-500" />
-            </div>
-            <h2 className="text-2xl font-bold tracking-tight">La FCO TV est fermée</h2>
-            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-              Aucun direct n'est diffusé pour le moment.<br />Reviens un peu plus tard pour ne rien manquer 📺
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Admin actions */}
       {isAdmin && (
         <div className="flex items-center gap-2 justify-end">
-          <button onClick={toggleChannelActive} disabled={togglingActive}
-            className={`h-9 px-3 rounded-full text-sm font-medium flex items-center gap-1.5 active:scale-95 transition disabled:opacity-50 ${
-              channel.is_active ? "bg-red-600/15 text-red-600 hover:bg-red-600/25" : "bg-emerald-600/15 text-emerald-600 hover:bg-emerald-600/25"
-            }`}>
-            {togglingActive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : channel.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
-            <span>{channel.is_active ? "Fermer la TV" : "Ouvrir la TV"}</span>
-          </button>
           <button onClick={() => setShowForm(true)}
             className="h-9 px-3 rounded-full bg-secondary text-foreground text-sm font-medium flex items-center gap-1.5 hover:bg-secondary/70 active:scale-95 transition">
             <Pencil className="w-3.5 h-3.5" /> Modifier
+          </button>
+          <button onClick={closeTv} disabled={togglingActive}
+            className="h-9 px-3 rounded-full text-sm font-medium flex items-center gap-1.5 active:scale-95 transition disabled:opacity-50 bg-red-600/15 text-red-600 hover:bg-red-600/25">
+            {togglingActive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PowerOff className="w-3.5 h-3.5" />}
+            <span>Fermer la TV</span>
           </button>
         </div>
       )}
