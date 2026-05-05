@@ -224,11 +224,11 @@ const Tv = () => {
     setLoading(false);
   };
 
-  // Realtime presence: count viewers on the current channel
+  // Realtime presence + chat broadcast
   useEffect(() => {
     if (!channel || !session?.user || !myName) return;
     const ch = supabase.channel(`tv-viewers:${channel.id}`, {
-      config: { presence: { key: session.user.id } },
+      config: { presence: { key: session.user.id }, broadcast: { self: true } },
     });
     ch.on("presence", { event: "sync" }, () => {
       const state = ch.presenceState() as Record<string, Array<{ name: string }>>;
@@ -239,11 +239,42 @@ const Tv = () => {
       });
       setViewers(list);
     });
+    ch.on("broadcast", { event: "chat" }, ({ payload }) => {
+      setMessages((prev) => [...prev.slice(-199), payload as any]);
+    });
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") await ch.track({ name: myName });
     });
-    return () => { void supabase.removeChannel(ch); };
+    presenceChannelRef.current = ch;
+    return () => {
+      presenceChannelRef.current = null;
+      void supabase.removeChannel(ch);
+      setMessages([]);
+    };
   }, [channel?.id, session?.user?.id, myName]);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
+
+  const sendMessage = async (e: FormEvent) => {
+    e.preventDefault();
+    const text = chatInput.trim();
+    if (!text || !presenceChannelRef.current || !session?.user) return;
+    setChatInput("");
+    await presenceChannelRef.current.send({
+      type: "broadcast",
+      event: "chat",
+      payload: {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        user_id: session.user.id,
+        name: myName,
+        text: text.slice(0, 500),
+        ts: Date.now(),
+      },
+    });
+  };
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
