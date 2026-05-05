@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Hls from "hls.js";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
-  Maximize2, Radio, Plus, Search, Calendar, Settings, Eye,
+  Maximize2, Radio, Plus, Search, Calendar, Settings, Eye, Send, MessageCircle,
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
