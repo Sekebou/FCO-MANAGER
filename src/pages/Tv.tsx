@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
-  Maximize2, Radio, Plus,
+  Maximize2, Radio, Plus, Search, Calendar,
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
@@ -19,6 +19,11 @@ interface Channel {
   description: string | null;
   is_active: boolean;
   sort_order: number | null;
+  home_team: string | null;
+  away_team: string | null;
+  home_logo: string | null;
+  away_logo: string | null;
+  match_date: string | null;
 }
 
 function toCloudflareIframe(input: string): string {
@@ -204,6 +209,34 @@ const Tv = () => {
           </div>
         ) : (
           <div className="space-y-5">
+            {/* Match poster */}
+            {(channel.home_team || channel.away_team) && (
+              <div className="bg-gradient-to-br from-primary/10 via-card to-primary/5 border border-border rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+                    {channel.home_logo ? (
+                      <img src={channel.home_logo} alt={channel.home_team || ""} className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
+                    ) : <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary" />}
+                    <p className="text-xs sm:text-sm font-bold text-center truncate w-full">{channel.home_team || "—"}</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground">VS</span>
+                    {channel.match_date && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> {channel.match_date}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+                    {channel.away_logo ? (
+                      <img src={channel.away_logo} alt={channel.away_team || ""} className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
+                    ) : <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary" />}
+                    <p className="text-xs sm:text-sm font-bold text-center truncate w-full">{channel.away_team || "—"}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Player */}
             <div className="relative">
               {/* Glow */}
@@ -267,6 +300,11 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
   const [sourceType, setSourceType] = useState<SourceType>(channel?.source_type || "cloudflare");
   const [url, setUrl] = useState(channel?.url || "");
   const [description, setDescription] = useState(channel?.description || "");
+  const [homeTeam, setHomeTeam] = useState(channel?.home_team || "");
+  const [awayTeam, setAwayTeam] = useState(channel?.away_team || "");
+  const [homeLogo, setHomeLogo] = useState(channel?.home_logo || "");
+  const [awayLogo, setAwayLogo] = useState(channel?.away_logo || "");
+  const [matchDate, setMatchDate] = useState(channel?.match_date || "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -284,6 +322,11 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
       source_type: sourceType,
       url: url.trim(),
       description: description.trim() || null,
+      home_team: homeTeam.trim() || null,
+      away_team: awayTeam.trim() || null,
+      home_logo: homeLogo.trim() || null,
+      away_logo: awayLogo.trim() || null,
+      match_date: matchDate.trim() || null,
       is_active: true,
     };
     let error;
@@ -343,6 +386,17 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
               <p className="text-xs text-muted-foreground mt-1.5">Accepte UID, token signé (JWT), URL customer-xxx ou /iframe.</p>
             )}
           </Field>
+          <div className="pt-2 border-t border-border" />
+          <div className="grid grid-cols-2 gap-3">
+            <TeamPicker label="Équipe domicile" team={homeTeam} logo={homeLogo}
+              onPick={(n, l) => { setHomeTeam(n); setHomeLogo(l); }} />
+            <TeamPicker label="Équipe extérieur" team={awayTeam} logo={awayLogo}
+              onPick={(n, l) => { setAwayTeam(n); setAwayLogo(l); }} />
+          </div>
+          <Field label="Date du match (optionnel)">
+            <input value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls}
+              placeholder="Ex: Dim 5 mai · 21h00" />
+          </Field>
           <Field label="Description">
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               className={`${inputCls} resize-none py-3`} placeholder="Optionnel" />
@@ -378,5 +432,85 @@ const Field = ({ label, children }: { label: string; children: any }) => (
     {children}
   </div>
 );
+
+// ================= TEAM PICKER =================
+const TeamPicker = ({ label, team, logo, onPick }: {
+  label: string; team: string; logo: string;
+  onPick: (name: string, logo: string) => void;
+}) => {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [results, setResults] = useState<Array<{ id: number; name: string; country: string; logo: string }>>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (!open || q.trim().length < 2) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearching(true);
+      const { data, error } = await supabase.functions.invoke("search-team-logo", { body: { search: q.trim() } });
+      setSearching(false);
+      if (error) { toast.error("Erreur recherche"); return; }
+      setResults((data?.teams as any[]) || []);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [q, open]);
+
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">{label}</label>
+      <div className="bg-secondary/60 border border-transparent rounded-xl p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          {logo ? (
+            <img src={logo} alt="" className="w-10 h-10 object-contain bg-background rounded-lg p-1" />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-background/60 flex items-center justify-center text-muted-foreground text-xs">?</div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">{team || "Aucune équipe"}</p>
+            <button type="button" onClick={() => { setOpen((v) => !v); setQ(""); }}
+              className="text-xs text-primary font-medium hover:underline">
+              {open ? "Annuler" : team ? "Changer" : "Rechercher…"}
+            </button>
+          </div>
+          {team && (
+            <button type="button" onClick={() => onPick("", "")}
+              className="w-7 h-7 rounded-full hover:bg-background flex items-center justify-center text-muted-foreground">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        {open && (
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)}
+                placeholder="Ex: PSG, Real Madrid…"
+                className="w-full h-10 pl-9 pr-3 rounded-lg bg-background border border-border focus:border-primary outline-none text-sm" />
+            </div>
+            {searching && <p className="text-xs text-muted-foreground text-center py-2">Recherche…</p>}
+            {!searching && results.length > 0 && (
+              <div className="max-h-56 overflow-y-auto space-y-1">
+                {results.map((r) => (
+                  <button key={r.id} type="button"
+                    onClick={() => { onPick(r.name, r.logo); setOpen(false); }}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-background text-left transition">
+                    <img src={r.logo} alt="" className="w-8 h-8 object-contain shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{r.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{r.country}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {!searching && q.trim().length >= 2 && results.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-2">Aucun résultat</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default Tv;
