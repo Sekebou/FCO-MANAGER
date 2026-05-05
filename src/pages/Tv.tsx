@@ -109,11 +109,13 @@ const Tv = () => {
     if (!channel) {
       setSignedToken(null);
       setPlayerUrl(null);
+      setHlsUrl(null);
       return;
     }
     if (channel.source_type !== "cloudflare") {
       setSignedToken(null);
       setPlayerUrl(buildPlayerUrl(channel, null));
+      setHlsUrl(null);
       return;
     }
     let cancelled = false;
