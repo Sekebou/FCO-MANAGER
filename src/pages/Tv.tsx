@@ -594,11 +594,13 @@ const Tv = () => {
                 )}
               </div>
 
-              {/* Bettors card */}
-              <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
-
               {/* Betting panel */}
               <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={session.user.id} />
+
+              {/* Bettors card on mobile (under betting panel; on desktop it's under chat live) */}
+              <div className="lg:hidden">
+                <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
+              </div>
 
               {channel.description && (
                 <div className="hidden sm:block bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-sm">
@@ -661,6 +663,11 @@ const Tv = () => {
                       <Send className="w-4 h-4" />
                     </button>
                   </form>
+                </div>
+
+                {/* Bettors card under live chat */}
+                <div className="mt-4">
+                  <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
                 </div>
               </div>
             </aside>
