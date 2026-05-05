@@ -18,7 +18,11 @@ function tryBase64Decode(s: string): string | null {
 }
 
 async function importSigningKey(rawKey: string): Promise<CryptoKey> {
-  const trimmed = rawKey.trim().replace(/^['"]|['"]$/g, "");
+  let trimmed = rawKey.trim().replace(/^['"]|['"]$/g, "");
+  // Handle pasted `"jwk": "eyJ..."` format → extract the base64 value
+  const m = trimmed.match(/"(?:jwk|pem)"\s*:\s*"([^"]+)"/);
+  if (m) trimmed = m[1];
+  trimmed = trimmed.replace(/,\s*$/, "").replace(/^['"]|['"]$/g, "");
 
   // 1) Try as base64-encoded JSON JWK (Cloudflare's `jwk` field)
   const decoded = tryBase64Decode(trimmed);
