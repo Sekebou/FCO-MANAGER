@@ -597,6 +597,11 @@ const Tv = () => {
               {/* Betting panel */}
               <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={session.user.id} />
 
+              {/* Bettors card on mobile (under betting panel; on desktop it's under chat live) */}
+              <div className="lg:hidden">
+                <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
+              </div>
+
               {channel.description && (
                 <div className="hidden sm:block bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-sm">
                   <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line line-clamp-3">{channel.description}</p>
