@@ -21,11 +21,15 @@ async function loadAllTeams(): Promise<Team[]> {
   if (CACHE && Date.now() - CACHE.at < TTL) return CACHE.teams;
   const out: Team[] = [];
   const seen = new Set<number>();
-  await Promise.all(LEAGUES.map(async (l) => {
+  // Sequential to avoid rate-limiting on TheSportsDB free tier
+  for (const l of LEAGUES) {
     try {
       const r = await fetch(`https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=${encodeURIComponent(l)}`);
+      if (!r.ok) { console.warn("league http", l, r.status); continue; }
       const d = await r.json();
-      for (const t of (d?.teams ?? [])) {
+      const arr = d?.teams ?? [];
+      console.log(`league ${l}: ${arr.length}`);
+      for (const t of arr) {
         const id = Number(t.idTeam);
         if (!id || seen.has(id)) continue;
         const logo = t.strBadge || t.strLogo || t.strTeamBadge || "";
@@ -39,7 +43,7 @@ async function loadAllTeams(): Promise<Team[]> {
         });
       }
     } catch (e) { console.warn("league fail", l, e); }
-  }));
+  }
   CACHE = { at: Date.now(), teams: out };
   console.log(`Loaded ${out.length} teams`);
   return out;
