@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Hls from "hls.js";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
-  Maximize2, Radio, Plus, Search, Calendar,
+  Maximize2, Radio, Plus, Search, Calendar, Settings, Eye,
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
@@ -81,9 +81,15 @@ const Tv = () => {
   const [signedToken, setSignedToken] = useState<string | null>(null);
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [hlsUrl, setHlsUrl] = useState<string | null>(null);
+  const [myName, setMyName] = useState<string>("");
+  const [viewers, setViewers] = useState<{ id: string; name: string }[]>([]);
+  const [levels, setLevels] = useState<{ height: number; bitrate: number; index: number }[]>([]);
+  const [currentLevel, setCurrentLevel] = useState<number>(-1);
+  const [showQuality, setShowQuality] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -157,8 +163,21 @@ const Tv = () => {
         lowLatencyMode: false,
         enableWorker: true,
       });
+      hlsRef.current = hls;
       hls.loadSource(hlsUrl);
       hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (!hls) return;
+        const lv = hls.levels.map((l, i) => ({ height: l.height || 0, bitrate: l.bitrate || 0, index: i }));
+        // sort high → low
+        lv.sort((a, b) => (b.height - a.height) || (b.bitrate - a.bitrate));
+        setLevels(lv);
+        setCurrentLevel(-1);
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
+        // Only reflect when in auto so user manual choice is preserved
+        if (hls && hls.autoLevelEnabled) setCurrentLevel(-1);
+      });
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) console.error("HLS fatal", data);
       });
@@ -170,23 +189,57 @@ const Tv = () => {
 
     return () => {
       if (hls) hls.destroy();
+      hlsRef.current = null;
+      setLevels([]);
+      setCurrentLevel(-1);
       video.removeAttribute("src");
       video.load();
     };
   }, [hlsUrl]);
 
+  const selectQuality = (idx: number) => {
+    const hls = hlsRef.current;
+    if (!hls) return;
+    hls.currentLevel = idx; // -1 = auto
+    setCurrentLevel(idx);
+    setShowQuality(false);
+  };
+
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }] = await Promise.all([
+    const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }, { data: prof }] = await Promise.all([
       supabase.from("tv_channels").select("*").eq("is_active", true)
         .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1),
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" as any }),
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin_plus" as any }),
+      supabase.from("profiles").select("name").eq("id", session.user.id).maybeSingle(),
     ]);
     setChannel(((ch as any) || [])[0] || null);
     setIsAdmin(Boolean(isAdminRpc) || Boolean(isAdminPlusRpc));
+    setMyName((prof as any)?.name || session.user.email?.split("@")[0] || "Anonyme");
     setLoading(false);
   };
+
+  // Realtime presence: count viewers on the current channel
+  useEffect(() => {
+    if (!channel || !session?.user || !myName) return;
+    const ch = supabase.channel(`tv-viewers:${channel.id}`, {
+      config: { presence: { key: session.user.id } },
+    });
+    ch.on("presence", { event: "sync" }, () => {
+      const state = ch.presenceState() as Record<string, Array<{ name: string }>>;
+      const list: { id: string; name: string }[] = [];
+      Object.entries(state).forEach(([uid, metas]) => {
+        const meta = metas[0];
+        if (meta?.name) list.push({ id: uid, name: meta.name });
+      });
+      setViewers(list);
+    });
+    ch.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") await ch.track({ name: myName });
+    });
+    return () => { void supabase.removeChannel(ch); };
+  }, [channel?.id, session?.user?.id, myName]);
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -354,6 +407,42 @@ const Tv = () => {
                     loading="eager"
                   />
                 ) : null}
+                {/* Quality selector */}
+                {hlsUrl && levels.length > 0 && (
+                  <div className="absolute top-3 left-3">
+                    <button
+                      onClick={() => setShowQuality((v) => !v)}
+                      className="h-10 px-3 rounded-full bg-black/55 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/75 active:scale-95 transition"
+                      aria-label="Qualité vidéo"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>
+                        {currentLevel === -1
+                          ? "Auto"
+                          : `${levels.find((l) => l.index === currentLevel)?.height || ""}p`}
+                      </span>
+                    </button>
+                    {showQuality && (
+                      <div className="mt-2 min-w-[140px] rounded-xl bg-black/80 backdrop-blur-xl text-white p-1 shadow-2xl ring-1 ring-white/10">
+                        <button
+                          onClick={() => selectQuality(-1)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/10 ${currentLevel === -1 ? "bg-white/10 font-semibold" : ""}`}
+                        >
+                          Auto
+                        </button>
+                        {levels.map((l) => (
+                          <button
+                            key={l.index}
+                            onClick={() => selectQuality(l.index)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/10 ${currentLevel === l.index ? "bg-white/10 font-semibold" : ""}`}
+                          >
+                            {l.height ? `${l.height}p` : `${Math.round(l.bitrate / 1000)} kbps`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button onClick={goFullscreen}
                   className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
                   aria-label="Plein écran">
@@ -377,6 +466,34 @@ const Tv = () => {
               </div>
               {channel.description && (
                 <p className="mt-4 text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{channel.description}</p>
+              )}
+            </div>
+
+            {/* Viewers (live presence) */}
+            <div className="bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-red-600/15 flex items-center justify-center">
+                  <Eye className="w-4 h-4 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold leading-none">
+                    {viewers.length} {viewers.length > 1 ? "personnes regardent" : "personne regarde"} le match
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1">En direct maintenant</p>
+                </div>
+              </div>
+              {viewers.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {viewers.map((v) => (
+                    <span
+                      key={v.id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      {v.name}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
           </div>
