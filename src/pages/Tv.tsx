@@ -407,6 +407,42 @@ const Tv = () => {
                     loading="eager"
                   />
                 ) : null}
+                {/* Quality selector */}
+                {hlsUrl && levels.length > 0 && (
+                  <div className="absolute top-3 left-3">
+                    <button
+                      onClick={() => setShowQuality((v) => !v)}
+                      className="h-10 px-3 rounded-full bg-black/55 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/75 active:scale-95 transition"
+                      aria-label="Qualité vidéo"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>
+                        {currentLevel === -1
+                          ? "Auto"
+                          : `${levels.find((l) => l.index === currentLevel)?.height || ""}p`}
+                      </span>
+                    </button>
+                    {showQuality && (
+                      <div className="mt-2 min-w-[140px] rounded-xl bg-black/80 backdrop-blur-xl text-white p-1 shadow-2xl ring-1 ring-white/10">
+                        <button
+                          onClick={() => selectQuality(-1)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/10 ${currentLevel === -1 ? "bg-white/10 font-semibold" : ""}`}
+                        >
+                          Auto
+                        </button>
+                        {levels.map((l) => (
+                          <button
+                            key={l.index}
+                            onClick={() => selectQuality(l.index)}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/10 ${currentLevel === l.index ? "bg-white/10 font-semibold" : ""}`}
+                          >
+                            {l.height ? `${l.height}p` : `${Math.round(l.bitrate / 1000)} kbps`}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button onClick={goFullscreen}
                   className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
                   aria-label="Plein écran">
