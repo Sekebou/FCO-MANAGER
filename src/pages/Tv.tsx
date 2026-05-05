@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import Hls from "hls.js";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
   Maximize2, Radio, Plus, Search, Calendar,
@@ -26,6 +27,11 @@ interface Channel {
   match_date: string | null;
 }
 
+function extractCustomerSubdomain(input: string): string | null {
+  const m = input.match(/(customer-[^.\/]+)\.cloudflarestream\.com/i);
+  return m ? m[1] : null;
+}
+
 function toCloudflareIframe(input: string): string {
   const v = input.trim();
   if (/\/iframe(\?|$)/i.test(v)) return v;
@@ -38,6 +44,12 @@ function toCloudflareIframe(input: string): string {
     return `https://iframe.cloudflarestream.com/${v}`;
   }
   return v;
+}
+
+function buildHlsUrl(c: Channel, signedToken: string): string | null {
+  const sub = extractCustomerSubdomain(c.url);
+  if (sub) return `https://${sub}.cloudflarestream.com/${signedToken}/manifest/video.m3u8`;
+  return `https://videodelivery.net/${signedToken}/manifest/video.m3u8`;
 }
 
 function buildPlayerUrl(c: Channel, signedToken?: string | null): string {
@@ -68,8 +80,10 @@ const Tv = () => {
   const [showForm, setShowForm] = useState(false);
   const [signedToken, setSignedToken] = useState<string | null>(null);
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
+  const [hlsUrl, setHlsUrl] = useState<string | null>(null);
 
   const playerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -95,11 +109,13 @@ const Tv = () => {
     if (!channel) {
       setSignedToken(null);
       setPlayerUrl(null);
+      setHlsUrl(null);
       return;
     }
     if (channel.source_type !== "cloudflare") {
       setSignedToken(null);
       setPlayerUrl(buildPlayerUrl(channel, null));
+      setHlsUrl(null);
       return;
     }
     let cancelled = false;
@@ -112,16 +128,52 @@ const Tv = () => {
         const tok = !error && data?.token ? data.token : null;
         setSignedToken(tok);
         setPlayerUrl(buildPlayerUrl(channel, tok));
+        setHlsUrl(tok ? buildHlsUrl(channel, tok) : null);
       } catch (e) {
         console.error("sign-stream-url invoke error", e);
         if (!cancelled) {
           setSignedToken(null);
           setPlayerUrl(buildPlayerUrl(channel, null));
+          setHlsUrl(null);
         }
       }
     })();
     return () => { cancelled = true; };
   }, [channel?.id]);
+
+  // Native HLS player with large buffer to eliminate micro-freezes on fast networks
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !hlsUrl) return;
+
+    let hls: Hls | null = null;
+
+    if (Hls.isSupported()) {
+      hls = new Hls({
+        maxBufferLength: 60,
+        maxMaxBufferLength: 120,
+        maxBufferSize: 120 * 1000 * 1000,
+        backBufferLength: 30,
+        lowLatencyMode: false,
+        enableWorker: true,
+      });
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.ERROR, (_e, data) => {
+        if (data.fatal) console.error("HLS fatal", data);
+      });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = hlsUrl;
+    }
+
+    video.play().catch(() => { /* autoplay blocked */ });
+
+    return () => {
+      if (hls) hls.destroy();
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [hlsUrl]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -282,7 +334,16 @@ const Tv = () => {
               {/* Glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-3xl blur-2xl opacity-60 pointer-events-none" />
               <div ref={playerRef} className="relative aspect-video w-full bg-black rounded-2xl sm:rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                {playerUrl && (
+                {hlsUrl ? (
+                  <video
+                    ref={videoRef}
+                    key={channel.id + ":" + hlsUrl}
+                    className="w-full h-full bg-black"
+                    controls
+                    playsInline
+                    autoPlay
+                  />
+                ) : playerUrl ? (
                   <iframe
                     key={channel.id}
                     src={playerUrl}
@@ -292,7 +353,7 @@ const Tv = () => {
                     allowFullScreen
                     loading="eager"
                   />
-                )}
+                ) : null}
                 <button onClick={goFullscreen}
                   className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
                   aria-label="Plein écran">
