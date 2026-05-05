@@ -417,6 +417,21 @@ const Tv = () => {
             <p className="text-lg font-semibold">Aucun stream en direct</p>
             <p className="text-sm text-muted-foreground mt-1">Reviens un peu plus tard.</p>
           </div>
+        ) : !channel.is_active && !isAdmin ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="relative max-w-md w-full text-center bg-card/70 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-lg overflow-hidden">
+              <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
+              <div className="relative">
+                <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-red-500/10 flex items-center justify-center">
+                  <PowerOff className="w-9 h-9 text-red-500" />
+                </div>
+                <h2 className="text-2xl font-bold tracking-tight">La FCO TV est fermée</h2>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                  Aucun direct n'est diffusé pour le moment.<br />Reviens un peu plus tard pour ne rien manquer 📺
+                </p>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-5">
             {/* LEFT: player + info */}
