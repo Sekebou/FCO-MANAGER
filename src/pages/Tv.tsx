@@ -141,6 +141,40 @@ const Tv = () => {
     return () => { cancelled = true; };
   }, [channel?.id]);
 
+  // Native HLS player with large buffer to eliminate micro-freezes on fast networks
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !hlsUrl) return;
+
+    let hls: Hls | null = null;
+
+    if (Hls.isSupported()) {
+      hls = new Hls({
+        maxBufferLength: 60,
+        maxMaxBufferLength: 120,
+        maxBufferSize: 120 * 1000 * 1000,
+        backBufferLength: 30,
+        lowLatencyMode: false,
+        enableWorker: true,
+      });
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.ERROR, (_e, data) => {
+        if (data.fatal) console.error("HLS fatal", data);
+      });
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = hlsUrl;
+    }
+
+    video.play().catch(() => { /* autoplay blocked */ });
+
+    return () => {
+      if (hls) hls.destroy();
+      video.removeAttribute("src");
+      video.load();
+    };
+  }, [hlsUrl]);
+
   const loadAll = async () => {
     setLoading(true);
     const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }] = await Promise.all([
