@@ -95,9 +95,8 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
 
   const settle = async () => {
     setSettling(true);
-    const scorers = sScorers.split(",").map(s => s.trim()).filter(Boolean);
     const { data, error } = await supabase.rpc("settle_tv_bets", {
-      p_channel_id: channel.id, p_home_score: sH, p_away_score: sA, p_scorer_names: scorers,
+      p_channel_id: channel.id, p_home_score: sH, p_away_score: sA, p_scorer_names: [],
     });
     setSettling(false);
     if (error) { toast.error(error.message); return; }
