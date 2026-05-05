@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
+import TvBettingPanel from "@/components/tv/TvBettingPanel";
 
 type SourceType = "cloudflare" | "iframe" | "m3u8";
 
