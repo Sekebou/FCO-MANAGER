@@ -19,6 +19,11 @@ interface Channel {
   description: string | null;
   is_active: boolean;
   sort_order: number | null;
+  home_team: string | null;
+  away_team: string | null;
+  home_logo: string | null;
+  away_logo: string | null;
+  match_date: string | null;
 }
 
 function toCloudflareIframe(input: string): string {
