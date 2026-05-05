@@ -126,11 +126,13 @@ const Tv = () => {
         const tok = !error && data?.token ? data.token : null;
         setSignedToken(tok);
         setPlayerUrl(buildPlayerUrl(channel, tok));
+        setHlsUrl(tok ? buildHlsUrl(channel, tok) : null);
       } catch (e) {
         console.error("sign-stream-url invoke error", e);
         if (!cancelled) {
           setSignedToken(null);
           setPlayerUrl(buildPlayerUrl(channel, null));
+          setHlsUrl(null);
         }
       }
     })();
