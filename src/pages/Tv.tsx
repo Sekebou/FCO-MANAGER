@@ -67,6 +67,7 @@ const Tv = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [signedToken, setSignedToken] = useState<string | null>(null);
+  const [playerUrl, setPlayerUrl] = useState<string | null>(null);
 
   const playerRef = useRef<HTMLDivElement>(null);
 
@@ -89,34 +90,38 @@ const Tv = () => {
     void loadAll();
   }, [session?.user?.id]);
 
-  // Fetch signed token for cloudflare streams (refresh every 3h)
+  // Fetch signed token once per channel; no periodic refresh to avoid iframe reload (freeze)
   useEffect(() => {
-    if (!channel || channel.source_type !== "cloudflare") {
+    if (!channel) {
       setSignedToken(null);
+      setPlayerUrl(null);
+      return;
+    }
+    if (channel.source_type !== "cloudflare") {
+      setSignedToken(null);
+      setPlayerUrl(buildPlayerUrl(channel, null));
       return;
     }
     let cancelled = false;
-    const fetchToken = async () => {
+    (async () => {
       try {
         const { data, error } = await supabase.functions.invoke("sign-stream-url", {
           body: { url: channel.url },
         });
         if (cancelled) return;
-        if (error || !data?.token) {
-          console.warn("Signed URL failed, falling back to public URL", error);
-          setSignedToken(null);
-        } else {
-          setSignedToken(data.token);
-        }
+        const tok = !error && data?.token ? data.token : null;
+        setSignedToken(tok);
+        setPlayerUrl(buildPlayerUrl(channel, tok));
       } catch (e) {
         console.error("sign-stream-url invoke error", e);
-        if (!cancelled) setSignedToken(null);
+        if (!cancelled) {
+          setSignedToken(null);
+          setPlayerUrl(buildPlayerUrl(channel, null));
+        }
       }
-    };
-    void fetchToken();
-    const id = setInterval(fetchToken, 1000 * 60 * 60 * 3);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [channel?.id, channel?.url, channel?.source_type]);
+    })();
+    return () => { cancelled = true; };
+  }, [channel?.id]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -277,14 +282,17 @@ const Tv = () => {
               {/* Glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-3xl blur-2xl opacity-60 pointer-events-none" />
               <div ref={playerRef} className="relative aspect-video w-full bg-black rounded-2xl sm:rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                <iframe
-                  src={buildPlayerUrl(channel, signedToken)}
-                  title={channel.name}
-                  className="w-full h-full"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  loading="eager"
-                />
+                {playerUrl && (
+                  <iframe
+                    key={channel.id}
+                    src={playerUrl}
+                    title={channel.name}
+                    className="w-full h-full"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    loading="eager"
+                  />
+                )}
                 <button onClick={goFullscreen}
                   className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
                   aria-label="Plein écran">
