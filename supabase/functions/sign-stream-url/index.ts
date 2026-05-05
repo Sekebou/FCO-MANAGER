@@ -102,21 +102,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const keyId = Deno.env.get("CLOUDFLARE_STREAM_KEY_ID");
+    const keyIdEnv = Deno.env.get("CLOUDFLARE_STREAM_KEY_ID");
     const pem = Deno.env.get("CLOUDFLARE_STREAM_KEY_PEM");
-    if (!keyId || !pem) {
-      return new Response(JSON.stringify({ error: "Missing signing key config" }), {
+    if (!pem) {
+      return new Response(JSON.stringify({ error: "Missing CLOUDFLARE_STREAM_KEY_PEM" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const cryptoKey = await importSigningKey(pem);
+    const { key: cryptoKey, kid: jwkKid } = await importSigningKey(pem);
+    const kid = jwkKid || keyIdEnv;
+    if (!kid) {
+      return new Response(JSON.stringify({ error: "Missing key ID (kid)" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Token valid for 4 hours
     const exp = getNumericDate(60 * 60 * 4);
     const jwt = await create(
-      { alg: "RS256", kid: keyId },
-      { sub: videoId, kid: keyId, exp },
+      { alg: "RS256", kid },
+      { sub: videoId, kid, exp },
       cryptoKey,
     );
 
