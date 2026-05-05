@@ -1,12 +1,12 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 
+// TheSportsDB — free, no key required (public key "3" works for basic search)
+// Endpoint: https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=PSG
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const API_KEY = Deno.env.get("API_FOOTBALL_KEY");
-    if (!API_KEY) throw new Error("API_FOOTBALL_KEY not configured");
-
     const { search } = await req.json();
     if (!search || typeof search !== "string" || search.trim().length < 2) {
       return new Response(JSON.stringify({ teams: [] }), {
@@ -14,17 +14,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    const url = `https://v3.football.api-sports.io/teams?search=${encodeURIComponent(search.trim())}`;
-    const res = await fetch(url, { headers: { "x-apisports-key": API_KEY } });
+    const q = search.trim();
+    const url = `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(q)}`;
+    const res = await fetch(url);
     const data = await res.json();
-    console.log("search-team-logo:", JSON.stringify({ q: search, results: data?.results, errors: data?.errors }));
 
-    const teams = (data?.response ?? []).slice(0, 10).map((t: any) => ({
-      id: t.team?.id,
-      name: t.team?.name,
-      country: t.team?.country,
-      logo: t.team?.logo,
-    }));
+    const teams = (data?.teams ?? [])
+      .filter((t: any) => (t?.strSport || "").toLowerCase() === "soccer")
+      .slice(0, 12)
+      .map((t: any, i: number) => ({
+        id: Number(t.idTeam) || i,
+        name: t.strTeam,
+        country: t.strCountry || "",
+        logo: t.strBadge || t.strLogo || t.strTeamBadge || "",
+      }))
+      .filter((t: any) => t.logo);
 
     return new Response(JSON.stringify({ teams }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
