@@ -12,7 +12,9 @@ function normalizePem(raw: string): string {
     const parsed = JSON.parse(trimmed);
     if (typeof parsed === "string") return parsed;
     if (typeof parsed?.jwk === "string") return parsed.jwk;
+    if (typeof parsed?.result?.jwk === "string") return parsed.result.jwk;
     if (typeof parsed?.pem === "string") return parsed.pem;
+    if (typeof parsed?.result?.pem === "string") return parsed.result.pem;
     if (typeof parsed?.privateKey === "string") return parsed.privateKey;
     if (typeof parsed?.private_key === "string") return parsed.private_key;
   } catch (_) {
@@ -38,7 +40,8 @@ async function importSigningKey(rawKey: string): Promise<CryptoKey> {
   const trimmed = rawKey.trim().replace(/^['"]|['"]$/g, "");
   try {
     const parsed = JSON.parse(trimmed);
-    const jwk = parsed?.jwk && typeof parsed.jwk === "object" ? parsed.jwk : parsed?.kty === "RSA" ? parsed : null;
+    const jwkSource = parsed?.jwk ?? parsed?.result?.jwk ?? parsed;
+    const jwk = typeof jwkSource === "string" ? JSON.parse(jwkSource) : jwkSource?.kty === "RSA" ? jwkSource : null;
     if (jwk) {
       return await crypto.subtle.importKey(
         "jwk",
