@@ -518,32 +518,36 @@ const Tv = () => {
             {/* RIGHT: live chat + viewers */}
             <aside className="lg:col-span-1">
               <div className="lg:sticky lg:top-20 space-y-4">
-                {/* Viewers */}
-                <div className="bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-red-600/15 flex items-center justify-center shrink-0">
-                      <Eye className="w-4 h-4 text-red-600" />
+                {/* Viewers — modern centered */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-3xl p-5 shadow-sm">
+                  <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-red-500/10 blur-2xl pointer-events-none" />
+                  <div className="relative flex flex-col items-center text-center gap-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-2xl bg-red-600/15 flex items-center justify-center">
+                        <Eye className="w-5 h-5 text-red-600" />
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold leading-none">
-                        {viewers.length} {viewers.length > 1 ? "personnes regardent" : "personne regarde"}
+                    <div>
+                      <p className="text-2xl font-black tracking-tight leading-none">{viewers.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1.5 font-medium">
+                        {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
                       </p>
-                      <p className="text-[11px] text-muted-foreground mt-1">En direct maintenant</p>
                     </div>
+                    {viewers.length > 0 && (
+                      <div className="w-full flex flex-wrap justify-center gap-1.5 max-h-24 overflow-y-auto pt-1">
+                        {viewers.map((v) => (
+                          <span
+                            key={v.id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-[11px] font-medium"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                            {v.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {viewers.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                      {viewers.map((v) => (
-                        <span
-                          key={v.id}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-[11px] font-medium"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                          {v.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Chat */}
