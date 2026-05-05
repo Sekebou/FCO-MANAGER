@@ -209,6 +209,34 @@ const Tv = () => {
           </div>
         ) : (
           <div className="space-y-5">
+            {/* Match poster */}
+            {(channel.home_team || channel.away_team) && (
+              <div className="bg-gradient-to-br from-primary/10 via-card to-primary/5 border border-border rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+                    {channel.home_logo ? (
+                      <img src={channel.home_logo} alt={channel.home_team || ""} className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
+                    ) : <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary" />}
+                    <p className="text-xs sm:text-sm font-bold text-center truncate w-full">{channel.home_team || "—"}</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xs font-semibold text-muted-foreground">VS</span>
+                    {channel.match_date && (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Calendar className="w-3 h-3" /> {channel.match_date}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+                    {channel.away_logo ? (
+                      <img src={channel.away_logo} alt={channel.away_team || ""} className="w-16 h-16 sm:w-20 sm:h-20 object-contain" />
+                    ) : <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-secondary" />}
+                    <p className="text-xs sm:text-sm font-bold text-center truncate w-full">{channel.away_team || "—"}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Player */}
             <div className="relative">
               {/* Glow */}
