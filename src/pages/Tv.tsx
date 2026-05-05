@@ -376,7 +376,7 @@ const Tv = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-6">
         {loading ? (
           <div className="flex justify-center py-32"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>
         ) : !channel ? (
@@ -388,54 +388,38 @@ const Tv = () => {
             <p className="text-sm text-muted-foreground mt-1">Reviens un peu plus tard.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-5">
             {/* LEFT: player + info */}
-            <div className="lg:col-span-2 space-y-5">
-              {/* Modern centered match card */}
+            <div className="lg:col-span-2 space-y-3 lg:space-y-4">
+              {/* Compact match card */}
               {(channel.home_team || channel.away_team) && (
-                <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/15 via-card to-primary/5 p-6 sm:p-8 shadow-lg">
-                  <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
-                  <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-
-                  <div className="relative flex flex-col items-center text-center gap-5">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600 text-white text-[10px] font-bold tracking-wider">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> EN DIRECT
-                    </div>
-
-                    <div className="flex items-center justify-center gap-4 sm:gap-8 w-full">
-                      <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-background/70 backdrop-blur flex items-center justify-center p-2 shadow-md">
-                          {channel.home_logo ? (
-                            <img src={channel.home_logo} alt={channel.home_team || ""} className="w-full h-full object-contain" />
-                          ) : <div className="w-full h-full rounded-xl bg-secondary" />}
-                        </div>
-                        <p className="text-sm sm:text-base font-bold text-center truncate w-full">{channel.home_team || "—"}</p>
-                      </div>
-
-                      <div className="flex flex-col items-center gap-2 shrink-0">
-                        <span className="text-2xl sm:text-3xl font-black text-primary tracking-tight">VS</span>
-                        {channel.match_date && (
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-                            <Calendar className="w-3 h-3" /> {channel.match_date}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-background/70 backdrop-blur flex items-center justify-center p-2 shadow-md">
-                          {channel.away_logo ? (
-                            <img src={channel.away_logo} alt={channel.away_team || ""} className="w-full h-full object-contain" />
-                          ) : <div className="w-full h-full rounded-xl bg-secondary" />}
-                        </div>
-                        <p className="text-sm sm:text-base font-bold text-center truncate w-full">{channel.away_team || "—"}</p>
+                <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-primary/15 via-card to-primary/5 px-4 py-3 sm:px-5 sm:py-4 shadow-sm">
+                  <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+                  <div className="relative flex items-center justify-between gap-3">
+                    <div className="flex-1 flex items-center gap-2 min-w-0 justify-end">
+                      <p className="text-xs sm:text-sm font-bold truncate text-right">{channel.home_team || "—"}</p>
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-background/70 backdrop-blur flex items-center justify-center p-1 shadow-sm shrink-0">
+                        {channel.home_logo ? (
+                          <img src={channel.home_logo} alt={channel.home_team || ""} className="w-full h-full object-contain" />
+                        ) : <div className="w-full h-full rounded-lg bg-secondary" />}
                       </div>
                     </div>
-
-                    <div className="pt-2">
-                      <h2 className="text-lg sm:text-xl font-bold tracking-tight">{channel.name}</h2>
-                      {channel.category && (
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">{channel.category}</p>
+                    <div className="flex flex-col items-center gap-0.5 shrink-0 px-1">
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-600 text-white text-[9px] font-bold tracking-wider">
+                        <span className="w-1 h-1 rounded-full bg-white animate-pulse" /> LIVE
+                      </div>
+                      <span className="text-base sm:text-lg font-black text-primary tracking-tight leading-none mt-1">VS</span>
+                      {channel.match_date && (
+                        <span className="text-[9px] text-muted-foreground whitespace-nowrap mt-0.5">{channel.match_date}</span>
                       )}
+                    </div>
+                    <div className="flex-1 flex items-center gap-2 min-w-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-background/70 backdrop-blur flex items-center justify-center p-1 shadow-sm shrink-0">
+                        {channel.away_logo ? (
+                          <img src={channel.away_logo} alt={channel.away_team || ""} className="w-full h-full object-contain" />
+                        ) : <div className="w-full h-full rounded-lg bg-secondary" />}
+                      </div>
+                      <p className="text-xs sm:text-sm font-bold truncate">{channel.away_team || "—"}</p>
                     </div>
                   </div>
                 </div>
@@ -469,10 +453,10 @@ const Tv = () => {
                     <div className="absolute top-3 left-3">
                       <button
                         onClick={() => setShowQuality((v) => !v)}
-                        className="h-10 px-3 rounded-full bg-black/55 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/75 active:scale-95 transition"
+                        className="h-9 px-3 rounded-full bg-black/55 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/75 active:scale-95 transition"
                         aria-label="Qualité vidéo"
                       >
-                        <Settings className="w-4 h-4" />
+                        <Settings className="w-3.5 h-3.5" />
                         <span>
                           {currentLevel === -1
                             ? "Auto"
@@ -501,64 +485,43 @@ const Tv = () => {
                     </div>
                   )}
                   <button onClick={goFullscreen}
-                    className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
                     aria-label="Plein écran">
                     <Maximize2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
+              {/* Compact viewers strip — visible on mobile too */}
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-card/80 border border-border shadow-sm mx-auto">
+                <span className="relative flex items-center justify-center">
+                  <Eye className="w-4 h-4 text-red-600" />
+                  <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
+                </span>
+                <p className="text-sm font-bold leading-none">{viewers.length}</p>
+                <p className="text-xs text-muted-foreground leading-none">
+                  {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
+                </p>
+              </div>
+
               {channel.description && (
-                <div className="bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-5 sm:p-6 shadow-sm">
-                  <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{channel.description}</p>
+                <div className="hidden sm:block bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-sm">
+                  <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line line-clamp-3">{channel.description}</p>
                 </div>
               )}
             </div>
 
-            {/* RIGHT: live chat + viewers */}
-            <aside className="lg:col-span-1">
-              <div className="lg:sticky lg:top-20 space-y-4">
-                {/* Viewers — modern centered */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-3xl p-5 shadow-sm">
-                  <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-red-500/10 blur-2xl pointer-events-none" />
-                  <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-2xl bg-red-600/15 flex items-center justify-center">
-                        <Eye className="w-5 h-5 text-red-600" />
-                      </div>
-                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black tracking-tight leading-none">{viewers.length}</p>
-                      <p className="text-xs text-muted-foreground mt-1.5 font-medium">
-                        {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
-                      </p>
-                    </div>
-                    {viewers.length > 0 && (
-                      <div className="w-full flex flex-wrap justify-center gap-1.5 max-h-24 overflow-y-auto pt-1">
-                        {viewers.map((v) => (
-                          <span
-                            key={v.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-[11px] font-medium"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                            {v.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Chat */}
-                <div className="hidden lg:flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col h-[calc(100vh-13rem)] overflow-hidden">
+            {/* RIGHT: live chat (desktop only) */}
+            <aside className="hidden lg:block lg:col-span-1">
+              <div className="lg:sticky lg:top-20">
+                <div className="flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col h-[calc(100vh-9rem)] overflow-hidden">
                   <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
                       <MessageCircle className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold leading-none">Chat live</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">Discute avec les autres supporters</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{viewers.length} en ligne</p>
                     </div>
                   </div>
 
