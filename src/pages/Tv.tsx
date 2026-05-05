@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
+import TvBettingPanel from "@/components/tv/TvBettingPanel";
 
 type SourceType = "cloudflare" | "iframe" | "m3u8";
 
@@ -26,6 +27,10 @@ interface Channel {
   home_logo: string | null;
   away_logo: string | null;
   match_date: string | null;
+  api_fixture_id?: string | null;
+  lineup_cache?: any;
+  bets_open?: boolean;
+  bets_settled?: boolean;
 }
 
 function extractCustomerSubdomain(input: string): string | null {
@@ -584,6 +589,9 @@ const Tv = () => {
                 )}
               </div>
 
+              {/* Betting panel */}
+              <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={session.user.id} />
+
               {channel.description && (
                 <div className="hidden sm:block bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-sm">
                   <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line line-clamp-3">{channel.description}</p>
@@ -678,6 +686,7 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
   const [homeLogo, setHomeLogo] = useState(channel?.home_logo || "");
   const [awayLogo, setAwayLogo] = useState(channel?.away_logo || "");
   const [matchDate, setMatchDate] = useState(channel?.match_date || "");
+  const [apiFixtureId, setApiFixtureId] = useState(channel?.api_fixture_id || "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -700,7 +709,8 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
       home_logo: homeLogo.trim() || null,
       away_logo: awayLogo.trim() || null,
       match_date: matchDate.trim() || null,
-      is_active: true,
+      api_fixture_id: apiFixtureId.trim() || null,
+      is_active: channel?.is_active ?? true,
     };
     let error;
     if (channel) {
@@ -769,6 +779,10 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
           <Field label="Date du match (optionnel)">
             <input value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls}
               placeholder="Ex: Dim 5 mai · 21h00" />
+          </Field>
+          <Field label="ID match API-Football (optionnel — pour buteurs)">
+            <input value={apiFixtureId} onChange={(e) => setApiFixtureId(e.target.value)} className={inputCls}
+              placeholder="Ex: 1234567" inputMode="numeric" />
           </Field>
           <Field label="Description">
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}

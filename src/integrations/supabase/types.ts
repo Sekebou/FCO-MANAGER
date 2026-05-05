@@ -962,10 +962,75 @@ export type Database = {
           },
         ]
       }
+      tv_bets: {
+        Row: {
+          amount: number
+          bet_type: string
+          channel_id: string
+          created_at: string
+          id: string
+          odds: number
+          payout: number
+          predicted_score_away: number | null
+          predicted_score_home: number | null
+          prediction: string | null
+          scorer_name: string | null
+          settled_at: string | null
+          status: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          amount: number
+          bet_type: string
+          channel_id: string
+          created_at?: string
+          id?: string
+          odds: number
+          payout?: number
+          predicted_score_away?: number | null
+          predicted_score_home?: number | null
+          prediction?: string | null
+          scorer_name?: string | null
+          settled_at?: string | null
+          status?: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          amount?: number
+          bet_type?: string
+          channel_id?: string
+          created_at?: string
+          id?: string
+          odds?: number
+          payout?: number
+          predicted_score_away?: number | null
+          predicted_score_home?: number | null
+          prediction?: string | null
+          scorer_name?: string | null
+          settled_at?: string | null
+          status?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tv_bets_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "tv_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tv_channels: {
         Row: {
+          api_fixture_id: string | null
           away_logo: string | null
           away_team: string | null
+          bets_open: boolean
+          bets_settled: boolean
           category: string
           created_at: string
           created_by: string | null
@@ -974,6 +1039,8 @@ export type Database = {
           home_team: string | null
           id: string
           is_active: boolean
+          lineup_cache: Json | null
+          lineup_refreshed_at: string | null
           logo_url: string | null
           match_date: string | null
           name: string
@@ -983,8 +1050,11 @@ export type Database = {
           url: string
         }
         Insert: {
+          api_fixture_id?: string | null
           away_logo?: string | null
           away_team?: string | null
+          bets_open?: boolean
+          bets_settled?: boolean
           category?: string
           created_at?: string
           created_by?: string | null
@@ -993,6 +1063,8 @@ export type Database = {
           home_team?: string | null
           id?: string
           is_active?: boolean
+          lineup_cache?: Json | null
+          lineup_refreshed_at?: string | null
           logo_url?: string | null
           match_date?: string | null
           name: string
@@ -1002,8 +1074,11 @@ export type Database = {
           url: string
         }
         Update: {
+          api_fixture_id?: string | null
           away_logo?: string | null
           away_team?: string | null
+          bets_open?: boolean
+          bets_settled?: boolean
           category?: string
           created_at?: string
           created_by?: string | null
@@ -1012,6 +1087,8 @@ export type Database = {
           home_team?: string | null
           id?: string
           is_active?: boolean
+          lineup_cache?: Json | null
+          lineup_refreshed_at?: string | null
           logo_url?: string | null
           match_date?: string | null
           name?: string
@@ -1161,6 +1238,18 @@ export type Database = {
         }
         Returns: Json
       }
+      place_tv_bet: {
+        Args: {
+          p_amount: number
+          p_bet_type: string
+          p_channel_id: string
+          p_predicted_score_away: number
+          p_predicted_score_home: number
+          p_prediction: string
+          p_scorer_name: string
+        }
+        Returns: Json
+      }
       refresh_match_sheet_score: { Args: { p_sheet_id: string }; Returns: Json }
       refund_scorer_bets_for_player: {
         Args: {
@@ -1200,6 +1289,15 @@ export type Database = {
           p_home_team: string
           p_match_date: string
           p_scorer_player_ids: string[]
+        }
+        Returns: Json
+      }
+      settle_tv_bets: {
+        Args: {
+          p_away_score: number
+          p_channel_id: string
+          p_home_score: number
+          p_scorer_names: string[]
         }
         Returns: Json
       }
