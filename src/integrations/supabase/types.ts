@@ -1043,6 +1043,7 @@ export type Database = {
           lineup_refreshed_at: string | null
           logo_url: string | null
           match_date: string | null
+          match_time: string | null
           name: string
           sort_order: number
           source_type: string
@@ -1067,6 +1068,7 @@ export type Database = {
           lineup_refreshed_at?: string | null
           logo_url?: string | null
           match_date?: string | null
+          match_time?: string | null
           name: string
           sort_order?: number
           source_type?: string
@@ -1091,6 +1093,7 @@ export type Database = {
           lineup_refreshed_at?: string | null
           logo_url?: string | null
           match_date?: string | null
+          match_time?: string | null
           name?: string
           sort_order?: number
           source_type?: string
