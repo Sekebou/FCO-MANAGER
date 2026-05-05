@@ -323,11 +323,22 @@ const Tv = () => {
     await supabase.auth.signOut();
   };
 
-  const goFullscreen = () => {
-    const el = playerRef.current;
+  const goFullscreen = async () => {
+    // iOS Safari : seul <video>.webkitEnterFullscreen() fonctionne
+    const video = videoRef.current as any;
+    if (video?.webkitEnterFullscreen) {
+      try { await video.play?.(); } catch {}
+      try { video.webkitEnterFullscreen(); return; } catch {}
+    }
+    const el = playerRef.current as any;
     if (!el) return;
-    if (el.requestFullscreen) el.requestFullscreen();
-    else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen();
+    try {
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (video?.requestFullscreen) await video.requestFullscreen();
+    } catch (e) {
+      console.warn("Fullscreen failed", e);
+    }
   };
 
   // ============== AUTH GATE ==============
