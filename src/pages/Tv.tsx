@@ -80,14 +80,14 @@ const Tv = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: ch }, { data: roles }] = await Promise.all([
+    const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }] = await Promise.all([
       supabase.from("tv_channels").select("*").eq("is_active", true)
         .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1),
-      supabase.from("user_roles").select("role").eq("user_id", session.user.id),
+      supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" as any }),
+      supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin_plus" as any }),
     ]);
     setChannel(((ch as any) || [])[0] || null);
-    const r = (roles || []).map((x: any) => x.role);
-    setIsAdmin(r.includes("admin") || r.includes("admin_plus") || r.includes("super_admin"));
+    setIsAdmin(Boolean(isAdminRpc) || Boolean(isAdminPlusRpc));
     setLoading(false);
   };
 
