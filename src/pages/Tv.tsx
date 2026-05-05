@@ -550,16 +550,38 @@ const Tv = () => {
                 </div>
               </div>
 
-              {/* Compact viewers strip — visible on mobile too */}
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-card/80 border border-border shadow-sm mx-auto">
-                <span className="relative flex items-center justify-center">
-                  <Eye className="w-4 h-4 text-red-600" />
-                  <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
-                </span>
-                <p className="text-sm font-bold leading-none">{viewers.length}</p>
-                <p className="text-xs text-muted-foreground leading-none">
-                  {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
-                </p>
+              {/* Viewers card with names */}
+              <div className="bg-card/70 backdrop-blur-xl border border-border rounded-2xl px-4 py-3 shadow-sm">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="relative flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-red-600" />
+                    <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
+                  </span>
+                  <p className="text-sm font-bold leading-none">{viewers.length}</p>
+                  <p className="text-xs text-muted-foreground leading-none">
+                    {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
+                  </p>
+                </div>
+                {viewers.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1.5">
+                    {(showAllViewers ? viewers : viewers.slice(0, 5)).map((v) => (
+                      <span key={v.id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-[11px] font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                        {v.name}
+                      </span>
+                    ))}
+                    {viewers.length > 5 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllViewers((v) => !v)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/20 transition"
+                      >
+                        {showAllViewers ? "Voir moins" : `+${viewers.length - 5} voir plus`}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {channel.description && (
