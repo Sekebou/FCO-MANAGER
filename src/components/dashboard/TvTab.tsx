@@ -682,4 +682,83 @@ const TeamPicker = ({ label, team, logo, onPick }: {
   );
 };
 
+interface OfficialMatchPickerProps {
+  value: { homeTeam: string; awayTeam: string; matchDate: string };
+  onPick: (v: { homeTeam: string; awayTeam: string; homeLogo: string; awayLogo: string; matchDate: string; fixtureId?: string | null }) => void;
+}
+const OfficialMatchPicker = ({ value, onPick }: OfficialMatchPickerProps) => {
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [resolving, setResolving] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("events")
+        .select("id, title, date, time, team, home_logo, away_logo")
+        .eq("type", "match")
+        .gte("date", new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
+        .order("date", { ascending: true })
+        .limit(40);
+      setMatches(data || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const pick = async (m: any) => {
+    const parts = (m.title || "").split(/\s+vs\s+/i);
+    const home = (parts[0] || "").trim();
+    const away = (parts[1] || "").trim();
+    const md = m.time ? `${m.date} · ${m.time}` : m.date;
+    onPick({ homeTeam: home, awayTeam: away, homeLogo: m.home_logo || "", awayLogo: m.away_logo || "", matchDate: md, fixtureId: null });
+    setResolving(m.id);
+    try {
+      const { data } = await supabase.functions.invoke("tv-find-fixture", {
+        body: { home_team: home, away_team: away, date: m.date },
+      });
+      if (data?.fixture_id) {
+        onPick({ homeTeam: home, awayTeam: away, homeLogo: m.home_logo || "", awayLogo: m.away_logo || "", matchDate: md, fixtureId: String(data.fixture_id) });
+        toast.success("Match API trouvé");
+      } else {
+        toast.message("Match API non trouvé — buteurs API désactivés");
+      }
+    } catch {
+      toast.error("Erreur recherche API");
+    } finally {
+      setResolving(null);
+    }
+  };
+
+  const selected = value.homeTeam && value.awayTeam ? `${value.homeTeam} vs ${value.awayTeam}` : null;
+
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Match officiel</label>
+      {selected && (
+        <div className="mb-2 flex items-center gap-2 p-2.5 rounded-xl bg-primary/10 border border-primary/30">
+          <span className="text-sm font-semibold flex-1 truncate">{selected}</span>
+          <span className="text-[11px] text-muted-foreground">{value.matchDate}</span>
+        </div>
+      )}
+      <div className="bg-secondary/60 rounded-xl divide-y divide-border max-h-72 overflow-y-auto">
+        {loading ? (
+          <p className="text-xs text-muted-foreground text-center py-4">Chargement…</p>
+        ) : matches.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">Aucun match planifié</p>
+        ) : matches.map((m) => (
+          <button key={m.id} type="button" onClick={() => pick(m)}
+            className="w-full flex items-center gap-2 p-3 hover:bg-background/50 text-left transition">
+            {m.home_logo && <img src={m.home_logo} alt="" className="w-7 h-7 object-contain shrink-0" />}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate">{m.title}</p>
+              <p className="text-[11px] text-muted-foreground">{m.date}{m.time ? ` · ${m.time}` : ""} · Équipe {m.team || "?"}</p>
+            </div>
+            {resolving === m.id && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default TvTab;
