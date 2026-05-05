@@ -118,13 +118,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const cryptoKey = await crypto.subtle.importKey(
-      "pkcs8",
-      pemToBinary(pem),
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-      false,
-      ["sign"],
-    );
+    const cryptoKey = await importSigningKey(pem);
 
     // Token valid for 4 hours
     const exp = getNumericDate(60 * 60 * 4);
