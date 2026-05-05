@@ -1743,10 +1743,18 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
                             <span className="text-[10px] text-muted-foreground font-medium">
                               {new Date(bet.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                             </span>
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
-                              <StatusIcon size={10} />
-                              {config.label}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {bet.team === 'TV' && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600">
+                                  <Tv size={10} />
+                                  FCO TV
+                                </span>
+                              )}
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                                <StatusIcon size={10} />
+                                {config.label}
+                              </span>
+                            </div>
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="min-w-0">
