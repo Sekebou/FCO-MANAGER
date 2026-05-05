@@ -682,6 +682,7 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
   const [homeLogo, setHomeLogo] = useState(channel?.home_logo || "");
   const [awayLogo, setAwayLogo] = useState(channel?.away_logo || "");
   const [matchDate, setMatchDate] = useState(channel?.match_date || "");
+  const [apiFixtureId, setApiFixtureId] = useState(channel?.api_fixture_id || "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
