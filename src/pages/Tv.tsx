@@ -163,8 +163,21 @@ const Tv = () => {
         lowLatencyMode: false,
         enableWorker: true,
       });
+      hlsRef.current = hls;
       hls.loadSource(hlsUrl);
       hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (!hls) return;
+        const lv = hls.levels.map((l, i) => ({ height: l.height || 0, bitrate: l.bitrate || 0, index: i }));
+        // sort high → low
+        lv.sort((a, b) => (b.height - a.height) || (b.bitrate - a.bitrate));
+        setLevels(lv);
+        setCurrentLevel(-1);
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
+        // Only reflect when in auto so user manual choice is preserved
+        if (hls && hls.autoLevelEnabled) setCurrentLevel(-1);
+      });
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) console.error("HLS fatal", data);
       });
@@ -176,10 +189,21 @@ const Tv = () => {
 
     return () => {
       if (hls) hls.destroy();
+      hlsRef.current = null;
+      setLevels([]);
+      setCurrentLevel(-1);
       video.removeAttribute("src");
       video.load();
     };
   }, [hlsUrl]);
+
+  const selectQuality = (idx: number) => {
+    const hls = hlsRef.current;
+    if (!hls) return;
+    hls.currentLevel = idx; // -1 = auto
+    setCurrentLevel(idx);
+    setShowQuality(false);
+  };
 
   const loadAll = async () => {
     setLoading(true);
