@@ -40,9 +40,14 @@ function toCloudflareIframe(input: string): string {
   return v;
 }
 
-function buildPlayerUrl(c: Channel): string {
+function buildPlayerUrl(c: Channel, signedToken?: string | null): string {
   if (c.source_type === "cloudflare") {
-    const base = toCloudflareIframe(c.url);
+    let base: string;
+    if (signedToken) {
+      base = `https://iframe.cloudflarestream.com/${signedToken}`;
+    } else {
+      base = toCloudflareIframe(c.url);
+    }
     const sep = base.includes("?") ? "&" : "?";
     return `${base}${sep}autoplay=true&muted=false&preload=true&letterboxColor=transparent`;
   }
