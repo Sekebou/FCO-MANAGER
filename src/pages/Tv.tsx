@@ -511,43 +511,10 @@ const Tv = () => {
               )}
             </div>
 
-            {/* RIGHT: live chat + viewers */}
-            <aside className="lg:col-span-1">
-              <div className="lg:sticky lg:top-20 space-y-4">
-                {/* Viewers — modern centered */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-3xl p-5 shadow-sm">
-                  <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-red-500/10 blur-2xl pointer-events-none" />
-                  <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-2xl bg-red-600/15 flex items-center justify-center">
-                        <Eye className="w-5 h-5 text-red-600" />
-                      </div>
-                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black tracking-tight leading-none">{viewers.length}</p>
-                      <p className="text-xs text-muted-foreground mt-1.5 font-medium">
-                        {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
-                      </p>
-                    </div>
-                    {viewers.length > 0 && (
-                      <div className="w-full flex flex-wrap justify-center gap-1.5 max-h-24 overflow-y-auto pt-1">
-                        {viewers.map((v) => (
-                          <span
-                            key={v.id}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-[11px] font-medium"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                            {v.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Chat */}
-                <div className="hidden lg:flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col h-[calc(100vh-13rem)] overflow-hidden">
+            {/* RIGHT: live chat (desktop only) */}
+            <aside className="hidden lg:block lg:col-span-1">
+              <div className="lg:sticky lg:top-20">
+                <div className="flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col h-[calc(100vh-9rem)] overflow-hidden">
                   <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
                       <MessageCircle className="w-4 h-4 text-primary" />
