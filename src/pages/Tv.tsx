@@ -89,6 +89,35 @@ const Tv = () => {
     void loadAll();
   }, [session?.user?.id]);
 
+  // Fetch signed token for cloudflare streams (refresh every 3h)
+  useEffect(() => {
+    if (!channel || channel.source_type !== "cloudflare") {
+      setSignedToken(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("sign-stream-url", {
+          body: { url: channel.url },
+        });
+        if (cancelled) return;
+        if (error || !data?.token) {
+          console.warn("Signed URL failed, falling back to public URL", error);
+          setSignedToken(null);
+        } else {
+          setSignedToken(data.token);
+        }
+      } catch (e) {
+        console.error("sign-stream-url invoke error", e);
+        if (!cancelled) setSignedToken(null);
+      }
+    };
+    void fetchToken();
+    const id = setInterval(fetchToken, 1000 * 60 * 60 * 3);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [channel?.id, channel?.url, channel?.source_type]);
+
   const loadAll = async () => {
     setLoading(true);
     const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }] = await Promise.all([
