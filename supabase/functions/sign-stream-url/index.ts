@@ -11,6 +11,7 @@ function normalizePem(raw: string): string {
   try {
     const parsed = JSON.parse(trimmed);
     if (typeof parsed === "string") return parsed;
+    if (typeof parsed?.jwk === "string") return parsed.jwk;
     if (typeof parsed?.pem === "string") return parsed.pem;
     if (typeof parsed?.privateKey === "string") return parsed.privateKey;
     if (typeof parsed?.private_key === "string") return parsed.private_key;
@@ -31,6 +32,33 @@ function pemToBinary(rawPem: string): Uint8Array {
   const buf = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
   return buf;
+}
+
+async function importSigningKey(rawKey: string): Promise<CryptoKey> {
+  const trimmed = rawKey.trim().replace(/^['"]|['"]$/g, "");
+  try {
+    const parsed = JSON.parse(trimmed);
+    const jwk = parsed?.jwk && typeof parsed.jwk === "object" ? parsed.jwk : parsed?.kty === "RSA" ? parsed : null;
+    if (jwk) {
+      return await crypto.subtle.importKey(
+        "jwk",
+        jwk,
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+        false,
+        ["sign"],
+      );
+    }
+  } catch (_) {
+    // Not JSON/JWK; import as PKCS8 PEM below.
+  }
+
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    pemToBinary(rawKey),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
 }
 
 // Extract video UID from any Cloudflare Stream URL or accept raw UID
