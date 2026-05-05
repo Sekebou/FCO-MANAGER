@@ -284,7 +284,7 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
 }
 
 function describeBet(b: TvBet): string {
-  if (b.bet_type === "match") return `1N2 → ${b.prediction === "home" ? "Dom." : b.prediction === "away" ? "Ext." : "Nul"}`;
+  if (b.bet_type === "match") return `Vainqueur → ${b.prediction === "home" ? "Dom." : b.prediction === "away" ? "Ext." : "Nul"}`;
   if (b.bet_type === "exact_score") return `Score ${b.predicted_score_home}-${b.predicted_score_away}`;
   return `Buteur: ${b.scorer_name}`;
 }
