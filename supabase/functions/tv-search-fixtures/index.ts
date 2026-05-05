@@ -35,6 +35,8 @@ Deno.serve(async (req) => {
 
     const r = await fetch(url, { headers: { "x-apisports-key": API_KEY } });
     const data = await r.json();
+    console.log("API-Football URL:", url);
+    console.log("API-Football response:", JSON.stringify({ results: data?.results, errors: data?.errors, sample: data?.response?.[0] }));
     const fixtures = (data?.response || []).map((f: any) => ({
       fixture_id: f?.fixture?.id,
       date: f?.fixture?.date,
