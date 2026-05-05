@@ -44,7 +44,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
   // Admin settle
   const [settleOpen, setSettleOpen] = useState(false);
   const [sH, setSH] = useState(0); const [sA, setSA] = useState(0);
-  const [sScorers, setSScorers] = useState("");
   const [settling, setSettling] = useState(false);
 
   const home = channel.home_team || "Domicile";
@@ -96,9 +95,8 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
 
   const settle = async () => {
     setSettling(true);
-    const scorers = sScorers.split(",").map(s => s.trim()).filter(Boolean);
     const { data, error } = await supabase.rpc("settle_tv_bets", {
-      p_channel_id: channel.id, p_home_score: sH, p_away_score: sA, p_scorer_names: scorers,
+      p_channel_id: channel.id, p_home_score: sH, p_away_score: sA, p_scorer_names: [],
     });
     setSettling(false);
     if (error) { toast.error(error.message); return; }
@@ -222,7 +220,10 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
             {!settleOpen ? (
               <button onClick={() => setSettleOpen(true)}
                 className="w-full h-9 rounded-xl bg-amber-500/15 text-amber-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-amber-500/25 transition">
-                <Settings2 className="w-3.5 h-3.5" /> {channel.bets_settled ? "Déjà réglé" : "Régler manuellement"}
+                <Settings2 className="w-3.5 h-3.5" />
+                {channel.bets_settled
+                  ? "Déjà réglé"
+                  : `Régler manuellement${(() => { const n = bets.filter(b => b.status === "pending").length; return n > 0 ? ` (${n} en cours)` : ""; })()}`}
               </button>
             ) : (
               <div className="space-y-2 bg-secondary/40 rounded-xl p-3">
@@ -232,10 +233,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
                   <span className="text-xl font-black">–</span>
                   <NumStepper value={sA} onChange={setSA} label={away} />
                 </div>
-                <p className="text-xs font-bold mt-2">Buteurs (séparés par virgule)</p>
-                <input value={sScorers} onChange={(e) => setSScorers(e.target.value)}
-                  placeholder="ex: Mbappé, Dembélé"
-                  className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary" />
                 <div className="flex gap-2">
                   <button onClick={() => setSettleOpen(false)} className="flex-1 h-9 rounded-lg bg-background text-xs font-medium border border-border">Annuler</button>
                   <button onClick={settle} disabled={settling}
