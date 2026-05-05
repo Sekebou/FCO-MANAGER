@@ -514,8 +514,9 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
 }) => {
   const [name, setName] = useState(channel?.name || "FCO TV — Direct");
   const [category, setCategory] = useState(channel?.category || "");
-  const [sourceType, setSourceType] = useState<SourceType>(channel?.source_type || "cloudflare");
-  const [url, setUrl] = useState(channel?.url || "");
+  const FIXED_URL = "https://customer-4dsyxvu2o8gbxjxn.cloudflarestream.com/9254205cd2fbb537ed52c54b7e411082/manifest/video.m3u8?protocol=llhlsbeta";
+  const sourceType: SourceType = "m3u8";
+  const url = FIXED_URL;
   const [description, setDescription] = useState(channel?.description || "");
   const [homeTeam, setHomeTeam] = useState(channel?.home_team || "");
   const [awayTeam, setAwayTeam] = useState(channel?.away_team || "");
@@ -572,20 +573,6 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
         <div className="p-5 space-y-4">
           <Field label="Titre *"><input value={name} onChange={(e) => setName(e.target.value)} required className={inputCls} /></Field>
           <Field label="Sous-titre"><input value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls} placeholder="Ex: Match du dimanche" /></Field>
-          <Field label="Type de source">
-            <div className="grid grid-cols-3 gap-2">
-              {(["cloudflare", "iframe", "m3u8"] as SourceType[]).map((t) => (
-                <button key={t} type="button" onClick={() => setSourceType(t)}
-                  className={`h-11 rounded-xl text-sm font-medium transition ${sourceType === t ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/70"}`}>
-                  {t === "cloudflare" ? "Cloudflare" : t === "iframe" ? "Iframe" : "HLS"}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <Field label={sourceType === "cloudflare" ? "URL / UID / Token Cloudflare *" : "URL *"}>
-            <input value={url} onChange={(e) => setUrl(e.target.value)} required className={inputCls}
-              placeholder={sourceType === "cloudflare" ? "UID, token signé, ou URL customer-xxx" : "https://…"} />
-          </Field>
           <div className="pt-2 border-t border-border" />
           <div className="grid grid-cols-2 gap-3">
             <TeamPicker label="Équipe domicile" team={homeTeam} logo={homeLogo} onPick={(n, l) => { setHomeTeam(n); setHomeLogo(l); }} />
