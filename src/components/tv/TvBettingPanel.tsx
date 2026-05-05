@@ -173,7 +173,12 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
       <div className="p-4 space-y-3">
         {closed && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
-            <Lock className="w-3.5 h-3.5" /> {channel.bets_settled ? "Paris réglés" : "Paris fermés par l'admin"}
+            <Lock className="w-3.5 h-3.5" />
+            {channel.bets_settled
+              ? "Paris réglés"
+              : timeLocked
+                ? "Trop tard : les paris se ferment 20 min après le coup d'envoi"
+                : "Paris fermés par l'admin"}
           </div>
         )}
 
