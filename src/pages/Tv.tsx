@@ -117,6 +117,19 @@ const Tv = () => {
     void loadAll();
   }, [session?.user?.id]);
 
+  // Poll channel is_active every 20s so viewers see open/close changes live
+  useEffect(() => {
+    if (!channel?.id) return;
+    const t = setInterval(async () => {
+      const { data } = await supabase.from("tv_channels")
+        .select("is_active").eq("id", channel.id).maybeSingle();
+      if (data && data.is_active !== channel.is_active) {
+        setChannel((c) => c ? { ...c, is_active: data.is_active } : c);
+      }
+    }, 20000);
+    return () => clearInterval(t);
+  }, [channel?.id, channel?.is_active]);
+
   // Fetch signed token once per channel; no periodic refresh to avoid iframe reload (freeze)
   useEffect(() => {
     if (!channel) {
