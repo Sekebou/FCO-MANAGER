@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket, Smartphone, Sun, Moon
+  Users, TrendingUp, Bell, Calendar, CalendarDays, LogOut, Shield, Trophy, Lock, Menu, X, CheckCircle2, Mail, KeyRound, UserCheck, Copy, Camera, Dumbbell, UserCircle, Briefcase, MessageCircle, Coins, Hand, Send, Ticket, Smartphone, Sun, Moon, Tv
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import clubLogo from '@/assets/logo.png';
@@ -20,7 +20,7 @@ import CalendarTab from '@/components/dashboard/CalendarTab';
 import MembersTab from '@/components/dashboard/MembersTab';
 import ChampionnatTab, { type Championship, type Match } from '@/components/dashboard/ChampionnatTab';
 import GalleryTab, { type Album, type Photo } from '@/components/dashboard/GalleryTab';
-import ChatTab from '@/components/dashboard/ChatTab';
+import TvTab from '@/components/dashboard/TvTab';
 import ParisTab from '@/components/dashboard/ParisTab';
 // FloatingChatBubble removed — discussions is now a tab
 import BottomTabBar from '@/components/dashboard/BottomTabBar';
@@ -158,7 +158,7 @@ const tabs = [
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'members', label: 'Membres', icon: Users },
-  { id: 'chat', label: 'Discussions', icon: MessageCircle },
+  { id: 'tv', label: 'FCO TV', icon: Tv },
   { id: 'paris', label: 'Paris', icon: Ticket },
 ];
 
@@ -1916,7 +1916,7 @@ const Dashboard = () => {
             </div>
           )}
           {activeTab === 'matchsheets' && <MatchSheetsTab matchSheets={visibleMatchSheets} players={visiblePlayers} isManager={!!canManage()} championships={championships} teamLogoMap={teamLogoMap} currentUser={currentUser ? { uid: currentUser.uid, name: currentUser.name } : null} onMatchSheetUpdated={(updatedSheet) => { setMatchSheets(prev => { const next = prev.map(ms => ms.id === updatedSheet.id ? updatedSheet : ms); writeCache('matchSheets', next); return next; }); }} onEventConvocationsUpdated={(eventId, convocations, publisherName) => { setEvents(prev => prev.map(e => e.id === eventId ? { ...e, convocations, convocationsPublished: true, convocationsPublishedByName: publisherName || e.convocationsPublishedByName, convocationsPublishedAt: new Date().toISOString() } : e)); }} onDeleteMatchSheet={currentUser?.role === 'admin+' ? (sheetId) => { setConfirmModal({ title: 'Supprimer cette feuille de match ?', message: 'Cette action est irréversible. La composition sera définitivement supprimée.', onConfirm: async () => { setMatchSheets(prev => prev.filter(ms => ms.id !== sheetId)); try { await supabase.from('match_sheets').delete().eq('id', sheetId); toast.success('Feuille de match supprimée'); } catch { toast.error('Erreur lors de la suppression'); } } }); } : undefined} />}
-          {activeTab === 'discussions' && <ChatTab currentUser={currentUser} members={members} />}
+          {activeTab === 'tv' && <TvTab currentUser={currentUser} />}
           {activeTab === 'members' && (
             <MembersTab members={visibleMembers} players={visiblePlayers} cards={cards} currentUser={currentUser} canManage={canManage} getPlayerCards={getPlayerCards} deletePlayer={deletePlayer} deleteMember={deleteMember}
               onResetPassword={(member) => { setSelectedMemberForReset(member); setShowAdminResetPassword(true); }}
