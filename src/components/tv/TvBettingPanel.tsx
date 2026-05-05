@@ -133,7 +133,7 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
       {/* Tabs */}
       <div className="flex border-b border-border bg-secondary/30">
         {([
-          { k: "match", label: "1N2", icon: Trophy },
+          { k: "match", label: "Vainqueur", icon: Trophy },
           { k: "exact_score", label: "Score", icon: Target },
           { k: "scorer", label: "Buteur", icon: User },
         ] as const).map(t => (
