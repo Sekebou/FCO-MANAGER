@@ -683,7 +683,7 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
   const [name, setName] = useState(channel?.name || "FCO TV — Direct");
   const [category, setCategory] = useState(channel?.category || "");
   const FIXED_URL = "https://customer-4dsyxvu2o8gbxjxn.cloudflarestream.com/9254205cd2fbb537ed52c54b7e411082/manifest/video.m3u8?protocol=llhlsbeta";
-  const sourceType: SourceType = "m3u8";
+  const sourceType: SourceType = "cloudflare";
   const url = FIXED_URL;
   const [description, setDescription] = useState(channel?.description || "");
   const [homeTeam, setHomeTeam] = useState(channel?.home_team || "");
