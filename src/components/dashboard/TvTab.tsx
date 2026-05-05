@@ -27,6 +27,7 @@ interface Channel {
   home_logo: string | null;
   away_logo: string | null;
   match_date: string | null;
+  match_time?: string | null;
   api_fixture_id?: string | null;
   lineup_cache?: any;
   bets_open?: boolean;
@@ -526,6 +527,7 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
   const [homeLogo, setHomeLogo] = useState(channel?.home_logo || "");
   const [awayLogo, setAwayLogo] = useState(channel?.away_logo || "");
   const [matchDate, setMatchDate] = useState(channel?.match_date || "");
+  const [matchTime, setMatchTime] = useState(channel?.match_time || "");
   const [apiFixtureId, setApiFixtureId] = useState(channel?.api_fixture_id || "");
   const [saving, setSaving] = useState(false);
 
@@ -544,14 +546,17 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
       description: description.trim() || null,
       home_team: homeTeam.trim() || null, away_team: awayTeam.trim() || null,
       home_logo: homeLogo.trim() || null, away_logo: awayLogo.trim() || null,
-      match_date: matchDate.trim() || null, api_fixture_id: apiFixtureId.trim() || null,
+      match_date: matchDate.trim() || null, match_time: matchTime.trim() || null,
+      api_fixture_id: apiFixtureId.trim() || null,
       is_active: channel?.is_active ?? true,
     };
     let error;
-    if (channel) ({ error } = await supabase.from("tv_channels").update(payload).eq("id", channel.id));
-    else ({ error } = await supabase.from("tv_channels").insert(payload));
+    let data;
+    if (channel) ({ data, error } = await supabase.from("tv_channels").update(payload).eq("id", channel.id).select("id"));
+    else ({ data, error } = await supabase.from("tv_channels").insert(payload).select("id"));
     setSaving(false);
     if (error) { toast.error("Erreur : " + error.message); return; }
+    if (!data?.length) { toast.error("Action bloquée par les permissions"); return; }
     toast.success(channel ? "Stream mis à jour" : "Stream ajouté");
     onSaved();
   };
@@ -583,9 +588,14 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
             <TeamPicker label="Extérieur" team={awayTeam} logo={awayLogo}
               onPick={(n, l) => { setAwayTeam(n); setAwayLogo(l); }} />
           </div>
-          <Field label="Date du match">
-            <input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls} />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Date du match">
+              <input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Heure du match">
+              <input type="time" value={matchTime} onChange={(e) => setMatchTime(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
           <Field label="Description">
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className={`${inputCls} resize-none py-3`} placeholder="Optionnel" />
           </Field>
