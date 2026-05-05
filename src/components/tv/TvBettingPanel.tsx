@@ -135,7 +135,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
         {([
           { k: "match", label: "Vainqueur", icon: Trophy },
           { k: "exact_score", label: "Score", icon: Target },
-          { k: "scorer", label: "Buteur", icon: User },
         ] as const).map(t => (
           <button key={t.k} onClick={() => setTab(t.k)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition ${
