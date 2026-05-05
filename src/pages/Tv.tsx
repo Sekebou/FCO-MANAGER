@@ -40,9 +40,14 @@ function toCloudflareIframe(input: string): string {
   return v;
 }
 
-function buildPlayerUrl(c: Channel): string {
+function buildPlayerUrl(c: Channel, signedToken?: string | null): string {
   if (c.source_type === "cloudflare") {
-    const base = toCloudflareIframe(c.url);
+    let base: string;
+    if (signedToken) {
+      base = `https://iframe.cloudflarestream.com/${signedToken}`;
+    } else {
+      base = toCloudflareIframe(c.url);
+    }
     const sep = base.includes("?") ? "&" : "?";
     return `${base}${sep}autoplay=true&muted=false&preload=true&letterboxColor=transparent`;
   }
@@ -61,6 +66,7 @@ const Tv = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [signedToken, setSignedToken] = useState<string | null>(null);
 
   const playerRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +88,35 @@ const Tv = () => {
     }
     void loadAll();
   }, [session?.user?.id]);
+
+  // Fetch signed token for cloudflare streams (refresh every 3h)
+  useEffect(() => {
+    if (!channel || channel.source_type !== "cloudflare") {
+      setSignedToken(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchToken = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("sign-stream-url", {
+          body: { url: channel.url },
+        });
+        if (cancelled) return;
+        if (error || !data?.token) {
+          console.warn("Signed URL failed, falling back to public URL", error);
+          setSignedToken(null);
+        } else {
+          setSignedToken(data.token);
+        }
+      } catch (e) {
+        console.error("sign-stream-url invoke error", e);
+        if (!cancelled) setSignedToken(null);
+      }
+    };
+    void fetchToken();
+    const id = setInterval(fetchToken, 1000 * 60 * 60 * 3);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [channel?.id, channel?.url, channel?.source_type]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -243,7 +278,7 @@ const Tv = () => {
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-3xl blur-2xl opacity-60 pointer-events-none" />
               <div ref={playerRef} className="relative aspect-video w-full bg-black rounded-2xl sm:rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
                 <iframe
-                  src={buildPlayerUrl(channel)}
+                  src={buildPlayerUrl(channel, signedToken)}
                   title={channel.name}
                   className="w-full h-full"
                   allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen"
