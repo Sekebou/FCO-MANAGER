@@ -659,6 +659,11 @@ const Tv = () => {
                     </button>
                   </form>
                 </div>
+
+                {/* Bettors card under live chat */}
+                <div className="mt-4">
+                  <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
+                </div>
               </div>
             </aside>
           </div>
