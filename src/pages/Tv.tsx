@@ -300,6 +300,11 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
   const [sourceType, setSourceType] = useState<SourceType>(channel?.source_type || "cloudflare");
   const [url, setUrl] = useState(channel?.url || "");
   const [description, setDescription] = useState(channel?.description || "");
+  const [homeTeam, setHomeTeam] = useState(channel?.home_team || "");
+  const [awayTeam, setAwayTeam] = useState(channel?.away_team || "");
+  const [homeLogo, setHomeLogo] = useState(channel?.home_logo || "");
+  const [awayLogo, setAwayLogo] = useState(channel?.away_logo || "");
+  const [matchDate, setMatchDate] = useState(channel?.match_date || "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -317,6 +322,11 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
       source_type: sourceType,
       url: url.trim(),
       description: description.trim() || null,
+      home_team: homeTeam.trim() || null,
+      away_team: awayTeam.trim() || null,
+      home_logo: homeLogo.trim() || null,
+      away_logo: awayLogo.trim() || null,
+      match_date: matchDate.trim() || null,
       is_active: true,
     };
     let error;
