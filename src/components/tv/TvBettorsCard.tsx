@@ -88,8 +88,7 @@ export default function TvBettorsCard({ channelId, homeTeam, awayTeam }: Props) 
             <span className="font-semibold truncate max-w-[110px]">{b.user_name}</span>
             <span className="text-muted-foreground">a parié</span>
             <span className="font-bold text-amber-600">{b.amount}</span>
-            <span className="text-muted-foreground">sur</span>
-            <span className="font-semibold truncate max-w-[90px]">{describe(b, homeTeam, awayTeam)}</span>
+            <span className="text-muted-foreground">pts</span>
           </span>
         ))}
         {bets.length > 5 && (

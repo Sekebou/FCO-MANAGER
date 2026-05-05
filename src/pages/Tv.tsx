@@ -702,6 +702,7 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
   const [homeLogo, setHomeLogo] = useState(channel?.home_logo || "");
   const [awayLogo, setAwayLogo] = useState(channel?.away_logo || "");
   const [matchDate, setMatchDate] = useState(channel?.match_date || "");
+  const [matchTime, setMatchTime] = useState((channel as any)?.match_time || "");
   const [apiFixtureId, setApiFixtureId] = useState(channel?.api_fixture_id || "");
   const [saving, setSaving] = useState(false);
 
@@ -725,6 +726,7 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
       home_logo: homeLogo.trim() || null,
       away_logo: awayLogo.trim() || null,
       match_date: matchDate.trim() || null,
+      match_time: matchTime.trim() || null,
       api_fixture_id: apiFixtureId.trim() || null,
       is_active: channel?.is_active ?? true,
     };
@@ -773,9 +775,14 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
             <TeamPicker label="Extérieur" team={awayTeam} logo={awayLogo}
               onPick={(n, l) => { setAwayTeam(n); setAwayLogo(l); }} />
           </div>
-          <Field label="Date du match">
-            <input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls} />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Date du match">
+              <input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Heure (coup d'envoi)">
+              <input type="time" value={matchTime} onChange={(e) => setMatchTime(e.target.value)} className={inputCls} />
+            </Field>
+          </div>
           <Field label="Description">
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               className={`${inputCls} resize-none py-3`} placeholder="Optionnel" />

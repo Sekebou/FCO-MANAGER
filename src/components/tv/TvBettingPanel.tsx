@@ -14,6 +14,8 @@ interface Props {
     lineup_cache?: { name: string; team: string; number?: number }[] | null;
     bets_open?: boolean;
     bets_settled?: boolean;
+    match_date?: string | null;
+    match_time?: string | null;
   };
   isAdmin: boolean;
   userId: string;
@@ -48,7 +50,27 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
 
   const home = channel.home_team || "Domicile";
   const away = channel.away_team || "Extérieur";
-  const closed = channel.bets_settled || channel.bets_open === false;
+
+  // Compute kickoff timestamp (date + time) and lock bets 20 min after kickoff
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+  const kickoffTs: number | null = (() => {
+    if (!channel.match_date) return null;
+    const d = String(channel.match_date).slice(0, 10);
+    const tm = (channel.match_time || "").trim();
+    if (!tm) return null;
+    const iso = `${d}T${tm.length === 5 ? tm + ":00" : tm}`;
+    const v = new Date(iso).getTime();
+    return Number.isFinite(v) ? v : null;
+  })();
+  const cutoffMs = 20 * 60 * 1000;
+  const timeLocked = kickoffTs !== null && now > kickoffTs + cutoffMs;
+  const closed = channel.bets_settled || channel.bets_open === false || timeLocked;
+  const minutesLeft = kickoffTs !== null ? Math.max(0, Math.floor((kickoffTs + cutoffMs - now) / 60000)) : null;
+  const beforeKickoff = kickoffTs !== null && now < kickoffTs;
 
   const refresh = async () => {
     const [{ data: pts }, { data: bs }] = await Promise.all([
@@ -118,7 +140,13 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold leading-none">Paris FCO TV</p>
           <p className="text-[11px] text-muted-foreground leading-none mt-1">
-            {closed ? "Paris fermés" : "Place ton pari live"}
+            {closed
+              ? (timeLocked ? "Paris fermés (+20 min après le coup d'envoi)" : "Paris fermés")
+              : beforeKickoff
+                ? "Place ton pari avant le match"
+                : minutesLeft !== null
+                  ? `Live · encore ${minutesLeft} min pour parier`
+                  : "Place ton pari live"}
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-bold">
@@ -145,7 +173,12 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
       <div className="p-4 space-y-3">
         {closed && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/40 rounded-lg px-3 py-2">
-            <Lock className="w-3.5 h-3.5" /> {channel.bets_settled ? "Paris réglés" : "Paris fermés par l'admin"}
+            <Lock className="w-3.5 h-3.5" />
+            {channel.bets_settled
+              ? "Paris réglés"
+              : timeLocked
+                ? "Trop tard : les paris se ferment 20 min après le coup d'envoi"
+                : "Paris fermés par l'admin"}
           </div>
         )}
 

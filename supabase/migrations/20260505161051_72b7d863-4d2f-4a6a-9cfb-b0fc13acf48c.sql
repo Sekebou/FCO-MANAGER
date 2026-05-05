@@ -1,0 +1,1 @@
+ALTER TABLE public.tv_channels ADD COLUMN IF NOT EXISTS match_time text;
