@@ -521,7 +521,7 @@ const Tv = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold leading-none">Chat live</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">Discute avec les autres supporters</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{viewers.length} en ligne</p>
                     </div>
                   </div>
 
