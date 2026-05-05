@@ -21,19 +21,32 @@ interface Channel {
   sort_order: number | null;
 }
 
-/** Convert any Cloudflare Stream input (UID, watch URL, iframe URL, customer URL) to a clean iframe URL. */
+/**
+ * Convert any Cloudflare Stream input to a clean iframe URL.
+ * Accepts: UID hex, signed JWT token, customer-xxx URLs, /iframe URLs,
+ * watch.cloudflarestream.com URLs, with or without /manifest/video.m3u8.
+ */
 function toCloudflareIframe(input: string): string {
   const v = input.trim();
-  // Already a CF iframe URL
-  if (/cloudflarestream\.com\/.+\/iframe/i.test(v)) return v;
-  // customer-xxx.cloudflarestream.com/<uid>/...  → use that uid + customer
-  const cust = v.match(/https?:\/\/(customer-[^/]+)\.cloudflarestream\.com\/([a-f0-9]{20,})/i);
+  // Already an iframe URL — keep as-is (preserves any query params)
+  if (/\/iframe(\?|$)/i.test(v)) return v;
+
+  // Pattern: https://customer-xxx.cloudflarestream.com/<UID_OR_TOKEN>/...
+  const cust = v.match(/https?:\/\/(customer-[^/]+)\.cloudflarestream\.com\/([^/?#]+)/i);
   if (cust) return `https://${cust[1]}.cloudflarestream.com/${cust[2]}/iframe`;
-  // watch.cloudflarestream.com/<uid>
-  const watch = v.match(/cloudflarestream\.com\/([a-f0-9]{20,})/i);
-  if (watch) return `https://iframe.cloudflarestream.com/${watch[1]}`;
-  // Bare UID (32 hex chars)
+
+  // Pattern: https://[iframe|watch|videodelivery].cloudflarestream.com/<UID_OR_TOKEN>/...
+  const generic = v.match(/https?:\/\/(?:iframe|watch|videodelivery\.net|[^.]+\.cloudflarestream\.com)\/([^/?#]+)/i);
+  if (generic) return `https://iframe.cloudflarestream.com/${generic[1]}`;
+
+  // Bare UID (hex)
   if (/^[a-f0-9]{20,}$/i.test(v)) return `https://iframe.cloudflarestream.com/${v}`;
+
+  // Bare signed JWT (3 base64url segments separated by .)
+  if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(v)) {
+    return `https://iframe.cloudflarestream.com/${v}`;
+  }
+
   return v;
 }
 
