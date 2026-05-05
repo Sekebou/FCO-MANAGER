@@ -377,7 +377,12 @@ const Tv = () => {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-6 relative">
+        <button onClick={() => setDarkMode((d) => !d)}
+          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/70 active:scale-95 transition" aria-label="Basculer mode sombre"
+          style={{ top: "calc(env(safe-area-inset-top) + 1rem)" }}>
+          {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <img src={clubLogo} alt="FCO-Manager" className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-xl" />
