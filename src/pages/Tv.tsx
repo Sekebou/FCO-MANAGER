@@ -446,6 +446,10 @@ const Tv = () => {
               <Power className="w-4 h-4" /> Ouvrir la TV
             </button>
           )}
+          <button onClick={() => setDarkMode((d) => !d)}
+            className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/70 active:scale-95 transition" aria-label="Basculer mode sombre">
+            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           <button onClick={handleLogout}
             className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/70 active:scale-95 transition" aria-label="Se déconnecter">
             <LogOut className="w-4 h-4" />
