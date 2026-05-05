@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Bell, Trophy, Ticket, Camera, ClipboardCheck,
-  TrendingUp, Calendar, UserCheck, MessageCircle, Plus, X,
+  TrendingUp, Calendar, UserCheck, Tv, Plus, X,
   Settings2, GripVertical, ArrowLeftRight, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,7 @@ const allTabs: Tab[] = [
   { id: 'gallery', label: 'Galerie', icon: Camera },
   { id: 'news', label: 'Actus', icon: Bell },
   { id: 'members', label: 'Membres', icon: UserCheck },
-  { id: 'discussions', label: 'Discussions', icon: MessageCircle },
+  { id: 'tv', label: 'FCO TV', icon: Tv },
 ];
 
 const DEFAULT_BOTTOM_IDS = ['home', 'presences', 'championnat', 'paris'];
