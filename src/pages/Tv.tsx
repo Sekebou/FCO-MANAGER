@@ -594,7 +594,7 @@ const Tv = () => {
             {/* RIGHT: live chat (desktop only) */}
             <aside className="hidden lg:block lg:col-span-1">
               <div className="lg:sticky lg:top-20">
-                <div className="flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col h-[calc(100vh-9rem)] overflow-hidden">
+                <div className="flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col max-h-[640px] h-[calc(100vh-10rem)] overflow-hidden">
                   <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
                       <MessageCircle className="w-4 h-4 text-primary" />
