@@ -106,15 +106,18 @@ const Tv = () => {
 
   useEffect(() => {
     const root = document.documentElement;
-    const had = root.classList.contains("dark");
+    const previous = root.classList.contains("dark");
+    return () => {
+      if (previous) root.classList.add("dark");
+      else root.classList.remove("dark");
+    };
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
     if (darkMode) root.classList.add("dark");
     else root.classList.remove("dark");
     localStorage.setItem("tv-dark-mode", darkMode ? "1" : "0");
-    return () => {
-      // restore previous state when leaving /tv
-      if (had) root.classList.add("dark");
-      else root.classList.remove("dark");
-    };
   }, [darkMode]);
 
   const playerRef = useRef<HTMLDivElement>(null);
