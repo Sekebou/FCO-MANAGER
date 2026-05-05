@@ -14,6 +14,8 @@ interface Props {
     lineup_cache?: { name: string; team: string; number?: number }[] | null;
     bets_open?: boolean;
     bets_settled?: boolean;
+    match_date?: string | null;
+    match_time?: string | null;
   };
   isAdmin: boolean;
   userId: string;
