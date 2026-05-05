@@ -705,7 +705,8 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
       home_logo: homeLogo.trim() || null,
       away_logo: awayLogo.trim() || null,
       match_date: matchDate.trim() || null,
-      is_active: true,
+      api_fixture_id: apiFixtureId.trim() || null,
+      is_active: channel?.is_active ?? true,
     };
     let error;
     if (channel) {
