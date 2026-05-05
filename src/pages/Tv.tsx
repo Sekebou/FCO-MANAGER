@@ -551,7 +551,7 @@ const Tv = () => {
                 </div>
 
                 {/* Chat */}
-                <div className="bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex flex-col h-[60vh] lg:h-[calc(100vh-13rem)] overflow-hidden">
+                <div className="hidden lg:flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col h-[calc(100vh-13rem)] overflow-hidden">
                   <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
                       <MessageCircle className="w-4 h-4 text-primary" />
