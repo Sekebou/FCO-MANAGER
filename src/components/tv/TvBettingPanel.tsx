@@ -140,7 +140,13 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold leading-none">Paris FCO TV</p>
           <p className="text-[11px] text-muted-foreground leading-none mt-1">
-            {closed ? "Paris fermés" : "Place ton pari live"}
+            {closed
+              ? (timeLocked ? "Paris fermés (+20 min après le coup d'envoi)" : "Paris fermés")
+              : beforeKickoff
+                ? "Place ton pari avant le match"
+                : minutesLeft !== null
+                  ? `Live · encore ${minutesLeft} min pour parier`
+                  : "Place ton pari live"}
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-bold">
