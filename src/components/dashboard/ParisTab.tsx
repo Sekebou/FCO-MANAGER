@@ -304,9 +304,17 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       if (!authUserId) return;
       Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('tv_bets').select('*, tv_channels(home_team,away_team)').order('created_at', { ascending: false }),
         supabase.from('user_points').select('balance').eq('user_id', authUserId).maybeSingle(),
-      ]).then(([{ data: betsData }, { data: pointsData }]) => {
-        if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
+      ]).then(([{ data: betsData }, { data: tvBetsData }, { data: pointsData }]) => {
+        if (betsData || tvBetsData) {
+          const merged = [
+            ...((betsData || []).map(mapBet)),
+            ...((tvBetsData || []).map(mapTvBet)),
+          ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+          setBets(merged);
+          setBetsLoaded(true);
+        }
         if (pointsData) setBalance(pointsData.balance);
       });
     };
