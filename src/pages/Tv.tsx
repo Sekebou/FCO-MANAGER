@@ -80,8 +80,10 @@ const Tv = () => {
   const [showForm, setShowForm] = useState(false);
   const [signedToken, setSignedToken] = useState<string | null>(null);
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
+  const [hlsUrl, setHlsUrl] = useState<string | null>(null);
 
   const playerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
