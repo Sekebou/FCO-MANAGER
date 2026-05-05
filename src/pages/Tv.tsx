@@ -386,6 +386,17 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
               <p className="text-xs text-muted-foreground mt-1.5">Accepte UID, token signé (JWT), URL customer-xxx ou /iframe.</p>
             )}
           </Field>
+          <div className="pt-2 border-t border-border" />
+          <div className="grid grid-cols-2 gap-3">
+            <TeamPicker label="Équipe domicile" team={homeTeam} logo={homeLogo}
+              onPick={(n, l) => { setHomeTeam(n); setHomeLogo(l); }} />
+            <TeamPicker label="Équipe extérieur" team={awayTeam} logo={awayLogo}
+              onPick={(n, l) => { setAwayTeam(n); setAwayLogo(l); }} />
+          </div>
+          <Field label="Date du match (optionnel)">
+            <input value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls}
+              placeholder="Ex: Dim 5 mai · 21h00" />
+          </Field>
           <Field label="Description">
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               className={`${inputCls} resize-none py-3`} placeholder="Optionnel" />
