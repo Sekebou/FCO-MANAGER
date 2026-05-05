@@ -81,9 +81,15 @@ const Tv = () => {
   const [signedToken, setSignedToken] = useState<string | null>(null);
   const [playerUrl, setPlayerUrl] = useState<string | null>(null);
   const [hlsUrl, setHlsUrl] = useState<string | null>(null);
+  const [myName, setMyName] = useState<string>("");
+  const [viewers, setViewers] = useState<{ id: string; name: string }[]>([]);
+  const [levels, setLevels] = useState<{ height: number; bitrate: number; index: number }[]>([]);
+  const [currentLevel, setCurrentLevel] = useState<number>(-1);
+  const [showQuality, setShowQuality] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
