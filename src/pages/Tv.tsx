@@ -27,6 +27,11 @@ interface Channel {
   match_date: string | null;
 }
 
+function extractCustomerSubdomain(input: string): string | null {
+  const m = input.match(/(customer-[^.\/]+)\.cloudflarestream\.com/i);
+  return m ? m[1] : null;
+}
+
 function toCloudflareIframe(input: string): string {
   const v = input.trim();
   if (/\/iframe(\?|$)/i.test(v)) return v;
@@ -39,6 +44,12 @@ function toCloudflareIframe(input: string): string {
     return `https://iframe.cloudflarestream.com/${v}`;
   }
   return v;
+}
+
+function buildHlsUrl(c: Channel, signedToken: string): string | null {
+  const sub = extractCustomerSubdomain(c.url);
+  if (sub) return `https://${sub}.cloudflarestream.com/${signedToken}/manifest/video.m3u8`;
+  return `https://videodelivery.net/${signedToken}/manifest/video.m3u8`;
 }
 
 function buildPlayerUrl(c: Channel, signedToken?: string | null): string {
