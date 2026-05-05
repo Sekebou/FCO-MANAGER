@@ -184,35 +184,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
           </div>
         )}
 
-        {/* BUTEUR */}
-        {tab === "scorer" && (
-          <div className="space-y-2">
-            {lineup.length === 0 ? (
-              <button type="button" onClick={fetchLineup} disabled={loadingLineup || !channel.api_fixture_id}
-                className="w-full h-10 rounded-xl bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-2 hover:bg-secondary/70 disabled:opacity-50">
-                {loadingLineup ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                {channel.api_fixture_id ? "Charger la compo" : "ID match API non configuré"}
-              </button>
-            ) : (
-              <>
-                <div className="max-h-44 overflow-y-auto rounded-xl border border-border bg-background divide-y divide-border">
-                  {lineup.map((p, i) => (
-                    <button key={i} type="button" disabled={closed}
-                      onClick={() => setScorer(p.name)}
-                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition ${
-                        scorer === p.name ? "bg-primary/10 text-primary font-semibold" : "hover:bg-secondary/50"
-                      } disabled:opacity-50`}>
-                      {p.number != null && <span className="w-6 text-center text-xs font-bold text-muted-foreground">{p.number}</span>}
-                      <span className="flex-1 truncate">{p.name}</span>
-                      <span className="text-[10px] text-muted-foreground truncate max-w-[40%]">{p.team}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-center text-xs text-muted-foreground">Cote fixe : <span className="font-bold text-primary">{ODDS.scorer.toFixed(2)}</span></p>
-              </>
-            )}
-          </div>
-        )}
 
         {/* MISE */}
         {!closed && (
