@@ -964,13 +964,18 @@ export type Database = {
       }
       tv_channels: {
         Row: {
+          away_logo: string | null
+          away_team: string | null
           category: string
           created_at: string
           created_by: string | null
           description: string | null
+          home_logo: string | null
+          home_team: string | null
           id: string
           is_active: boolean
           logo_url: string | null
+          match_date: string | null
           name: string
           sort_order: number
           source_type: string
@@ -978,13 +983,18 @@ export type Database = {
           url: string
         }
         Insert: {
+          away_logo?: string | null
+          away_team?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
+          home_logo?: string | null
+          home_team?: string | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
+          match_date?: string | null
           name: string
           sort_order?: number
           source_type?: string
@@ -992,13 +1002,18 @@ export type Database = {
           url: string
         }
         Update: {
+          away_logo?: string | null
+          away_team?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
           description?: string | null
+          home_logo?: string | null
+          home_team?: string | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
+          match_date?: string | null
           name?: string
           sort_order?: number
           source_type?: string
