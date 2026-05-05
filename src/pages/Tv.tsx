@@ -86,10 +86,14 @@ const Tv = () => {
   const [levels, setLevels] = useState<{ height: number; bitrate: number; index: number }[]>([]);
   const [currentLevel, setCurrentLevel] = useState<number>(-1);
   const [showQuality, setShowQuality] = useState(false);
+  const [messages, setMessages] = useState<{ id: string; user_id: string; name: string; text: string; ts: number }[]>([]);
+  const [chatInput, setChatInput] = useState("");
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
