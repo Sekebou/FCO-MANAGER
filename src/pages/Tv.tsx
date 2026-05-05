@@ -26,6 +26,10 @@ interface Channel {
   home_logo: string | null;
   away_logo: string | null;
   match_date: string | null;
+  api_fixture_id?: string | null;
+  lineup_cache?: any;
+  bets_open?: boolean;
+  bets_settled?: boolean;
 }
 
 function extractCustomerSubdomain(input: string): string | null {
