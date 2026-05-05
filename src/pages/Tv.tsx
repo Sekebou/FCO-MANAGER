@@ -67,6 +67,7 @@ const Tv = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [signedToken, setSignedToken] = useState<string | null>(null);
+  const [playerUrl, setPlayerUrl] = useState<string | null>(null);
 
   const playerRef = useRef<HTMLDivElement>(null);
 
