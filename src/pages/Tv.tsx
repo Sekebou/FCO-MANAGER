@@ -468,6 +468,34 @@ const Tv = () => {
                 <p className="mt-4 text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{channel.description}</p>
               )}
             </div>
+
+            {/* Viewers (live presence) */}
+            <div className="bg-card/70 backdrop-blur-xl border border-border rounded-2xl p-5 sm:p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-full bg-red-600/15 flex items-center justify-center">
+                  <Eye className="w-4 h-4 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold leading-none">
+                    {viewers.length} {viewers.length > 1 ? "personnes regardent" : "personne regarde"} le match
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1">En direct maintenant</p>
+                </div>
+              </div>
+              {viewers.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {viewers.map((v) => (
+                    <span
+                      key={v.id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      {v.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
