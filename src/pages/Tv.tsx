@@ -334,7 +334,16 @@ const Tv = () => {
               {/* Glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-3xl blur-2xl opacity-60 pointer-events-none" />
               <div ref={playerRef} className="relative aspect-video w-full bg-black rounded-2xl sm:rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
-                {playerUrl && (
+                {hlsUrl ? (
+                  <video
+                    ref={videoRef}
+                    key={channel.id + ":" + hlsUrl}
+                    className="w-full h-full bg-black"
+                    controls
+                    playsInline
+                    autoPlay
+                  />
+                ) : playerUrl ? (
                   <iframe
                     key={channel.id}
                     src={playerUrl}
@@ -344,7 +353,7 @@ const Tv = () => {
                     allowFullScreen
                     loading="eager"
                   />
-                )}
+                ) : null}
                 <button onClick={goFullscreen}
                   className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
                   aria-label="Plein écran">
