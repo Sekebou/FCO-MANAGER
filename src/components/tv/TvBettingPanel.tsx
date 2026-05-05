@@ -220,7 +220,10 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
             {!settleOpen ? (
               <button onClick={() => setSettleOpen(true)}
                 className="w-full h-9 rounded-xl bg-amber-500/15 text-amber-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-amber-500/25 transition">
-                <Settings2 className="w-3.5 h-3.5" /> {channel.bets_settled ? "Déjà réglé" : "Régler manuellement"}
+                <Settings2 className="w-3.5 h-3.5" />
+                {channel.bets_settled
+                  ? "Déjà réglé"
+                  : `Régler manuellement${(() => { const n = bets.filter(b => b.status === "pending").length; return n > 0 ? ` (${n} en cours)` : ""; })()}`}
               </button>
             ) : (
               <div className="space-y-2 bg-secondary/40 rounded-xl p-3">
