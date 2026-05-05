@@ -44,7 +44,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
   // Admin settle
   const [settleOpen, setSettleOpen] = useState(false);
   const [sH, setSH] = useState(0); const [sA, setSA] = useState(0);
-  const [sScorers, setSScorers] = useState("");
   const [settling, setSettling] = useState(false);
 
   const home = channel.home_team || "Domicile";
