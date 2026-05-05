@@ -8,8 +8,11 @@ const corsHeaders = {
 
 function normalizePem(raw: string): string {
   const trimmed = raw.trim().replace(/^['"]|['"]$/g, "");
+  const maybeDecoded = trimmed.includes("%") ? decodeURIComponent(trimmed) : trimmed;
+  const pemBlock = maybeDecoded.match(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/);
+  if (pemBlock) return pemBlock[0].replace(/\\n/g, "\n").replace(/\\r/g, "\r");
   try {
-    const parsed = JSON.parse(trimmed);
+    const parsed = JSON.parse(maybeDecoded);
     if (typeof parsed === "string") return parsed;
     if (typeof parsed?.jwk === "string") return parsed.jwk;
     if (typeof parsed?.result?.jwk === "string") return parsed.result.jwk;
@@ -20,7 +23,7 @@ function normalizePem(raw: string): string {
   } catch (_) {
     // Not JSON; keep parsing as a PEM string.
   }
-  return trimmed.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+  return maybeDecoded.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
 }
 
 function pemToBinary(rawPem: string): Uint8Array {
@@ -30,6 +33,9 @@ function pemToBinary(rawPem: string): Uint8Array {
     .replace(/-----END [^-]+-----/g, "")
     .replace(/\\n/g, "")
     .replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/=]+$/.test(b64)) {
+    throw new Error("Secret CLOUDFLARE_STREAM_KEY_PEM invalide: colle le PEM/JWK privé Cloudflare Stream, pas le token API ni seulement l'id");
+  }
   const bin = atob(b64);
   const buf = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
