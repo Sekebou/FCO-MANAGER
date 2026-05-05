@@ -4,7 +4,7 @@ import Hls from "hls.js";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
   Maximize2, Radio, Plus, Search, Calendar, Settings, Eye, Send, MessageCircle,
-  Power, PowerOff,
+  Power, PowerOff, Sun, Moon,
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
@@ -97,6 +97,28 @@ const Tv = () => {
   const [chatInput, setChatInput] = useState("");
   const [showAllViewers, setShowAllViewers] = useState(false);
   const [togglingActive, setTogglingActive] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("tv-dark-mode");
+    if (saved !== null) return saved === "1";
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.classList.contains("dark");
+    return () => {
+      if (previous) root.classList.add("dark");
+      else root.classList.remove("dark");
+    };
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) root.classList.add("dark");
+    else root.classList.remove("dark");
+    localStorage.setItem("tv-dark-mode", darkMode ? "1" : "0");
+  }, [darkMode]);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -355,7 +377,12 @@ const Tv = () => {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-6 relative">
+        <button onClick={() => setDarkMode((d) => !d)}
+          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/70 active:scale-95 transition" aria-label="Basculer mode sombre"
+          style={{ top: "calc(env(safe-area-inset-top) + 1rem)" }}>
+          {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <img src={clubLogo} alt="FCO-Manager" className="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-xl" />
@@ -424,6 +451,10 @@ const Tv = () => {
               <Power className="w-4 h-4" /> Ouvrir la TV
             </button>
           )}
+          <button onClick={() => setDarkMode((d) => !d)}
+            className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/70 active:scale-95 transition" aria-label="Basculer mode sombre">
+            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
           <button onClick={handleLogout}
             className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/70 active:scale-95 transition" aria-label="Se déconnecter">
             <LogOut className="w-4 h-4" />
