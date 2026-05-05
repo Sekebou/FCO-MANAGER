@@ -248,13 +248,18 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         return;
       }
 
-      const [{ data: betsData }, { data: pointsData }] = await Promise.all([
+      const [{ data: betsData }, { data: tvBetsData }, { data: pointsData }] = await Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('tv_bets').select('*, tv_channels(home_team,away_team)').order('created_at', { ascending: false }),
         supabase.from('user_points').select('balance, last_refund_seen_at').eq('user_id', sessionUserId).maybeSingle(),
       ]);
 
       if (!mounted) return;
-      if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
+      const merged = [
+        ...((betsData || []).map(mapBet)),
+        ...((tvBetsData || []).map(mapTvBet)),
+      ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      if (betsData || tvBetsData) { setBets(merged); setBetsLoaded(true); }
       if (pointsData) {
         setBalance(pointsData.balance);
         const seen = (pointsData as any).last_refund_seen_at;
@@ -265,10 +270,22 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
     fetchData();
 
+    const refetch = () => {
+      Promise.all([
+        supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('tv_bets').select('*, tv_channels(home_team,away_team)').order('created_at', { ascending: false }),
+      ]).then(([{ data: b }, { data: tv }]) => {
+        const merged = [
+          ...((b || []).map(mapBet)),
+          ...((tv || []).map(mapTvBet)),
+        ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+        setBets(merged);
+      });
+    };
+
     const channel = supabase.channel('paris-tab')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => {
-        supabase.from('bets').select('*').order('created_at', { ascending: false }).then(({ data }) => data && setBets(data.map(mapBet)));
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, refetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tv_bets' }, refetch)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, (payload: any) => {
         if (payload.new?.user_id === authUserId && typeof payload.new?.balance === 'number') setBalance(payload.new.balance);
       })
