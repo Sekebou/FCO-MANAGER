@@ -3,13 +3,29 @@ import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function pemToBinary(pem: string): Uint8Array {
+function normalizePem(raw: string): string {
+  const trimmed = raw.trim().replace(/^['"]|['"]$/g, "");
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (typeof parsed === "string") return parsed;
+    if (typeof parsed?.pem === "string") return parsed.pem;
+    if (typeof parsed?.privateKey === "string") return parsed.privateKey;
+    if (typeof parsed?.private_key === "string") return parsed.private_key;
+  } catch (_) {
+    // Not JSON; keep parsing as a PEM string.
+  }
+  return trimmed.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+}
+
+function pemToBinary(rawPem: string): Uint8Array {
+  const pem = normalizePem(rawPem);
   const b64 = pem
     .replace(/-----BEGIN [^-]+-----/g, "")
     .replace(/-----END [^-]+-----/g, "")
+    .replace(/\\n/g, "")
     .replace(/\s+/g, "");
   const bin = atob(b64);
   const buf = new Uint8Array(bin.length);
