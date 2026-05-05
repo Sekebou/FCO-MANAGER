@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseTv as supabase } from "@/integrations/supabase/tvClient";
 import { Coins } from "lucide-react";
 
 interface Props {

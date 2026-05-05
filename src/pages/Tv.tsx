@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseTv as supabase } from "@/integrations/supabase/tvClient";
 import Hls from "hls.js";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
