@@ -406,28 +406,21 @@ const Tv = () => {
           </div>
           {isAdmin && channel && (
             <>
-              <button
-                onClick={toggleChannelActive}
-                disabled={togglingActive}
-                className={`h-9 px-3 rounded-full text-sm font-medium flex items-center gap-1.5 active:scale-95 transition disabled:opacity-50 ${
-                  channel.is_active
-                    ? "bg-red-600/15 text-red-600 hover:bg-red-600/25"
-                    : "bg-emerald-600/15 text-emerald-600 hover:bg-emerald-600/25"
-                }`}
-              >
-                {togglingActive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : channel.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{channel.is_active ? "Fermer" : "Ouvrir"}</span>
-              </button>
               <button onClick={() => setShowForm(true)}
                 className="h-9 px-3 rounded-full bg-secondary text-foreground text-sm font-medium flex items-center gap-1.5 hover:bg-secondary/70 active:scale-95 transition">
                 <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Modifier</span>
+              </button>
+              <button onClick={closeTv} disabled={togglingActive}
+                className="h-9 px-3 rounded-full text-sm font-medium flex items-center gap-1.5 active:scale-95 transition disabled:opacity-50 bg-red-600/15 text-red-600 hover:bg-red-600/25">
+                {togglingActive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PowerOff className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">Fermer la TV</span>
               </button>
             </>
           )}
           {isAdmin && !channel && (
             <button onClick={() => setShowForm(true)}
               className="h-9 px-3 rounded-full bg-primary text-primary-foreground text-sm font-medium flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition">
-              <Plus className="w-4 h-4" /> Ajouter
+              <Power className="w-4 h-4" /> Ouvrir la TV
             </button>
           )}
           <button onClick={handleLogout}
@@ -441,14 +434,6 @@ const Tv = () => {
         {loading ? (
           <div className="flex justify-center py-32"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>
         ) : !channel ? (
-          <div className="text-center py-32">
-            <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-secondary flex items-center justify-center">
-              <TvIcon className="w-9 h-9 text-muted-foreground" />
-            </div>
-            <p className="text-lg font-semibold">Aucun stream en direct</p>
-            <p className="text-sm text-muted-foreground mt-1">Reviens un peu plus tard.</p>
-          </div>
-        ) : !channel.is_active && !isAdmin ? (
           <div className="flex items-center justify-center py-20">
             <div className="relative max-w-md w-full text-center bg-card/70 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-lg overflow-hidden">
               <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
@@ -456,10 +441,16 @@ const Tv = () => {
                 <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-red-500/10 flex items-center justify-center">
                   <PowerOff className="w-9 h-9 text-red-500" />
                 </div>
-                <h2 className="text-2xl font-bold tracking-tight">La FCO TV est fermée</h2>
+                <h2 className="text-2xl font-bold tracking-tight">La FCO TV est actuellement fermée</h2>
                 <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                   Aucun direct n'est diffusé pour le moment.<br />Reviens un peu plus tard pour ne rien manquer 📺
                 </p>
+                {isAdmin && (
+                  <button onClick={() => setShowForm(true)}
+                    className="mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-95 transition shadow-lg">
+                    <Power className="w-4 h-4" /> Ouvrir la FCO TV
+                  </button>
+                )}
               </div>
             </div>
           </div>
