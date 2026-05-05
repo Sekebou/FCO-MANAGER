@@ -385,10 +385,13 @@ const TvTab = ({ currentUser }: TvTabProps) => {
                   )}
                 </div>
               )}
-              <button onClick={goFullscreen}
-                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition" aria-label="Plein écran">
-                <Maximize2 className="w-4 h-4" />
-              </button>
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <CastButton hlsUrl={hlsUrl} videoRef={videoRef} title={channel.name} poster={channel.logo_url || undefined} />
+                <button onClick={goFullscreen}
+                  className="w-9 h-9 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition" aria-label="Plein écran">
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
