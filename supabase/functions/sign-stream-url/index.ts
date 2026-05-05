@@ -17,14 +17,12 @@ function tryBase64Decode(s: string): string | null {
   }
 }
 
-async function importSigningKey(rawKey: string): Promise<CryptoKey> {
+async function importSigningKey(rawKey: string): Promise<{ key: CryptoKey; kid: string | null }> {
   let trimmed = rawKey.trim().replace(/,\s*$/, "");
-  // Handle pasted `"jwk": "eyJ..."` format → extract the base64 value
   const m = trimmed.match(/(?:jwk|pem)["']?\s*:\s*["']([^"']+)["']/i);
   if (m) trimmed = m[1];
   trimmed = trimmed.trim().replace(/^['"]+|['"]+$/g, "");
 
-  // 1) Try as base64-encoded JSON JWK (Cloudflare's `jwk` field)
   const decoded = tryBase64Decode(trimmed);
   const jwkCandidates: string[] = [];
   if (decoded) jwkCandidates.push(decoded);
@@ -39,17 +37,16 @@ async function importSigningKey(rawKey: string): Promise<CryptoKey> {
         : typeof parsed?.result?.jwk === "string" ? JSON.parse(atob(parsed.result.jwk))
         : null;
       if (jwk?.kty === "RSA") {
-        return await crypto.subtle.importKey(
+        const key = await crypto.subtle.importKey(
           "jwk",
           { ...jwk, alg: "RS256", key_ops: ["sign"] },
           { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
           false,
           ["sign"],
         );
+        return { key, kid: jwk.kid ?? null };
       }
-    } catch {
-      // not JSON, continue
-    }
+    } catch { /* try next */ }
   }
 
   const preview = trimmed.slice(0, 40) + "..." + trimmed.slice(-20);
