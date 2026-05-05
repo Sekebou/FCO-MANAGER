@@ -57,6 +57,28 @@ const mapBet = (r: any): Bet => ({
   predictedScoreAway: r.predicted_score_away ?? null,
 });
 
+const mapTvBet = (r: any): Bet => ({
+  id: `tv-${r.id}`,
+  userId: r.user_id,
+  userName: r.user_name,
+  homeTeam: r.tv_channels?.home_team || 'Domicile',
+  awayTeam: r.tv_channels?.away_team || 'Extérieur',
+  matchDate: r.created_at,
+  prediction: r.prediction || '',
+  odds: r.odds,
+  amount: r.amount,
+  payout: r.payout,
+  status: r.status,
+  createdAt: r.created_at,
+  settledAt: r.settled_at || null,
+  team: 'TV',
+  betType: r.bet_type || 'match',
+  scorerPlayerId: null,
+  scorerPlayerName: r.scorer_name || null,
+  predictedScoreHome: r.predicted_score_home ?? null,
+  predictedScoreAway: r.predicted_score_away ?? null,
+});
+
 type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard' | 'settle';
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; color: string; bg: string }> = {
