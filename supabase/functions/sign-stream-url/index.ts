@@ -48,7 +48,8 @@ async function importSigningKey(rawKey: string): Promise<CryptoKey> {
     }
   }
 
-  throw new Error("CLOUDFLARE_STREAM_KEY_PEM doit contenir le champ 'jwk' (base64) renvoyé par Cloudflare");
+  const preview = trimmed.slice(0, 40) + "..." + trimmed.slice(-20);
+  throw new Error(`Secret invalide. Reçu (len=${trimmed.length}): "${preview}". Attendu: la valeur "jwk" base64 (commence par eyJ...)`);
 }
 
 // Extract video UID from any Cloudflare Stream URL or accept raw UID
