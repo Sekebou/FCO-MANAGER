@@ -50,7 +50,27 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
 
   const home = channel.home_team || "Domicile";
   const away = channel.away_team || "Extérieur";
-  const closed = channel.bets_settled || channel.bets_open === false;
+
+  // Compute kickoff timestamp (date + time) and lock bets 20 min after kickoff
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+  const kickoffTs: number | null = (() => {
+    if (!channel.match_date) return null;
+    const d = String(channel.match_date).slice(0, 10);
+    const tm = (channel.match_time || "").trim();
+    if (!tm) return null;
+    const iso = `${d}T${tm.length === 5 ? tm + ":00" : tm}`;
+    const v = new Date(iso).getTime();
+    return Number.isFinite(v) ? v : null;
+  })();
+  const cutoffMs = 20 * 60 * 1000;
+  const timeLocked = kickoffTs !== null && now > kickoffTs + cutoffMs;
+  const closed = channel.bets_settled || channel.bets_open === false || timeLocked;
+  const minutesLeft = kickoffTs !== null ? Math.max(0, Math.floor((kickoffTs + cutoffMs - now) / 60000)) : null;
+  const beforeKickoff = kickoffTs !== null && now < kickoffTs;
 
   const refresh = async () => {
     const [{ data: pts }, { data: bs }] = await Promise.all([
