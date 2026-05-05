@@ -4,6 +4,7 @@ import Hls from "hls.js";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
   Maximize2, Radio, Plus, Search, Calendar, Settings, Eye, Send, MessageCircle,
+  Power, PowerOff,
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
@@ -88,6 +89,8 @@ const Tv = () => {
   const [showQuality, setShowQuality] = useState(false);
   const [messages, setMessages] = useState<{ id: string; user_id: string; name: string; text: string; ts: number }[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [showAllViewers, setShowAllViewers] = useState(false);
+  const [togglingActive, setTogglingActive] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -113,6 +116,19 @@ const Tv = () => {
     }
     void loadAll();
   }, [session?.user?.id]);
+
+  // Poll channel is_active every 20s so viewers see open/close changes live
+  useEffect(() => {
+    if (!channel?.id) return;
+    const t = setInterval(async () => {
+      const { data } = await supabase.from("tv_channels")
+        .select("is_active").eq("id", channel.id).maybeSingle();
+      if (data && data.is_active !== channel.is_active) {
+        setChannel((c) => c ? { ...c, is_active: data.is_active } : c);
+      }
+    }, 20000);
+    return () => clearInterval(t);
+  }, [channel?.id, channel?.is_active]);
 
   // Fetch signed token once per channel; no periodic refresh to avoid iframe reload (freeze)
   useEffect(() => {
@@ -211,17 +227,30 @@ const Tv = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }, { data: prof }] = await Promise.all([
-      supabase.from("tv_channels").select("*").eq("is_active", true)
-        .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1),
+    const [{ data: isAdminRpc }, { data: isAdminPlusRpc }, { data: prof }] = await Promise.all([
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" as any }),
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin_plus" as any }),
       supabase.from("profiles").select("name").eq("id", session.user.id).maybeSingle(),
     ]);
+    const admin = Boolean(isAdminRpc) || Boolean(isAdminPlusRpc);
+    const { data: ch } = await supabase.from("tv_channels").select("*")
+      .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1);
     setChannel(((ch as any) || [])[0] || null);
-    setIsAdmin(Boolean(isAdminRpc) || Boolean(isAdminPlusRpc));
+    setIsAdmin(admin);
     setMyName((prof as any)?.name || session.user.email?.split("@")[0] || "Anonyme");
     setLoading(false);
+  };
+
+  const toggleChannelActive = async () => {
+    if (!channel || !isAdmin) return;
+    setTogglingActive(true);
+    const next = !channel.is_active;
+    const { error } = await supabase.from("tv_channels")
+      .update({ is_active: next }).eq("id", channel.id);
+    setTogglingActive(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? "TV ouverte" : "TV fermée");
+    setChannel({ ...channel, is_active: next });
   };
 
   // Realtime presence + chat broadcast
@@ -358,10 +387,24 @@ const Tv = () => {
             </p>
           </div>
           {isAdmin && channel && (
-            <button onClick={() => setShowForm(true)}
-              className="h-9 px-3 rounded-full bg-secondary text-foreground text-sm font-medium flex items-center gap-1.5 hover:bg-secondary/70 active:scale-95 transition">
-              <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Modifier</span>
-            </button>
+            <>
+              <button
+                onClick={toggleChannelActive}
+                disabled={togglingActive}
+                className={`h-9 px-3 rounded-full text-sm font-medium flex items-center gap-1.5 active:scale-95 transition disabled:opacity-50 ${
+                  channel.is_active
+                    ? "bg-red-600/15 text-red-600 hover:bg-red-600/25"
+                    : "bg-emerald-600/15 text-emerald-600 hover:bg-emerald-600/25"
+                }`}
+              >
+                {togglingActive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : channel.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{channel.is_active ? "Fermer" : "Ouvrir"}</span>
+              </button>
+              <button onClick={() => setShowForm(true)}
+                className="h-9 px-3 rounded-full bg-secondary text-foreground text-sm font-medium flex items-center gap-1.5 hover:bg-secondary/70 active:scale-95 transition">
+                <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Modifier</span>
+              </button>
+            </>
           )}
           {isAdmin && !channel && (
             <button onClick={() => setShowForm(true)}
@@ -386,6 +429,21 @@ const Tv = () => {
             </div>
             <p className="text-lg font-semibold">Aucun stream en direct</p>
             <p className="text-sm text-muted-foreground mt-1">Reviens un peu plus tard.</p>
+          </div>
+        ) : !channel.is_active && !isAdmin ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="relative max-w-md w-full text-center bg-card/70 backdrop-blur-xl border border-border rounded-3xl p-8 shadow-lg overflow-hidden">
+              <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
+              <div className="relative">
+                <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-red-500/10 flex items-center justify-center">
+                  <PowerOff className="w-9 h-9 text-red-500" />
+                </div>
+                <h2 className="text-2xl font-bold tracking-tight">La FCO TV est fermée</h2>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                  Aucun direct n'est diffusé pour le moment.<br />Reviens un peu plus tard pour ne rien manquer 📺
+                </p>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-5">
@@ -492,16 +550,38 @@ const Tv = () => {
                 </div>
               </div>
 
-              {/* Compact viewers strip — visible on mobile too */}
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-card/80 border border-border shadow-sm mx-auto">
-                <span className="relative flex items-center justify-center">
-                  <Eye className="w-4 h-4 text-red-600" />
-                  <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
-                </span>
-                <p className="text-sm font-bold leading-none">{viewers.length}</p>
-                <p className="text-xs text-muted-foreground leading-none">
-                  {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
-                </p>
+              {/* Viewers card with names */}
+              <div className="bg-card/70 backdrop-blur-xl border border-border rounded-2xl px-4 py-3 shadow-sm">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="relative flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-red-600" />
+                    <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-card animate-pulse" />
+                  </span>
+                  <p className="text-sm font-bold leading-none">{viewers.length}</p>
+                  <p className="text-xs text-muted-foreground leading-none">
+                    {viewers.length > 1 ? "personnes regardent" : "personne regarde"} en direct
+                  </p>
+                </div>
+                {viewers.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1.5">
+                    {(showAllViewers ? viewers : viewers.slice(0, 5)).map((v) => (
+                      <span key={v.id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-[11px] font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                        {v.name}
+                      </span>
+                    ))}
+                    {viewers.length > 5 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllViewers((v) => !v)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-semibold hover:bg-primary/20 transition"
+                      >
+                        {showAllViewers ? "Voir moins" : `+${viewers.length - 5} voir plus`}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {channel.description && (
@@ -514,7 +594,7 @@ const Tv = () => {
             {/* RIGHT: live chat (desktop only) */}
             <aside className="hidden lg:block lg:col-span-1">
               <div className="lg:sticky lg:top-20">
-                <div className="flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col h-[calc(100vh-9rem)] overflow-hidden">
+                <div className="flex bg-card/70 backdrop-blur-xl border border-border rounded-2xl shadow-sm flex-col max-h-[640px] h-[calc(100vh-10rem)] overflow-hidden">
                   <div className="px-4 py-3 border-b border-border flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
                       <MessageCircle className="w-4 h-4 text-primary" />
