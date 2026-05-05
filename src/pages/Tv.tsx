@@ -726,6 +726,7 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
       home_logo: homeLogo.trim() || null,
       away_logo: awayLogo.trim() || null,
       match_date: matchDate.trim() || null,
+      match_time: matchTime.trim() || null,
       api_fixture_id: apiFixtureId.trim() || null,
       is_active: channel?.is_active ?? true,
     };
