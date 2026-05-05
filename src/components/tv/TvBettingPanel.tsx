@@ -31,7 +31,7 @@ type TvBet = {
 const ODDS = { home: 2.0, draw: 3.0, away: 2.5, exact: 8.0, scorer: 5.0 } as const;
 
 export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
-  const [tab, setTab] = useState<"match" | "exact_score" | "scorer">("match");
+  const [tab, setTab] = useState<"match" | "exact_score">("match");
   const [balance, setBalance] = useState<number | null>(null);
   const [amount, setAmount] = useState<number>(10);
   const [prediction, setPrediction] = useState<"home" | "draw" | "away">("home");
@@ -86,7 +86,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
       p_prediction: null, p_predicted_score_home: null, p_predicted_score_away: null, p_scorer_name: null };
     if (tab === "match") payload.p_prediction = prediction;
     else if (tab === "exact_score") { payload.p_predicted_score_home = scoreH; payload.p_predicted_score_away = scoreA; }
-    else { if (!scorer) { setSubmitting(false); toast.error("Choisis un buteur"); return; } payload.p_scorer_name = scorer; }
     const { data, error } = await supabase.rpc("place_tv_bet", payload);
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
@@ -135,7 +134,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
         {([
           { k: "match", label: "Vainqueur", icon: Trophy },
           { k: "exact_score", label: "Score", icon: Target },
-          { k: "scorer", label: "Buteur", icon: User },
         ] as const).map(t => (
           <button key={t.k} onClick={() => setTab(t.k)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition ${
@@ -185,35 +183,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
           </div>
         )}
 
-        {/* BUTEUR */}
-        {tab === "scorer" && (
-          <div className="space-y-2">
-            {lineup.length === 0 ? (
-              <button type="button" onClick={fetchLineup} disabled={loadingLineup || !channel.api_fixture_id}
-                className="w-full h-10 rounded-xl bg-secondary text-foreground text-sm font-medium flex items-center justify-center gap-2 hover:bg-secondary/70 disabled:opacity-50">
-                {loadingLineup ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                {channel.api_fixture_id ? "Charger la compo" : "ID match API non configuré"}
-              </button>
-            ) : (
-              <>
-                <div className="max-h-44 overflow-y-auto rounded-xl border border-border bg-background divide-y divide-border">
-                  {lineup.map((p, i) => (
-                    <button key={i} type="button" disabled={closed}
-                      onClick={() => setScorer(p.name)}
-                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition ${
-                        scorer === p.name ? "bg-primary/10 text-primary font-semibold" : "hover:bg-secondary/50"
-                      } disabled:opacity-50`}>
-                      {p.number != null && <span className="w-6 text-center text-xs font-bold text-muted-foreground">{p.number}</span>}
-                      <span className="flex-1 truncate">{p.name}</span>
-                      <span className="text-[10px] text-muted-foreground truncate max-w-[40%]">{p.team}</span>
-                    </button>
-                  ))}
-                </div>
-                <p className="text-center text-xs text-muted-foreground">Cote fixe : <span className="font-bold text-primary">{ODDS.scorer.toFixed(2)}</span></p>
-              </>
-            )}
-          </div>
-        )}
 
         {/* MISE */}
         {!closed && (
