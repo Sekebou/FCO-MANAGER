@@ -17,6 +17,7 @@ Deno.serve(async (req) => {
     const url = `https://v3.football.api-sports.io/teams?search=${encodeURIComponent(search.trim())}`;
     const res = await fetch(url, { headers: { "x-apisports-key": API_KEY } });
     const data = await res.json();
+    console.log("search-team-logo:", JSON.stringify({ q: search, results: data?.results, errors: data?.errors }));
 
     const teams = (data?.response ?? []).slice(0, 10).map((t: any) => ({
       id: t.team?.id,
