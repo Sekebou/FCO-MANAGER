@@ -3,18 +3,71 @@ import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function pemToBinary(pem: string): Uint8Array {
+function normalizePem(raw: string): string {
+  const trimmed = raw.trim().replace(/^['"]|['"]$/g, "");
+  const maybeDecoded = trimmed.includes("%") ? decodeURIComponent(trimmed) : trimmed;
+  const pemBlock = maybeDecoded.match(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/);
+  if (pemBlock) return pemBlock[0].replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+  try {
+    const parsed = JSON.parse(maybeDecoded);
+    if (typeof parsed === "string") return parsed;
+    if (typeof parsed?.jwk === "string") return parsed.jwk;
+    if (typeof parsed?.result?.jwk === "string") return parsed.result.jwk;
+    if (typeof parsed?.pem === "string") return parsed.pem;
+    if (typeof parsed?.result?.pem === "string") return parsed.result.pem;
+    if (typeof parsed?.privateKey === "string") return parsed.privateKey;
+    if (typeof parsed?.private_key === "string") return parsed.private_key;
+  } catch (_) {
+    // Not JSON; keep parsing as a PEM string.
+  }
+  return maybeDecoded.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+}
+
+function pemToBinary(rawPem: string): Uint8Array {
+  const pem = normalizePem(rawPem);
   const b64 = pem
     .replace(/-----BEGIN [^-]+-----/g, "")
     .replace(/-----END [^-]+-----/g, "")
+    .replace(/\\n/g, "")
     .replace(/\s+/g, "");
+  if (!/^[A-Za-z0-9+/=]+$/.test(b64)) {
+    throw new Error("Secret CLOUDFLARE_STREAM_KEY_PEM invalide: colle le PEM/JWK privé Cloudflare Stream, pas le token API ni seulement l'id");
+  }
   const bin = atob(b64);
   const buf = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
   return buf;
+}
+
+async function importSigningKey(rawKey: string): Promise<CryptoKey> {
+  const trimmed = rawKey.trim().replace(/^['"]|['"]$/g, "");
+  try {
+    const parsed = JSON.parse(trimmed);
+    const jwkSource = parsed?.jwk ?? parsed?.result?.jwk ?? parsed;
+    const jwk = typeof jwkSource === "string" ? JSON.parse(jwkSource) : jwkSource?.kty === "RSA" ? jwkSource : null;
+    if (jwk) {
+      return await crypto.subtle.importKey(
+        "jwk",
+        jwk,
+        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+        false,
+        ["sign"],
+      );
+    }
+  } catch (_) {
+    // Not JSON/JWK; import as PKCS8 PEM below.
+  }
+
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    pemToBinary(rawKey),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
 }
 
 // Extract video UID from any Cloudflare Stream URL or accept raw UID
@@ -74,13 +127,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const cryptoKey = await crypto.subtle.importKey(
-      "pkcs8",
-      pemToBinary(pem),
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-      false,
-      ["sign"],
-    );
+    const cryptoKey = await importSigningKey(pem);
 
     // Token valid for 4 hours
     const exp = getNumericDate(60 * 60 * 4);
