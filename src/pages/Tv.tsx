@@ -756,20 +756,14 @@ const ChannelForm = ({ channel, onClose, onSaved, onDeleted }: {
             <input value={category} onChange={(e) => setCategory(e.target.value)} className={inputCls} placeholder="Ex: Match du dimanche" />
           </Field>
           <div className="pt-2 border-t border-border" />
-          <div className="grid grid-cols-2 gap-3">
-            <TeamPicker label="Équipe domicile" team={homeTeam} logo={homeLogo}
-              onPick={(n, l) => { setHomeTeam(n); setHomeLogo(l); }} />
-            <TeamPicker label="Équipe extérieur" team={awayTeam} logo={awayLogo}
-              onPick={(n, l) => { setAwayTeam(n); setAwayLogo(l); }} />
-          </div>
-          <Field label="Date du match (optionnel)">
-            <input value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className={inputCls}
-              placeholder="Ex: Dim 5 mai · 21h00" />
-          </Field>
-          <Field label="ID match API-Football (optionnel — pour buteurs)">
-            <input value={apiFixtureId} onChange={(e) => setApiFixtureId(e.target.value)} className={inputCls}
-              placeholder="Ex: 1234567" inputMode="numeric" />
-          </Field>
+          <OfficialMatchPicker
+            value={{ homeTeam, awayTeam, matchDate }}
+            onPick={({ homeTeam: h, awayTeam: a, homeLogo: hl, awayLogo: al, matchDate: md, fixtureId }) => {
+              setHomeTeam(h); setAwayTeam(a); setHomeLogo(hl); setAwayLogo(al);
+              setMatchDate(md);
+              if (fixtureId) setApiFixtureId(fixtureId);
+            }}
+          />
           <Field label="Description">
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
               className={`${inputCls} resize-none py-3`} placeholder="Optionnel" />
