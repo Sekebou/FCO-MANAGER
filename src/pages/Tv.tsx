@@ -376,10 +376,24 @@ const Tv = () => {
             </p>
           </div>
           {isAdmin && channel && (
-            <button onClick={() => setShowForm(true)}
-              className="h-9 px-3 rounded-full bg-secondary text-foreground text-sm font-medium flex items-center gap-1.5 hover:bg-secondary/70 active:scale-95 transition">
-              <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Modifier</span>
-            </button>
+            <>
+              <button
+                onClick={toggleChannelActive}
+                disabled={togglingActive}
+                className={`h-9 px-3 rounded-full text-sm font-medium flex items-center gap-1.5 active:scale-95 transition disabled:opacity-50 ${
+                  channel.is_active
+                    ? "bg-red-600/15 text-red-600 hover:bg-red-600/25"
+                    : "bg-emerald-600/15 text-emerald-600 hover:bg-emerald-600/25"
+                }`}
+              >
+                {togglingActive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : channel.is_active ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{channel.is_active ? "Fermer" : "Ouvrir"}</span>
+              </button>
+              <button onClick={() => setShowForm(true)}
+                className="h-9 px-3 rounded-full bg-secondary text-foreground text-sm font-medium flex items-center gap-1.5 hover:bg-secondary/70 active:scale-95 transition">
+                <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Modifier</span>
+              </button>
+            </>
           )}
           {isAdmin && !channel && (
             <button onClick={() => setShowForm(true)}
