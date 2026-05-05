@@ -4,6 +4,7 @@ import Hls from "hls.js";
 import {
   Tv as TvIcon, Lock, Mail, Loader2, LogOut, Pencil, Trash2, X,
   Maximize2, Radio, Plus, Search, Calendar, Settings, Eye, Send, MessageCircle,
+  Power, PowerOff,
 } from "lucide-react";
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
