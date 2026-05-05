@@ -230,10 +230,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
                   <span className="text-xl font-black">–</span>
                   <NumStepper value={sA} onChange={setSA} label={away} />
                 </div>
-                <p className="text-xs font-bold mt-2">Buteurs (séparés par virgule)</p>
-                <input value={sScorers} onChange={(e) => setSScorers(e.target.value)}
-                  placeholder="ex: Mbappé, Dembélé"
-                  className="w-full h-10 px-3 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary" />
                 <div className="flex gap-2">
                   <button onClick={() => setSettleOpen(false)} className="flex-1 h-9 rounded-lg bg-background text-xs font-medium border border-border">Annuler</button>
                   <button onClick={settle} disabled={settling}
