@@ -884,47 +884,40 @@ interface OfficialMatchPickerProps {
   value: { homeTeam: string; awayTeam: string; matchDate: string };
   onPick: (v: { homeTeam: string; awayTeam: string; homeLogo: string; awayLogo: string; matchDate: string; fixtureId?: string | null }) => void;
 }
+const LEAGUES = [
+  { id: "ligue1", label: "Ligue 1" }, { id: "ligue2", label: "Ligue 2" },
+  { id: "pl", label: "Premier L." }, { id: "laliga", label: "La Liga" },
+  { id: "seriea", label: "Serie A" }, { id: "bundesliga", label: "Bundesliga" },
+  { id: "ucl", label: "Ligue Champ." }, { id: "uel", label: "Ligue Europa" },
+];
 const OfficialMatchPicker = ({ value, onPick }: OfficialMatchPickerProps) => {
-  const [matches, setMatches] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [resolving, setResolving] = useState<string | null>(null);
+  const [league, setLeague] = useState("ligue1");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [search, setSearch] = useState("");
+  const [fixtures, setFixtures] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("events")
-        .select("id, title, date, time, team, home_logo, away_logo")
-        .eq("type", "match")
-        .gte("date", new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
-        .order("date", { ascending: true })
-        .limit(40);
-      setMatches(data || []);
-      setLoading(false);
-    })();
-  }, []);
-
-  const pick = async (m: any) => {
-    const parts = (m.title || "").split(/\s+vs\s+/i);
-    const home = (parts[0] || "").trim();
-    const away = (parts[1] || "").trim();
-    const md = m.time ? `${m.date} · ${m.time}` : m.date;
-    onPick({ homeTeam: home, awayTeam: away, homeLogo: m.home_logo || "", awayLogo: m.away_logo || "", matchDate: md, fixtureId: null });
-    setResolving(m.id);
+  const load = async (opts?: { useSearch?: boolean }) => {
+    setLoading(true);
     try {
-      const { data } = await supabase.functions.invoke("tv-find-fixture", {
-        body: { home_team: home, away_team: away, date: m.date },
-      });
-      if (data?.fixture_id) {
-        onPick({ homeTeam: home, awayTeam: away, homeLogo: m.home_logo || "", awayLogo: m.away_logo || "", matchDate: md, fixtureId: String(data.fixture_id) });
-        toast.success("Match API trouvé");
-      } else {
-        toast.message("Match API non trouvé — buteurs API désactivés");
-      }
-    } catch {
-      toast.error("Erreur recherche API");
-    } finally {
-      setResolving(null);
-    }
+      const body = opts?.useSearch && search.trim().length >= 3
+        ? { mode: "search", search: search.trim() }
+        : { date, league };
+      const { data } = await supabase.functions.invoke("tv-search-fixtures", { body });
+      setFixtures(data?.fixtures || []);
+    } catch { toast.error("Erreur API"); } finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [league, date]);
+
+  const pick = (f: any) => {
+    const md = new Date(f.date).toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    onPick({
+      homeTeam: f.home_team, awayTeam: f.away_team,
+      homeLogo: f.home_logo || "", awayLogo: f.away_logo || "",
+      matchDate: md, fixtureId: String(f.fixture_id),
+    });
+    toast.success("Match sélectionné");
   };
 
   const selected = value.homeTeam && value.awayTeam ? `${value.homeTeam} vs ${value.awayTeam}` : null;
@@ -938,22 +931,40 @@ const OfficialMatchPicker = ({ value, onPick }: OfficialMatchPickerProps) => {
           <span className="text-[11px] text-muted-foreground">{value.matchDate}</span>
         </div>
       )}
-      <div className="bg-secondary/60 rounded-xl divide-y divide-border max-h-72 overflow-y-auto">
-        {loading ? (
-          <p className="text-xs text-muted-foreground text-center py-4">Chargement…</p>
-        ) : matches.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">Aucun match planifié</p>
-        ) : matches.map((m) => (
-          <button key={m.id} type="button" onClick={() => pick(m)}
-            className="w-full flex items-center gap-2 p-3 hover:bg-background/50 text-left transition">
-            {m.home_logo && <img src={m.home_logo} alt="" className="w-7 h-7 object-contain shrink-0" />}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{m.title}</p>
-              <p className="text-[11px] text-muted-foreground">{m.date}{m.time ? ` · ${m.time}` : ""} · Équipe {m.team || "?"}</p>
-            </div>
-            {resolving === m.id && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
+      <div className="bg-secondary/60 rounded-xl p-2.5 space-y-2">
+        <div className="flex gap-2">
+          <select value={league} onChange={(e) => setLeague(e.target.value)} className="flex-1 h-10 px-2 rounded-lg bg-background border border-border text-sm">
+            {LEAGUES.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+          </select>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-10 px-2 rounded-lg bg-background border border-border text-sm" />
+        </div>
+        <div className="flex gap-2">
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher une équipe…"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); load({ useSearch: true }); } }}
+            className="flex-1 h-10 px-3 rounded-lg bg-background border border-border text-sm" />
+          <button type="button" onClick={() => load({ useSearch: true })} className="h-10 px-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium">
+            <Search className="w-4 h-4" />
           </button>
-        ))}
+        </div>
+        <div className="bg-background/50 rounded-lg divide-y divide-border max-h-72 overflow-y-auto">
+          {loading ? (
+            <p className="text-xs text-muted-foreground text-center py-4">Chargement…</p>
+          ) : fixtures.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">Aucun match</p>
+          ) : fixtures.map((f) => (
+            <button key={f.fixture_id} type="button" onClick={() => pick(f)}
+              className="w-full flex items-center gap-2 p-2.5 hover:bg-secondary/40 text-left transition">
+              {f.home_logo && <img src={f.home_logo} alt="" className="w-7 h-7 object-contain shrink-0" />}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{f.home_team} vs {f.away_team}</p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {f.league} · {new Date(f.date).toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+              {f.away_logo && <img src={f.away_logo} alt="" className="w-7 h-7 object-contain shrink-0" />}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
