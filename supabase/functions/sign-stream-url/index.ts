@@ -17,10 +17,12 @@ function tryBase64Decode(s: string): string | null {
   }
 }
 
-async function importSigningKey(rawKey: string): Promise<CryptoKey> {
-  const trimmed = rawKey.trim().replace(/^['"]|['"]$/g, "");
+async function importSigningKey(rawKey: string): Promise<{ key: CryptoKey; kid: string | null }> {
+  let trimmed = rawKey.trim().replace(/,\s*$/, "");
+  const m = trimmed.match(/(?:jwk|pem)["']?\s*:\s*["']([^"']+)["']/i);
+  if (m) trimmed = m[1];
+  trimmed = trimmed.trim().replace(/^['"]+|['"]+$/g, "");
 
-  // 1) Try as base64-encoded JSON JWK (Cloudflare's `jwk` field)
   const decoded = tryBase64Decode(trimmed);
   const jwkCandidates: string[] = [];
   if (decoded) jwkCandidates.push(decoded);
@@ -35,17 +37,16 @@ async function importSigningKey(rawKey: string): Promise<CryptoKey> {
         : typeof parsed?.result?.jwk === "string" ? JSON.parse(atob(parsed.result.jwk))
         : null;
       if (jwk?.kty === "RSA") {
-        return await crypto.subtle.importKey(
+        const key = await crypto.subtle.importKey(
           "jwk",
           { ...jwk, alg: "RS256", key_ops: ["sign"] },
           { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
           false,
           ["sign"],
         );
+        return { key, kid: jwk.kid ?? null };
       }
-    } catch {
-      // not JSON, continue
-    }
+    } catch { /* try next */ }
   }
 
   const preview = trimmed.slice(0, 40) + "..." + trimmed.slice(-20);
@@ -101,21 +102,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    const keyId = Deno.env.get("CLOUDFLARE_STREAM_KEY_ID");
+    const keyIdEnv = Deno.env.get("CLOUDFLARE_STREAM_KEY_ID");
     const pem = Deno.env.get("CLOUDFLARE_STREAM_KEY_PEM");
-    if (!keyId || !pem) {
-      return new Response(JSON.stringify({ error: "Missing signing key config" }), {
+    if (!pem) {
+      return new Response(JSON.stringify({ error: "Missing CLOUDFLARE_STREAM_KEY_PEM" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const cryptoKey = await importSigningKey(pem);
+    const { key: cryptoKey, kid: jwkKid } = await importSigningKey(pem);
+    const kid = jwkKid || keyIdEnv;
+    if (!kid) {
+      return new Response(JSON.stringify({ error: "Missing key ID (kid)" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Token valid for 4 hours
     const exp = getNumericDate(60 * 60 * 4);
     const jwt = await create(
-      { alg: "RS256", kid: keyId },
-      { sub: videoId, kid: keyId, exp },
+      { alg: "RS256", kid },
+      { sub: videoId, kid, exp },
       cryptoKey,
     );
 
