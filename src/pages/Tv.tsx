@@ -594,9 +594,6 @@ const Tv = () => {
                 )}
               </div>
 
-              {/* Bettors card */}
-              <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
-
               {/* Betting panel */}
               <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={session.user.id} />
 
