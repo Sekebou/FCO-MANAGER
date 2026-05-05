@@ -1,53 +1,7 @@
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 
-// TheSportsDB — free key "3" restricts searchteams.php (always returns Arsenal).
-// Workaround: fetch all teams for major leagues (cached in-memory) and filter locally.
-
-const LEAGUES = [
-  "French Ligue 1", "French Ligue 2", "English Premier League", "English League Championship",
-  "Spanish La Liga", "Spanish La Liga 2", "Italian Serie A", "Italian Serie B",
-  "German Bundesliga", "German Bundesliga 2", "Portuguese Primeira Liga",
-  "Dutch Eredivisie", "Belgian Pro League", "Turkish Super Lig",
-  "UEFA Champions League", "Scottish Premiership",
-  "American Major League Soccer", "Brazilian Serie A", "Argentinian Primera Division",
-  "Saudi Pro League",
-];
-
-type Team = { id: number; name: string; alt: string; country: string; logo: string };
-let CACHE: { at: number; teams: Team[] } | null = null;
-const TTL = 1000 * 60 * 60 * 12; // 12h
-
-async function loadAllTeams(): Promise<Team[]> {
-  if (CACHE && Date.now() - CACHE.at < TTL) return CACHE.teams;
-  const out: Team[] = [];
-  const seen = new Set<number>();
-  // Sequential to avoid rate-limiting on TheSportsDB free tier
-  for (const l of LEAGUES) {
-    try {
-      const r = await fetch(`https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=${encodeURIComponent(l)}`);
-      if (!r.ok) { console.warn("league http", l, r.status); continue; }
-      const d = await r.json();
-      const arr = d?.teams ?? [];
-      console.log(`league ${l}: ${arr.length}`);
-      for (const t of arr) {
-        const id = Number(t.idTeam);
-        if (!id || seen.has(id)) continue;
-        const logo = t.strBadge || t.strLogo || t.strTeamBadge || "";
-        if (!logo) continue;
-        seen.add(id);
-        out.push({
-          id, name: t.strTeam,
-          alt: (t.strTeamAlternate || "").toLowerCase(),
-          country: t.strCountry || "",
-          logo,
-        });
-      }
-    } catch (e) { console.warn("league fail", l, e); }
-  }
-  CACHE = { at: Date.now(), teams: out };
-  console.log(`Loaded ${out.length} teams`);
-  return out;
-}
+// ESPN public search API — free, no key, returns logos for any soccer team worldwide.
+// Endpoint: https://site.web.api.espn.com/apis/common/v3/search?query=...&type=team&sport=soccer
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -60,24 +14,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    const q = search.trim().toLowerCase();
-    const all = await loadAllTeams();
-    const matches = all
-      .map((t) => {
-        const n = t.name.toLowerCase();
-        let score = 0;
-        if (n === q) score = 100;
-        else if (n.startsWith(q)) score = 80;
-        else if (n.includes(q)) score = 60;
-        else if (t.alt.includes(q)) score = 40;
-        return { t, score };
-      })
-      .filter((x) => x.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 15)
-      .map(({ t }) => ({ id: t.id, name: t.name, country: t.country, logo: t.logo }));
+    const q = search.trim();
+    const url = `https://site.web.api.espn.com/apis/common/v3/search?query=${encodeURIComponent(q)}&limit=20&type=team&sport=soccer`;
+    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const data = await res.json();
 
-    return new Response(JSON.stringify({ teams: matches }), {
+    const items = (data?.items ?? []) as any[];
+    const teams = items
+      .filter((t) => t?.sport === "soccer" && Array.isArray(t.logos) && t.logos.length > 0)
+      .slice(0, 15)
+      .map((t) => {
+        const logo = t.logos.find((l: any) => (l.rel || []).includes("default"))?.href || t.logos[0]?.href || "";
+        // Country guess from league slug (e.g. "fra.1" -> "fra")
+        const country = (t.league || "").split(".")[0]?.toUpperCase() || "";
+        return {
+          id: Number(t.id) || 0,
+          name: t.displayName || t.name || "",
+          country,
+          logo,
+        };
+      })
+      .filter((t) => t.logo && t.name);
+
+    return new Response(JSON.stringify({ teams }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
