@@ -9,6 +9,7 @@ import {
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
 import TvBettingPanel from "@/components/tv/TvBettingPanel";
+import TvBettorsCard from "@/components/tv/TvBettorsCard";
 
 type SourceType = "cloudflare" | "iframe" | "m3u8";
 
@@ -592,6 +593,9 @@ const Tv = () => {
                   </div>
                 )}
               </div>
+
+              {/* Bettors card */}
+              <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
 
               {/* Betting panel */}
               <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={session.user.id} />

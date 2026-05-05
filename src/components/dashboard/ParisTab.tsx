@@ -57,6 +57,28 @@ const mapBet = (r: any): Bet => ({
   predictedScoreAway: r.predicted_score_away ?? null,
 });
 
+const mapTvBet = (r: any): Bet => ({
+  id: `tv-${r.id}`,
+  userId: r.user_id,
+  userName: r.user_name,
+  homeTeam: r.tv_channels?.home_team || 'Domicile',
+  awayTeam: r.tv_channels?.away_team || 'Extérieur',
+  matchDate: r.created_at,
+  prediction: r.prediction || '',
+  odds: r.odds,
+  amount: r.amount,
+  payout: r.payout,
+  status: r.status,
+  createdAt: r.created_at,
+  settledAt: r.settled_at || null,
+  team: 'TV',
+  betType: r.bet_type || 'match',
+  scorerPlayerId: null,
+  scorerPlayerName: r.scorer_name || null,
+  predictedScoreHome: r.predicted_score_home ?? null,
+  predictedScoreAway: r.predicted_score_away ?? null,
+});
+
 type TabFilter = 'upcoming' | 'my-bets' | 'leaderboard' | 'settle';
 
 const STATUS_CONFIG: Record<string, { icon: React.ElementType; label: string; color: string; bg: string }> = {
@@ -226,13 +248,18 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
         return;
       }
 
-      const [{ data: betsData }, { data: pointsData }] = await Promise.all([
+      const [{ data: betsData }, { data: tvBetsData }, { data: pointsData }] = await Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('tv_bets').select('*, tv_channels(home_team,away_team)').order('created_at', { ascending: false }),
         supabase.from('user_points').select('balance, last_refund_seen_at').eq('user_id', sessionUserId).maybeSingle(),
       ]);
 
       if (!mounted) return;
-      if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
+      const merged = [
+        ...((betsData || []).map(mapBet)),
+        ...((tvBetsData || []).map(mapTvBet)),
+      ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      if (betsData || tvBetsData) { setBets(merged); setBetsLoaded(true); }
       if (pointsData) {
         setBalance(pointsData.balance);
         const seen = (pointsData as any).last_refund_seen_at;
@@ -243,10 +270,22 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
 
     fetchData();
 
+    const refetch = () => {
+      Promise.all([
+        supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('tv_bets').select('*, tv_channels(home_team,away_team)').order('created_at', { ascending: false }),
+      ]).then(([{ data: b }, { data: tv }]) => {
+        const merged = [
+          ...((b || []).map(mapBet)),
+          ...((tv || []).map(mapTvBet)),
+        ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+        setBets(merged);
+      });
+    };
+
     const channel = supabase.channel('paris-tab')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, () => {
-        supabase.from('bets').select('*').order('created_at', { ascending: false }).then(({ data }) => data && setBets(data.map(mapBet)));
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bets' }, refetch)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tv_bets' }, refetch)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_points' }, (payload: any) => {
         if (payload.new?.user_id === authUserId && typeof payload.new?.balance === 'number') setBalance(payload.new.balance);
       })
@@ -265,9 +304,17 @@ const ParisTab: React.FC<Props> = ({ currentUser, championships }) => {
       if (!authUserId) return;
       Promise.all([
         supabase.from('bets').select('*').order('created_at', { ascending: false }),
+        supabase.from('tv_bets').select('*, tv_channels(home_team,away_team)').order('created_at', { ascending: false }),
         supabase.from('user_points').select('balance').eq('user_id', authUserId).maybeSingle(),
-      ]).then(([{ data: betsData }, { data: pointsData }]) => {
-        if (betsData) { setBets(betsData.map(mapBet)); setBetsLoaded(true); }
+      ]).then(([{ data: betsData }, { data: tvBetsData }, { data: pointsData }]) => {
+        if (betsData || tvBetsData) {
+          const merged = [
+            ...((betsData || []).map(mapBet)),
+            ...((tvBetsData || []).map(mapTvBet)),
+          ].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+          setBets(merged);
+          setBetsLoaded(true);
+        }
         if (pointsData) setBalance(pointsData.balance);
       });
     };

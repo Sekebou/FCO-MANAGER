@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import TvBettingPanel from "@/components/tv/TvBettingPanel";
+import TvBettorsCard from "@/components/tv/TvBettorsCard";
 
 type SourceType = "cloudflare" | "iframe" | "m3u8";
 
@@ -418,6 +419,8 @@ const TvTab = ({ currentUser }: TvTabProps) => {
               </div>
             )}
           </div>
+
+          <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
 
           <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={userId} />
 
