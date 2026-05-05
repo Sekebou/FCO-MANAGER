@@ -86,7 +86,6 @@ export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
       p_prediction: null, p_predicted_score_home: null, p_predicted_score_away: null, p_scorer_name: null };
     if (tab === "match") payload.p_prediction = prediction;
     else if (tab === "exact_score") { payload.p_predicted_score_home = scoreH; payload.p_predicted_score_away = scoreA; }
-    else { if (!scorer) { setSubmitting(false); toast.error("Choisis un buteur"); return; } payload.p_scorer_name = scorer; }
     const { data, error } = await supabase.rpc("place_tv_bet", payload);
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
