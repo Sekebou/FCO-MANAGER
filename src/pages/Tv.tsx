@@ -88,6 +88,8 @@ const Tv = () => {
   const [showQuality, setShowQuality] = useState(false);
   const [messages, setMessages] = useState<{ id: string; user_id: string; name: string; text: string; ts: number }[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [showAllViewers, setShowAllViewers] = useState(false);
+  const [togglingActive, setTogglingActive] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
