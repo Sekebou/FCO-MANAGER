@@ -213,17 +213,32 @@ const Tv = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }, { data: prof }] = await Promise.all([
-      supabase.from("tv_channels").select("*").eq("is_active", true)
-        .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1),
+    const [{ data: isAdminRpc }, { data: isAdminPlusRpc }, { data: prof }] = await Promise.all([
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" as any }),
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin_plus" as any }),
       supabase.from("profiles").select("name").eq("id", session.user.id).maybeSingle(),
     ]);
+    const admin = Boolean(isAdminRpc) || Boolean(isAdminPlusRpc);
+    // Admins see any channel (active or closed). Others only see active ones.
+    const q = supabase.from("tv_channels").select("*")
+      .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1);
+    const { data: ch } = admin ? await q : await q.eq("is_active", true);
     setChannel(((ch as any) || [])[0] || null);
-    setIsAdmin(Boolean(isAdminRpc) || Boolean(isAdminPlusRpc));
+    setIsAdmin(admin);
     setMyName((prof as any)?.name || session.user.email?.split("@")[0] || "Anonyme");
     setLoading(false);
+  };
+
+  const toggleChannelActive = async () => {
+    if (!channel || !isAdmin) return;
+    setTogglingActive(true);
+    const next = !channel.is_active;
+    const { error } = await supabase.from("tv_channels")
+      .update({ is_active: next }).eq("id", channel.id);
+    setTogglingActive(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? "TV ouverte" : "TV fermée");
+    setChannel({ ...channel, is_active: next });
   };
 
   // Realtime presence + chat broadcast
