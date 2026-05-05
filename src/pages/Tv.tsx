@@ -97,6 +97,25 @@ const Tv = () => {
   const [chatInput, setChatInput] = useState("");
   const [showAllViewers, setShowAllViewers] = useState(false);
   const [togglingActive, setTogglingActive] = useState(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("tv-dark-mode");
+    if (saved !== null) return saved === "1";
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const had = root.classList.contains("dark");
+    if (darkMode) root.classList.add("dark");
+    else root.classList.remove("dark");
+    localStorage.setItem("tv-dark-mode", darkMode ? "1" : "0");
+    return () => {
+      // restore previous state when leaving /tv
+      if (had) root.classList.add("dark");
+      else root.classList.remove("dark");
+    };
+  }, [darkMode]);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
