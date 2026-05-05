@@ -207,16 +207,39 @@ const Tv = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }] = await Promise.all([
+    const [{ data: ch }, { data: isAdminRpc }, { data: isAdminPlusRpc }, { data: prof }] = await Promise.all([
       supabase.from("tv_channels").select("*").eq("is_active", true)
         .order("sort_order", { ascending: true }).order("created_at", { ascending: false }).limit(1),
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin" as any }),
       supabase.rpc("has_role", { _user_id: session.user.id, _role: "admin_plus" as any }),
+      supabase.from("profiles").select("name").eq("id", session.user.id).maybeSingle(),
     ]);
     setChannel(((ch as any) || [])[0] || null);
     setIsAdmin(Boolean(isAdminRpc) || Boolean(isAdminPlusRpc));
+    setMyName((prof as any)?.name || session.user.email?.split("@")[0] || "Anonyme");
     setLoading(false);
   };
+
+  // Realtime presence: count viewers on the current channel
+  useEffect(() => {
+    if (!channel || !session?.user || !myName) return;
+    const ch = supabase.channel(`tv-viewers:${channel.id}`, {
+      config: { presence: { key: session.user.id } },
+    });
+    ch.on("presence", { event: "sync" }, () => {
+      const state = ch.presenceState() as Record<string, Array<{ name: string }>>;
+      const list: { id: string; name: string }[] = [];
+      Object.entries(state).forEach(([uid, metas]) => {
+        const meta = metas[0];
+        if (meta?.name) list.push({ id: uid, name: meta.name });
+      });
+      setViewers(list);
+    });
+    ch.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") await ch.track({ name: myName });
+    });
+    return () => { void supabase.removeChannel(ch); };
+  }, [channel?.id, session?.user?.id, myName]);
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
