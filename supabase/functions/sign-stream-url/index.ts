@@ -6,68 +6,49 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function normalizePem(raw: string): string {
-  const trimmed = raw.trim().replace(/^['"]|['"]$/g, "");
-  const maybeDecoded = trimmed.includes("%") ? decodeURIComponent(trimmed) : trimmed;
-  const pemBlock = maybeDecoded.match(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/);
-  if (pemBlock) return pemBlock[0].replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+function tryBase64Decode(s: string): string | null {
   try {
-    const parsed = JSON.parse(maybeDecoded);
-    if (typeof parsed === "string") return parsed;
-    if (typeof parsed?.jwk === "string") return parsed.jwk;
-    if (typeof parsed?.result?.jwk === "string") return parsed.result.jwk;
-    if (typeof parsed?.pem === "string") return parsed.pem;
-    if (typeof parsed?.result?.pem === "string") return parsed.result.pem;
-    if (typeof parsed?.privateKey === "string") return parsed.privateKey;
-    if (typeof parsed?.private_key === "string") return parsed.private_key;
-  } catch (_) {
-    // Not JSON; keep parsing as a PEM string.
+    const cleaned = s.replace(/\s+/g, "");
+    if (!/^[A-Za-z0-9+/=_-]+$/.test(cleaned)) return null;
+    const std = cleaned.replace(/-/g, "+").replace(/_/g, "/");
+    return atob(std);
+  } catch {
+    return null;
   }
-  return maybeDecoded.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
-}
-
-function pemToBinary(rawPem: string): Uint8Array {
-  const pem = normalizePem(rawPem);
-  const b64 = pem
-    .replace(/-----BEGIN [^-]+-----/g, "")
-    .replace(/-----END [^-]+-----/g, "")
-    .replace(/\\n/g, "")
-    .replace(/\s+/g, "");
-  if (!/^[A-Za-z0-9+/=]+$/.test(b64)) {
-    throw new Error("Secret CLOUDFLARE_STREAM_KEY_PEM invalide: colle le PEM/JWK privé Cloudflare Stream, pas le token API ni seulement l'id");
-  }
-  const bin = atob(b64);
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return buf;
 }
 
 async function importSigningKey(rawKey: string): Promise<CryptoKey> {
   const trimmed = rawKey.trim().replace(/^['"]|['"]$/g, "");
-  try {
-    const parsed = JSON.parse(trimmed);
-    const jwkSource = parsed?.jwk ?? parsed?.result?.jwk ?? parsed;
-    const jwk = typeof jwkSource === "string" ? JSON.parse(jwkSource) : jwkSource?.kty === "RSA" ? jwkSource : null;
-    if (jwk) {
-      return await crypto.subtle.importKey(
-        "jwk",
-        jwk,
-        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-        false,
-        ["sign"],
-      );
+
+  // 1) Try as base64-encoded JSON JWK (Cloudflare's `jwk` field)
+  const decoded = tryBase64Decode(trimmed);
+  const jwkCandidates: string[] = [];
+  if (decoded) jwkCandidates.push(decoded);
+  jwkCandidates.push(trimmed);
+
+  for (const candidate of jwkCandidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      const jwk = parsed?.kty === "RSA" ? parsed
+        : typeof parsed?.jwk === "string" ? JSON.parse(atob(parsed.jwk))
+        : parsed?.jwk?.kty === "RSA" ? parsed.jwk
+        : typeof parsed?.result?.jwk === "string" ? JSON.parse(atob(parsed.result.jwk))
+        : null;
+      if (jwk?.kty === "RSA") {
+        return await crypto.subtle.importKey(
+          "jwk",
+          { ...jwk, alg: "RS256", key_ops: ["sign"] },
+          { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+          false,
+          ["sign"],
+        );
+      }
+    } catch {
+      // not JSON, continue
     }
-  } catch (_) {
-    // Not JSON/JWK; import as PKCS8 PEM below.
   }
 
-  return await crypto.subtle.importKey(
-    "pkcs8",
-    pemToBinary(rawKey),
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
+  throw new Error("CLOUDFLARE_STREAM_KEY_PEM doit contenir le champ 'jwk' (base64) renvoyé par Cloudflare");
 }
 
 // Extract video UID from any Cloudflare Stream URL or accept raw UID
