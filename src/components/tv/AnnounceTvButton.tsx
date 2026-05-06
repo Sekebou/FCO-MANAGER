@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Megaphone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -23,8 +23,18 @@ export default function AnnounceTvButton({
   client,
 }: Props) {
   const [sending, setSending] = useState(false);
+  const [resolvedEmail, setResolvedEmail] = useState<string | null>(userEmail ?? null);
 
-  const allowed = (userEmail || "").toLowerCase() === ALLOWED_EMAIL;
+  useEffect(() => {
+    if (userEmail) { setResolvedEmail(userEmail); return; }
+    let active = true;
+    client.auth.getUser().then(({ data }) => {
+      if (active) setResolvedEmail(data.user?.email ?? null);
+    });
+    return () => { active = false; };
+  }, [userEmail, client]);
+
+  const allowed = (resolvedEmail || "").toLowerCase() === ALLOWED_EMAIL;
   if (!allowed) return null;
 
   const handleClick = async () => {
