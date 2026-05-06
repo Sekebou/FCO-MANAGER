@@ -587,6 +587,12 @@ const Tv = () => {
                     </div>
                   )}
                   <div className="absolute top-3 right-3 flex items-center gap-2">
+                    <AnnounceTvButton
+                      channelName={channel.name}
+                      homeTeam={channel.home_team}
+                      awayTeam={channel.away_team}
+                      matchTime={channel.match_time}
+                    />
                     <CastButton hlsUrl={hlsUrl} videoRef={videoRef} title={channel.name} poster={channel.logo_url || undefined} />
                     <button onClick={goFullscreen}
                       className="w-9 h-9 rounded-full bg-black/55 backdrop-blur-md text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition"
