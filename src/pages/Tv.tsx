@@ -537,10 +537,8 @@ const Tv = () => {
                       controls
                       playsInline
                       autoPlay
-                      // @ts-expect-error - AirPlay attributes for Safari/iOS
-                      x-webkit-airplay="allow"
-                      airplay="allow"
                       crossOrigin="anonymous"
+                      {...({ "x-webkit-airplay": "allow", airplay: "allow" } as any)}
                     />
                   ) : playerUrl ? (
                     <iframe
