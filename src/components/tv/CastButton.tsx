@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Cast, Airplay } from "lucide-react";
+import { Cast } from "lucide-react";
+import { toast } from "sonner";
 
 declare global {
   interface Window {
@@ -33,9 +34,18 @@ function loadCastSdk(): Promise<boolean> {
       s.onerror = () => resolve(false);
       document.head.appendChild(s);
     }
-    setTimeout(() => resolve(!!window.cast?.framework), 4000);
+    setTimeout(() => resolve(!!window.cast?.framework), 5000);
   });
   return castSdkPromise;
+}
+
+function detectPlatform() {
+  if (typeof navigator === "undefined") return { ios: false, android: false, safari: false };
+  const ua = navigator.userAgent || "";
+  const ios = /iPad|iPhone|iPod/.test(ua) || (/Mac/.test(ua) && (navigator as any).maxTouchPoints > 1);
+  const android = /Android/i.test(ua);
+  const safari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+  return { ios, android, safari };
 }
 
 export default function CastButton({ hlsUrl, videoRef, title, poster }: CastButtonProps) {
@@ -43,8 +53,9 @@ export default function CastButton({ hlsUrl, videoRef, title, poster }: CastButt
   const [casting, setCasting] = useState(false);
   const [airplayAvailable, setAirplayAvailable] = useState(false);
   const sessionListenerRef = useRef<any>(null);
+  const platform = useRef(detectPlatform()).current;
 
-  // Init Google Cast
+  // Init Google Cast (best-effort)
   useEffect(() => {
     let cancelled = false;
     loadCastSdk().then((ok) => {
@@ -85,28 +96,39 @@ export default function CastButton({ hlsUrl, videoRef, title, poster }: CastButt
   useEffect(() => {
     const v = videoRef.current as any;
     if (!v) return;
+    // Enable AirPlay on the element
+    try {
+      v.setAttribute("x-webkit-airplay", "allow");
+      v.setAttribute("airplay", "allow");
+    } catch (_) {}
     if (typeof v.webkitShowPlaybackTargetPicker !== "function") return;
     const onAvail = (e: any) => {
       setAirplayAvailable(e.availability === "available");
     };
     v.addEventListener("webkitplaybacktargetavailabilitychanged", onAvail);
+    // Assume available on iOS/Safari even before event fires
+    if (platform.ios || platform.safari) setAirplayAvailable(true);
     return () => v.removeEventListener("webkitplaybacktargetavailabilitychanged", onAvail);
-  }, [videoRef, hlsUrl]);
+  }, [videoRef, hlsUrl, platform.ios, platform.safari]);
 
   const handleAirplay = () => {
     const v = videoRef.current as any;
     try {
-      v?.webkitShowPlaybackTargetPicker?.();
+      if (typeof v?.webkitShowPlaybackTargetPicker === "function") {
+        v.webkitShowPlaybackTargetPicker();
+        return true;
+      }
     } catch (_) {}
+    return false;
   };
 
-  const handleCast = async () => {
-    if (!hlsUrl || !window.cast?.framework) return;
+  const handleChromecast = async () => {
+    if (!hlsUrl || !window.cast?.framework) return false;
     try {
       const ctx = window.cast.framework.CastContext.getInstance();
       await ctx.requestSession();
       const session = ctx.getCurrentSession();
-      if (!session) return;
+      if (!session) return false;
       const mediaInfo = new window.chrome.cast.media.MediaInfo(hlsUrl, "application/x-mpegURL");
       mediaInfo.streamType = window.chrome.cast.media.StreamType.LIVE;
       const meta = new window.chrome.cast.media.GenericMediaMetadata();
@@ -115,38 +137,52 @@ export default function CastButton({ hlsUrl, videoRef, title, poster }: CastButt
       mediaInfo.metadata = meta;
       const request = new window.chrome.cast.media.LoadRequest(mediaInfo);
       await session.loadMedia(request);
-    } catch (_) {}
+      return true;
+    } catch (_) {
+      return false;
+    }
   };
 
-  // iOS AirPlay button
-  if (airplayAvailable) {
-    return (
-      <button
-        onClick={handleAirplay}
-        className="h-9 px-3 rounded-full bg-black/55 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-black/75 active:scale-95 transition"
-        aria-label="AirPlay"
-      >
-        <Airplay className="w-4 h-4" />
-        <span>AirPlay</span>
-      </button>
-    );
-  }
+  const handleClick = async () => {
+    // 1. Chromecast if available
+    if (castReady) {
+      const ok = await handleChromecast();
+      if (ok) return;
+    }
+    // 2. AirPlay (iOS Safari / native iOS WebView)
+    if (handleAirplay()) return;
+    // 3. Fallback : instructions selon plateforme
+    if (platform.ios) {
+      toast.info("Ouvrez le Centre de contrôle puis « Recopie de l'écran » pour diffuser sur Apple TV.", {
+        duration: 6000,
+      });
+    } else if (platform.android) {
+      toast.info("Ouvrez les paramètres rapides puis « Diffuser l'écran » pour envoyer sur Chromecast/TV.", {
+        duration: 6000,
+      });
+    } else {
+      toast.info("Utilisez Chrome (menu ⋮ → Diffuser) ou la recopie d'écran de votre système.", {
+        duration: 6000,
+      });
+    }
+  };
 
-  // Chromecast button
-  if (castReady && hlsUrl) {
-    return (
-      <button
-        onClick={handleCast}
-        className={`h-9 px-3 rounded-full backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition ${
-          casting ? "bg-primary/90 hover:bg-primary" : "bg-black/55 hover:bg-black/75"
-        }`}
-        aria-label="Caster sur TV"
-      >
-        <Cast className="w-4 h-4" />
-        <span>{casting ? "En cast" : "Caster"}</span>
-      </button>
-    );
-  }
+  // Toujours afficher si on a un flux
+  if (!hlsUrl) return null;
 
-  return null;
+  const label = casting ? "En cast" : "Caster";
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`h-9 px-3 rounded-full backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition ${
+        casting ? "bg-primary/90 hover:bg-primary" : "bg-black/55 hover:bg-black/75"
+      }`}
+      aria-label="Diffuser sur TV"
+      title="Diffuser sur TV (Chromecast / AirPlay)"
+    >
+      <Cast className="w-4 h-4" />
+      <span>{label}</span>
+    </button>
+  );
 }
