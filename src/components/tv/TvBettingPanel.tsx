@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabaseTv as supabase } from "@/integrations/supabase/tvClient";
+import { supabaseTv } from "@/integrations/supabase/tvClient";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { Coins, Trophy, Target, User, Loader2, Lock, CheckCircle2, XCircle, RefreshCw, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 
