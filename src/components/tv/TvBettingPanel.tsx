@@ -20,6 +20,7 @@ interface Props {
   };
   isAdmin: boolean;
   userId: string;
+  client?: SupabaseClient<any>;
 }
 
 type TvBet = {
@@ -33,7 +34,8 @@ type TvBet = {
 
 const ODDS = { home: 2.0, draw: 3.0, away: 2.5, exact: 8.0, scorer: 5.0 } as const;
 
-export default function TvBettingPanel({ channel, isAdmin, userId }: Props) {
+export default function TvBettingPanel({ channel, isAdmin, userId, client }: Props) {
+  const supabase = (client ?? supabaseTv) as SupabaseClient<any>;
   const [tab, setTab] = useState<"match" | "exact_score">("match");
   const [balance, setBalance] = useState<number | null>(null);
   const [amount, setAmount] = useState<number>(10);
