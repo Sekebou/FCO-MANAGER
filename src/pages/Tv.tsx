@@ -9,6 +9,7 @@ import {
 import clubLogo from "@/assets/logo.png";
 import { toast } from "sonner";
 import CastButton from "@/components/tv/CastButton";
+import AnnounceTvButton from "@/components/tv/AnnounceTvButton";
 import TvBettingPanel from "@/components/tv/TvBettingPanel";
 import TvBettorsCard from "@/components/tv/TvBettorsCard";
 

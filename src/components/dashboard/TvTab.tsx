@@ -9,6 +9,7 @@ import {
 import { toast } from "sonner";
 import TvBettingPanel from "@/components/tv/TvBettingPanel";
 import CastButton from "@/components/tv/CastButton";
+import AnnounceTvButton from "@/components/tv/AnnounceTvButton";
 import TvBettorsCard from "@/components/tv/TvBettorsCard";
 
 type SourceType = "cloudflare" | "iframe" | "m3u8";
