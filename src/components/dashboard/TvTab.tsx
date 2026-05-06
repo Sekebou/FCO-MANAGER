@@ -90,6 +90,12 @@ const TvTab = ({ currentUser }: TvTabProps) => {
   const [showAllViewers, setShowAllViewers] = useState(false);
   const [togglingActive, setTogglingActive] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const canOpenTv = (userEmail || "").toLowerCase() === "boussekeymaxime@gmail.com";
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
+  }, []);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -296,7 +302,7 @@ const TvTab = ({ currentUser }: TvTabProps) => {
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
               Aucun direct n'est diffusé pour le moment.<br />Reviens un peu plus tard pour ne rien manquer 📺
             </p>
-            {isAdmin && (
+            {isAdmin && canOpenTv && (
               <button onClick={() => setShowForm(true)}
                 className="mt-6 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 active:scale-95 transition shadow-lg">
                 <Power className="w-4 h-4" /> Ouvrir la FCO TV
