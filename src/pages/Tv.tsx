@@ -537,6 +537,8 @@ const Tv = () => {
                       controls
                       playsInline
                       autoPlay
+                      
+                      {...({ "x-webkit-airplay": "allow", airplay: "allow" } as any)}
                     />
                   ) : playerUrl ? (
                     <iframe

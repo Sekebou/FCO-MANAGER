@@ -362,7 +362,16 @@ const TvTab = ({ currentUser }: TvTabProps) => {
             <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 via-primary/20 to-primary/40 rounded-3xl blur-2xl opacity-60 pointer-events-none" />
             <div ref={playerRef} className="relative aspect-video w-full bg-black rounded-2xl sm:rounded-3xl overflow-hidden ring-1 ring-white/10 shadow-2xl [&:fullscreen]:rounded-none [&:fullscreen]:aspect-auto [&:fullscreen]:h-screen [&:-webkit-full-screen]:rounded-none [&:-webkit-full-screen]:aspect-auto [&:-webkit-full-screen]:h-screen">
               {hlsUrl ? (
-                <video ref={videoRef} key={channel.id + ":" + hlsUrl} className="w-full h-full bg-black" controls playsInline autoPlay />
+                <video
+                  ref={videoRef}
+                  key={channel.id + ":" + hlsUrl}
+                  className="w-full h-full bg-black"
+                  controls
+                  playsInline
+                  autoPlay
+                  
+                  {...({ "x-webkit-airplay": "allow", airplay: "allow" } as any)}
+                />
               ) : playerUrl ? (
                 <iframe key={channel.id} src={playerUrl} title={channel.name} className="w-full h-full"
                   allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen loading="eager" />
