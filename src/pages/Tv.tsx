@@ -590,6 +590,8 @@ const Tv = () => {
                   )}
                   <div className="absolute top-3 right-3 flex items-center gap-2">
                     <AnnounceTvButton
+                      client={supabase}
+                      userEmail={session?.user?.email}
                       channelName={channel.name}
                       homeTeam={channel.home_team}
                       awayTeam={channel.away_team}
