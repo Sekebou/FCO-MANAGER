@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-// Remote server keeps the native app on the published Lovable web bundle,
-// so JS fixes can go live without another Xcode rebuild.
-const USE_REMOTE_SERVER = true;
+// Set to true for development (hot-reload from Lovable preview)
+// Set to false for production builds (native local files)
+const USE_REMOTE_SERVER = false;
 
 const config: CapacitorConfig = {
   appId: 'com.sekebou.fcomanager',
