@@ -537,7 +537,7 @@ const Tv = () => {
                       controls
                       playsInline
                       autoPlay
-                      crossOrigin="anonymous"
+                      
                       {...({ "x-webkit-airplay": "allow", airplay: "allow" } as any)}
                     />
                   ) : playerUrl ? (
