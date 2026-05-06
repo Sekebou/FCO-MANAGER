@@ -122,30 +122,57 @@ export default function CastButton({ hlsUrl, videoRef, title, poster }: CastButt
     return false;
   };
 
+  const ensureCastReady = async (): Promise<boolean> => {
+    if (window.cast?.framework) return true;
+    const ok = await loadCastSdk();
+    if (!ok || !window.cast?.framework) return false;
+    try {
+      const ctx = window.cast.framework.CastContext.getInstance();
+      ctx.setOptions({
+        receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+      });
+      setCastReady(true);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleChromecast = async () => {
-    if (!hlsUrl || !window.cast?.framework) return false;
+    if (!hlsUrl) return false;
+    const ready = await ensureCastReady();
+    if (!ready) return false;
     try {
       const ctx = window.cast.framework.CastContext.getInstance();
       await ctx.requestSession();
       const session = ctx.getCurrentSession();
       if (!session) return false;
-      const mediaInfo = new window.chrome.cast.media.MediaInfo(hlsUrl, "application/x-mpegURL");
-      mediaInfo.streamType = window.chrome.cast.media.StreamType.LIVE;
-      const meta = new window.chrome.cast.media.GenericMediaMetadata();
+      const cmedia = window.chrome.cast.media;
+      const mediaInfo = new cmedia.MediaInfo(hlsUrl, "application/x-mpegURL");
+      mediaInfo.streamType = cmedia.StreamType.LIVE;
+      // CRITICAL pour Cloudflare Stream : segments fMP4 (sinon audio sans vidéo)
+      try {
+        if (cmedia.HlsSegmentFormat) mediaInfo.hlsSegmentFormat = cmedia.HlsSegmentFormat.FMP4;
+        if (cmedia.HlsVideoSegmentFormat) mediaInfo.hlsVideoSegmentFormat = cmedia.HlsVideoSegmentFormat.FMP4;
+      } catch {}
+      const meta = new cmedia.GenericMediaMetadata();
       if (title) meta.title = title;
       if (poster) meta.images = [new window.chrome.cast.Image(poster)];
       mediaInfo.metadata = meta;
-      const request = new window.chrome.cast.media.LoadRequest(mediaInfo);
+      const request = new cmedia.LoadRequest(mediaInfo);
+      request.autoplay = true;
       await session.loadMedia(request);
       return true;
-    } catch (_) {
+    } catch (e) {
+      console.warn("[Cast] loadMedia failed", e);
       return false;
     }
   };
 
   const handleClick = async () => {
-    // 1. Chromecast if available
-    if (castReady) {
+    // 1. Chromecast (tente toujours, même si SDK pas encore prêt)
+    {
       const ok = await handleChromecast();
       if (ok) return;
     }
