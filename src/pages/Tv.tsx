@@ -29,6 +29,7 @@ interface Channel {
   home_logo: string | null;
   away_logo: string | null;
   match_date: string | null;
+  match_time?: string | null;
   api_fixture_id?: string | null;
   lineup_cache?: any;
   bets_open?: boolean;
