@@ -1,30 +1,30 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Megaphone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const ALLOWED_EMAIL = "boussekeymaxime@gmail.com";
 
 interface Props {
+  userEmail?: string | null;
   channelName?: string;
   homeTeam?: string | null;
   awayTeam?: string | null;
   matchTime?: string | null;
+  client: SupabaseClient;
 }
 
-export default function AnnounceTvButton({ channelName, homeTeam, awayTeam, matchTime }: Props) {
-  const [allowed, setAllowed] = useState(false);
+export default function AnnounceTvButton({
+  userEmail,
+  channelName,
+  homeTeam,
+  awayTeam,
+  matchTime,
+  client,
+}: Props) {
   const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!active) return;
-      setAllowed((data.user?.email || "").toLowerCase() === ALLOWED_EMAIL);
-    });
-    return () => { active = false; };
-  }, []);
-
+  const allowed = (userEmail || "").toLowerCase() === ALLOWED_EMAIL;
   if (!allowed) return null;
 
   const handleClick = async () => {
@@ -34,7 +34,7 @@ export default function AnnounceTvButton({ channelName, homeTeam, awayTeam, matc
       const matchLabel =
         homeTeam && awayTeam ? `${homeTeam} vs ${awayTeam}` : channelName || "Match en direct";
       const timeLabel = matchTime ? ` à ${matchTime}` : "";
-      const { data, error } = await supabase.functions.invoke("send-push-notification", {
+      const { data, error } = await client.functions.invoke("send-push-notification", {
         body: {
           title: "📺 FCO TV est en direct !",
           body: `Diffusion ouverte : ${matchLabel}${timeLabel}. Rejoins-nous sur l'app !`,
@@ -42,7 +42,7 @@ export default function AnnounceTvButton({ channelName, homeTeam, awayTeam, matc
         },
       });
       if (error) throw error;
-      toast.success(`Notification envoyée (${data?.sent ?? 0} appareils)`);
+      toast.success(`Notification envoyée (${(data as any)?.sent ?? 0} appareils)`);
     } catch (e: any) {
       toast.error(e?.message || "Échec de l'envoi");
     } finally {
