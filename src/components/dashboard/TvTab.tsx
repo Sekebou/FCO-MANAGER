@@ -444,7 +444,7 @@ const TvTab = ({ currentUser }: TvTabProps) => {
 
           <TvBettorsCard channelId={channel.id} homeTeam={channel.home_team} awayTeam={channel.away_team} />
 
-          <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={userId} />
+          <TvBettingPanel channel={channel as any} isAdmin={isAdmin} userId={userId} client={supabase} />
 
           {/* Mobile chat toggle */}
           <button onClick={() => setShowChat((v) => !v)}
