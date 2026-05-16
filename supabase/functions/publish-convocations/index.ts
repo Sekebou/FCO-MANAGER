@@ -144,12 +144,19 @@ serve(async (req) => {
         // Ghost event: only notify the creator
         targetUserIds = [userId];
       } else {
-        // Normal event: notify all convoked players
-        const { data: profiles } = await admin
-          .from('profiles')
-          .select('id, player_id')
-          .in('player_id', convokedPlayerIds);
-        targetUserIds = profiles?.map((p: any) => p.id) || [];
+        // Normal event: notify all convoked players.
+        // Filter out non-UUID ids (e.g. "virtual_..." invited guests) otherwise
+        // the .in() query fails silently because profiles.player_id is uuid.
+        const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const realPlayerIds = convokedPlayerIds.filter((id) => UUID_RE.test(id));
+        if (realPlayerIds.length > 0) {
+          const { data: profiles, error: profErr } = await admin
+            .from('profiles')
+            .select('id, player_id')
+            .in('player_id', realPlayerIds);
+          if (profErr) console.error('[publish-convocations] profiles lookup error:', profErr);
+          targetUserIds = profiles?.map((p: any) => p.id) || [];
+        }
       }
 
       if (targetUserIds.length > 0) {
