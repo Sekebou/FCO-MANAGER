@@ -397,7 +397,7 @@ function Empty({ msg }: { msg: string }) {
 
 function Footer({ index, total }: { index: number; total: number }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 18 }}>
+    <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 10 }}>
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
