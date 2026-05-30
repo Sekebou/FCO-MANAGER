@@ -13,7 +13,7 @@ async function fetchTeam(supabase: any, team: string) {
 
   const { data: champs } = await supabase
     .from("championships")
-    .select("id,name,season,fff_standings,team_logos,team")
+    .select("id,name,season,fff_standings,team_logos,team,fff_live_cache")
     .order("created_at", { ascending: false });
 
   const champ =
@@ -27,7 +27,22 @@ async function fetchTeam(supabase: any, team: string) {
 
   if (champ) {
     standings = Array.isArray(champ.fff_standings) ? champ.fff_standings : [];
-    logos = (champ.team_logos as any) || {};
+    logos = { ...((champ.team_logos as any) || {}) };
+
+    // Extract logos from fff_live_cache results
+    const results = champ.fff_live_cache?.results || [];
+    for (const r of results) {
+      for (const m of (r.matchs || [])) {
+        for (const side of ['home', 'away']) {
+          const s = m[side];
+          const url = s?.club?.logo;
+          if (!url) continue;
+          if (s.short_name) logos[s.short_name] = url;
+          if (s.name) logos[s.name] = url;
+        }
+      }
+    }
+
     const { data: cm } = await supabase
       .from("championship_matches")
       .select("*")
