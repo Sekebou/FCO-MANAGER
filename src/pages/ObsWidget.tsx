@@ -345,7 +345,7 @@ function TeamBlock({ name, logo }: { name: string; logo?: string }) {
   );
 }
 
-function Standings({ rows }: { rows: any[] }) {
+function Standings({ rows, logos }: { rows: any[]; logos: Record<string, string> }) {
   if (!rows?.length) return <Empty msg="Classement indisponible" />;
   const top = rows.slice(0, 8);
   return (
@@ -353,6 +353,7 @@ function Standings({ rows }: { rows: any[] }) {
       {top.map((r, i) => {
         const name = r.team || r.name || r.club || "—";
         const isUs = /oisemont/i.test(name);
+        const logo = findLogo(logos, name);
         return (
           <motion.div
             key={i}
@@ -361,8 +362,9 @@ function Standings({ rows }: { rows: any[] }) {
             transition={{ delay: i * 0.04 }}
             style={{
               display: "grid",
-              gridTemplateColumns: "34px 1fr 48px 48px",
+              gridTemplateColumns: "30px 28px 1fr 44px 44px",
               alignItems: "center",
+              gap: 8,
               padding: "8px 12px",
               borderRadius: 10,
               background: isUs ? "rgba(255,184,0,0.25)" : "rgba(255,255,255,0.05)",
@@ -371,6 +373,11 @@ function Standings({ rows }: { rows: any[] }) {
             }}
           >
             <div style={{ opacity: 0.7, fontWeight: 800 }}>{r.rank || r.position || i + 1}</div>
+            {logo ? (
+              <img src={logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />
+            ) : (
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
+            )}
             <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {name}
             </div>
