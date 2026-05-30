@@ -72,8 +72,12 @@ export default function ObsWidget() {
       setIndex((i) => {
         const next = i + 1;
         if (next >= slides.length) {
-          // fin du cycle : on masque définitivement le widget
+          // fin du cycle : pause 10 min puis recommence
           setPaused(true);
+          setTimeout(() => {
+            setPaused(false);
+            setIndex(0);
+          }, 10 * 60 * 1000);
           return i;
         }
         return next;
