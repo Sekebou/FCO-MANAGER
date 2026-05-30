@@ -135,11 +135,11 @@ export default function ObsWidget() {
           {!data ? (
             <Loading />
           ) : slide.view === "next" ? (
-            <NextMatch ev={data.nextMatch} />
+            <NextMatch ev={data.nextMatch} logos={data.logos} />
           ) : slide.view === "last" ? (
             <LastMatch m={data.lastMatch} logos={data.logos} />
           ) : (
-            <Standings rows={data.standings} />
+            <Standings rows={data.standings} logos={data.logos} />
           )}
           <Footer index={index} total={slides.length} />
         </motion.div>
@@ -243,13 +243,27 @@ function fmtDate(d?: string) {
   return `${day}/${m}/${y.slice(2)}`;
 }
 
-function NextMatch({ ev }: { ev: any }) {
+function findLogo(logos: Record<string, string> | undefined, name?: string) {
+  if (!logos || !name) return undefined;
+  if (logos[name]) return logos[name];
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const target = norm(name);
+  const key = Object.keys(logos).find((k) => {
+    const nk = norm(k);
+    return nk === target || nk.includes(target) || target.includes(nk);
+  });
+  return key ? logos[key] : undefined;
+}
+
+function NextMatch({ ev, logos }: { ev: any; logos: Record<string, string> }) {
   if (!ev) return <Empty msg="Aucun match prévu" />;
   const [home, away] = (ev.title || "").split(/vs|VS|-/i).map((s: string) => s.trim());
+  const homeLogo = ev.home_logo || findLogo(logos, home);
+  const awayLogo = ev.away_logo || findLogo(logos, away);
   return (
     <div style={{ padding: "12px 0 6px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-around", gap: 12 }}>
-        <TeamBlock name={home || "Domicile"} logo={ev.home_logo} />
+        <TeamBlock name={home || "Domicile"} logo={homeLogo} />
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: 3 }}>VS</div>
           <div style={{ fontSize: 16, opacity: 0.9, marginTop: 6, fontWeight: 600 }}>
@@ -259,7 +273,7 @@ function NextMatch({ ev }: { ev: any }) {
             <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>{ev.location}</div>
           )}
         </div>
-        <TeamBlock name={away || "Extérieur"} logo={ev.away_logo} />
+        <TeamBlock name={away || "Extérieur"} logo={awayLogo} />
       </div>
     </div>
   );
@@ -267,8 +281,8 @@ function NextMatch({ ev }: { ev: any }) {
 
 function LastMatch({ m, logos }: { m: any; logos: Record<string, string> }) {
   if (!m) return <Empty msg="Aucun match récent" />;
-  const homeLogo = logos?.[m.home_team];
-  const awayLogo = logos?.[m.away_team];
+  const homeLogo = findLogo(logos, m.home_team);
+  const awayLogo = findLogo(logos, m.away_team);
   const isHome = /oisemont/i.test(m.home_team);
   const us = isHome ? m.home_score : m.away_score;
   const them = isHome ? m.away_score : m.home_score;
@@ -280,14 +294,7 @@ function LastMatch({ m, logos }: { m: any; logos: Record<string, string> }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-around", gap: 12 }}>
         <TeamBlock name={m.home_team} logo={homeLogo} />
         <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 48,
-              fontWeight: 900,
-              letterSpacing: 2,
-              lineHeight: 1,
-            }}
-          >
+          <div style={{ fontSize: 48, fontWeight: 900, letterSpacing: 2, lineHeight: 1 }}>
             {m.home_score} <span style={{ opacity: 0.5 }}>-</span> {m.away_score}
           </div>
           <div
@@ -338,7 +345,7 @@ function TeamBlock({ name, logo }: { name: string; logo?: string }) {
   );
 }
 
-function Standings({ rows }: { rows: any[] }) {
+function Standings({ rows, logos }: { rows: any[]; logos: Record<string, string> }) {
   if (!rows?.length) return <Empty msg="Classement indisponible" />;
   const top = rows.slice(0, 8);
   return (
@@ -346,6 +353,7 @@ function Standings({ rows }: { rows: any[] }) {
       {top.map((r, i) => {
         const name = r.team || r.name || r.club || "—";
         const isUs = /oisemont/i.test(name);
+        const logo = findLogo(logos, name);
         return (
           <motion.div
             key={i}
@@ -354,8 +362,9 @@ function Standings({ rows }: { rows: any[] }) {
             transition={{ delay: i * 0.04 }}
             style={{
               display: "grid",
-              gridTemplateColumns: "34px 1fr 48px 48px",
+              gridTemplateColumns: "30px 28px 1fr 44px 44px",
               alignItems: "center",
+              gap: 8,
               padding: "8px 12px",
               borderRadius: 10,
               background: isUs ? "rgba(255,184,0,0.25)" : "rgba(255,255,255,0.05)",
@@ -364,6 +373,11 @@ function Standings({ rows }: { rows: any[] }) {
             }}
           >
             <div style={{ opacity: 0.7, fontWeight: 800 }}>{r.rank || r.position || i + 1}</div>
+            {logo ? (
+              <img src={logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />
+            ) : (
+              <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
+            )}
             <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {name}
             </div>
