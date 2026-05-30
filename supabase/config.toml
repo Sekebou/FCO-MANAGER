@@ -1,1 +1,4 @@
 project_id = "onlqjqaejvxcsinfmptx"
+
+[functions.obs-widget-data]
+verify_jwt = false
