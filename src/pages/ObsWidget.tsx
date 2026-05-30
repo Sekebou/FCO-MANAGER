@@ -281,8 +281,8 @@ function NextMatch({ ev, logos }: { ev: any; logos: Record<string, string> }) {
 
 function LastMatch({ m, logos }: { m: any; logos: Record<string, string> }) {
   if (!m) return <Empty msg="Aucun match récent" />;
-  const homeLogo = logos?.[m.home_team];
-  const awayLogo = logos?.[m.away_team];
+  const homeLogo = findLogo(logos, m.home_team);
+  const awayLogo = findLogo(logos, m.away_team);
   const isHome = /oisemont/i.test(m.home_team);
   const us = isHome ? m.home_score : m.away_score;
   const them = isHome ? m.away_score : m.home_score;
@@ -294,14 +294,7 @@ function LastMatch({ m, logos }: { m: any; logos: Record<string, string> }) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-around", gap: 12 }}>
         <TeamBlock name={m.home_team} logo={homeLogo} />
         <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 48,
-              fontWeight: 900,
-              letterSpacing: 2,
-              lineHeight: 1,
-            }}
-          >
+          <div style={{ fontSize: 48, fontWeight: 900, letterSpacing: 2, lineHeight: 1 }}>
             {m.home_score} <span style={{ opacity: 0.5 }}>-</span> {m.away_score}
           </div>
           <div
