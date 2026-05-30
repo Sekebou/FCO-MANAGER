@@ -68,7 +68,9 @@ Deno.serve(async (req) => {
         : null,
       standings,
       logos,
-      lastMatches: matches.filter((m) => m.played).slice(-5),
+      lastMatches: matches
+        .filter((m) => m.played && /oisemont/i.test(`${m.home_team} ${m.away_team}`))
+        .slice(-5),
       nextMatch: next,
       lastMatch: last,
       updatedAt: new Date().toISOString(),
