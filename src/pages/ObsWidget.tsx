@@ -347,36 +347,36 @@ function TeamBlock({ name, logo }: { name: string; logo?: string }) {
 
 function Standings({ rows, logos }: { rows: any[]; logos: Record<string, string> }) {
   if (!rows?.length) return <Empty msg="Classement indisponible" />;
-  const top = rows.slice(0, 8);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      {top.map((r, i) => {
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {rows.map((r, i) => {
         const name = r.team || r.name || r.club || "—";
         const isUs = /oisemont/i.test(name);
         const logo = findLogo(logos, name);
         return (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
+            transition={{ delay: i * 0.02 }}
             style={{
               display: "grid",
-              gridTemplateColumns: "30px 28px 1fr 44px 44px",
+              gridTemplateColumns: "22px 20px 1fr 32px 32px",
               alignItems: "center",
-              gap: 8,
-              padding: "8px 12px",
-              borderRadius: 10,
-              background: isUs ? "rgba(255,184,0,0.25)" : "rgba(255,255,255,0.05)",
+              gap: 6,
+              padding: "4px 8px",
+              borderRadius: 7,
+              background: isUs ? "rgba(255,184,0,0.3)" : "rgba(255,255,255,0.05)",
               fontWeight: isUs ? 900 : 600,
-              fontSize: 15,
+              fontSize: 12,
+              lineHeight: 1.1,
             }}
           >
             <div style={{ opacity: 0.7, fontWeight: 800 }}>{r.rank || r.position || i + 1}</div>
             {logo ? (
-              <img src={logo} alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />
+              <img src={logo} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
             ) : (
-              <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
             )}
             <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {name}
