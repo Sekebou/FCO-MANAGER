@@ -119,8 +119,9 @@ export default function ObsWidget() {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           style={{
             width: "min(720px, 100%)",
-            borderRadius: 28,
-            padding: 28,
+            maxHeight: "100%",
+            borderRadius: 20,
+            padding: "14px 18px",
             background:
               "linear-gradient(135deg, rgba(14,43,160,0.95), rgba(8,20,70,0.95))",
             boxShadow:
@@ -188,22 +189,22 @@ function Header({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 18,
+        marginBottom: 10,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: 14,
+            width: 34,
+            height: 34,
+            borderRadius: 10,
             background: "linear-gradient(135deg, #ffb800, #ff7a00)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontWeight: 900,
             color: "#1a1a1a",
-            fontSize: 22,
+            fontSize: 16,
           }}
         >
           {team}
@@ -211,20 +212,20 @@ function Header({
         <div>
           <div
             style={{
-              fontSize: 13,
+              fontSize: 10,
               opacity: 0.75,
-              letterSpacing: 1.2,
+              letterSpacing: 1,
               textTransform: "uppercase",
               fontWeight: 700,
             }}
           >
             FCO • Équipe {team}
           </div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>{view ? titles[view] : ""}</div>
+          <div style={{ fontSize: 17, fontWeight: 900, lineHeight: 1.1 }}>{view ? titles[view] : ""}</div>
         </div>
       </div>
       {championship && (
-        <div style={{ textAlign: "right", fontSize: 13, opacity: 0.8, fontWeight: 600 }}>
+        <div style={{ textAlign: "right", fontSize: 10, opacity: 0.8, fontWeight: 600, lineHeight: 1.2 }}>
           <div>{championship.name}</div>
           <div style={{ opacity: 0.7 }}>{championship.season}</div>
         </div>
@@ -396,7 +397,7 @@ function Empty({ msg }: { msg: string }) {
 
 function Footer({ index, total }: { index: number; total: number }) {
   return (
-    <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 18 }}>
+    <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 10 }}>
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}
