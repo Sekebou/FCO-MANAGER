@@ -62,11 +62,41 @@ async function fetchTeam(supabase: any, team: string) {
   );
   const next = teamEvents.find((e: any) => e.date >= today) || null;
 
-  // Last played match WITH score (championship_matches filtered to oisemont)
-  const playedOisemont = matches.filter(
-    (m: any) => m.played && /oisemont/i.test(`${m.home_team} ${m.away_team}`)
-  );
-  const lastPlayed = playedOisemont[playedOisemont.length - 1] || null;
+  // Last played match WITH score — source from fff_live_cache (most accurate / up-to-date)
+  let lastPlayed: any = null;
+  const cacheResults = champ?.fff_live_cache?.results || [];
+  const cacheMatches: any[] = [];
+  for (const r of cacheResults) {
+    for (const m of (r.matchs || [])) {
+      const homeName = m?.home?.short_name || m?.home?.name || "";
+      const awayName = m?.away?.short_name || m?.away?.name || "";
+      const hs = m?.home_score;
+      const as = m?.away_score;
+      const date = (m?.date || "").slice(0, 10);
+      if (!/oisemont/i.test(`${homeName} ${awayName}`)) continue;
+      if (hs == null || as == null) continue;
+      if (!date || date > today) continue;
+      cacheMatches.push({
+        date,
+        home_team: homeName,
+        away_team: awayName,
+        home_score: Number(hs),
+        away_score: Number(as),
+        played: true,
+      });
+    }
+  }
+  cacheMatches.sort((a, b) => a.date.localeCompare(b.date));
+  lastPlayed = cacheMatches[cacheMatches.length - 1] || null;
+
+  // Fallback to championship_matches if cache has nothing
+  if (!lastPlayed) {
+    const playedOisemont = matches.filter(
+      (m: any) => m.played && /oisemont/i.test(`${m.home_team} ${m.away_team}`)
+    );
+    playedOisemont.sort((a: any, b: any) => (a.date || "").localeCompare(b.date || ""));
+    lastPlayed = playedOisemont[playedOisemont.length - 1] || null;
+  }
 
   return {
     team,
