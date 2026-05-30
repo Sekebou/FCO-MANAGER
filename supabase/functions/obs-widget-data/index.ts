@@ -8,29 +8,18 @@ const cors = {
   "Content-Type": "application/json",
 };
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-
-  const url = new URL(req.url);
-  const team = url.searchParams.get("team") || "A"; // A | B | C
-
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
-
+async function fetchTeam(supabase: any, team: string) {
   const today = new Date().toISOString().slice(0, 10);
 
-  // Championnat actif pour cette équipe (par suffixe dans le nom)
   const { data: champs } = await supabase
     .from("championships")
     .select("id,name,season,fff_standings,team_logos,team")
     .order("created_at", { ascending: false });
 
   const champ =
-    champs?.find((c) => (c.team || "").toUpperCase() === team.toUpperCase()) ||
-    champs?.find((c) => new RegExp(`\\b${team}\\b`, "i").test(c.name)) ||
-    champs?.[0];
+    champs?.find((c: any) => (c.team || "").toUpperCase() === team.toUpperCase()) ||
+    champs?.find((c: any) => new RegExp(`\\b${team}\\b`, "i").test(c.name)) ||
+    null;
 
   let standings: any[] = [];
   let matches: any[] = [];
@@ -47,7 +36,6 @@ Deno.serve(async (req) => {
     matches = cm || [];
   }
 
-  // Prochain & dernier match (events ciblant l'équipe)
   const { data: events } = await supabase
     .from("events")
     .select("id,title,date,time,type,location,home_logo,away_logo,team")
@@ -55,26 +43,54 @@ Deno.serve(async (req) => {
     .order("date", { ascending: true });
 
   const teamEvents = (events || []).filter(
-    (e) => !e.team || e.team.toUpperCase().endsWith(team.toUpperCase())
+    (e: any) => !e.team || e.team.toUpperCase().endsWith(team.toUpperCase())
   );
-  const next = teamEvents.find((e) => e.date >= today) || null;
-  const last = [...teamEvents].reverse().find((e) => e.date < today) || null;
+  const next = teamEvents.find((e: any) => e.date >= today) || null;
+
+  // Last played match WITH score (championship_matches filtered to oisemont)
+  const playedOisemont = matches.filter(
+    (m: any) => m.played && /oisemont/i.test(`${m.home_team} ${m.away_team}`)
+  );
+  const lastPlayed = playedOisemont[playedOisemont.length - 1] || null;
+
+  return {
+    team,
+    championship: champ ? { name: champ.name, season: champ.season } : null,
+    standings,
+    logos,
+    nextMatch: next,
+    lastMatch: lastPlayed,
+  };
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  const url = new URL(req.url);
+  const teamParam = url.searchParams.get("team");
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  if (teamParam) {
+    const data = await fetchTeam(supabase, teamParam.toUpperCase());
+    return new Response(
+      JSON.stringify({ ...data, updatedAt: new Date().toISOString() }),
+      { headers: cors }
+    );
+  }
+
+  // All teams
+  const [a, b, c] = await Promise.all([
+    fetchTeam(supabase, "A"),
+    fetchTeam(supabase, "B"),
+    fetchTeam(supabase, "C"),
+  ]);
 
   return new Response(
-    JSON.stringify({
-      team,
-      championship: champ
-        ? { name: champ.name, season: champ.season }
-        : null,
-      standings,
-      logos,
-      lastMatches: matches
-        .filter((m) => m.played && /oisemont/i.test(`${m.home_team} ${m.away_team}`))
-        .slice(-5),
-      nextMatch: next,
-      lastMatch: last,
-      updatedAt: new Date().toISOString(),
-    }),
+    JSON.stringify({ teams: { A: a, B: b, C: c }, updatedAt: new Date().toISOString() }),
     { headers: cors }
   );
 });
