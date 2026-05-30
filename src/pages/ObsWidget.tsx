@@ -72,12 +72,9 @@ export default function ObsWidget() {
       setIndex((i) => {
         const next = i + 1;
         if (next >= slides.length) {
+          // fin du cycle : on masque définitivement le widget
           setPaused(true);
-          setTimeout(() => {
-            setPaused(false);
-            setIndex(0);
-          }, pauseMinutes * 60 * 1000);
-          return i; // reste sur la dernière slide pendant la pause
+          return i;
         }
         return next;
       });
