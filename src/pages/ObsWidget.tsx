@@ -243,13 +243,27 @@ function fmtDate(d?: string) {
   return `${day}/${m}/${y.slice(2)}`;
 }
 
-function NextMatch({ ev }: { ev: any }) {
+function findLogo(logos: Record<string, string> | undefined, name?: string) {
+  if (!logos || !name) return undefined;
+  if (logos[name]) return logos[name];
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const target = norm(name);
+  const key = Object.keys(logos).find((k) => {
+    const nk = norm(k);
+    return nk === target || nk.includes(target) || target.includes(nk);
+  });
+  return key ? logos[key] : undefined;
+}
+
+function NextMatch({ ev, logos }: { ev: any; logos: Record<string, string> }) {
   if (!ev) return <Empty msg="Aucun match prévu" />;
   const [home, away] = (ev.title || "").split(/vs|VS|-/i).map((s: string) => s.trim());
+  const homeLogo = ev.home_logo || findLogo(logos, home);
+  const awayLogo = ev.away_logo || findLogo(logos, away);
   return (
     <div style={{ padding: "12px 0 6px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-around", gap: 12 }}>
-        <TeamBlock name={home || "Domicile"} logo={ev.home_logo} />
+        <TeamBlock name={home || "Domicile"} logo={homeLogo} />
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: 3 }}>VS</div>
           <div style={{ fontSize: 16, opacity: 0.9, marginTop: 6, fontWeight: 600 }}>
@@ -259,7 +273,7 @@ function NextMatch({ ev }: { ev: any }) {
             <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>{ev.location}</div>
           )}
         </div>
-        <TeamBlock name={away || "Extérieur"} logo={ev.away_logo} />
+        <TeamBlock name={away || "Extérieur"} logo={awayLogo} />
       </div>
     </div>
   );
