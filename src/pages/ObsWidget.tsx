@@ -135,11 +135,11 @@ export default function ObsWidget() {
           {!data ? (
             <Loading />
           ) : slide.view === "next" ? (
-            <NextMatch ev={data.nextMatch} />
+            <NextMatch ev={data.nextMatch} logos={data.logos} />
           ) : slide.view === "last" ? (
             <LastMatch m={data.lastMatch} logos={data.logos} />
           ) : (
-            <Standings rows={data.standings} />
+            <Standings rows={data.standings} logos={data.logos} />
           )}
           <Footer index={index} total={slides.length} />
         </motion.div>
