@@ -18,6 +18,7 @@ const Support = lazy(() => import("./pages/Support"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Tv = lazy(() => import("./pages/Tv"));
+const ObsWidget = lazy(() => import("./pages/ObsWidget"));
 
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/tv" element={<Tv />} />
+            <Route path="/obs" element={<ObsWidget />} />
             
             
             <Route path="/auth" element={
