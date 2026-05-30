@@ -111,39 +111,41 @@ export default function ObsWidget() {
       }}
     >
       <AnimatePresence mode="wait">
-        <motion.div
-          key={`${slide?.team}-${slide?.view}-${paused ? "p" : "a"}`}
-          initial={{ opacity: 0, x: 60, scale: 0.95 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: -60, scale: 0.95 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            width: "min(720px, 100%)",
-            maxHeight: "100%",
-            borderRadius: 20,
-            padding: "14px 18px",
-            background:
-              "linear-gradient(135deg, rgba(14,43,160,0.95), rgba(8,20,70,0.95))",
-            boxShadow:
-              "0 30px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08) inset",
-            backdropFilter: "blur(18px)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <ShineBar />
-          <Header team={slide?.team} championship={data?.championship} view={slide?.view} />
-          {!data ? (
-            <Loading />
-          ) : slide.view === "next" ? (
-            <NextMatch ev={data.nextMatch} logos={data.logos} />
-          ) : slide.view === "last" ? (
-            <LastMatch m={data.lastMatch} logos={data.logos} />
-          ) : (
-            <Standings rows={data.standings} logos={data.logos} />
-          )}
-          <Footer index={index} total={slides.length} />
-        </motion.div>
+        {!paused && (
+          <motion.div
+            key={`${slide?.team}-${slide?.view}`}
+            initial={{ opacity: 0, x: 60, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -60, scale: 0.95 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              width: "min(720px, 100%)",
+              maxHeight: "100%",
+              borderRadius: 20,
+              padding: "14px 18px",
+              background:
+                "linear-gradient(135deg, rgba(14,43,160,0.95), rgba(8,20,70,0.95))",
+              boxShadow:
+                "0 30px 60px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08) inset",
+              backdropFilter: "blur(18px)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <ShineBar />
+            <Header team={slide?.team} championship={data?.championship} view={slide?.view} />
+            {!data ? (
+              <Loading />
+            ) : slide.view === "next" ? (
+              <NextMatch ev={data.nextMatch} logos={data.logos} />
+            ) : slide.view === "last" ? (
+              <LastMatch m={data.lastMatch} logos={data.logos} />
+            ) : (
+              <Standings rows={data.standings} logos={data.logos} />
+            )}
+            <Footer index={index} total={slides.length} />
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
