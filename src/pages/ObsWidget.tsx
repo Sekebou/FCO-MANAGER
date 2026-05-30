@@ -119,8 +119,9 @@ export default function ObsWidget() {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           style={{
             width: "min(720px, 100%)",
-            borderRadius: 28,
-            padding: 28,
+            maxHeight: "100%",
+            borderRadius: 20,
+            padding: "14px 18px",
             background:
               "linear-gradient(135deg, rgba(14,43,160,0.95), rgba(8,20,70,0.95))",
             boxShadow:
