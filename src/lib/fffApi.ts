@@ -174,6 +174,12 @@ export interface FFFCompetition {
   competitionName: string;
 }
 
+export const FCO_DEFAULT_COMPETITIONS: FFFCompetition[] = [
+  { equipe: 'Équipe A', equipeCode: 1, category: 'Seniors', competition: null, cpNo: 443358, phase: 1, poule: 3, competitionName: 'Seniors D2' },
+  { equipe: 'Équipe B', equipeCode: 2, category: 'Seniors', competition: null, cpNo: 443360, phase: 1, poule: 1, competitionName: 'Seniors D4' },
+  { equipe: 'Équipe C', equipeCode: 3, category: 'Seniors', competition: null, cpNo: 443362, phase: 1, poule: 1, competitionName: 'Seniors D6' },
+];
+
 /** Map FFF equipe code (1,2,3) to team letter (A,B,C) */
 export function equipeCodeToTeamLetter(code: number): string {
   const map: Record<number, string> = { 1: 'A', 2: 'B', 3: 'C' };
@@ -199,7 +205,7 @@ export function getAllCompetitions(equipes: any[]): FFFCompetition[] {
       });
     }
   }
-  return result;
+  return result.length > 0 ? result : FCO_DEFAULT_COMPETITIONS;
 }
 
 /** Encode les paramètres API dans fff_url pour stockage en base */
