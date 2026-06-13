@@ -12,7 +12,7 @@ import {
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
   extractTeamLogosFromResults,
   encodeFFFApiRef, decodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship, getOisemontDisplayName,
-  getTousMatchsAvenir, getTousResultats, clearFFFCache,
+  getTousMatchsAvenir, getTousResultats, clearFFFCache, FCO_DEFAULT_COMPETITIONS,
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
 import { toast } from 'sonner';
@@ -222,12 +222,13 @@ const ChampionnatTab: React.FC<Props> = ({
     setIsLoadingEquipes(true);
     getEquipes(OISEMONT_CL_NO)
       .then((data) => {
-        const comps = getAllCompetitions(Array.isArray(data) ? data : data?.equipes || []);
+        const comps = getAllCompetitions(Array.isArray(data) ? data : data?.['hydra:member'] || data?.equipes || []);
         setFffCompetitions(comps);
       })
       .catch((err) => {
         console.error('Error loading FFF equipes:', err);
-        toast.error('Impossible de charger les équipes FFF');
+        setFffCompetitions(FCO_DEFAULT_COMPETITIONS);
+        toast.info('Équipes A/B/C chargées en secours');
       })
       .finally(() => setIsLoadingEquipes(false));
   }, [showAddChamp]);
@@ -358,9 +359,14 @@ const ChampionnatTab: React.FC<Props> = ({
         let champParams: { cpNo: number; phase: number; poule: number } | null = customParams;
         
         if (!champParams && mapping) {
-          const equipesData = await getEquipes(OISEMONT_CL_NO);
-          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
-          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+          const fallback = FCO_DEFAULT_COMPETITIONS.find(c => c.equipeCode === mapping.code);
+          try {
+            const equipesData = await getEquipes(OISEMONT_CL_NO);
+            const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.['hydra:member'] || equipesData?.equipes || [];
+            champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code) || (fallback ? { cpNo: fallback.cpNo, phase: fallback.phase, poule: fallback.poule } : null);
+          } catch {
+            champParams = fallback ? { cpNo: fallback.cpNo, phase: fallback.phase, poule: fallback.poule } : null;
+          }
         }
         
         if (!champParams) {
