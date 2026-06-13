@@ -12,7 +12,7 @@ import {
   mapClassementToStandings, mapMatchesToScrapedMatches, extractTeamLogosFromClassement,
   extractTeamLogosFromResults,
   encodeFFFApiRef, decodeFFFApiRef, OISEMONT_CL_NO, getTeamChampionship, getOisemontDisplayName,
-  getTousMatchsAvenir, getTousResultats, clearFFFCache,
+  getTousMatchsAvenir, getTousResultats, clearFFFCache, FCO_DEFAULT_COMPETITIONS,
   type ScrapedMatch, type ScrapedStanding, type FFFCompetition, type FFFMonthGroup, type FFFLiveMatch
 } from '@/lib/fffApi';
 import { toast } from 'sonner';
@@ -222,12 +222,13 @@ const ChampionnatTab: React.FC<Props> = ({
     setIsLoadingEquipes(true);
     getEquipes(OISEMONT_CL_NO)
       .then((data) => {
-        const comps = getAllCompetitions(Array.isArray(data) ? data : data?.equipes || []);
+        const comps = getAllCompetitions(Array.isArray(data) ? data : data?.['hydra:member'] || data?.equipes || []);
         setFffCompetitions(comps);
       })
       .catch((err) => {
         console.error('Error loading FFF equipes:', err);
-        toast.error('Impossible de charger les équipes FFF');
+        setFffCompetitions(FCO_DEFAULT_COMPETITIONS);
+        toast.info('Équipes A/B/C chargées en secours');
       })
       .finally(() => setIsLoadingEquipes(false));
   }, [showAddChamp]);
@@ -240,19 +241,12 @@ const ChampionnatTab: React.FC<Props> = ({
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
     const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h local cache (data changes only on Sundays)
 
-    // Helper: check if a cache has enough logos (at least 50% of teams)
-    const cacheHasLogos = (cache: any): boolean => {
+    // Helper: accept cached rankings even when FFF logos are missing/unavailable
+    const cacheHasClassement = (cache: any): boolean => {
       if (!cache?.classement || !Array.isArray(cache.classement)) return false;
       const totalTeams = cache.classement.length;
       if (totalTeams === 0) return false;
-      let logosCount = 0;
-      const cacheLogos = cache.logos || {};
-      for (const entry of cache.classement) {
-        const clNo = entry.equipe?.club?.cl_no;
-        const logo = entry.equipe?.club?.logo;
-        if ((clNo && logo) || (clNo && cacheLogos[clNo])) logosCount++;
-      }
-      return logosCount >= totalTeams * 0.5;
+      return true;
     };
 
     // Skip caches if force refresh requested
@@ -262,7 +256,7 @@ const ChampionnatTab: React.FC<Props> = ({
         const cached = localStorage.getItem(LOCAL_CACHE_KEY);
         if (cached) {
           const { data: cache, ts } = JSON.parse(cached);
-          if (Date.now() - ts < LOCAL_CACHE_TTL && cache && cacheHasLogos(cache)) {
+          if (Date.now() - ts < LOCAL_CACHE_TTL && cache && cacheHasClassement(cache)) {
             if (cache.classement && Array.isArray(cache.classement)) {
               setLiveClassement(mapClassementToStandings(cache.classement));
               const logosFromClassement: Record<number, string> = {};
@@ -313,7 +307,7 @@ const ChampionnatTab: React.FC<Props> = ({
     const teamChamp = championships.find(c => (c.team || 'A') === selectedTeam && c.fffLiveCache && c.fffRefreshedAt);
     const cacheAge = teamChamp?.fffRefreshedAt ? Date.now() - new Date(teamChamp.fffRefreshedAt).getTime() : Infinity;
     const CACHE_MAX_AGE = 6 * 24 * 60 * 60 * 1000; // 6 jours (données FFF mises à jour le dimanche soir)
-    const shouldUseDbCache = forceRefreshLive === 0 && !!teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE && cacheHasLogos(teamChamp.fffLiveCache);
+    const shouldUseDbCache = forceRefreshLive === 0 && !!teamChamp?.fffLiveCache && cacheAge < CACHE_MAX_AGE && cacheHasClassement(teamChamp.fffLiveCache);
 
     if (shouldUseDbCache) {
       // Use DB cache — zero API calls!
@@ -358,9 +352,14 @@ const ChampionnatTab: React.FC<Props> = ({
         let champParams: { cpNo: number; phase: number; poule: number } | null = customParams;
         
         if (!champParams && mapping) {
-          const equipesData = await getEquipes(OISEMONT_CL_NO);
-          const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.equipes || [];
-          champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code);
+          const fallback = FCO_DEFAULT_COMPETITIONS.find(c => c.equipeCode === mapping.code);
+          try {
+            const equipesData = await getEquipes(OISEMONT_CL_NO);
+            const equipes = Array.isArray(equipesData) ? equipesData : equipesData?.['hydra:member'] || equipesData?.equipes || [];
+            champParams = getTeamChampionship(equipes, mapping.categoryCode, mapping.code) || (fallback ? { cpNo: fallback.cpNo, phase: fallback.phase, poule: fallback.poule } : null);
+          } catch {
+            champParams = fallback ? { cpNo: fallback.cpNo, phase: fallback.phase, poule: fallback.poule } : null;
+          }
         }
         
         if (!champParams) {

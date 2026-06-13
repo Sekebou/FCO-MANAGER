@@ -4,7 +4,7 @@ import NativeDatePicker from '@/components/ui/native-date-picker';
 import NativeTimePicker from '@/components/ui/native-time-picker';
 import LocationAutocomplete from '@/components/ui/location-autocomplete';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { getEquipes, getAllCompetitions, getTousMatchsAvenir, equipeCodeToTeamLetter, OISEMONT_CL_NO, getOisemontDisplayName, type FFFCompetition, type FFFMonthGroup } from '@/lib/fffApi';
+import { getEquipes, getAllCompetitions, getTousMatchsAvenir, equipeCodeToTeamLetter, OISEMONT_CL_NO, getOisemontDisplayName, FCO_DEFAULT_COMPETITIONS, type FFFCompetition, type FFFMonthGroup } from '@/lib/fffApi';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -72,11 +72,14 @@ const AddEventForm = ({ onSubmit, onClose, isDirigeant, isAdminPlus, currentUser
     if (matchMode !== 'auto' || fffEquipes.length > 0) return;
     setLoadingEquipes(true);
     getEquipes(OISEMONT_CL_NO).then(data => {
-      const equipes = Array.isArray(data) ? data : data?.['hydra:member'] || [];
+      const equipes = Array.isArray(data) ? data : data?.['hydra:member'] || data?.equipes || [];
       setFffEquipes(equipes);
       const comps = getAllCompetitions(equipes);
       setFffCompetitions(comps);
-    }).catch(() => {}).finally(() => setLoadingEquipes(false));
+    }).catch(() => {
+      setFffEquipes([]);
+      setFffCompetitions(FCO_DEFAULT_COMPETITIONS);
+    }).finally(() => setLoadingEquipes(false));
   }, [matchMode]);
 
   // Load matches when competition selected — use getTousMatchsAvenir
