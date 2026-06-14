@@ -292,19 +292,15 @@
     box-shadow: var(--shadow-elevated), inset 0 1px 0 hsl(0 0% 100% / 0.7);
   }
 
-  .gold-accent {
-    color: hsl(var(--gold));
-  }
-  .bg-gold {
-    background: var(--gradient-gold);
-    color: hsl(var(--gold-foreground));
-  }
   .bg-royal {
     background: var(--gradient-royal);
     color: hsl(var(--primary-foreground));
   }
+  .bg-sky-grad {
+    background: var(--gradient-sky);
+    color: hsl(var(--primary-foreground));
+  }
   .shadow-royal { box-shadow: var(--shadow-royal); }
-  .shadow-gold { box-shadow: var(--shadow-gold); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-elevated { box-shadow: var(--shadow-elevated); }
 
