@@ -287,8 +287,30 @@
   }
 
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-sm;
+    @apply bg-card/75 backdrop-blur-2xl border border-white/40;
+    box-shadow: var(--shadow-soft), inset 0 1px 0 hsl(0 0% 100% / 0.6);
   }
+
+  .glass-card-elevated {
+    @apply bg-card/85 backdrop-blur-2xl border border-white/50 rounded-2xl;
+    box-shadow: var(--shadow-elevated), inset 0 1px 0 hsl(0 0% 100% / 0.7);
+  }
+
+  .gold-accent {
+    color: hsl(var(--gold));
+  }
+  .bg-gold {
+    background: var(--gradient-gold);
+    color: hsl(var(--gold-foreground));
+  }
+  .bg-royal {
+    background: var(--gradient-royal);
+    color: hsl(var(--primary-foreground));
+  }
+  .shadow-royal { box-shadow: var(--shadow-royal); }
+  .shadow-gold { box-shadow: var(--shadow-gold); }
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
 
   /* ─── App Header — bleu royal en clair, navy profond en sombre ─── */
   .app-header {
