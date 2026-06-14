@@ -239,7 +239,7 @@ const ChampionnatTab: React.FC<Props> = ({
     let cancelled = false;
 
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
-    const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h local cache (data changes only on Sundays)
+    const LOCAL_CACHE_TTL = 6 * 24 * 60 * 60 * 1000; // 6j local cache (FFF refresh dimanche soir)
 
     // Helper: accept cached rankings even when FFF logos are missing/unavailable
     const cacheHasClassement = (cache: any): boolean => {
