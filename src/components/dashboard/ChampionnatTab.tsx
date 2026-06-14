@@ -235,8 +235,9 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Auto-fetch live classement AND matches — use localStorage > DB cache > API
   useEffect(() => {
-    if (!dataLoaded) return; // Wait for DB data before deciding cache vs API
     let cancelled = false;
+    // Note: localStorage cache shows instantly; DB cache fallback waits for dataLoaded
+
 
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
     const LOCAL_CACHE_TTL = 6 * 24 * 60 * 60 * 1000; // 6j local cache (FFF refresh dimanche soir)
