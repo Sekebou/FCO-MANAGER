@@ -235,11 +235,12 @@ const ChampionnatTab: React.FC<Props> = ({
 
   // Auto-fetch live classement AND matches — use localStorage > DB cache > API
   useEffect(() => {
-    if (!dataLoaded) return; // Wait for DB data before deciding cache vs API
     let cancelled = false;
+    // Note: localStorage cache shows instantly; DB cache fallback waits for dataLoaded
+
 
     const LOCAL_CACHE_KEY = `fco_champ_live_${selectedTeam}`;
-    const LOCAL_CACHE_TTL = 2 * 60 * 60 * 1000; // 2h local cache (data changes only on Sundays)
+    const LOCAL_CACHE_TTL = 6 * 24 * 60 * 60 * 1000; // 6j local cache (FFF refresh dimanche soir)
 
     // Helper: accept cached rankings even when FFF logos are missing/unavailable
     const cacheHasClassement = (cache: any): boolean => {
@@ -275,6 +276,9 @@ const ChampionnatTab: React.FC<Props> = ({
       // Clear local cache on force refresh
       try { localStorage.removeItem(LOCAL_CACHE_KEY); } catch {}
     }
+
+    // From here, we need DB championships data for cache fallback / API fetch
+    if (!dataLoaded) return;
 
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
