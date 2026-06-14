@@ -163,42 +163,47 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
                 </div>
 
                 <div className="flex items-center justify-around gap-2">
-                  <div className="flex flex-col items-center flex-1 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 overflow-hidden shrink-0">
-                      {nextMatch.homeLogo ? (
-                        <img src={nextMatch.homeLogo} alt="" className="w-12 h-12 object-contain" />
-                      ) : (
-                        <Trophy size={26} className="text-white/70" />
-                      )}
-                    </div>
-                    <span className="text-[11px] font-bold tracking-tight uppercase truncate max-w-[110px]">
-                      {nextMatch.homeTeam || 'FCO'}
-                    </span>
-                  </div>
+                  {(() => {
+                    const parts = nextMatch.title.split(/\s+(?:vs\.?|-)\s+/i);
+                    const home = parts[0]?.trim() || 'FCO';
+                    const away = parts[1]?.trim() || nextMatch.title;
+                    return (
+                      <>
+                        <div className="flex flex-col items-center flex-1 text-center">
+                          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 overflow-hidden shrink-0">
+                            {nextMatch.homeLogo ? (
+                              <img src={nextMatch.homeLogo} alt="" className="w-12 h-12 object-contain" />
+                            ) : (
+                              <Trophy size={26} className="text-white/70" />
+                            )}
+                          </div>
+                          <span className="text-[11px] font-bold tracking-tight uppercase truncate max-w-[110px]">{home}</span>
+                        </div>
 
-                  <div className="flex flex-col items-center px-2">
-                    {getCountdown(nextMatch.date, nextMatch.time) ? (
-                      <div className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 text-[11px] font-black tracking-wider">
-                        {getCountdown(nextMatch.date, nextMatch.time)}
-                      </div>
-                    ) : (
-                      <div className="text-xs font-black text-white/20 italic">VS</div>
-                    )}
-                    <div className="h-6 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mt-2" />
-                  </div>
+                        <div className="flex flex-col items-center px-2">
+                          {getCountdown(nextMatch.date, nextMatch.time) ? (
+                            <div className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 text-[11px] font-black tracking-wider">
+                              {getCountdown(nextMatch.date, nextMatch.time)}
+                            </div>
+                          ) : (
+                            <div className="text-xs font-black text-white/20 italic">VS</div>
+                          )}
+                          <div className="h-6 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mt-2" />
+                        </div>
 
-                  <div className="flex flex-col items-center flex-1 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 overflow-hidden shrink-0">
-                      {nextMatch.awayLogo ? (
-                        <img src={nextMatch.awayLogo} alt="" className="w-12 h-12 object-contain" />
-                      ) : (
-                        <Trophy size={26} className="text-white/40" />
-                      )}
-                    </div>
-                    <span className="text-[11px] font-bold tracking-tight uppercase truncate max-w-[110px]">
-                      {nextMatch.awayTeam || 'Adversaire'}
-                    </span>
-                  </div>
+                        <div className="flex flex-col items-center flex-1 text-center">
+                          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 overflow-hidden shrink-0">
+                            {nextMatch.awayLogo ? (
+                              <img src={nextMatch.awayLogo} alt="" className="w-12 h-12 object-contain" />
+                            ) : (
+                              <Trophy size={26} className="text-white/40" />
+                            )}
+                          </div>
+                          <span className="text-[11px] font-bold tracking-tight uppercase truncate max-w-[110px]">{away}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {myConvoked && (
