@@ -415,6 +415,20 @@ const ChampionnatTab: React.FC<Props> = ({
               const logo = entry.equipe?.club?.logo;
               if (clNo && logo) liveLogosCache[clNo] = logo;
             }
+            // Also harvest logos from results + upcoming (classement_journees has no logos)
+            const harvestFromMatches = (arr: any) => {
+              if (!Array.isArray(arr)) return;
+              for (const r of arr) {
+                const matchs = r?.matchs || r?.matches || [];
+                for (const m of matchs) {
+                  const h = m?.home?.club; const a = m?.away?.club;
+                  if (h?.cl_no && h?.logo) liveLogosCache[h.cl_no] = h.logo;
+                  if (a?.cl_no && a?.logo) liveLogosCache[a.cl_no] = a.logo;
+                }
+              }
+            };
+            harvestFromMatches(results);
+            harvestFromMatches(upcoming);
             if (Object.keys(liveLogosCache).length > 0) liveCache.logos = liveLogosCache;
             // Save to localStorage
             try { localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ data: liveCache, ts: Date.now() })); } catch {}
