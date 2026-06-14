@@ -2,11 +2,12 @@ import React, { useMemo } from 'react';
 import {
   ChevronRight, Clock, MapPin, Trophy, Dumbbell,
   Target, Shield, Swords, Users,
-  Calendar, Newspaper, BarChart3, Bell
+  Calendar, Newspaper, BarChart3
 } from 'lucide-react';
 import type { Player, Event, NewsItem, Member } from '@/pages/Dashboard';
 import type { AppUser } from '@/contexts/AuthContext';
 import { getNowParis, isEventTerminatedParis } from '@/lib/dateUtils';
+import footballHeroBg from '@/assets/football-hero-bg.jpg';
 
 interface HomeTabProps {
   currentUser: AppUser | null;
@@ -22,12 +23,9 @@ const formatDate = (d: string) => {
   return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 };
 
-const getDayParts = (d: string) => {
+const formatDateLong = (d: string) => {
   const date = new Date(d);
-  return {
-    day: date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''),
-    num: date.getDate().toString().padStart(2, '0'),
-  };
+  return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 };
 
 const getCountdown = (dateStr: string, timeStr?: string | null): string | null => {
@@ -55,7 +53,6 @@ function getGreeting(): string {
   return 'Bonsoir';
 }
 
-/* ──────────────── Bento Glass HomeTab — Saison 2026 ──────────────── */
 const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, members, onNavigate }) => {
   const isCoach = currentUser && ['admin+', 'admin', 'entraineur'].includes(currentUser.role);
 
@@ -72,8 +69,7 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
     [events]
   );
 
-  const nextMatch = useMemo(() => upcomingEvents.find(e => e.type === 'match') || null, [upcomingEvents]);
-  const otherMatches = useMemo(() => upcomingEvents.filter(e => e.type === 'match').slice(1, 3), [upcomingEvents]);
+  const nextMatches = useMemo(() => upcomingEvents.filter(e => e.type === 'match').slice(0, 3), [upcomingEvents]);
   const nextTrainings = useMemo(() => upcomingEvents.filter(e => e.type === 'training').slice(0, 2), [upcomingEvents]);
 
   const myPlayer = useMemo(() => {
@@ -86,276 +82,263 @@ const HomeTab: React.FC<HomeTabProps> = ({ currentUser, events, players, news, m
   const totalPlayers = useMemo(() => players.filter(p => playerIdsWithAccount.has(p.id)).length, [players, playerIdsWithAccount]);
 
   const initials = currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const firstName = currentUser?.name?.split(' ')[0] || '';
 
-  const myConvoked = nextMatch && currentUser?.playerId && nextMatch.convocationsPublished
-    && nextMatch.convocations && (nextMatch.convocations as any)[currentUser.playerId];
-
-  // Stats bento : si joueur → perso ; sinon → club
-  const bentoStats = myPlayer
-    ? [
-        { label: 'Buts', value: myPlayer.goals || 0, icon: Target },
-        { label: 'Passes', value: myPlayer.assists || 0, icon: Swords },
-        { label: 'Matchs', value: myPlayer.matches || 0, icon: Shield },
-      ]
-    : isCoach
-    ? [
-        { label: 'Joueurs', value: totalPlayers, icon: Users },
-        { label: 'Buts Club', value: players.reduce((s, p) => s + (p.goals || 0), 0), icon: Target },
-        { label: 'Passes Club', value: players.reduce((s, p) => s + (p.assists || 0), 0), icon: Swords },
-      ]
-    : null;
+  const handleMatchClick = (matchId: string) => {
+    onNavigate('presences', matchId);
+  };
 
   return (
-    /* Breakout : casse le padding parent du Dashboard pour fond immersif full-bleed */
-    <div className="-mx-3 -my-4 sm:-mx-6 sm:-my-6 lg:-mx-10 bg-[#050a1f] text-white min-h-[calc(100vh-120px)] relative overflow-hidden">
-      {/* Halos d'ambiance */}
-      <div className="absolute top-[-120px] left-[-80px] w-[340px] h-[340px] rounded-full bg-[#0e2ba0]/40 blur-[120px] pointer-events-none" />
-      <div className="absolute top-[40%] right-[-100px] w-[300px] h-[300px] rounded-full bg-[#3b82f6]/20 blur-[120px] pointer-events-none" />
+    <div className="space-y-5 pb-6">
+      {/* ── Hero Greeting Card ── */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/85 p-5 shadow-lg shadow-primary/20">
+        {/* Football pitch background image */}
+        <div
+          className="absolute inset-0 pointer-events-none bg-cover bg-center"
+          style={{ backgroundImage: `url(${footballHeroBg})` }}
+        />
+        {/* Subtle gradient overlay to keep text readable on the left */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/70 via-primary/25 to-transparent pointer-events-none" />
+        {/* Top-bottom darken for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/15 pointer-events-none" />
+        {/* Decorative accent glow */}
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 px-5 pt-5 pb-28 space-y-6 font-['Epilogue']">
-
-        {/* ── Header — avatar + greeting + bell ── */}
-        <header className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0e2ba0] to-[#3b82f6] border border-white/20 p-0.5 shrink-0">
-              <div className="w-full h-full rounded-full overflow-hidden bg-[#050a1f] flex items-center justify-center">
-                {currentUser?.photoURL ? (
-                  <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <span className="text-sm font-black text-white">{initials}</span>
-                )}
-              </div>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-white/40 uppercase tracking-[0.18em] font-bold leading-none">{getGreeting()}</p>
-              <h2 className="font-['Urbanist'] font-extrabold text-lg tracking-tight truncate mt-1">{firstName}</h2>
-            </div>
+        <div className="relative flex items-center gap-3.5">
+          <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md border-2 border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+            {currentUser?.photoURL ? (
+              <img src={currentUser.photoURL} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+            ) : (
+              <span className="text-base font-black text-white">{initials}</span>
+            )}
           </div>
-          <button
-            onClick={() => onNavigate('news')}
-            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-xl active:scale-95 transition-all"
-            aria-label="Notifications"
-          >
-            <Bell size={18} className="text-white/70" strokeWidth={2} />
-          </button>
-        </header>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold text-white/70 uppercase tracking-[0.18em]">{getGreeting()}</p>
+            <h2 className="text-xl font-black text-white leading-tight truncate">
+              {currentUser?.name?.split(' ')[0]}
+            </h2>
+            <p className="text-[11px] text-white/75 mt-0.5 font-medium">
+              {isCoach ? `${totalPlayers} joueurs · effectif actif` : 'Prêt pour la prochaine ?'}
+            </p>
+          </div>
+        </div>
+      </div>
 
-        {/* ── Hero : Prochain match ── */}
-        {nextMatch ? (
-          <section>
-            <div className="relative group">
-              <div className="absolute inset-0 bg-[#0e2ba0] blur-3xl opacity-25 pointer-events-none" />
-              <button
-                onClick={() => onNavigate('presences', nextMatch.id)}
-                className="relative w-full text-left overflow-hidden rounded-[28px] bg-gradient-to-b from-white/10 to-white/[0.02] border border-white/15 backdrop-blur-xl p-5 active:scale-[0.99] transition-all"
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <span className="px-3 py-1 rounded-full bg-[#0e2ba0] text-[10px] font-black tracking-wider uppercase">
-                    Prochain match
-                  </span>
-                  <div className="text-right">
-                    <p className="text-xs font-bold capitalize">{formatDate(nextMatch.date)}</p>
-                    <p className="text-[10px] text-white/50 mt-0.5">
-                      {nextMatch.time || '—'}{nextMatch.location ? ` · ${nextMatch.location.split(',')[0]}` : ''}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-around gap-2">
-                  {(() => {
-                    const parts = nextMatch.title.split(/\s+(?:vs\.?|-)\s+/i);
-                    const home = parts[0]?.trim() || 'FCO';
-                    const away = parts[1]?.trim() || nextMatch.title;
-                    return (
-                      <>
-                        <div className="flex flex-col items-center flex-1 text-center">
-                          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 overflow-hidden shrink-0">
-                            {nextMatch.homeLogo ? (
-                              <img src={nextMatch.homeLogo} alt="" className="w-12 h-12 object-contain" />
-                            ) : (
-                              <Trophy size={26} className="text-white/70" />
-                            )}
-                          </div>
-                          <span className="text-[11px] font-bold tracking-tight uppercase truncate max-w-[110px]">{home}</span>
-                        </div>
-
-                        <div className="flex flex-col items-center px-2">
-                          {getCountdown(nextMatch.date, nextMatch.time) ? (
-                            <div className="px-2.5 py-1 rounded-lg bg-white/10 border border-white/15 text-[11px] font-black tracking-wider">
-                              {getCountdown(nextMatch.date, nextMatch.time)}
-                            </div>
-                          ) : (
-                            <div className="text-xs font-black text-white/20 italic">VS</div>
-                          )}
-                          <div className="h-6 w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mt-2" />
-                        </div>
-
-                        <div className="flex flex-col items-center flex-1 text-center">
-                          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3 overflow-hidden shrink-0">
-                            {nextMatch.awayLogo ? (
-                              <img src={nextMatch.awayLogo} alt="" className="w-12 h-12 object-contain" />
-                            ) : (
-                              <Trophy size={26} className="text-white/40" />
-                            )}
-                          </div>
-                          <span className="text-[11px] font-bold tracking-tight uppercase truncate max-w-[110px]">{away}</span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {myConvoked && (
-                  <div className="mt-5 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#3b82f6]/15 border border-[#3b82f6]/30">
-                    <Shield size={13} className="text-[#7dd3fc] shrink-0" strokeWidth={2.5} />
-                    <span className="text-[11px] font-bold text-[#bfdbfe]">Tu es convoqué pour ce match</span>
-                  </div>
-                )}
-              </button>
+      {/* ── Personal Stats (any user with a player profile) ── */}
+      {myPlayer && (
+        <div className="grid grid-cols-3 gap-2.5">
+          {[
+            { icon: Target, value: myPlayer.goals || 0, label: 'Buts', gradient: 'from-primary/15 to-primary/5', iconColor: 'text-primary' },
+            { icon: Swords, value: myPlayer.assists || 0, label: 'Passes', gradient: 'from-accent/15 to-accent/5', iconColor: 'text-accent' },
+            { icon: Shield, value: myPlayer.matches || 0, label: 'Matchs', gradient: 'from-muted to-background', iconColor: 'text-foreground/70' },
+          ].map((s) => (
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-2xl p-3 text-center`}>
+              <s.icon size={18} className={`${s.iconColor} mx-auto mb-1`} strokeWidth={2.5} />
+              <div className="text-2xl font-black text-foreground leading-none">{s.value}</div>
+              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
             </div>
-          </section>
-        ) : (
-          <section className="rounded-[28px] bg-white/[0.04] border border-white/10 backdrop-blur-xl p-6 text-center">
-            <Trophy size={28} className="text-white/30 mx-auto mb-2" />
-            <p className="text-sm font-bold text-white/80">Aucun match programmé</p>
-            <p className="text-[11px] text-white/40 mt-1">La nouvelle saison arrive bientôt</p>
-          </section>
-        )}
+          ))}
+        </div>
+      )}
 
-        {/* ── Bento Stats Grid ── */}
-        {bentoStats && (
-          <section className="grid grid-cols-3 gap-3">
-            {bentoStats.map((s) => (
-              <div
-                key={s.label}
-                className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 backdrop-blur-sm relative overflow-hidden"
-              >
-                <div className="w-7 h-7 rounded-lg bg-[#3b82f6]/15 flex items-center justify-center mb-3">
-                  <s.icon size={14} className="text-[#7dd3fc]" strokeWidth={2.5} />
-                </div>
-                <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider mb-1 truncate">{s.label}</p>
-                <p className="text-xl font-['Urbanist'] font-extrabold tracking-tight">{s.value}</p>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ── Dernier résultat / autres matchs à venir ── */}
-        {otherMatches.length > 0 && (
-          <button
-            onClick={() => onNavigate('presences')}
-            className="w-full text-left bg-gradient-to-r from-[#0e2ba0]/40 to-white/[0.04] border border-white/10 rounded-2xl p-4 backdrop-blur-sm flex items-center justify-between active:scale-[0.99] transition-all"
-          >
-            <div className="min-w-0">
-              <p className="text-[10px] text-white/40 font-bold uppercase mb-1 tracking-wider">À venir aussi</p>
-              <p className="text-sm font-bold font-['Urbanist'] truncate">
-                {otherMatches.length} match{otherMatches.length > 1 ? 's' : ''} · {formatDate(otherMatches[0].date)}
-              </p>
+      {/* ── Club Stats (coach/admin view) ── */}
+      {isCoach && (
+        <div className="grid grid-cols-3 gap-2.5">
+          {[
+            { icon: Users, value: totalPlayers, label: 'Joueurs', gradient: 'from-primary/15 to-primary/5', iconColor: 'text-primary' },
+            { icon: Target, value: players.reduce((s, p) => s + (p.goals || 0), 0), label: 'Buts Club', gradient: 'from-accent/15 to-accent/5', iconColor: 'text-accent' },
+            { icon: Swords, value: players.reduce((s, p) => s + (p.assists || 0), 0), label: 'Passes Club', gradient: 'from-muted to-background', iconColor: 'text-foreground/70' },
+          ].map((s) => (
+            <div key={s.label} className={`relative overflow-hidden bg-gradient-to-br ${s.gradient} border border-border/50 rounded-2xl p-3 text-center`}>
+              <s.icon size={18} className={`${s.iconColor} mx-auto mb-1`} strokeWidth={2.5} />
+              <div className="text-2xl font-black text-foreground leading-none">{s.value}</div>
+              <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{s.label}</div>
             </div>
-            <span className="text-xs font-bold text-[#7dd3fc] shrink-0 ml-2">VOIR TOUT →</span>
-          </button>
-        )}
+          ))}
+        </div>
+      )}
 
-        {/* ── Entraînements ── */}
-        {nextTrainings.length > 0 && (
-          <section>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-['Urbanist'] font-extrabold text-lg tracking-tight">Entraînements</h3>
-              <button
-                onClick={() => onNavigate('presences')}
-                className="text-[10px] font-bold text-[#0e2ba0] bg-white rounded-full px-2.5 py-1 active:scale-95 transition-all"
-              >
-                CETTE SEMAINE
-              </button>
-            </div>
-            <div className="space-y-3">
-              {nextTrainings.map((t, idx) => {
-                const { day, num } = getDayParts(t.date);
-                const cd = getCountdown(t.date, t.time);
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => onNavigate('presences', t.id)}
-                    className={`w-full text-left flex items-center gap-4 p-4 bg-white/[0.04] rounded-2xl border border-white/10 active:scale-[0.99] transition-all ${idx > 0 ? 'opacity-70' : ''}`}
-                  >
-                    <div className="flex flex-col items-center justify-center w-12 h-12 bg-white/5 rounded-xl border border-white/10 shrink-0">
-                      <span className="text-[9px] text-white/50 font-bold uppercase tracking-tighter">{day}</span>
-                      <span className="text-sm font-black font-['Urbanist']">{num}</span>
+      {/* ── Next Matches ── */}
+      {nextMatches.length > 0 && (
+        <div>
+          <SectionHeader icon={Trophy} title={`Prochain${nextMatches.length > 1 ? 's' : ''} match${nextMatches.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
+          <div className="space-y-2.5">
+            {nextMatches.map((match) => {
+              const myPid = currentUser?.playerId;
+              const iAmConvoked = !!(myPid && match.convocationsPublished && match.convocations && (match.convocations as any)[myPid]);
+              const publisher = match.convocationsPublishedByName || match.createdByName;
+              const cd = getCountdown(match.date, match.time);
+              return (
+                <button
+                  key={match.id}
+                  onClick={() => handleMatchClick(match.id)}
+                  className="group w-full text-left bg-card border border-border/60 rounded-2xl overflow-hidden active:scale-[0.98] transition-all hover:border-primary/30 hover:shadow-md"
+                >
+                  {iAmConvoked && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary/15 to-accent/15 border-b border-primary/30 text-[11px] font-bold text-primary">
+                      <Shield size={11} className="shrink-0" strokeWidth={2.5} />
+                      <span className="truncate">
+                        Tu es convoqué{publisher ? <> par <span className="font-black">{publisher}</span></> : ''}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 p-3.5">
+                    <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${match.homeLogo ? 'bg-white keep-white border-border/50' : 'bg-gradient-to-br from-primary/15 to-primary/5 border-primary/10'}`}>
+                      {match.homeLogo ? (
+                        <img src={match.homeLogo} alt="" className="w-9 h-9 object-contain" />
+                      ) : (
+                        <Trophy size={20} className="text-primary" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold tracking-tight truncate capitalize">{t.title.toLowerCase()}</h4>
-                      <p className="text-[11px] text-white/40 font-medium truncate mt-0.5">
-                        {t.time || '—'}{t.location ? ` · ${t.location.split(',')[0]}` : ''}
-                      </p>
+                      <h3 className="text-sm font-black text-foreground truncate">{match.title}</h3>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                          <Calendar size={10} /> {formatDate(match.date)}
+                        </span>
+                        {match.time && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                            <Clock size={10} /> {match.time}
+                          </span>
+                        )}
+                      </div>
+                      {match.location && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                          <MapPin size={9} /> <span className="truncate max-w-[200px]">{match.location}</span>
+                        </span>
+                      )}
                     </div>
-                    {cd && idx === 0 ? (
-                      <div className="h-2 w-2 rounded-full bg-[#3b82f6] shadow-[0_0_10px_rgba(59,130,246,0.7)] shrink-0" />
-                    ) : (
-                      <ChevronRight size={14} className="text-white/30 shrink-0" />
+                    {cd && (
+                      <span className="px-2 py-1 rounded-lg bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
+                        {cd}
+                      </span>
                     )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
+                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-        {/* ── Quick Navigation ── */}
-        <section>
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { icon: Calendar, label: 'Présences', tab: 'presences' },
-              { icon: Trophy, label: 'Champ.', tab: 'championnat' },
-              { icon: BarChart3, label: 'Stats', tab: 'stats' },
-              { icon: isCoach ? Users : Newspaper, label: isCoach ? 'Effectif' : 'Actus', tab: isCoach ? 'members' : 'news' },
-            ].map((a) => (
+      {/* ── Next Trainings (up to 2) ── */}
+      {nextTrainings.length > 0 && (
+        <div>
+          <SectionHeader icon={Dumbbell} title={`Prochain${nextTrainings.length > 1 ? 's' : ''} entraînement${nextTrainings.length > 1 ? 's' : ''}`} onAction={() => onNavigate('presences')} actionLabel="Voir tout" />
+          <div className="space-y-2.5">
+            {nextTrainings.map((training) => {
+              const cd = getCountdown(training.date, training.time);
+              return (
+                <button
+                  key={training.id}
+                  onClick={() => onNavigate('presences', training.id)}
+                  className="group w-full text-left bg-card border border-border/60 rounded-2xl p-3.5 active:scale-[0.98] transition-all hover:border-accent/30 hover:shadow-md"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center shrink-0 border border-accent/10">
+                      <Dumbbell size={20} className="text-accent" strokeWidth={2.5} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-black text-foreground truncate capitalize">{training.title.toLowerCase()}</h3>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                          <Calendar size={10} /> {formatDate(training.date)}
+                        </span>
+                        {training.time && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                            <Clock size={10} /> {training.time}
+                          </span>
+                        )}
+                      </div>
+                      {training.location && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                          <MapPin size={10} /> <span className="truncate capitalize">{training.location.toLowerCase()}</span>
+                        </span>
+                      )}
+                    </div>
+                    {cd && (
+                      <span className="px-2 py-1 rounded-lg bg-accent/10 border border-accent/20 text-[10px] font-black text-accent shrink-0">
+                        {cd}
+                      </span>
+                    )}
+                    <ChevronRight size={14} className="text-muted-foreground/40 shrink-0" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Quick Navigation ── */}
+      <div>
+        <div className="grid grid-cols-4 gap-2.5">
+          {[
+            { icon: Calendar, label: 'Présences', tab: 'presences', color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
+            { icon: Trophy, label: 'Champ.', tab: 'championnat', color: 'text-accent', bg: 'from-accent/10 to-accent/5' },
+            { icon: BarChart3, label: 'Stats', tab: 'stats', color: 'text-primary', bg: 'from-primary/10 to-primary/5' },
+            { icon: isCoach ? Users : Newspaper, label: isCoach ? 'Effectif' : 'Actus', tab: isCoach ? 'members' : 'news', color: 'text-accent', bg: 'from-accent/10 to-accent/5' },
+          ].map((a) => (
+            <button
+              key={a.tab}
+              onClick={() => onNavigate(a.tab)}
+              className={`flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-gradient-to-br ${a.bg} border border-border/50 active:scale-95 transition-all hover:shadow-md`}
+            >
+              <a.icon size={22} className={a.color} strokeWidth={2.5} />
+              <span className="text-[10px] font-bold text-foreground">{a.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Recent News ── */}
+      {recentNews.length > 0 && (
+        <div>
+          <SectionHeader icon={Newspaper} title="Dernières actus" onAction={() => onNavigate('news')} actionLabel="Voir tout" />
+          <div className="space-y-2">
+            {recentNews.map((n) => (
               <button
-                key={a.tab}
-                onClick={() => onNavigate(a.tab)}
-                className="flex flex-col items-center gap-2 py-3.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm active:scale-95 transition-all"
+                key={n.id}
+                onClick={() => onNavigate('news')}
+                className="w-full text-left flex items-center gap-3 p-3 rounded-2xl bg-card border border-border/60 active:scale-[0.98] transition-all hover:border-accent/30 hover:shadow-md"
               >
-                <div className="w-9 h-9 rounded-xl bg-[#3b82f6]/15 flex items-center justify-center">
-                  <a.icon size={18} className="text-[#7dd3fc]" strokeWidth={2.5} />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center shrink-0 border border-accent/10">
+                  <Newspaper size={16} className="text-accent" strokeWidth={2.5} />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">{a.label}</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-black text-foreground truncate">{n.title}</h4>
+                  <p className="text-[11px] text-muted-foreground truncate">{n.content.slice(0, 60)}</p>
+                </div>
+                <span className="text-[10px] text-muted-foreground/60 font-semibold shrink-0">{formatDate(n.date)}</span>
               </button>
             ))}
           </div>
-        </section>
-
-        {/* ── Recent News ── */}
-        {recentNews.length > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-['Urbanist'] font-extrabold text-lg tracking-tight">Actus</h3>
-              <button onClick={() => onNavigate('news')} className="text-[11px] font-bold text-[#7dd3fc] active:scale-95 transition-all">
-                VOIR TOUT →
-              </button>
-            </div>
-            <div className="space-y-2.5">
-              {recentNews.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => onNavigate('news')}
-                  className="w-full text-left flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-sm active:scale-[0.99] transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-[#3b82f6]/15 flex items-center justify-center shrink-0 border border-white/5">
-                    <Newspaper size={16} className="text-[#7dd3fc]" strokeWidth={2.5} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold truncate">{n.title}</h4>
-                    <p className="text-[11px] text-white/40 truncate mt-0.5">{n.content.slice(0, 60)}</p>
-                  </div>
-                  <span className="text-[10px] text-white/30 font-semibold shrink-0">{formatDate(n.date)}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
+
+/* ── Section Header helper ── */
+const SectionHeader: React.FC<{
+  icon: React.ElementType;
+  title: string;
+  onAction?: () => void;
+  actionLabel?: string;
+}> = ({ icon: Icon, title, onAction, actionLabel = 'Voir' }) => (
+  <div className="flex items-center justify-between mb-2.5 px-1">
+    <div className="flex items-center gap-2">
+      <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+        <Icon size={13} className="text-primary" strokeWidth={2.5} />
+      </div>
+      <span className="text-xs font-black text-foreground tracking-wide uppercase">{title}</span>
+    </div>
+    {onAction && (
+      <button onClick={onAction} className="text-[11px] font-bold text-accent flex items-center gap-0.5 active:scale-95 transition-transform">
+        {actionLabel} <ChevronRight size={12} />
+      </button>
+    )}
+  </div>
+);
 
 export default React.memo(HomeTab);
