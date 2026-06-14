@@ -277,6 +277,9 @@ const ChampionnatTab: React.FC<Props> = ({
       try { localStorage.removeItem(LOCAL_CACHE_KEY); } catch {}
     }
 
+    // From here, we need DB championships data for cache fallback / API fetch
+    if (!dataLoaded) return;
+
     const teamMapping: Record<string, { categoryCode: string; code: number }> = {
       'A': { categoryCode: 'SEM', code: 1 },
       'B': { categoryCode: 'SEM', code: 2 },
