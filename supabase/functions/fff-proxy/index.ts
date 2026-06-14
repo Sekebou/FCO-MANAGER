@@ -45,25 +45,54 @@ Deno.serve(async (req) => {
     }
 
     const url = `https://api-dofa.fff.fr/api${endpoint}`;
-    console.log('Proxying FFF API:', url);
+    console.log('Proxying FFF API via Firecrawl:', url);
 
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'FCO-Manager/1.0',
-      },
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error(`FFF API error ${response.status}:`, text);
+    const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!firecrawlKey) {
       return new Response(
-        JSON.stringify({ error: `FFF API returned ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'FIRECRAWL_API_KEY not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const responseData = await response.json();
+    const fcResp = await fetch('https://api.firecrawl.dev/v2/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url, formats: ['rawHtml'], onlyMainContent: false }),
+    });
+
+    if (!fcResp.ok) {
+      const text = await fcResp.text();
+      console.error(`Firecrawl error ${fcResp.status}:`, text);
+      return new Response(
+        JSON.stringify({ error: `Firecrawl returned ${fcResp.status}` }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const fcJson = await fcResp.json();
+    const rawHtml: string = fcJson?.data?.rawHtml ?? '';
+    if (!rawHtml) {
+      console.error('Firecrawl returned empty rawHtml', fcJson);
+      return new Response(
+        JSON.stringify({ error: 'Empty response from FFF API' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let responseData;
+    try {
+      responseData = JSON.parse(rawHtml);
+    } catch (e) {
+      console.error('Failed to parse FFF JSON from rawHtml:', e);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON from FFF API' }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
       JSON.stringify(responseData),
