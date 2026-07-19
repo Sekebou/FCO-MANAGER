@@ -4,165 +4,125 @@
 
 /* ─────────────────────────────────────────────────────────────
    FCO-Manager · Saison 2026-2027
-   Design system: Midnight Stadium
-   Palette: #0a0a1a / #141432 / #1e1e5a / #4f46e5
+   Design system: "Stade Blanc" — light, airy, club identity
+   Palette: white surfaces + royal blue (#0e2ba0) + sky accent
+   No pink / no red brand accents. Inspired by Apple Sport / Linear.
    Fonts: Space Grotesk (display) + DM Sans (body)
    ───────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
-    /* Deep navy stadium base */
-    --background: 240 45% 6%;          /* #0a0a1a */
-    --foreground: 220 30% 96%;
+    /* Base — bright paper white with a hint of blue */
+    --background: 220 40% 99%;
+    --foreground: 225 40% 10%;
 
-    --card: 240 43% 11%;               /* raised surface */
-    --card-foreground: 220 30% 96%;
+    --card: 0 0% 100%;
+    --card-foreground: 225 40% 10%;
 
-    --popover: 240 43% 13%;
-    --popover-foreground: 220 30% 96%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 40% 10%;
 
-    /* Electric indigo — signature */
-    --primary: 245 75% 59%;            /* #4f46e5 */
+    /* Club royal blue — signature */
+    --primary: 227 84% 34%;            /* #0e2ba0 */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 245 90% 70%;
+    --primary-glow: 224 90% 58%;
 
-    --secondary: 240 40% 16%;
-    --secondary-foreground: 220 30% 96%;
+    --secondary: 220 45% 96%;
+    --secondary-foreground: 225 40% 15%;
 
-    --muted: 240 35% 14%;
-    --muted-foreground: 230 15% 68%;
+    --muted: 220 30% 95%;
+    --muted-foreground: 225 15% 42%;
 
-    --accent: 245 90% 68%;             /* lighter indigo for accents */
+    /* Sky accent — bright modern blue */
+    --accent: 215 92% 55%;             /* electric sky */
     --accent-foreground: 0 0% 100%;
 
-    /* Signature pop for wins / live */
-    --pop: 340 95% 62%;                /* neon pink */
+    /* Pop = a second cool blue (NO pink, NO red) */
+    --pop: 195 95% 48%;                /* cyan pop */
     --pop-foreground: 0 0% 100%;
 
-    --destructive: 0 75% 58%;
+    --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 156 78% 48%;
+    --success: 156 72% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 95% 60%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 240 30% 18%;
-    --input: 240 30% 16%;
-    --ring: 245 90% 68%;
+    --border: 220 25% 90%;
+    --input: 220 25% 92%;
+    --ring: 227 84% 34%;
 
     --radius: 1.25rem;
 
-    --sidebar-background: 240 45% 5%;
-    --sidebar-foreground: 220 30% 96%;
-    --sidebar-primary: 245 75% 59%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 225 40% 12%;
+    --sidebar-primary: 227 84% 34%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 40% 14%;
-    --sidebar-accent-foreground: 220 30% 96%;
-    --sidebar-border: 240 30% 18%;
-    --sidebar-ring: 245 90% 68%;
+    --sidebar-accent: 220 40% 96%;
+    --sidebar-accent-foreground: 225 40% 12%;
+    --sidebar-border: 220 25% 90%;
+    --sidebar-ring: 227 84% 34%;
 
-    --nav-active: 245 75% 59%;
+    --nav-active: 227 84% 34%;
     --nav-active-foreground: 0 0% 100%;
-    --badge-match: 245 75% 59%;
-    --badge-training: 280 70% 62%;
-    --badge-other: 230 15% 55%;
+    --badge-match: 227 84% 34%;
+    --badge-training: 215 92% 55%;
+    --badge-other: 220 15% 55%;
 
-    /* Signature gradients & shadows */
-    --gradient-royal: linear-gradient(135deg, hsl(240 51% 24%) 0%, hsl(245 75% 59%) 100%);
-    --gradient-hero:  linear-gradient(135deg, hsl(240 45% 8%) 0%, hsl(240 51% 22%) 50%, hsl(245 75% 55%) 100%);
-    --gradient-pop:   linear-gradient(135deg, hsl(245 75% 59%) 0%, hsl(340 95% 62%) 100%);
-    --gradient-soft:  linear-gradient(180deg, hsl(240 43% 11%) 0%, hsl(240 45% 7%) 100%);
-    --gradient-aurora: radial-gradient(ellipse at 20% 0%, hsl(245 90% 65% / 0.35), transparent 55%),
-                       radial-gradient(ellipse at 80% 100%, hsl(340 95% 62% / 0.25), transparent 50%);
-    --shadow-elevated: 0 20px 50px -20px hsl(245 90% 40% / 0.45), 0 2px 6px -2px hsl(0 0% 0% / 0.4);
-    --shadow-glow: 0 0 0 6px hsl(245 90% 68% / 0.18);
-    --shadow-pop: 0 12px 30px -12px hsl(340 95% 62% / 0.55);
+    /* Signature gradients & shadows (blue only, no pink) */
+    --gradient-royal: linear-gradient(135deg, hsl(227 84% 28%) 0%, hsl(224 90% 52%) 100%);
+    --gradient-hero:  linear-gradient(135deg, hsl(227 84% 26%) 0%, hsl(224 90% 45%) 55%, hsl(200 95% 55%) 100%);
+    --gradient-pop:   linear-gradient(135deg, hsl(224 90% 55%) 0%, hsl(195 95% 55%) 100%);
+    --gradient-soft:  linear-gradient(180deg, hsl(220 45% 99%) 0%, hsl(220 40% 96%) 100%);
+    --gradient-aurora: radial-gradient(ellipse at 15% -10%, hsl(224 90% 65% / 0.20), transparent 55%),
+                       radial-gradient(ellipse at 100% 110%, hsl(195 95% 60% / 0.16), transparent 55%);
+    --shadow-elevated: 0 20px 45px -22px hsl(227 84% 34% / 0.30), 0 2px 6px -2px hsl(227 40% 20% / 0.08);
+    --shadow-glow: 0 0 0 6px hsl(224 90% 60% / 0.15);
+    --shadow-pop: 0 12px 30px -14px hsl(195 95% 48% / 0.45);
   }
 
-  /* Dark mode = same Midnight Stadium (app is dark-native) */
+  /* Optional dark variant (opt-in via .dark) */
   .dark {
-    --background: 240 45% 5%;
+    --background: 225 45% 7%;
     --foreground: 220 30% 96%;
-    --card: 240 43% 10%;
+    --card: 225 40% 11%;
     --card-foreground: 220 30% 96%;
-    --popover: 240 43% 12%;
+    --popover: 225 40% 13%;
     --popover-foreground: 220 30% 96%;
-    --primary: 245 75% 62%;
+    --primary: 224 90% 62%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 40% 15%;
+    --secondary: 225 35% 15%;
     --secondary-foreground: 220 30% 96%;
-    --muted: 240 35% 13%;
-    --muted-foreground: 230 15% 68%;
-    --accent: 245 90% 70%;
+    --muted: 225 30% 14%;
+    --muted-foreground: 220 15% 68%;
+    --accent: 215 92% 62%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 75% 58%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 156 78% 48%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 95% 60%;
-    --warning-foreground: 0 0% 100%;
-    --border: 240 30% 17%;
-    --input: 240 30% 15%;
-    --ring: 245 90% 70%;
-    --sidebar-background: 240 45% 4%;
+    --pop: 195 95% 55%;
+    --border: 225 30% 18%;
+    --input: 225 30% 16%;
+    --ring: 224 90% 62%;
+    --sidebar-background: 225 45% 6%;
     --sidebar-foreground: 220 30% 96%;
-    --sidebar-primary: 245 75% 62%;
+    --sidebar-primary: 224 90% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 40% 13%;
+    --sidebar-accent: 225 35% 13%;
     --sidebar-accent-foreground: 220 30% 96%;
-    --sidebar-border: 240 30% 17%;
-    --sidebar-ring: 245 90% 70%;
-    --nav-active: 245 75% 62%;
-    --nav-active-foreground: 0 0% 100%;
-    --badge-match: 245 85% 65%;
-    --badge-training: 280 75% 70%;
-    --badge-other: 230 15% 60%;
+    --sidebar-border: 225 30% 18%;
+    --sidebar-ring: 224 90% 62%;
   }
 
   html {
     transition: background-color 0.3s ease;
   }
-  body, .bg-card, .bg-background, .bg-popover, .bg-secondary, .bg-muted,
-  .border, .border-border, .text-foreground, .text-muted-foreground {
-    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease;
-  }
 
-  /* ───────────────────────────────────────────────────────────
-     LEGACY LIGHT CLASSES → Midnight Stadium overrides
-     App a beaucoup de bg-white / text-gray-* historiques.
-     ─────────────────────────────────────────────────────────── */
-  .bg-white:not([class*="bg-white/"]):not(img):not(.keep-white) {
-    background-color: hsl(var(--card)) !important;
-    color: hsl(var(--card-foreground));
-  }
-  .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100,
-  .bg-blue-50, .bg-blue-100 {
-    background-color: hsl(var(--secondary)) !important;
-  }
-  .bg-gray-200, .bg-slate-200 {
-    background-color: hsl(var(--muted)) !important;
-  }
-  .text-gray-900, .text-gray-800, .text-slate-900, .text-slate-800, .text-black {
-    color: hsl(var(--foreground)) !important;
-  }
-  .text-gray-700, .text-gray-600, .text-slate-700, .text-slate-600 {
-    color: hsl(var(--foreground) / 0.85) !important;
-  }
-  .text-gray-500, .text-gray-400, .text-slate-500, .text-slate-400 {
-    color: hsl(var(--muted-foreground)) !important;
-  }
-  .border-gray-100, .border-gray-200, .border-slate-100, .border-slate-200,
-  .border-blue-100, .border-blue-200 {
-    border-color: hsl(var(--border)) !important;
-  }
-  .focus\:bg-white:focus {
-    background-color: hsl(var(--card)) !important;
-  }
   #app-loader {
-    background: radial-gradient(ellipse at top, #1e1e5a 0%, #141432 40%, #0a0a1a 100%) !important;
+    background: radial-gradient(ellipse at top, #ffffff 0%, #eef3ff 45%, #dbe5ff 100%) !important;
   }
+  #app-loader .loader-text { color: hsl(227 40% 25%) !important; }
+  #app-loader .loader-dots span { background: hsl(227 84% 34% / 0.55) !important; }
+
   ::-webkit-scrollbar-thumb { background-color: hsl(var(--border)); }
   ::-webkit-scrollbar-track { background-color: hsl(var(--background)); }
 }
@@ -224,13 +184,12 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
   .glass-card {
-    @apply bg-card/70 backdrop-blur-2xl border border-border/60;
-    box-shadow: 0 1px 0 hsl(255 100% 100% / 0.04) inset,
-                0 12px 40px -18px hsl(245 90% 40% / 0.35);
+    @apply bg-card/80 backdrop-blur-2xl border border-border/60;
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.7) inset,
+                0 12px 40px -18px hsl(227 84% 34% / 0.25);
     border-radius: calc(var(--radius) + 0.25rem);
   }
 
-  /* ─── Midnight Stadium signature utilities ─── */
   .card-royal {
     @apply bg-card border border-border/60;
     border-radius: calc(var(--radius) + 0.25rem);
@@ -242,7 +201,7 @@
   .bg-soft-gradient  { background: var(--gradient-soft); }
   .bg-aurora         { background: var(--gradient-aurora); }
   .text-royal-gradient {
-    background: linear-gradient(135deg, hsl(245 90% 75%), hsl(340 95% 68%));
+    background: linear-gradient(135deg, hsl(227 84% 34%), hsl(195 95% 48%));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -256,38 +215,37 @@
     background: var(--gradient-royal);
     box-shadow: var(--shadow-elevated);
   }
-  .btn-royal:hover { filter: brightness(1.1); }
+  .btn-royal:hover { filter: brightness(1.08); }
 
   .chip {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
-    background: hsl(var(--accent) / 0.14);
-    color: hsl(var(--accent));
-    border: 1px solid hsl(var(--accent) / 0.25);
+    background: hsl(var(--primary) / 0.10);
+    color: hsl(var(--primary));
+    border: 1px solid hsl(var(--primary) / 0.20);
   }
   .chip-pop {
-    background: hsl(var(--pop) / 0.14);
-    color: hsl(var(--pop));
-    border-color: hsl(var(--pop) / 0.3);
+    background: hsl(var(--accent) / 0.10);
+    color: hsl(var(--accent));
+    border-color: hsl(var(--accent) / 0.25);
   }
 
-  /* ─── App Header — Midnight Stadium ─── */
+  /* ─── App Header — Blanc / Royal ─── */
   .app-header {
     background: linear-gradient(180deg,
-      hsl(240 45% 8%) 0%,
-      hsl(240 45% 5%) 100%);
-    border-bottom: 1px solid hsl(240 30% 18%);
-    color: hsl(220 30% 96%);
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.04) inset,
-                0 8px 24px -18px hsl(245 90% 40% / 0.4);
+      hsl(0 0% 100%) 0%,
+      hsl(220 40% 98%) 100%);
+    border-bottom: 1px solid hsl(220 25% 90%);
+    color: hsl(225 40% 12%);
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.7) inset,
+                0 6px 20px -18px hsl(227 84% 34% / 0.35);
   }
   .app-header .text-primary-foreground {
-    color: hsl(220 30% 96%);
+    color: hsl(225 40% 12%);
   }
-
 
   .loading-spinner {
     border: 3px solid hsl(var(--border));
-    border-top: 3px solid hsl(var(--accent));
+    border-top: 3px solid hsl(var(--primary));
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -317,12 +275,12 @@
   }
 
   @keyframes glowText {
-    0%, 100% { text-shadow: 0 0 20px rgba(255,255,255,0.1); }
-    50% { text-shadow: 0 0 40px rgba(255,255,255,0.25), 0 0 80px rgba(255,255,255,0.1); }
+    0%, 100% { text-shadow: 0 0 20px rgba(14,43,160,0.10); }
+    50% { text-shadow: 0 0 40px rgba(14,43,160,0.22), 0 0 80px rgba(14,43,160,0.10); }
   }
 
   .glow-pulse-green {
-    box-shadow: 0 0 6px 2px hsl(230 85% 45% / 0.5), 0 0 16px 4px hsl(230 85% 45% / 0.2);
+    box-shadow: 0 0 6px 2px hsl(156 72% 40% / 0.5), 0 0 16px 4px hsl(156 72% 40% / 0.2);
     animation: glowPulse 2s ease-in-out infinite;
   }
   .glow-pulse-orange {
@@ -330,7 +288,7 @@
     animation: glowPulse 2s ease-in-out infinite;
   }
   .glow-pulse-red {
-    box-shadow: 0 0 6px 2px hsl(0 84% 60% / 0.5), 0 0 16px 4px hsl(0 84% 60% / 0.2);
+    box-shadow: 0 0 6px 2px hsl(0 72% 52% / 0.5), 0 0 16px 4px hsl(0 72% 52% / 0.2);
     animation: glowPulse 1.5s ease-in-out infinite;
   }
 
@@ -349,15 +307,12 @@
   }
 }
 
-/* Desktop / small laptop optimization — does NOT affect mobile (<768px) */
+/* Desktop / small laptop optimization */
 @media (min-width: 768px) {
-  /* Constrain modals for small laptops */
   .fixed.inset-0 > div {
     max-height: 90vh;
     overflow-y: auto;
   }
-
-  /* Scale down modal content on small screens */
   @media (max-height: 768px) {
     .fixed.inset-0 {
       padding-top: 1rem;
@@ -371,14 +326,8 @@
 
 /* ── Stadium wave + ball spin animations (Home hero halo) ── */
 @keyframes stadium-wave {
-  0% {
-    transform: scale(0.4);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
+  0% { transform: scale(0.4); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
 @keyframes ball-spin {
   from { transform: translate(-50%, -50%) rotate(0deg); }
