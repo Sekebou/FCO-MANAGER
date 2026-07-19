@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Manrope", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        display: ["Sora", "Manrope", "-apple-system", "sans-serif"],
+        sans: ["DM Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        display: ["Space Grotesk", "DM Sans", "-apple-system", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

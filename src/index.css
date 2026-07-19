@@ -4,134 +4,123 @@
 
 /* ─────────────────────────────────────────────────────────────
    FCO-Manager · Saison 2026-2027
-   Design system: Royal Heritage (white / #0e2ba0 / #3b6fff / #ff3b5c)
-   Fonts: Sora (display) + Manrope (body) — loaded in index.html
+   Design system: Midnight Stadium
+   Palette: #0a0a1a / #141432 / #1e1e5a / #4f46e5
+   Fonts: Space Grotesk (display) + DM Sans (body)
    ───────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
-    --background: 220 40% 98%;
-    --foreground: 226 45% 10%;
+    /* Deep navy stadium base */
+    --background: 240 45% 6%;          /* #0a0a1a */
+    --foreground: 220 30% 96%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 226 45% 10%;
+    --card: 240 43% 11%;               /* raised surface */
+    --card-foreground: 220 30% 96%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 226 45% 10%;
+    --popover: 240 43% 13%;
+    --popover-foreground: 220 30% 96%;
 
-    /* Royal blue heritage */
-    --primary: 229 84% 34%;         /* #0e2ba0 */
+    /* Electric indigo — signature */
+    --primary: 245 75% 59%;            /* #4f46e5 */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 225 100% 62%;   /* #3b6fff */
+    --primary-glow: 245 90% 70%;
 
-    --secondary: 226 40% 96%;
-    --secondary-foreground: 226 45% 12%;
+    --secondary: 240 40% 16%;
+    --secondary-foreground: 220 30% 96%;
 
-    --muted: 226 30% 95%;
-    --muted-foreground: 226 15% 45%;
+    --muted: 240 35% 14%;
+    --muted-foreground: 230 15% 68%;
 
-    --accent: 225 100% 62%;         /* #3b6fff */
+    --accent: 245 90% 68%;             /* lighter indigo for accents */
     --accent-foreground: 0 0% 100%;
 
-    /* Signature pop coral for wins / live / celebration */
-    --pop: 351 100% 62%;            /* #ff3b5c */
+    /* Signature pop for wins / live */
+    --pop: 340 95% 62%;                /* neon pink */
     --pop-foreground: 0 0% 100%;
 
-    --destructive: 351 85% 55%;
+    --destructive: 0 75% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 156 78% 42%;
+    --success: 156 78% 48%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 95% 55%;
+    --warning: 38 95% 60%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 226 30% 90%;
-    --input: 226 30% 92%;
-    --ring: 225 100% 62%;
+    --border: 240 30% 18%;
+    --input: 240 30% 16%;
+    --ring: 245 90% 68%;
 
-    --radius: 1rem;
+    --radius: 1.25rem;
 
-    --sidebar-background: 229 84% 12%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 225 100% 62%;
+    --sidebar-background: 240 45% 5%;
+    --sidebar-foreground: 220 30% 96%;
+    --sidebar-primary: 245 75% 59%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 229 60% 20%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 229 60% 22%;
-    --sidebar-ring: 225 100% 62%;
+    --sidebar-accent: 240 40% 14%;
+    --sidebar-accent-foreground: 220 30% 96%;
+    --sidebar-border: 240 30% 18%;
+    --sidebar-ring: 245 90% 68%;
 
-    --nav-active: 229 84% 34%;
+    --nav-active: 245 75% 59%;
     --nav-active-foreground: 0 0% 100%;
-    --badge-match: 229 84% 34%;
-    --badge-training: 263 70% 55%;
-    --badge-other: 226 15% 50%;
+    --badge-match: 245 75% 59%;
+    --badge-training: 280 70% 62%;
+    --badge-other: 230 15% 55%;
 
     /* Signature gradients & shadows */
-    --gradient-royal: linear-gradient(135deg, hsl(229 84% 34%) 0%, hsl(225 100% 62%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(229 84% 22%) 0%, hsl(225 90% 40%) 55%, hsl(225 100% 62%) 100%);
-    --gradient-pop: linear-gradient(135deg, hsl(225 100% 62%) 0%, hsl(351 100% 62%) 100%);
-    --gradient-soft: linear-gradient(180deg, hsl(220 60% 99%) 0%, hsl(226 40% 96%) 100%);
-    --shadow-elevated: 0 20px 40px -20px hsl(229 84% 34% / 0.28), 0 2px 6px -2px hsl(229 84% 34% / 0.08);
-    --shadow-glow: 0 0 0 6px hsl(225 100% 62% / 0.12);
-    --shadow-pop: 0 12px 30px -12px hsl(351 100% 62% / 0.5);
+    --gradient-royal: linear-gradient(135deg, hsl(240 51% 24%) 0%, hsl(245 75% 59%) 100%);
+    --gradient-hero:  linear-gradient(135deg, hsl(240 45% 8%) 0%, hsl(240 51% 22%) 50%, hsl(245 75% 55%) 100%);
+    --gradient-pop:   linear-gradient(135deg, hsl(245 75% 59%) 0%, hsl(340 95% 62%) 100%);
+    --gradient-soft:  linear-gradient(180deg, hsl(240 43% 11%) 0%, hsl(240 45% 7%) 100%);
+    --gradient-aurora: radial-gradient(ellipse at 20% 0%, hsl(245 90% 65% / 0.35), transparent 55%),
+                       radial-gradient(ellipse at 80% 100%, hsl(340 95% 62% / 0.25), transparent 50%);
+    --shadow-elevated: 0 20px 50px -20px hsl(245 90% 40% / 0.45), 0 2px 6px -2px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 0 6px hsl(245 90% 68% / 0.18);
+    --shadow-pop: 0 12px 30px -12px hsl(340 95% 62% / 0.55);
   }
 
-
+  /* Dark mode = same Midnight Stadium (app is dark-native) */
   .dark {
-    /* ── Modern dark theme — deep navy + royal blue accents ── */
-    --background: 224 35% 5%;          /* near-black bleuté */
-    --foreground: 210 25% 96%;
-
-    --card: 224 28% 9%;                /* surface élevée */
-    --card-foreground: 210 25% 96%;
-
-    --popover: 224 28% 11%;
-    --popover-foreground: 210 25% 96%;
-
-    /* Garde le bleu royal d'identité, juste éclairci pour le contraste */
-    --primary: 225 80% 55%;
+    --background: 240 45% 5%;
+    --foreground: 220 30% 96%;
+    --card: 240 43% 10%;
+    --card-foreground: 220 30% 96%;
+    --popover: 240 43% 12%;
+    --popover-foreground: 220 30% 96%;
+    --primary: 245 75% 62%;
     --primary-foreground: 0 0% 100%;
-
-    --secondary: 224 22% 14%;
-    --secondary-foreground: 210 25% 96%;
-
-    --muted: 224 22% 13%;
-    --muted-foreground: 220 10% 68%;
-
-    --accent: 225 90% 65%;
+    --secondary: 240 40% 15%;
+    --secondary-foreground: 220 30% 96%;
+    --muted: 240 35% 13%;
+    --muted-foreground: 230 15% 68%;
+    --accent: 245 90% 70%;
     --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 70% 55%;
+    --destructive: 0 75% 58%;
     --destructive-foreground: 0 0% 100%;
-
-    --success: 142 65% 48%;
+    --success: 156 78% 48%;
     --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 58%;
+    --warning: 38 95% 60%;
     --warning-foreground: 0 0% 100%;
-
-    --border: 224 22% 18%;
-    --input: 224 22% 16%;
-    --ring: 225 90% 65%;
-
-    --sidebar-background: 224 35% 5%;
-    --sidebar-foreground: 210 25% 96%;
-    --sidebar-primary: 225 80% 55%;
+    --border: 240 30% 17%;
+    --input: 240 30% 15%;
+    --ring: 245 90% 70%;
+    --sidebar-background: 240 45% 4%;
+    --sidebar-foreground: 220 30% 96%;
+    --sidebar-primary: 245 75% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 22% 14%;
-    --sidebar-accent-foreground: 210 25% 96%;
-    --sidebar-border: 224 22% 14%;
-    --sidebar-ring: 225 90% 65%;
-
-    --nav-active: 225 90% 65%;
+    --sidebar-accent: 240 40% 13%;
+    --sidebar-accent-foreground: 220 30% 96%;
+    --sidebar-border: 240 30% 17%;
+    --sidebar-ring: 245 90% 70%;
+    --nav-active: 245 75% 62%;
     --nav-active-foreground: 0 0% 100%;
-    --badge-match: 225 85% 62%;
-    --badge-training: 263 75% 70%;
-    --badge-other: 220 10% 60%;
+    --badge-match: 245 85% 65%;
+    --badge-training: 280 75% 70%;
+    --badge-other: 230 15% 60%;
   }
 
-  /* Smooth color transitions when toggling theme */
   html {
     transition: background-color 0.3s ease;
   }
@@ -141,88 +130,41 @@
   }
 
   /* ───────────────────────────────────────────────────────────
-     DARK MODE PATCHES
-     L'app a beaucoup de classes Tailwind hard-codées (gray-*,
-     blue-*, white) historiquement pensées pour le mode clair.
-     Ces overrides garantissent un rendu cohérent en sombre
-     sans avoir à refactorer chaque composant.
+     LEGACY LIGHT CLASSES → Midnight Stadium overrides
+     App a beaucoup de bg-white / text-gray-* historiques.
      ─────────────────────────────────────────────────────────── */
-
-  /* Fonds blancs purs → carte sombre (sauf overlays /n et logos qui
-     gardent volontairement bg-white pour rester lisibles) */
-  .dark .bg-white:not([class*="bg-white/"]):not(img):not(.keep-white) {
+  .bg-white:not([class*="bg-white/"]):not(img):not(.keep-white) {
     background-color: hsl(var(--card)) !important;
     color: hsl(var(--card-foreground));
   }
-
-  /* Niveaux de gris Tailwind (clairs) → tokens sombres */
-  .dark .bg-gray-50,
-  .dark .bg-gray-100,
-  .dark .bg-slate-50,
-  .dark .bg-slate-100,
-  .dark .bg-blue-50,
-  .dark .bg-blue-100 {
+  .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100,
+  .bg-blue-50, .bg-blue-100 {
     background-color: hsl(var(--secondary)) !important;
   }
-  .dark .bg-gray-200,
-  .dark .bg-slate-200 {
+  .bg-gray-200, .bg-slate-200 {
     background-color: hsl(var(--muted)) !important;
   }
-
-  /* Textes gris foncés → clair */
-  .dark .text-gray-900,
-  .dark .text-gray-800,
-  .dark .text-slate-900,
-  .dark .text-slate-800,
-  .dark .text-black {
+  .text-gray-900, .text-gray-800, .text-slate-900, .text-slate-800, .text-black {
     color: hsl(var(--foreground)) !important;
   }
-  .dark .text-gray-700,
-  .dark .text-gray-600,
-  .dark .text-slate-700,
-  .dark .text-slate-600 {
+  .text-gray-700, .text-gray-600, .text-slate-700, .text-slate-600 {
     color: hsl(var(--foreground) / 0.85) !important;
   }
-  .dark .text-gray-500,
-  .dark .text-gray-400,
-  .dark .text-slate-500,
-  .dark .text-slate-400 {
+  .text-gray-500, .text-gray-400, .text-slate-500, .text-slate-400 {
     color: hsl(var(--muted-foreground)) !important;
   }
-
-  /* Bordures grises */
-  .dark .border-gray-100,
-  .dark .border-gray-200,
-  .dark .border-slate-100,
-  .dark .border-slate-200,
-  .dark .border-blue-100,
-  .dark .border-blue-200 {
+  .border-gray-100, .border-gray-200, .border-slate-100, .border-slate-200,
+  .border-blue-100, .border-blue-200 {
     border-color: hsl(var(--border)) !important;
   }
-
-  /* Inputs : focus blanc → garde token */
-  .dark .focus\:bg-white:focus {
+  .focus\:bg-white:focus {
     background-color: hsl(var(--card)) !important;
   }
-
-  /* Loader / splash overlay (gradient bleu vers blanc) — fond uni dark */
-  .dark #app-loader {
-    background: hsl(var(--background)) !important;
+  #app-loader {
+    background: radial-gradient(ellipse at top, #1e1e5a 0%, #141432 40%, #0a0a1a 100%) !important;
   }
-
-  /* Header & cards — élévation visible en dark */
-  .dark .glass-card {
-    @apply bg-card/70 backdrop-blur-xl border border-border/60;
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.04) inset, 0 8px 24px -12px hsl(0 0% 0% / 0.5);
-  }
-
-  /* Scrollbars discrètes en dark */
-  .dark ::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--border));
-  }
-  .dark ::-webkit-scrollbar-track {
-    background-color: hsl(var(--background));
-  }
+  ::-webkit-scrollbar-thumb { background-color: hsl(var(--border)); }
+  ::-webkit-scrollbar-track { background-color: hsl(var(--background)); }
 }
 
 @layer base {
@@ -232,18 +174,19 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-feature-settings: "ss01", "cv11";
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     letter-spacing: -0.005em;
+    background-image: var(--gradient-aurora);
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Sora', 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-    letter-spacing: -0.02em;
+    font-family: 'Space Grotesk', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.025em;
+    font-weight: 700;
   }
 
-
-  /* Prevent iOS/Android auto-zoom on input focus — native app feel */
+  /* Prevent iOS/Android auto-zoom on input focus */
   input, select, textarea, [contenteditable] {
     font-size: 16px !important;
     touch-action: manipulation;
@@ -251,15 +194,11 @@
     -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
-
-  /* Force no-zoom on focus for iOS Safari 16+ */
   input:focus, select:focus, textarea:focus, [contenteditable]:focus {
     font-size: 16px !important;
     transform: scale(1);
     -webkit-transform: scale(1);
   }
-
-  /* Disable all pinch-to-zoom and double-tap zoom globally */
   html {
     touch-action: manipulation;
     -ms-touch-action: manipulation;
@@ -268,14 +207,10 @@
     text-size-adjust: 100%;
     overscroll-behavior: none;
   }
-
-  /* Prevent iOS rubber-band bounce scroll */
   body {
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
   }
-
-  /* Force all interactive elements to use manipulation touch-action */
   button, a, [role="button"], label {
     touch-action: manipulation;
   }
@@ -286,17 +221,16 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 
   .glass-card {
-    @apply bg-card/85 backdrop-blur-2xl border border-border/50;
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.6) inset, 0 12px 30px -18px hsl(229 84% 34% / 0.25);
+    @apply bg-card/70 backdrop-blur-2xl border border-border/60;
+    box-shadow: 0 1px 0 hsl(255 100% 100% / 0.04) inset,
+                0 12px 40px -18px hsl(245 90% 40% / 0.35);
     border-radius: calc(var(--radius) + 0.25rem);
   }
 
-  /* ─── Signature 2026-2027 utilities ─── */
+  /* ─── Midnight Stadium signature utilities ─── */
   .card-royal {
     @apply bg-card border border-border/60;
     border-radius: calc(var(--radius) + 0.25rem);
@@ -306,8 +240,9 @@
   .bg-hero-gradient  { background: var(--gradient-hero); }
   .bg-pop-gradient   { background: var(--gradient-pop); }
   .bg-soft-gradient  { background: var(--gradient-soft); }
+  .bg-aurora         { background: var(--gradient-aurora); }
   .text-royal-gradient {
-    background: var(--gradient-royal);
+    background: linear-gradient(135deg, hsl(245 90% 75%), hsl(340 95% 68%));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -321,38 +256,32 @@
     background: var(--gradient-royal);
     box-shadow: var(--shadow-elevated);
   }
-  .btn-royal:hover { filter: brightness(1.05); }
+  .btn-royal:hover { filter: brightness(1.1); }
 
   .chip {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
-    background: hsl(var(--accent) / 0.12);
-    color: hsl(var(--primary));
+    background: hsl(var(--accent) / 0.14);
+    color: hsl(var(--accent));
+    border: 1px solid hsl(var(--accent) / 0.25);
   }
   .chip-pop {
-    background: hsl(var(--pop) / 0.12);
+    background: hsl(var(--pop) / 0.14);
     color: hsl(var(--pop));
+    border-color: hsl(var(--pop) / 0.3);
   }
 
-  /* ─── App Header — bleu royal en clair, navy profond en sombre ─── */
+  /* ─── App Header — Midnight Stadium ─── */
   .app-header {
-    background: var(--gradient-hero);
-    border-bottom: 1px solid hsl(var(--primary) / 0.5);
-    color: hsl(var(--primary-foreground));
-    box-shadow: 0 8px 24px -18px hsl(229 84% 20% / 0.45);
-  }
-  .dark .app-header {
     background: linear-gradient(180deg,
-      hsl(225 50% 11%) 0%,
-      hsl(225 45% 8%) 100%);
-    border-bottom: 1px solid hsl(225 35% 18%);
-    color: hsl(210 25% 96%);
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.04) inset, 0 8px 20px -16px hsl(0 0% 0% / 0.6);
+      hsl(240 45% 8%) 0%,
+      hsl(240 45% 5%) 100%);
+    border-bottom: 1px solid hsl(240 30% 18%);
+    color: hsl(220 30% 96%);
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.04) inset,
+                0 8px 24px -18px hsl(245 90% 40% / 0.4);
   }
   .app-header .text-primary-foreground {
-    color: hsl(var(--primary-foreground));
-  }
-  .dark .app-header .text-primary-foreground {
-    color: hsl(210 25% 96%);
+    color: hsl(220 30% 96%);
   }
 
 
