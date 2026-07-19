@@ -1,21 +1,18 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-// Set to true for development (hot-reload from Lovable preview)
-// Set to false for production builds (native local files)
-const USE_REMOTE_SERVER = false;
+// Charge l'app depuis l'URL publiée Lovable → pas besoin de rebuild Xcode
+// Chaque "Publish" sur Lovable = live immédiatement sur le téléphone
+const REMOTE_URL = 'https://fco-manager.lovable.app';
 
 const config: CapacitorConfig = {
   appId: 'com.sekebou.fcomanager',
   appName: 'FCO-Manager',
   webDir: 'dist',
-  ...(USE_REMOTE_SERVER
-    ? {
-        server: {
-          url: 'https://f724ebf3-745f-46d6-9ffc-d9e0270da6cb.lovableproject.com?forceHideBadge=true',
-          cleartext: true,
-        },
-      }
-    : {}),
+  server: {
+    url: REMOTE_URL,
+    cleartext: true,
+  },
+
   android: {
     webContentsDebuggingEnabled: false,
   },
