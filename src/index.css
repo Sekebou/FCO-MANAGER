@@ -2,61 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* ─────────────────────────────────────────────────────────────
+   FCO-Manager · Saison 2026-2027
+   Design system: Royal Heritage (white / #0e2ba0 / #3b6fff / #ff3b5c)
+   Fonts: Sora (display) + Manrope (body) — loaded in index.html
+   ───────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 230 20% 15%;
+    --background: 220 40% 98%;
+    --foreground: 226 45% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 230 20% 15%;
+    --card-foreground: 226 45% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 20% 15%;
+    --popover-foreground: 226 45% 10%;
 
-    --primary: 230 85% 34%;
+    /* Royal blue heritage */
+    --primary: 229 84% 34%;         /* #0e2ba0 */
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 225 100% 62%;   /* #3b6fff */
 
-    --secondary: 228 40% 96%;
-    --secondary-foreground: 230 20% 15%;
+    --secondary: 226 40% 96%;
+    --secondary-foreground: 226 45% 12%;
 
-    --muted: 228 40% 96%;
-    --muted-foreground: 230 15% 50%;
+    --muted: 226 30% 95%;
+    --muted-foreground: 226 15% 45%;
 
-    --accent: 230 85% 45%;
+    --accent: 225 100% 62%;         /* #3b6fff */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    /* Signature pop coral for wins / live / celebration */
+    --pop: 351 100% 62%;            /* #ff3b5c */
+    --pop-foreground: 0 0% 100%;
+
+    --destructive: 351 85% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 156 78% 42%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 95% 55%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 228 25% 90%;
-    --input: 228 25% 90%;
-    --ring: 230 85% 45%;
+    --border: 226 30% 90%;
+    --input: 226 30% 92%;
+    --ring: 225 100% 62%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --sidebar-background: 230 85% 14%;
+    --sidebar-background: 229 84% 12%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 230 80% 60%;
+    --sidebar-primary: 225 100% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 230 70% 22%;
+    --sidebar-accent: 229 60% 20%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 230 70% 22%;
-    --sidebar-ring: 230 80% 60%;
+    --sidebar-border: 229 60% 22%;
+    --sidebar-ring: 225 100% 62%;
 
-    --nav-active: 230 85% 45%;
+    --nav-active: 229 84% 34%;
     --nav-active-foreground: 0 0% 100%;
-    --badge-match: 230 85% 45%;
-    --badge-training: 263 70% 50%;
-    --badge-other: 230 15% 50%;
+    --badge-match: 229 84% 34%;
+    --badge-training: 263 70% 55%;
+    --badge-other: 226 15% 50%;
+
+    /* Signature gradients & shadows */
+    --gradient-royal: linear-gradient(135deg, hsl(229 84% 34%) 0%, hsl(225 100% 62%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(229 84% 22%) 0%, hsl(225 90% 40%) 55%, hsl(225 100% 62%) 100%);
+    --gradient-pop: linear-gradient(135deg, hsl(225 100% 62%) 0%, hsl(351 100% 62%) 100%);
+    --gradient-soft: linear-gradient(180deg, hsl(220 60% 99%) 0%, hsl(226 40% 96%) 100%);
+    --shadow-elevated: 0 20px 40px -20px hsl(229 84% 34% / 0.28), 0 2px 6px -2px hsl(229 84% 34% / 0.08);
+    --shadow-glow: 0 0 0 6px hsl(225 100% 62% / 0.12);
+    --shadow-pop: 0 12px 30px -12px hsl(351 100% 62% / 0.5);
   }
+
 
   .dark {
     /* ── Modern dark theme — deep navy + royal blue accents ── */
