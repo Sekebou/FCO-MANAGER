@@ -291,17 +291,56 @@
   }
 
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-sm;
+    @apply bg-card/85 backdrop-blur-2xl border border-border/50;
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.6) inset, 0 12px 30px -18px hsl(229 84% 34% / 0.25);
+    border-radius: calc(var(--radius) + 0.25rem);
+  }
+
+  /* ─── Signature 2026-2027 utilities ─── */
+  .card-royal {
+    @apply bg-card border border-border/60;
+    border-radius: calc(var(--radius) + 0.25rem);
+    box-shadow: var(--shadow-elevated);
+  }
+  .bg-royal-gradient { background: var(--gradient-royal); }
+  .bg-hero-gradient  { background: var(--gradient-hero); }
+  .bg-pop-gradient   { background: var(--gradient-pop); }
+  .bg-soft-gradient  { background: var(--gradient-soft); }
+  .text-royal-gradient {
+    background: var(--gradient-royal);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .ring-royal { box-shadow: var(--shadow-glow); }
+  .shadow-royal { box-shadow: var(--shadow-elevated); }
+  .shadow-pop { box-shadow: var(--shadow-pop); }
+
+  .btn-royal {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-white transition-all active:scale-[0.97];
+    background: var(--gradient-royal);
+    box-shadow: var(--shadow-elevated);
+  }
+  .btn-royal:hover { filter: brightness(1.05); }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+    background: hsl(var(--accent) / 0.12);
+    color: hsl(var(--primary));
+  }
+  .chip-pop {
+    background: hsl(var(--pop) / 0.12);
+    color: hsl(var(--pop));
   }
 
   /* ─── App Header — bleu royal en clair, navy profond en sombre ─── */
   .app-header {
-    background-color: hsl(var(--primary));
-    border-bottom: 1px solid hsl(var(--primary) / 0.7);
+    background: var(--gradient-hero);
+    border-bottom: 1px solid hsl(var(--primary) / 0.5);
     color: hsl(var(--primary-foreground));
+    box-shadow: 0 8px 24px -18px hsl(229 84% 20% / 0.45);
   }
   .dark .app-header {
-    /* Navy très foncé pour ne pas brûler les yeux, garde l'ADN bleu */
     background: linear-gradient(180deg,
       hsl(225 50% 11%) 0%,
       hsl(225 45% 8%) 100%);
@@ -315,6 +354,7 @@
   .dark .app-header .text-primary-foreground {
     color: hsl(210 25% 96%);
   }
+
 
   .loading-spinner {
     border: 3px solid hsl(var(--border));
