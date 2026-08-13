@@ -17,8 +17,7 @@ const getInitialTheme = (): Theme => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'dark' || stored === 'light') return stored;
   } catch {}
-  // Default to light to keep current visual identity. User opts-in to dark.
-  return 'light';
+  return 'dark';
 };
 
 const applyTheme = (t: Theme) => {
@@ -27,7 +26,7 @@ const applyTheme = (t: Theme) => {
   else root.classList.remove('dark');
   // Sync native status bar color (mobile)
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', t === 'dark' ? '#0a0e1f' : '#0e2ba0');
+  if (meta) meta.setAttribute('content', '#0A0A0B');
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {

@@ -4,124 +4,112 @@
 
 /* ─────────────────────────────────────────────────────────────
    FCO-Manager · Saison 2026-2027
-   Design system: "Stade Blanc" — light, airy, club identity
-   Palette: white surfaces + royal blue (#0e2ba0) + sky accent
-   No pink / no red brand accents. Inspired by Apple Sport / Linear.
-   Fonts: Space Grotesk (display) + DM Sans (body)
+   Design system: "Night Arena" — dark sport app, club blue accent
+   Palette: near-black surfaces + electric club blue (#2f6bff / #0e2ba0)
+   Type: Montserrat Black Italic (display) + Inter (body)
    ───────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
-    /* Base — bright paper white with a hint of blue */
-    --background: 220 40% 99%;
-    --foreground: 225 40% 10%;
+    --background: 240 6% 4%;            /* #0A0A0B */
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 225 40% 10%;
+    --card: 240 6% 11%;                 /* #1C1C1E */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 225 40% 10%;
+    --popover: 240 6% 11%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Club royal blue — signature */
-    --primary: 227 84% 34%;            /* #0e2ba0 */
+    /* Club electric blue — replaces the neon lime */
+    --primary: 222 100% 60%;            /* #3366FF-ish */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 224 90% 58%;
+    --primary-glow: 214 100% 66%;
 
-    --secondary: 220 45% 96%;
-    --secondary-foreground: 225 40% 15%;
+    --secondary: 240 6% 14%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 30% 95%;
-    --muted-foreground: 225 15% 42%;
+    --muted: 240 4% 17%;                /* #2C2C2E */
+    --muted-foreground: 240 5% 65%;     /* #A1A1AA */
 
-    /* Sky accent — bright modern blue */
-    --accent: 215 92% 55%;             /* electric sky */
+    --accent: 222 100% 60%;
     --accent-foreground: 0 0% 100%;
 
-    /* Pop = a second cool blue (NO pink, NO red) */
-    --pop: 195 95% 48%;                /* cyan pop */
+    --pop: 205 100% 60%;
     --pop-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 52%;
+    --destructive: 3 100% 61%;          /* #FF453A */
     --destructive-foreground: 0 0% 100%;
 
-    --success: 156 72% 40%;
-    --success-foreground: 0 0% 100%;
+    --success: 152 70% 45%;
+    --success-foreground: 0 0% 0%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 0%;
 
-    --border: 220 25% 90%;
-    --input: 220 25% 92%;
-    --ring: 227 84% 34%;
+    --border: 240 4% 17%;
+    --input: 240 4% 15%;
+    --ring: 222 100% 60%;
 
-    --radius: 1.25rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 225 40% 12%;
-    --sidebar-primary: 227 84% 34%;
+    --sidebar-background: 240 6% 6%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 222 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 40% 96%;
-    --sidebar-accent-foreground: 225 40% 12%;
-    --sidebar-border: 220 25% 90%;
-    --sidebar-ring: 227 84% 34%;
+    --sidebar-accent: 240 6% 11%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 240 4% 17%;
+    --sidebar-ring: 222 100% 60%;
 
-    --nav-active: 227 84% 34%;
+    --nav-active: 222 100% 60%;
     --nav-active-foreground: 0 0% 100%;
-    --badge-match: 227 84% 34%;
-    --badge-training: 215 92% 55%;
-    --badge-other: 220 15% 55%;
+    --badge-match: 222 100% 60%;
+    --badge-training: 205 100% 60%;
+    --badge-other: 240 5% 45%;
 
-    /* Signature gradients & shadows (blue only, no pink) */
-    --gradient-royal: linear-gradient(135deg, hsl(227 84% 28%) 0%, hsl(224 90% 52%) 100%);
-    --gradient-hero:  linear-gradient(135deg, hsl(227 84% 26%) 0%, hsl(224 90% 45%) 55%, hsl(200 95% 55%) 100%);
-    --gradient-pop:   linear-gradient(135deg, hsl(224 90% 55%) 0%, hsl(195 95% 55%) 100%);
-    --gradient-soft:  linear-gradient(180deg, hsl(220 45% 99%) 0%, hsl(220 40% 96%) 100%);
-    --gradient-aurora: radial-gradient(ellipse at 15% -10%, hsl(224 90% 65% / 0.20), transparent 55%),
-                       radial-gradient(ellipse at 100% 110%, hsl(195 95% 60% / 0.16), transparent 55%);
-    --shadow-elevated: 0 20px 45px -22px hsl(227 84% 34% / 0.30), 0 2px 6px -2px hsl(227 40% 20% / 0.08);
-    --shadow-glow: 0 0 0 6px hsl(224 90% 60% / 0.15);
-    --shadow-pop: 0 12px 30px -14px hsl(195 95% 48% / 0.45);
+    --gradient-royal: linear-gradient(135deg, hsl(227 84% 40%) 0%, hsl(222 100% 62%) 100%);
+    --gradient-hero:  linear-gradient(135deg, hsl(230 90% 30%) 0%, hsl(222 100% 58%) 55%, hsl(200 100% 60%) 100%);
+    --gradient-pop:   linear-gradient(135deg, hsl(222 100% 60%) 0%, hsl(200 100% 60%) 100%);
+    --gradient-soft:  linear-gradient(180deg, hsl(240 6% 11%) 0%, hsl(240 6% 7%) 100%);
+    --gradient-aurora: radial-gradient(ellipse at 10% -10%, hsl(222 100% 55% / 0.22), transparent 55%),
+                       radial-gradient(ellipse at 110% 105%, hsl(205 100% 55% / 0.14), transparent 55%);
+    --shadow-elevated: 0 24px 50px -24px hsl(222 100% 50% / 0.45), 0 2px 8px -3px hsl(0 0% 0% / 0.6);
+    --shadow-glow: 0 0 0 6px hsl(222 100% 60% / 0.18);
+    --shadow-pop: 0 14px 34px -16px hsl(222 100% 60% / 0.55);
   }
 
-  /* Optional dark variant (opt-in via .dark) */
+  /* Same dark identity when the .dark class is applied */
   .dark {
-    --background: 225 45% 7%;
-    --foreground: 220 30% 96%;
-    --card: 225 40% 11%;
-    --card-foreground: 220 30% 96%;
-    --popover: 225 40% 13%;
-    --popover-foreground: 220 30% 96%;
-    --primary: 224 90% 62%;
+    --background: 240 6% 4%;
+    --foreground: 0 0% 100%;
+    --card: 240 6% 11%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 6% 11%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 222 100% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 225 35% 15%;
-    --secondary-foreground: 220 30% 96%;
-    --muted: 225 30% 14%;
-    --muted-foreground: 220 15% 68%;
-    --accent: 215 92% 62%;
+    --secondary: 240 6% 14%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 4% 17%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 222 100% 60%;
     --accent-foreground: 0 0% 100%;
-    --pop: 195 95% 55%;
-    --border: 225 30% 18%;
-    --input: 225 30% 16%;
-    --ring: 224 90% 62%;
-    --sidebar-background: 225 45% 6%;
-    --sidebar-foreground: 220 30% 96%;
-    --sidebar-primary: 224 90% 62%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 225 35% 13%;
-    --sidebar-accent-foreground: 220 30% 96%;
-    --sidebar-border: 225 30% 18%;
-    --sidebar-ring: 224 90% 62%;
+    --pop: 205 100% 60%;
+    --border: 240 4% 17%;
+    --input: 240 4% 15%;
+    --ring: 222 100% 60%;
   }
 
   html {
     transition: background-color 0.3s ease;
+    background: hsl(240 6% 4%);
   }
 
   #app-loader {
-    background: radial-gradient(ellipse at top, #ffffff 0%, #eef3ff 45%, #dbe5ff 100%) !important;
+    background: radial-gradient(ellipse at top, #14142b 0%, #0a0a0b 60%) !important;
   }
-  #app-loader .loader-text { color: hsl(227 40% 25%) !important; }
-  #app-loader .loader-dots span { background: hsl(227 84% 34% / 0.55) !important; }
+  #app-loader .loader-text { color: hsl(0 0% 92%) !important; }
+  #app-loader .loader-dots span { background: hsl(222 100% 60%) !important; }
 
   ::-webkit-scrollbar-thumb { background-color: hsl(var(--border)); }
   ::-webkit-scrollbar-track { background-color: hsl(var(--background)); }
@@ -134,16 +122,21 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     letter-spacing: -0.005em;
     background-image: var(--gradient-aurora);
     background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Space Grotesk', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    letter-spacing: -0.025em;
-    font-weight: 700;
+    font-family: 'Montserrat', 'Inter', -apple-system, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+  }
+
+  h1, h2, h3 {
+    font-style: italic;
+    text-transform: uppercase;
   }
 
   /* Prevent iOS/Android auto-zoom on input focus */
@@ -183,16 +176,29 @@
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+  /* Display heading style from the reference design */
+  .heading-arena {
+    font-family: 'Montserrat', 'Inter', sans-serif;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .label-arena {
+    @apply text-[10px] font-bold uppercase;
+    letter-spacing: 0.15em;
+  }
+
   .glass-card {
     @apply bg-card/80 backdrop-blur-2xl border border-border/60;
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.7) inset,
-                0 12px 40px -18px hsl(227 84% 34% / 0.25);
-    border-radius: calc(var(--radius) + 0.25rem);
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.05) inset,
+                0 18px 45px -22px hsl(0 0% 0% / 0.8);
+    border-radius: calc(var(--radius) + 0.75rem);
   }
 
   .card-royal {
     @apply bg-card border border-border/60;
-    border-radius: calc(var(--radius) + 0.25rem);
+    border-radius: calc(var(--radius) + 0.75rem);
     box-shadow: var(--shadow-elevated);
   }
   .bg-royal-gradient { background: var(--gradient-royal); }
@@ -201,7 +207,7 @@
   .bg-soft-gradient  { background: var(--gradient-soft); }
   .bg-aurora         { background: var(--gradient-aurora); }
   .text-royal-gradient {
-    background: linear-gradient(135deg, hsl(227 84% 34%), hsl(195 95% 48%));
+    background: linear-gradient(135deg, hsl(222 100% 65%), hsl(200 100% 60%));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -211,36 +217,35 @@
   .shadow-pop { box-shadow: var(--shadow-pop); }
 
   .btn-royal {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold text-white transition-all active:scale-[0.97];
-    background: var(--gradient-royal);
-    box-shadow: var(--shadow-elevated);
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold uppercase tracking-wide text-primary-foreground transition-all active:scale-[0.97];
+    background: hsl(var(--primary));
+    box-shadow: var(--shadow-pop);
   }
   .btn-royal:hover { filter: brightness(1.08); }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
-    background: hsl(var(--primary) / 0.10);
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase;
+    letter-spacing: 0.15em;
+    background: hsl(var(--primary) / 0.18);
     color: hsl(var(--primary));
-    border: 1px solid hsl(var(--primary) / 0.20);
+    border: 1px solid hsl(var(--primary) / 0.25);
   }
   .chip-pop {
-    background: hsl(var(--accent) / 0.10);
-    color: hsl(var(--accent));
-    border-color: hsl(var(--accent) / 0.25);
+    background: hsl(var(--pop) / 0.15);
+    color: hsl(var(--pop));
+    border-color: hsl(var(--pop) / 0.25);
   }
 
-  /* ─── App Header — Blanc / Royal ─── */
+  /* ─── App Header — Night Arena ─── */
   .app-header {
-    background: linear-gradient(180deg,
-      hsl(0 0% 100%) 0%,
-      hsl(220 40% 98%) 100%);
-    border-bottom: 1px solid hsl(220 25% 90%);
-    color: hsl(225 40% 12%);
-    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.7) inset,
-                0 6px 20px -18px hsl(227 84% 34% / 0.35);
+    background: hsl(var(--background) / 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
   }
   .app-header .text-primary-foreground {
-    color: hsl(225 40% 12%);
+    color: hsl(var(--foreground));
   }
 
   .loading-spinner {
@@ -275,20 +280,20 @@
   }
 
   @keyframes glowText {
-    0%, 100% { text-shadow: 0 0 20px rgba(14,43,160,0.10); }
-    50% { text-shadow: 0 0 40px rgba(14,43,160,0.22), 0 0 80px rgba(14,43,160,0.10); }
+    0%, 100% { text-shadow: 0 0 20px hsl(222 100% 60% / 0.25); }
+    50% { text-shadow: 0 0 40px hsl(222 100% 60% / 0.5), 0 0 80px hsl(222 100% 60% / 0.2); }
   }
 
   .glow-pulse-green {
-    box-shadow: 0 0 6px 2px hsl(156 72% 40% / 0.5), 0 0 16px 4px hsl(156 72% 40% / 0.2);
+    box-shadow: 0 0 6px 2px hsl(152 70% 45% / 0.5), 0 0 16px 4px hsl(152 70% 45% / 0.2);
     animation: glowPulse 2s ease-in-out infinite;
   }
   .glow-pulse-orange {
-    box-shadow: 0 0 6px 2px hsl(38 92% 50% / 0.5), 0 0 16px 4px hsl(38 92% 50% / 0.2);
+    box-shadow: 0 0 6px 2px hsl(38 92% 55% / 0.5), 0 0 16px 4px hsl(38 92% 55% / 0.2);
     animation: glowPulse 2s ease-in-out infinite;
   }
   .glow-pulse-red {
-    box-shadow: 0 0 6px 2px hsl(0 72% 52% / 0.5), 0 0 16px 4px hsl(0 72% 52% / 0.2);
+    box-shadow: 0 0 6px 2px hsl(3 100% 61% / 0.5), 0 0 16px 4px hsl(3 100% 61% / 0.2);
     animation: glowPulse 1.5s ease-in-out infinite;
   }
 

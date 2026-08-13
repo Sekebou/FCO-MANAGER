@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["DM Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        display: ["Space Grotesk", "DM Sans", "-apple-system", "sans-serif"],
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        display: ["Montserrat", "Inter", "-apple-system", "sans-serif"],
+        heading: ["Montserrat", "Inter", "-apple-system", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
