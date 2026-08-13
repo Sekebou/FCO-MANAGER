@@ -1690,11 +1690,11 @@ const Dashboard = () => {
         <div className="mx-auto px-3 sm:px-6 lg:px-10">
           <div className="flex justify-between items-center h-16 lg:h-20 overflow-hidden">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink">
-              <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+              <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/20 rounded-xl flex items-center justify-center shadow-md border border-white/15 shrink-0">
                   <img src={clubLogo} alt="FCO Logo" className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 object-contain drop-shadow-md" />
                 </div>
-                <h1 className="text-[13px] sm:text-lg lg:text-xl font-black text-primary-foreground leading-tight whitespace-nowrap">FCO Manager</h1>
+                <h1 className="text-[13px] sm:text-lg lg:text-xl font-black text-primary-foreground leading-tight truncate">FCO Manager</h1>
               </div>
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
